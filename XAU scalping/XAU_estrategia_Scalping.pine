@@ -22,12 +22,18 @@ in_session = not na(time(timeframe.period, sess_ny, "America/New_York"))
 m3_high_price = request.security(syminfo.tickerid, "3", close[1] > open[1] and close < open ? math.max(high, high[1]) : na, lookahead=barmerge.lookahead_off, gaps=barmerge.gaps_off)
 m3_low_price  = request.security(syminfo.tickerid, "3", close[1] < open[1] and close > open ? math.min(low,  low[1])  : na, lookahead=barmerge.lookahead_off, gaps=barmerge.gaps_off)
 
+// Rastreamos los DOS niveles m3 mas recientes de cada tipo
+// prev = el inmediatamente anterior al ultimo (necesario para validacion MER)
 var float last_m3_high = na
 var float last_m3_low  = na
+var float prev_m3_high = na
+var float prev_m3_low  = na
 
 if not na(m3_high_price)
+    prev_m3_high := last_m3_high
     last_m3_high := m3_high_price
 if not na(m3_low_price)
+    prev_m3_low  := last_m3_low
     last_m3_low  := m3_low_price
 
 // ESTRUCTURA M3
@@ -66,6 +72,12 @@ entry_bear = env_bear or mart_bear or doji_bear
 pb_to_bull = close[1] < open[1]
 pb_to_bear = close[1] > open[1]
 
+// CONTINUACION MEC — la vela de entrada debe superar con cuerpo el alto/bajo
+// pre-pullback por al menos min_brk (0.01%) — Plan Tecnico p.20-22
+// Envolvente clasico: 1 vela pullback en [-1], superamos su alto/bajo
+cont_bull_env  = close > high[1] and (close - high[1]) / high[1] >= min_brk
+cont_bear_env  = close < low[1]  and (low[1] - close)  / low[1]  >= min_brk
+
 // PATRON START (pullback[-2] + indecision[-1] mismo color + envolvente[0])
 bpct_1        = (high[1] - low[1]) > 0 ? math.abs(close[1] - open[1]) / (high[1] - low[1]) : 0.0
 indecion_bull = bpct_1 <= 0.50 and close[1] > open[1]
@@ -76,6 +88,12 @@ not_3bull     = not (close > open and close[1] > open[1] and close[2] > open[2])
 not_3bear     = not (close < open and close[1] < open[1] and close[2] < open[2])
 start_bull    = pb2_to_bull and indecion_bull and entry_bull and not_3bull
 start_bear    = pb2_to_bear and indecion_bear and entry_bear and not_3bear
+
+// START: la vela de entrada debe superar el maximo de la zona pullback+indecision ([-2] y [-1])
+pre_pb_high     = math.max(high[1], high[2])
+pre_pb_low      = math.min(low[1],  low[2])
+cont_bull_start = close > pre_pb_high and (close - pre_pb_high) / pre_pb_high >= min_brk
+cont_bear_start = close < pre_pb_low  and (pre_pb_low - close)  / pre_pb_low  >= min_brk
 
 // CONTADOR DIARIO
 var int day_tp   = 0
@@ -99,13 +117,35 @@ if exited_trade or hedged_trade
 
 can_trade = day_tp == 0 and day_sl < 2
 
+// VALIDACION MER — maximo UN nivel m3 opuesto visible al momento de la entrada
+// Si existen DOS niveles y estan a <=min_brk% entre si: valido, SL al mas alejado
+// Si existen DOS niveles y estan a >min_brk%: invalido — Plan Tecnico p.26-27
+//
+// BUY: verificamos bajos m3 (ambos deben estar por debajo del precio actual)
+both_lows_valid  = not na(prev_m3_low)  and prev_m3_low  < close and last_m3_low  < close
+two_lows_close   = both_lows_valid and math.abs(last_m3_low - prev_m3_low) / last_m3_low <= min_brk
+
+// SL para MER BUY: nivel unico, o el mas bajo de los dos cuando estan muy cerca
+mer_sl_long  = not both_lows_valid  ? last_m3_low  :
+               two_lows_close       ? math.min(last_m3_low, prev_m3_low) :
+               na   // dos niveles lejanos → MER invalido
+
+// SELL: verificamos altos m3 (ambos deben estar por encima del precio actual)
+both_highs_valid = not na(prev_m3_high) and prev_m3_high > close and last_m3_high > close
+two_highs_close  = both_highs_valid and math.abs(last_m3_high - prev_m3_high) / last_m3_high <= min_brk
+
+// SL para MER SELL: nivel unico, o el mas alto de los dos cuando estan muy cerca
+mer_sl_short = not both_highs_valid ? last_m3_high :
+               two_highs_close      ? math.max(last_m3_high, prev_m3_high) :
+               na   // dos niveles lejanos → MER invalido
+
 // SENALES DE ENTRADA
 can_long  = strategy.position_size <= 0
 can_short = strategy.position_size >= 0
-mec_buy  = can_trade and can_long  and market_struct ==  1 and (pb_to_bull and entry_bull or start_bull)
-mec_sell = can_trade and can_short and market_struct == -1 and (pb_to_bear and entry_bear or start_bear)
-mer_buy  = can_trade and can_long  and choc_bull and entry_bull
-mer_sell = can_trade and can_short and choc_bear and entry_bear
+mec_buy  = can_trade and can_long  and market_struct ==  1 and ((pb_to_bull and entry_bull and cont_bull_env) or (start_bull and cont_bull_start))
+mec_sell = can_trade and can_short and market_struct == -1 and ((pb_to_bear and entry_bear and cont_bear_env) or (start_bear and cont_bear_start))
+mer_buy  = can_trade and can_long  and choc_bull and entry_bull and not na(mer_sl_long)
+mer_sell = can_trade and can_short and choc_bear and entry_bear and not na(mer_sl_short)
 go_long  = mec_buy  or mer_buy
 go_short = mec_sell or mer_sell
 
@@ -114,7 +154,9 @@ var float trade_sl = na
 var float trade_tp = na
 
 if go_long
-    sl_ref  = not na(last_m3_low) ? last_m3_low : close - close * 0.002
+    // MER: usa mer_sl_long (que puede ser prev_m3_low si habia dos niveles cercanos)
+    // MEC: usa el ultimo bajo m3
+    sl_ref  = mer_buy ? mer_sl_long : (not na(last_m3_low) ? last_m3_low : close - close * 0.002)
     sl_dist = close - sl_ref
     if sl_dist > max_sl_pts
         sl_dist := sl_dist * (1.0 - sl_red)
@@ -126,7 +168,9 @@ if go_long
     strategy.exit("Long X", "Long",  stop=trade_sl, limit=trade_tp)
 
 if go_short
-    sl_ref  = not na(last_m3_high) ? last_m3_high : close + close * 0.002
+    // MER: usa mer_sl_short (que puede ser prev_m3_high si habia dos niveles cercanos)
+    // MEC: usa el ultimo alto m3
+    sl_ref  = mer_sell ? mer_sl_short : (not na(last_m3_high) ? last_m3_high : close + close * 0.002)
     sl_dist = sl_ref - close
     if sl_dist > max_sl_pts
         sl_dist := sl_dist * (1.0 - sl_red)
