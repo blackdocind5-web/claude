@@ -90,7 +90,8 @@ if na(prev_day) or curr_day != prev_day
 
 was_in_trade = strategy.position_size[1] != 0
 exited_trade = was_in_trade and strategy.position_size == 0
-if exited_trade
+hedged_trade = was_in_trade and strategy.position_size != 0 and math.sign(strategy.position_size) != math.sign(strategy.position_size[1])
+if exited_trade or hedged_trade
     if strategy.netprofit > strategy.netprofit[1]
         day_tp += 1
     else
@@ -99,11 +100,13 @@ if exited_trade
 can_trade = day_tp == 0 and day_sl < 2
 
 // SENALES DE ENTRADA
-no_pos   = strategy.position_size == 0
-mec_buy  = in_session and can_trade and no_pos and market_struct ==  1 and (pb_to_bull and entry_bull or start_bull)
-mec_sell = in_session and can_trade and no_pos and market_struct == -1 and (pb_to_bear and entry_bear or start_bear)
-mer_buy  = in_session and can_trade and no_pos and choc_bull and entry_bull
-mer_sell = in_session and can_trade and no_pos and choc_bear and entry_bear
+no_pos    = strategy.position_size == 0
+can_long  = strategy.position_size <= 0
+can_short = strategy.position_size >= 0
+mec_buy  = can_trade and can_long  and market_struct ==  1 and (pb_to_bull and entry_bull or start_bull)
+mec_sell = can_trade and can_short and market_struct == -1 and (pb_to_bear and entry_bear or start_bear)
+mer_buy  = can_trade and can_long  and choc_bull and entry_bull
+mer_sell = can_trade and can_short and choc_bear and entry_bear
 go_long  = mec_buy  or mer_buy
 go_short = mec_sell or mer_sell
 
@@ -132,10 +135,6 @@ if go_short
     trade_tp := close - sl_dist * rr_tp
     strategy.entry("Short", strategy.short, comment=mec_sell ? "MEC SELL" : "MER SELL")
     strategy.exit("Short X","Short", stop=trade_sl, limit=trade_tp)
-
-end_session = not in_session and in_session[1]
-if end_session and not no_pos
-    strategy.close_all(comment="Fin sesion")
 
 // VISUALIZACION
 bgcolor(show_bg and in_session ? color.new(color.blue, 93) : na, title="Fondo sesion")
