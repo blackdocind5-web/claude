@@ -80,8 +80,8 @@ cont_bear_env  = close < low[1]  and (low[1] - close)  / low[1]  >= min_brk
 
 // PATRON START (pullback[-2] + indecision[-1] mismo color + envolvente[0])
 bpct_1        = (high[1] - low[1]) > 0 ? math.abs(close[1] - open[1]) / (high[1] - low[1]) : 0.0
-indecion_bull = bpct_1 <= 0.50 and close[1] > open[1]
-indecion_bear = bpct_1 <= 0.50 and close[1] < open[1]
+indecion_bull = bpct_1 <= 0.5001 and close[1] > open[1]
+indecion_bear = bpct_1 <= 0.5001 and close[1] < open[1]
 pb2_to_bull   = close[2] < open[2]
 pb2_to_bear   = close[2] > open[2]
 not_3bull     = not (close > open and close[1] > open[1] and close[2] > open[2])
@@ -89,11 +89,21 @@ not_3bear     = not (close < open and close[1] < open[1] and close[2] < open[2])
 start_bull    = pb2_to_bull and indecion_bull and entry_bull and not_3bull
 start_bear    = pb2_to_bear and indecion_bear and entry_bear and not_3bear
 
-// START: la vela de entrada debe superar el maximo de la zona pullback+indecision ([-2] y [-1])
+// START 1pb: la vela de entrada debe superar el maximo de la zona pullback+indecision ([-2] y [-1])
 pre_pb_high     = math.max(high[1], high[2])
 pre_pb_low      = math.min(low[1],  low[2])
 cont_bull_start = close > pre_pb_high and (close - pre_pb_high) / pre_pb_high >= min_brk
 cont_bear_start = close < pre_pb_low  and (pre_pb_low - close)  / pre_pb_low  >= min_brk
+
+// PATRON START 2-pullback ([-3]+[-2] pullbacks, [-1] indecision, [0] entrada) — Plan Tecnico p.10
+pb2_both_bull    = close[2] < open[2] and close[3] < open[3]
+pb2_both_bear    = close[2] > open[2] and close[3] > open[3]
+pre_pb_high2     = math.max(high[1], high[2], high[3])
+pre_pb_low2      = math.min(low[1],  low[2],  low[3])
+cont_bull_start2 = close > pre_pb_high2 and (close - pre_pb_high2) / pre_pb_high2 >= min_brk
+cont_bear_start2 = close < pre_pb_low2  and (pre_pb_low2 - close)  / pre_pb_low2  >= min_brk
+start_bull2      = pb2_both_bull and indecion_bull and entry_bull and not_3bull
+start_bear2      = pb2_both_bear and indecion_bear and entry_bear and not_3bear
 
 // CONTADOR DIARIO
 var int day_tp   = 0
@@ -142,8 +152,8 @@ mer_sl_short = not both_highs_valid ? last_m3_high :
 // SENALES DE ENTRADA
 can_long  = strategy.position_size <= 0
 can_short = strategy.position_size >= 0
-mec_buy  = can_trade and can_long  and market_struct ==  1 and ((pb_to_bull and entry_bull and cont_bull_env) or (start_bull and cont_bull_start))
-mec_sell = can_trade and can_short and market_struct == -1 and ((pb_to_bear and entry_bear and cont_bear_env) or (start_bear and cont_bear_start))
+mec_buy  = can_trade and can_long  and market_struct ==  1 and ((pb_to_bull and entry_bull and cont_bull_env) or (start_bull and cont_bull_start) or (start_bull2 and cont_bull_start2))
+mec_sell = can_trade and can_short and market_struct == -1 and ((pb_to_bear and entry_bear and cont_bear_env) or (start_bear and cont_bear_start) or (start_bear2 and cont_bear_start2))
 mer_buy  = can_trade and can_long  and choc_bull and entry_bull and not na(mer_sl_long)
 mer_sell = can_trade and can_short and choc_bear and entry_bear and not na(mer_sl_short)
 go_long  = mec_buy  or mer_buy
@@ -163,7 +173,7 @@ if go_long
         sl_ref  := close - sl_dist
     trade_sl := sl_ref
     trade_tp := close + sl_dist * rr_tp
-    long_comment = mer_buy ? "MER BUY" : start_bull ? "MEC START BUY" : "MEC ENV BUY"
+    long_comment = mer_buy ? "MER BUY" : (start_bull or start_bull2) ? "MEC START BUY" : "MEC ENV BUY"
     strategy.entry("Long",  strategy.long,  comment=long_comment)
     strategy.exit("Long X", "Long",  stop=trade_sl, limit=trade_tp)
 
@@ -177,7 +187,7 @@ if go_short
         sl_ref  := close + sl_dist
     trade_sl := sl_ref
     trade_tp := close - sl_dist * rr_tp
-    short_comment = mer_sell ? "MER SELL" : start_bear ? "MEC START SELL" : "MEC ENV SELL"
+    short_comment = mer_sell ? "MER SELL" : (start_bear or start_bear2) ? "MEC START SELL" : "MEC ENV SELL"
     strategy.entry("Short", strategy.short, comment=short_comment)
     strategy.exit("Short X","Short", stop=trade_sl, limit=trade_tp)
 
