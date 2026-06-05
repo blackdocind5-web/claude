@@ -9,10 +9,11 @@ mart_min   = input.float(0.50,   "Cuerpo min Martillo",        minval=0.3,     s
 max_sl_pts = input.float(200.0,  "SL maximo en puntos",        minval=5.0,     step=1.0)
 sl_red     = input.float(0.40,   "Reduccion SL si supera max", minval=0.1,     step=0.05)
 min_brk    = input.float(0.0001, "Quiebre minimo valido",      minval=0.00001, step=0.00001)
-show_lbl   = input.bool(true, "Mostrar BUY/SELL")
-show_str   = input.bool(true, "Mostrar altos/bajos m3")
-show_exit  = input.bool(true, "Mostrar SL y TP")
-show_bg    = input.bool(true, "Fondo sesion activa")
+show_lbl     = input.bool(true,  "Mostrar BUY/SELL")
+show_str     = input.bool(true,  "Mostrar altos/bajos m3")
+show_exit    = input.bool(true,  "Mostrar SL y TP")
+show_bg      = input.bool(true,  "Fondo sesion activa")
+m3_line_len  = input.int(8,      "Longitud linea m3 (velas)", minval=1, maxval=50)
 
 // SESION
 in_session = not na(time(timeframe.period, sess_ny, "America/New_York"))
@@ -126,8 +127,13 @@ if end_session and not no_pos
 // VISUALIZACION
 bgcolor(show_bg and in_session ? color.new(color.blue, 93) : na, title="Fondo sesion")
 
-plotshape(show_str and not na(m3_high_price), title="Alto m3", style=shape.triangledown, location=location.abovebar, color=color.red,   size=size.tiny)
-plotshape(show_str and not na(m3_low_price),  title="Bajo m3", style=shape.triangleup,   location=location.belowbar, color=color.green, size=size.tiny)
+if show_str and not na(m3_high_price)
+    line.new(bar_index, m3_high_price, bar_index + m3_line_len, m3_high_price, color=color.red,   style=line.style_dashed, width=1)
+    label.new(bar_index + m3_line_len, m3_high_price, text="alto m3", color=color.new(color.red, 100),   textcolor=color.red,   style=label.style_label_left, size=size.small)
+
+if show_str and not na(m3_low_price)
+    line.new(bar_index, m3_low_price,  bar_index + m3_line_len, m3_low_price,  color=color.green, style=line.style_dashed, width=1)
+    label.new(bar_index + m3_line_len, m3_low_price,  text="bajo m3", color=color.new(color.green, 100), textcolor=color.green, style=label.style_label_left, size=size.small)
 
 plot(show_exit and strategy.position_size != 0 ? trade_sl : na, title="SL", color=color.red,   style=plot.style_linebr, linewidth=1)
 plot(show_exit and strategy.position_size != 0 ? trade_tp : na, title="TP", color=color.green, style=plot.style_linebr, linewidth=1)
