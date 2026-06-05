@@ -57,9 +57,11 @@ env_bull  = close > open and bpct >= body_min and upct < (1.0 - body_min)
 env_bear  = close < open and bpct >= body_min and lpct < (1.0 - body_min)
 mart_bull = close > open and bpct >= mart_min and bpct < body_min and lpct > 0.30
 mart_bear = close < open and bpct >= mart_min and bpct < body_min and upct > 0.30
+doji_bull = close > open and bpct >= 0.15 and bpct < mart_min and lpct >= 0.15 and upct >= 0.15
+doji_bear = close < open and bpct >= 0.15 and bpct < mart_min and lpct >= 0.15 and upct >= 0.15
 
-entry_bull = env_bull or mart_bull
-entry_bear = env_bear or mart_bear
+entry_bull = env_bull or mart_bull or doji_bull
+entry_bear = env_bear or mart_bear or doji_bear
 
 pb_to_bull = close[1] < open[1]
 pb_to_bear = close[1] > open[1]
