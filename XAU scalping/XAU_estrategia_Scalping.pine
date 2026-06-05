@@ -1,0 +1,160 @@
+//@version=5
+strategy(title="XAUUSD Scalping MEC/MER", shorttitle="XAU Scalp", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=1, pyramiding=0, commission_type=strategy.commission.cash_per_contract, commission_value=0, slippage=2, max_bars_back=1000, calc_on_every_tick=false)
+
+// INPUTS
+sess_ny    = input.session("0901-1059", "Sesion New York")
+rr_tp      = input.float(0.9,    "Ratio TP (RR 1:x)",         minval=0.1,     step=0.05)
+body_min   = input.float(0.85,   "Cuerpo min Envolvente",      minval=0.5,     step=0.05)
+mart_min   = input.float(0.50,   "Cuerpo min Martillo",        minval=0.3,     step=0.05)
+max_sl_pts = input.float(200.0,  "SL maximo en puntos",        minval=5.0,     step=1.0)
+sl_red     = input.float(0.40,   "Reduccion SL si supera max", minval=0.1,     step=0.05)
+min_brk    = input.float(0.0001, "Quiebre minimo valido",      minval=0.00001, step=0.00001)
+show_lbl   = input.bool(true, "Mostrar BUY/SELL")
+show_str   = input.bool(true, "Mostrar altos/bajos m3")
+show_exit  = input.bool(true, "Mostrar SL y TP")
+show_bg    = input.bool(true, "Fondo sesion activa")
+
+// SESION
+in_session = not na(time(timeframe.period, sess_ny, "America/New_York"))
+
+// DATOS M3
+m3_high_price = request.security(syminfo.tickerid, "3", close[1] > open[1] and close < open ? math.max(high, high[1]) : na, lookahead=barmerge.lookahead_off, gaps=barmerge.gaps_off)
+m3_low_price  = request.security(syminfo.tickerid, "3", close[1] < open[1] and close > open ? math.min(low,  low[1])  : na, lookahead=barmerge.lookahead_off, gaps=barmerge.gaps_off)
+
+var float last_m3_high = na
+var float last_m3_low  = na
+
+if not na(m3_high_price)
+    last_m3_high := m3_high_price
+if not na(m3_low_price)
+    last_m3_low  := m3_low_price
+
+// ESTRUCTURA M3
+var int market_struct = 0
+
+body_breaks_high = not na(last_m3_high) and close > last_m3_high and close > open and (close - last_m3_high) / last_m3_high >= min_brk
+body_breaks_low  = not na(last_m3_low)  and close < last_m3_low  and close < open and (last_m3_low - close)  / last_m3_low  >= min_brk
+
+choc_bull = body_breaks_high and market_struct == -1
+choc_bear = body_breaks_low  and market_struct ==  1
+
+if body_breaks_high
+    market_struct := 1
+if body_breaks_low
+    market_struct := -1
+
+// PATRONES DE VELAS m1
+rng_c  = high - low
+body_c = math.abs(close - open)
+uwck   = high - math.max(open, close)
+lwck   = math.min(open, close) - low
+bpct   = rng_c > 0 ? body_c / rng_c : 0.0
+upct   = rng_c > 0 ? uwck   / rng_c : 0.0
+lpct   = rng_c > 0 ? lwck   / rng_c : 0.0
+
+env_bull  = close > open and bpct >= body_min and upct < (1.0 - body_min)
+env_bear  = close < open and bpct >= body_min and lpct < (1.0 - body_min)
+mart_bull = close > open and bpct >= mart_min and bpct < body_min and lpct > 0.30
+mart_bear = close < open and bpct >= mart_min and bpct < body_min and upct > 0.30
+
+entry_bull = env_bull or mart_bull
+entry_bear = env_bear or mart_bear
+
+pb_to_bull = close[1] < open[1]
+pb_to_bear = close[1] > open[1]
+
+// CONTADOR DIARIO
+var int day_tp   = 0
+var int day_sl   = 0
+var int prev_day = na
+
+curr_day = dayofmonth(time)
+if na(prev_day) or curr_day != prev_day
+    day_tp   := 0
+    day_sl   := 0
+    prev_day := curr_day
+
+was_in_trade = strategy.position_size[1] != 0
+exited_trade = was_in_trade and strategy.position_size == 0
+if exited_trade
+    if strategy.netprofit > strategy.netprofit[1]
+        day_tp += 1
+    else
+        day_sl += 1
+
+can_trade = day_tp == 0 and day_sl < 2
+
+// SENALES DE ENTRADA
+no_pos   = strategy.position_size == 0
+mec_buy  = in_session and can_trade and no_pos and market_struct ==  1 and pb_to_bull and entry_bull
+mec_sell = in_session and can_trade and no_pos and market_struct == -1 and pb_to_bear and entry_bear
+mer_buy  = in_session and can_trade and no_pos and choc_bull and entry_bull
+mer_sell = in_session and can_trade and no_pos and choc_bear and entry_bear
+go_long  = mec_buy  or mer_buy
+go_short = mec_sell or mer_sell
+
+// SL / TP
+var float trade_sl = na
+var float trade_tp = na
+
+if go_long
+    sl_ref  = not na(last_m3_low) ? last_m3_low : close - close * 0.002
+    sl_dist = close - sl_ref
+    if sl_dist > max_sl_pts
+        sl_dist := sl_dist * (1.0 - sl_red)
+        sl_ref  := close - sl_dist
+    trade_sl := sl_ref
+    trade_tp := close + sl_dist * rr_tp
+    strategy.entry("Long",  strategy.long,  comment=mec_buy ? "MEC BUY" : "MER BUY")
+    strategy.exit("Long X", "Long",  stop=trade_sl, limit=trade_tp)
+
+if go_short
+    sl_ref  = not na(last_m3_high) ? last_m3_high : close + close * 0.002
+    sl_dist = sl_ref - close
+    if sl_dist > max_sl_pts
+        sl_dist := sl_dist * (1.0 - sl_red)
+        sl_ref  := close + sl_dist
+    trade_sl := sl_ref
+    trade_tp := close - sl_dist * rr_tp
+    strategy.entry("Short", strategy.short, comment=mec_sell ? "MEC SELL" : "MER SELL")
+    strategy.exit("Short X","Short", stop=trade_sl, limit=trade_tp)
+
+end_session = not in_session and in_session[1]
+if end_session and not no_pos
+    strategy.close_all(comment="Fin sesion")
+
+// VISUALIZACION
+bgcolor(show_bg and in_session ? color.new(color.blue, 93) : na, title="Fondo sesion")
+
+plotshape(show_str and not na(m3_high_price), title="Alto m3", style=shape.triangledown, location=location.abovebar, color=color.red,   size=size.tiny)
+plotshape(show_str and not na(m3_low_price),  title="Bajo m3", style=shape.triangleup,   location=location.belowbar, color=color.green, size=size.tiny)
+
+plot(show_exit and strategy.position_size != 0 ? trade_sl : na, title="SL", color=color.red,   style=plot.style_linebr, linewidth=1)
+plot(show_exit and strategy.position_size != 0 ? trade_tp : na, title="TP", color=color.green, style=plot.style_linebr, linewidth=1)
+
+atr14 = ta.atr(14)
+if show_lbl and go_long
+    label.new(bar_index, low  - atr14 * 0.4, text="BUY",  color=color.new(color.gray,15), textcolor=color.white, style=label.style_label_up,   size=size.normal)
+if show_lbl and go_short
+    label.new(bar_index, high + atr14 * 0.4, text="SELL", color=color.new(color.gray,15), textcolor=color.white, style=label.style_label_down, size=size.normal)
+
+bar_col  = market_struct == 1 ? color.new(color.teal, 50) : market_struct == -1 ? color.new(color.maroon, 50) : na
+barcolor(bar_col, title="Color estructura")
+
+choc_col = choc_bull ? color.new(color.green, 80) : choc_bear ? color.new(color.red, 80) : na
+bgcolor(choc_col, title="Cambio estructura")
+
+// TABLA INFO
+var table tbl = table.new(position.top_right, 2, 5, bgcolor=color.new(color.black,70), border_color=color.new(color.gray,40), border_width=1)
+if barstate.islast
+    st = market_struct == 1 ? "ALCISTA" : market_struct == -1 ? "BAJISTA" : "NEUTRAL"
+    table.cell(tbl, 0, 0, "Estructura m3",  text_color=color.silver, text_size=size.small)
+    table.cell(tbl, 1, 0, st,               text_color=color.white,  text_size=size.small)
+    table.cell(tbl, 0, 1, "Sesion NY",      text_color=color.silver, text_size=size.small)
+    table.cell(tbl, 1, 1, in_session ? "ACTIVA" : "CERRADA", text_color=color.white, text_size=size.small)
+    table.cell(tbl, 0, 2, "Puede operar",   text_color=color.silver, text_size=size.small)
+    table.cell(tbl, 1, 2, can_trade ? "SI" : "NO-limite",    text_color=color.white, text_size=size.small)
+    table.cell(tbl, 0, 3, "TP / SL dia",    text_color=color.silver, text_size=size.small)
+    table.cell(tbl, 1, 3, str.tostring(day_tp) + " / " + str.tostring(day_sl), text_color=color.white, text_size=size.small)
+    table.cell(tbl, 0, 4, "RR",             text_color=color.silver, text_size=size.small)
+    table.cell(tbl, 1, 4, "1:" + str.tostring(rr_tp),        text_color=color.white, text_size=size.small)
