@@ -100,7 +100,6 @@ if exited_trade or hedged_trade
 can_trade = day_tp == 0 and day_sl < 2
 
 // SENALES DE ENTRADA
-no_pos    = strategy.position_size == 0
 can_long  = strategy.position_size <= 0
 can_short = strategy.position_size >= 0
 mec_buy  = can_trade and can_long  and market_struct ==  1 and (pb_to_bull and entry_bull or start_bull)
@@ -122,7 +121,8 @@ if go_long
         sl_ref  := close - sl_dist
     trade_sl := sl_ref
     trade_tp := close + sl_dist * rr_tp
-    strategy.entry("Long",  strategy.long,  comment=mec_buy ? "MEC BUY" : "MER BUY")
+    long_comment = mer_buy ? "MER BUY" : start_bull ? "MEC START BUY" : "MEC ENV BUY"
+    strategy.entry("Long",  strategy.long,  comment=long_comment)
     strategy.exit("Long X", "Long",  stop=trade_sl, limit=trade_tp)
 
 if go_short
@@ -133,7 +133,8 @@ if go_short
         sl_ref  := close + sl_dist
     trade_sl := sl_ref
     trade_tp := close - sl_dist * rr_tp
-    strategy.entry("Short", strategy.short, comment=mec_sell ? "MEC SELL" : "MER SELL")
+    short_comment = mer_sell ? "MER SELL" : start_bear ? "MEC START SELL" : "MEC ENV SELL"
+    strategy.entry("Short", strategy.short, comment=short_comment)
     strategy.exit("Short X","Short", stop=trade_sl, limit=trade_tp)
 
 // VISUALIZACION
