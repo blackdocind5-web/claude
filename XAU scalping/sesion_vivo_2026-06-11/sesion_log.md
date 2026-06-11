@@ -32,6 +32,29 @@
 
 ---
 
+### 08:57 EDT — Gráfico M3 (Fabian)
+
+**Archivo:** screenshot_0857_m3.png
+**Timeframe:** 3 minutos
+**Precio:** 4,079.115
+
+**Estructura visible en M3:**
+- Estructura: ALCISTA ✓
+- Línea continua (bajo m3 actual): ~4,057-4,058 → nuevo bajo formado, nivel trasladado
+- Líneas punteadas (altos m3): ~4,074 y ~4,082-4,085
+- Precio consolidando entre 4,077-4,081 tras gran rally desde 4,057
+
+**Lógica de Fabian explicada:**
+- MEC BUY: cuando precio supera con cuerpo la línea punteada (alto m3) en m1
+- MER SELL: cuando precio rompe la línea continua (bajo m3) → ChOC bajista
+
+**Observaciones:**
+- El gran rally de 08:30-08:45 superó varios altos m3 (potenciales MEC BUY en m1)
+- El nuevo bajo m3 en 4,057 es el SL natural para cualquier BUY activo
+- Actualmente en fase de consolidación post-rally
+
+---
+
 ## Aprendizajes del día
 
 *(se irán agregando durante la sesión)*
