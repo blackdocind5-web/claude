@@ -5,6 +5,7 @@ strategy(title="XAUUSD Scalping MEC/MER", shorttitle="XAU Scalp", overlay=true, 
 sess_ny    = input.session("0901-1059", "Sesion New York")
 rr_tp      = input.float(0.9,    "Ratio TP (RR 1:x)",         minval=0.1,     step=0.05)
 body_min   = input.float(0.85,   "Cuerpo min Envolvente",      minval=0.5,     step=0.05)
+body_warn  = input.float(0.75,   "Cuerpo pre-señal (~)",        minval=0.5,     step=0.05)
 mart_min   = input.float(0.50,   "Cuerpo min Martillo",        minval=0.3,     step=0.05)
 max_sl_pts = input.float(200.0,  "SL maximo en puntos",        minval=5.0,     step=1.0)
 sl_red     = input.float(0.40,   "Reduccion SL si supera max", minval=0.1,     step=0.05)
@@ -20,11 +21,12 @@ use_doji       = input.bool(true,  "Entrada: Doji",                  group="Modu
 use_limite     = input.bool(false, "Limite diario (1TP / 2SL)",      group="Modulos activos")
 
 // ── TOGGLES VISUALES ─────────────────────────────────────────────────────────
-show_lbl    = input.bool(true, "Mostrar BUY/SELL",      group="Visual")
-show_str    = input.bool(true, "Mostrar altos/bajos m3", group="Visual")
-show_exit   = input.bool(true, "Mostrar SL y TP",        group="Visual")
-show_bg     = input.bool(true, "Fondo sesion activa",    group="Visual")
-m3_line_len = input.int(8,     "Longitud linea m3",      group="Visual", minval=1, maxval=50)
+show_lbl    = input.bool(true, "Mostrar BUY/SELL",           group="Visual")
+show_warn   = input.bool(true, "Mostrar pre-señales (~)",     group="Visual")
+show_str    = input.bool(true, "Mostrar altos/bajos m3",      group="Visual")
+show_exit   = input.bool(true, "Mostrar SL y TP",             group="Visual")
+show_bg     = input.bool(true, "Fondo sesion activa",         group="Visual")
+m3_line_len = input.int(5,     "Longitud linea m3 (velas)",   group="Visual", minval=1, maxval=100)
 
 // ── SESION ───────────────────────────────────────────────────────────────────
 in_session = not na(time(timeframe.period, sess_ny, "America/New_York"))
@@ -77,6 +79,9 @@ doji_bear = use_doji and close < open and bpct >= 0.15 and bpct < mart_min and l
 
 entry_bull = env_bull or mart_bull or doji_bull
 entry_bear = env_bear or mart_bear or doji_bear
+
+pre_bull = close > open and bpct >= body_warn and bpct < body_min and upct < (1.0 - body_warn)
+pre_bear = close < open and bpct >= body_warn and bpct < body_min and lpct < (1.0 - body_warn)
 
 pb_to_bull = close[1] < open[1]
 pb_to_bear = close[1] > open[1]
@@ -166,6 +171,13 @@ mer_sell = can_trade and can_short and use_mer and choc_bear and entry_bear and 
 go_long  = mec_buy  or mer_buy
 go_short = mec_sell or mer_sell
 
+pre_long  = show_warn and can_long  and market_struct ==  1 and not go_long  and (
+     (use_mec_env and pb_to_bull and pre_bull and cont_bull_env) or
+     (use_mer     and choc_bull  and pre_bull and not na(mer_sl_long)))
+pre_short = show_warn and can_short and market_struct == -1 and not go_short and (
+     (use_mec_env and pb_to_bear and pre_bear and cont_bear_env) or
+     (use_mer     and choc_bear  and pre_bear and not na(mer_sl_short)))
+
 // ── SL / TP ──────────────────────────────────────────────────────────────────
 var float trade_sl = na
 var float trade_tp = na
@@ -215,9 +227,13 @@ plot(show_exit and strategy.position_size != 0 ? trade_tp : na, title="TP", colo
 
 atr14 = ta.atr(14)
 if show_lbl and go_long
-    label.new(bar_index, low  - atr14 * 0.4, text="BUY",  color=color.new(color.gray,15), textcolor=color.white, style=label.style_label_up,   size=size.normal)
+    label.new(bar_index, low  - atr14 * 0.4, text="BUY",   color=color.new(color.gray,15),   textcolor=color.white, style=label.style_label_up,   size=size.normal)
 if show_lbl and go_short
-    label.new(bar_index, high + atr14 * 0.4, text="SELL", color=color.new(color.gray,15), textcolor=color.white, style=label.style_label_down, size=size.normal)
+    label.new(bar_index, high + atr14 * 0.4, text="SELL",  color=color.new(color.gray,15),   textcolor=color.white, style=label.style_label_down, size=size.normal)
+if pre_long
+    label.new(bar_index, low  - atr14 * 0.2, text="~BUY",  color=color.new(color.blue,40),   textcolor=color.white, style=label.style_label_up,   size=size.small)
+if pre_short
+    label.new(bar_index, high + atr14 * 0.2, text="~SELL", color=color.new(color.orange,20), textcolor=color.white, style=label.style_label_down, size=size.small)
 
 bar_col  = close > open ? color.new(color.green, 20) : color.new(color.red, 20)
 barcolor(bar_col, title="Color velas")
