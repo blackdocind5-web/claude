@@ -200,12 +200,17 @@ bgcolor(show_bg and in_session ? color.new(color.blue, 93) : na, title="Fondo se
 var line line_m3_high = na
 var line line_m3_low  = na
 
-if show_str and not na(m3_high_price)
-    line.delete(line_m3_high)
-    line_m3_high := line.new(bar_index - 1, last_m3_high, bar_index, last_m3_high, color=color.red,   style=line.style_dashed, width=2, extend=extend.right)
-if show_str and not na(m3_low_price)
-    line.delete(line_m3_low)
-    line_m3_low  := line.new(bar_index - 1, last_m3_low,  bar_index, last_m3_low,  color=color.green, style=line.style_solid,  width=2, extend=extend.right)
+if show_str
+    if not na(m3_high_price)
+        line.delete(line_m3_high)
+        line_m3_high := line.new(bar_index - 1, last_m3_high, bar_index + m3_line_len, last_m3_high, color=color.red,   style=line.style_dashed, width=2)
+    else if not na(line_m3_high)
+        line.set_x2(line_m3_high, bar_index + m3_line_len)
+    if not na(m3_low_price)
+        line.delete(line_m3_low)
+        line_m3_low  := line.new(bar_index - 1, last_m3_low,  bar_index + m3_line_len, last_m3_low,  color=color.green, style=line.style_solid,  width=2)
+    else if not na(line_m3_low)
+        line.set_x2(line_m3_low, bar_index + m3_line_len)
 
 plot(show_exit and strategy.position_size != 0 ? trade_sl : na, title="SL", color=color.red,   style=plot.style_linebr, linewidth=1)
 plot(show_exit and strategy.position_size != 0 ? trade_tp : na, title="TP", color=color.green, style=plot.style_linebr, linewidth=1)
