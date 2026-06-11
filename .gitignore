@@ -1,0 +1,18 @@
+# Credenciales — NUNCA subir
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+
+# Reportes y gráficos generados
+jarvis/reports/*.html
+jarvis/charts/*.html
+
+# Sistema
+.DS_Store
+Thumbs.db
