@@ -5,6 +5,6 @@
     "etfs": ["SPY", "QQQ", "VTI", "IWM", "EEM"],
     "latam": ["MELI", "NU", "GLOB", "DESP"],
     "macro": ["GLD", "SLV", "USO", "TLT", "UUP", "BTC-USD"],
-    "custom": []
+    "custom": ["ORCL"]
   }
 }

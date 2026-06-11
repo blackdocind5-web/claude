@@ -1,5 +1,104 @@
 {
-  "last_updated": "",
+  "last_updated": "11/06/2026",
   "currency": "USD",
-  "positions": []
+  "asset_type": "CEDEARs",
+  "notes": "Precios promedio de compra pendientes de carga.",
+  "positions": [
+    {
+      "ticker": "AMZN",
+      "quantity": 759,
+      "avg_buy_price": null,
+      "type": "cedear",
+      "buy_date": "",
+      "notes": ""
+    },
+    {
+      "ticker": "BRK-B",
+      "quantity": 31,
+      "avg_buy_price": null,
+      "type": "cedear",
+      "buy_date": "",
+      "notes": "Ticker Balanz: BRKB"
+    },
+    {
+      "ticker": "GLD",
+      "quantity": 245,
+      "avg_buy_price": null,
+      "type": "cedear",
+      "buy_date": "",
+      "notes": ""
+    },
+    {
+      "ticker": "GOOGL",
+      "quantity": 747,
+      "avg_buy_price": null,
+      "type": "cedear",
+      "buy_date": "",
+      "notes": ""
+    },
+    {
+      "ticker": "LLY",
+      "quantity": 60,
+      "avg_buy_price": null,
+      "type": "cedear",
+      "buy_date": "",
+      "notes": ""
+    },
+    {
+      "ticker": "MELI",
+      "quantity": 253,
+      "avg_buy_price": null,
+      "type": "cedear",
+      "buy_date": "",
+      "notes": ""
+    },
+    {
+      "ticker": "META",
+      "quantity": 200,
+      "avg_buy_price": null,
+      "type": "cedear",
+      "buy_date": "",
+      "notes": ""
+    },
+    {
+      "ticker": "MSFT",
+      "quantity": 277,
+      "avg_buy_price": null,
+      "type": "cedear",
+      "buy_date": "",
+      "notes": ""
+    },
+    {
+      "ticker": "NU",
+      "quantity": 590,
+      "avg_buy_price": null,
+      "type": "cedear",
+      "buy_date": "",
+      "notes": ""
+    },
+    {
+      "ticker": "NVDA",
+      "quantity": 520,
+      "avg_buy_price": null,
+      "type": "cedear",
+      "buy_date": "",
+      "notes": ""
+    },
+    {
+      "ticker": "PLTR",
+      "quantity": 41,
+      "avg_buy_price": null,
+      "type": "cedear",
+      "buy_date": "",
+      "notes": ""
+    },
+    {
+      "ticker": "SPY",
+      "quantity": 546,
+      "avg_buy_price": null,
+      "type": "cedear",
+      "buy_date": "",
+      "notes": ""
+    }
+  ]
 }

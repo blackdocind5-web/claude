@@ -1,12 +1,12 @@
 {
-  "onboarding_completed": false,
-  "name": "",
+  "onboarding_completed": true,
+  "name": "Diego",
   "email": "",
   "investments": {
-    "broker": "",
-    "risk_profile": "",
-    "investment_horizon": "",
-    "markets_of_interest": []
+    "broker": "Balanz y Cocos Capital",
+    "risk_profile": "Moderado-agresivo / Agresivo",
+    "investment_horizon": "Corto, mediano y largo plazo",
+    "markets_of_interest": ["Acciones", "ETFs", "CEDEARs", "Bonos", "Cripto", "Commodities", "Mercados emergentes", "Latinoamérica", "Argentina", "Todos los activos financieros"]
   },
   "reporting": {
     "daily_report_time": "08:00",
@@ -20,5 +20,5 @@
     "chart_default_period": "6mo",
     "currency": "USD"
   },
-  "notes": ""
+  "notes": "Maneja carteras propias y de terceros. CEDEARs en Balanz. Precios promedio de compra pendientes de carga."
 }
