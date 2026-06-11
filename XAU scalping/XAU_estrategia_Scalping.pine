@@ -197,13 +197,8 @@ if go_short
 // ── VISUALIZACION ────────────────────────────────────────────────────────────
 bgcolor(show_bg and in_session ? color.new(color.blue, 93) : na, title="Fondo sesion")
 
-if show_str and not na(m3_high_price)
-    line.new(bar_index, m3_high_price, bar_index + m3_line_len, m3_high_price, color=color.red,   style=line.style_dashed, width=1)
-    label.new(bar_index + m3_line_len, m3_high_price, text="alto m3", color=color.new(color.red, 100),   textcolor=color.red,   style=label.style_label_left, size=size.small)
-
-if show_str and not na(m3_low_price)
-    line.new(bar_index, m3_low_price,  bar_index + m3_line_len, m3_low_price,  color=color.green, style=line.style_dashed, width=1)
-    label.new(bar_index + m3_line_len, m3_low_price,  text="bajo m3", color=color.new(color.green, 100), textcolor=color.green, style=label.style_label_left, size=size.small)
+plot(show_str ? last_m3_high : na, "Alto m3", color=color.red,   style=plot.style_stepline, linewidth=1)
+plot(show_str ? last_m3_low  : na, "Bajo m3", color=color.green, style=plot.style_stepline, linewidth=1)
 
 plot(show_exit and strategy.position_size != 0 ? trade_sl : na, title="SL", color=color.red,   style=plot.style_linebr, linewidth=1)
 plot(show_exit and strategy.position_size != 0 ? trade_tp : na, title="TP", color=color.green, style=plot.style_linebr, linewidth=1)
