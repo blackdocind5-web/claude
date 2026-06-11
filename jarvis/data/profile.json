@@ -1,0 +1,24 @@
+{
+  "onboarding_completed": false,
+  "name": "",
+  "email": "",
+  "investments": {
+    "broker": "",
+    "risk_profile": "",
+    "investment_horizon": "",
+    "markets_of_interest": []
+  },
+  "reporting": {
+    "daily_report_time": "08:00",
+    "report_frequency": "daily",
+    "send_by_email": false,
+    "email_to": ""
+  },
+  "preferences": {
+    "language": "es",
+    "response_style": "directo y profesional",
+    "chart_default_period": "6mo",
+    "currency": "USD"
+  },
+  "notes": ""
+}
