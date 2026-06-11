@@ -30,8 +30,8 @@ m3_line_len = input.int(8,     "Longitud linea m3",      group="Visual", minval=
 in_session = not na(time(timeframe.period, sess_ny, "America/New_York"))
 
 // ── DATOS M3 ─────────────────────────────────────────────────────────────────
-m3_high_price = request.security(syminfo.tickerid, "3", close[1] > open[1] and close < open ? math.max(high, high[1]) : na, lookahead=barmerge.lookahead_off, gaps=barmerge.gaps_off)
-m3_low_price  = request.security(syminfo.tickerid, "3", close[1] < open[1] and close > open ? math.min(low,  low[1])  : na, lookahead=barmerge.lookahead_off, gaps=barmerge.gaps_off)
+m3_high_price = request.security(syminfo.tickerid, "3", close[1] > open[1] and close < open ? math.max(high, high[1]) : na, lookahead=barmerge.lookahead_off, gaps=barmerge.gaps_on)
+m3_low_price  = request.security(syminfo.tickerid, "3", close[1] < open[1] and close > open ? math.min(low,  low[1])  : na, lookahead=barmerge.lookahead_off, gaps=barmerge.gaps_on)
 
 var float last_m3_high = na
 var float last_m3_low  = na
@@ -202,10 +202,10 @@ var line line_m3_low  = na
 
 if show_str and not na(m3_high_price)
     line.delete(line_m3_high)
-    line_m3_high := line.new(bar_index, last_m3_high, bar_index, last_m3_high, color=color.red,   style=line.style_dashed, width=1, extend=extend.right)
+    line_m3_high := line.new(bar_index - 1, last_m3_high, bar_index, last_m3_high, color=color.red,   style=line.style_dashed, width=2, extend=extend.right)
 if show_str and not na(m3_low_price)
     line.delete(line_m3_low)
-    line_m3_low  := line.new(bar_index, last_m3_low,  bar_index, last_m3_low,  color=color.green, style=line.style_solid,  width=1, extend=extend.right)
+    line_m3_low  := line.new(bar_index - 1, last_m3_low,  bar_index, last_m3_low,  color=color.green, style=line.style_solid,  width=2, extend=extend.right)
 
 plot(show_exit and strategy.position_size != 0 ? trade_sl : na, title="SL", color=color.red,   style=plot.style_linebr, linewidth=1)
 plot(show_exit and strategy.position_size != 0 ? trade_tp : na, title="TP", color=color.green, style=plot.style_linebr, linewidth=1)
