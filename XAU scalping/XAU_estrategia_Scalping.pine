@@ -17,7 +17,7 @@ use_mec_start2 = input.bool(true,  "MEC — START (2 pullbacks)",      group="Mo
 use_mer        = input.bool(true,  "MER — Cambio de estructura",     group="Modulos activos")
 use_mart       = input.bool(true,  "Entrada: Martillo",              group="Modulos activos")
 use_doji       = input.bool(true,  "Entrada: Doji",                  group="Modulos activos")
-use_limite     = input.bool(true,  "Limite diario (1TP / 2SL)",      group="Modulos activos")
+use_limite     = input.bool(false, "Limite diario (1TP / 2SL)",      group="Modulos activos")
 
 // ── TOGGLES VISUALES ─────────────────────────────────────────────────────────
 show_lbl    = input.bool(true, "Mostrar BUY/SELL",      group="Visual")
