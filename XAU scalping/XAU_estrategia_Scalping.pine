@@ -131,7 +131,7 @@ if exited_trade or hedged_trade
     else
         day_sl += 1
 
-can_trade = not use_limite or (day_tp == 0 and day_sl < 2)
+can_trade = in_session and (not use_limite or (day_tp == 0 and day_sl < 2))
 
 // ── VALIDACION MER ───────────────────────────────────────────────────────────
 both_lows_valid  = not na(prev_m3_low)  and prev_m3_low  < close and last_m3_low  < close
