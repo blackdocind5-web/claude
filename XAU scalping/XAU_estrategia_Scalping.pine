@@ -214,8 +214,8 @@ if show_lbl and go_long
 if show_lbl and go_short
     label.new(bar_index, high + atr14 * 0.4, text="SELL", color=color.new(color.gray,15), textcolor=color.white, style=label.style_label_down, size=size.normal)
 
-bar_col  = market_struct == 1 ? color.new(color.teal, 50) : market_struct == -1 ? color.new(color.maroon, 50) : na
-barcolor(bar_col, title="Color estructura")
+bar_col  = close > open ? color.new(color.green, 20) : color.new(color.red, 20)
+barcolor(bar_col, title="Color velas")
 
 choc_col = choc_bull ? color.new(color.green, 80) : choc_bear ? color.new(color.red, 80) : na
 bgcolor(choc_col, title="Cambio estructura")
