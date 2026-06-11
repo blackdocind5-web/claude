@@ -1,18 +1,18 @@
 {
-  "onboarding_completed": false,
-  "name": "",
-  "email": "",
+  "onboarding_completed": true,
+  "name": "Diego",
+  "email": "blackdoc.ind5@gmail.com",
   "investments": {
-    "broker": "",
-    "risk_profile": "",
-    "investment_horizon": "",
-    "markets_of_interest": []
+    "broker": ["Balanz", "Cocos Capital", "Interactive Brokers"],
+    "risk_profile": "moderado-agresivo",
+    "investment_horizon": ["corto plazo", "mediano plazo", "largo plazo"],
+    "markets_of_interest": ["global", "S&P 500", "NASDAQ", "ETFs", "renta fija", "commodities", "cripto", "Latinoamérica", "mercados emergentes"]
   },
   "reporting": {
     "daily_report_time": "08:00",
-    "report_frequency": "daily",
+    "report_frequency": "on-demand",
     "send_by_email": false,
-    "email_to": ""
+    "email_to": "blackdoc.ind5@gmail.com"
   },
   "preferences": {
     "language": "es",
@@ -20,5 +20,5 @@
     "chart_default_period": "6mo",
     "currency": "USD"
   },
-  "notes": ""
+  "notes": "Maneja carteras de inversión. Prefiere análisis de oportunidades basado en noticias y scanner global. Sin reportes automáticos."
 }
