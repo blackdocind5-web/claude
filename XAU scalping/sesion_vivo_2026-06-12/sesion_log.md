@@ -269,6 +269,15 @@ Nuestro código se benefició de entrar MÁS TEMPRANO (09:05 vs 09:24) — el TP
 
 ---
 
+## Resultado semanal de Fabian (semana 9-13 Jun 2026)
+
+- **Resultado acumulado semana:** +1.35R
+- **Resultado hoy (Jun 12):** -1.65R aprox (2 SL: -0.65R en BUY + ~-1R en SELL)
+- **Implicación:** Lunes-Jueves fue positivo, compensó el viernes difícil
+- **Conclusión:** Sistema de Fabian es consistente — un día de trampa doble no destruye la semana
+
+---
+
 ## Notas para próxima sesión
 
 - Implementar cooldown post-spike antes de siguiente sesión en vivo
