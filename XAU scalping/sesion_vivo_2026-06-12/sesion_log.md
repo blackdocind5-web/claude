@@ -161,9 +161,38 @@
 
 ---
 
+## Resultados finales de la sesión
+
+### Nuestro código
+| Trade | Tipo | Entrada | Resultado |
+|---|---|---|---|
+| 1 | MEC ENV BUY | ~09:05 ~4,200 | TP ✓ |
+| 2 | SELL | ~09:37 ~4,212 | TP ✓ |
+| **Total** | | | **2 TP / 0 SL** |
+
+### Fabian
+| Trade | Tipo | Entrada | Resultado |
+|---|---|---|---|
+| 1 | MER BUY | ~09:24 ~4,200 | SL ✗ (-0.65R) |
+| 2 | SELL | ~09:40 ~4,212 | SL ✗ |
+| **Total** | | | **0 TP / 2 SL** |
+
+### Análisis del resultado
+
+El spike falso de las 09:37 a ~4,212 fue una trampa doble:
+- Limpió el BUY de Fabian (que entró a 4,200 pero el TP no alcanzó)
+- Luego la reversión violenta hasta 4,175 limpió su SELL también
+
+Nuestro código se benefició de entrar MÁS TEMPRANO (09:05 vs 09:24) — el TP del BUY fue alcanzado durante el spike antes de la reversión. El modelo fue "incorrecto" (MEC vs MER) pero el timing accidentalmente fue mejor.
+
+**Lección:** En días de alta volatilidad post-noticia, los spikes falsos castigan las entradas tardías más que las prematuras. No es una regla general — fue el contexto específico de hoy.
+
+---
+
 ## Notas para próxima sesión
 
 - Implementar cooldown post-spike antes de siguiente sesión en vivo
 - Verificar que solo hay UNA instancia del indicador cargada
 - Confirmar que use_limite = false antes de abrir sesión
 - Preguntar a Fabian si tiene filtro especial para períodos post-noticia
+- Estudiar por qué el spike falso de hoy no tenía continuación — posible patrón recurrente en viernes con noticias Michigan
