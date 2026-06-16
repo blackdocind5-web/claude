@@ -180,6 +180,22 @@ La vela de ~08:30 tenía cuerpo 75-84% (activó `~BUY`, no `BUY` real). Para ent
 
 ---
 
+### ~13:50 EDT — El fix del cooldown NO resolvió el caso: misma captura, sigue saliendo MEC ENV SELL
+
+**Contexto:** Usuario volvió a mandar la comparación (nuestro chart, timestamp 13:25 EDT, vs el chart de Fabian con sus cajas de medición de 13,870pts/0.320% y 13,060pts/0.301%) preguntando por qué seguimos sin poder tomar la orden por MER en la vela del ChOC bajista (~09:14).
+
+**Conclusión honesta:** el fix de cooldown (sacarlo de `can_trade` y dejarlo solo en `mec_buy`/`mec_sell`) era real y se queda, pero **no era la única causa, o no era la causa correcta**. La captura sigue mostrando "MEC ENV SELL" con resultado -2.3 en vez de "MER SELL" en el bar del ChOC. No tenemos acceso a los valores OHLC exactos de esa vela ni al estado interno bar-por-bar (`choc_bear`, `entry_bear`, `mer_sl_short`, `can_short`), así que reconstruir la causa exacta desde una captura es necesariamente una hipótesis, no un diagnóstico confirmado.
+
+**Hipótesis rankeadas (de más a menos probable), atadas a líneas de código reales:**
+
+1. **`mer_sl_short` devolvió `na` por la regla de "nivel único"** (`both_highs_valid and not two_highs_close` → bloquea con `na`, línea de `mer_sl_short`). El movimiento de apertura (rally hasta ~4356 + caída + posible micro-rebote antes de los 09:14) es justo el escenario donde pueden quedar dos altos m3 opuestos visibles y no cercanos entre sí — la regla de Fabian (pág.26-27 Plan Técnico) bloquea la ejecución en ese caso, y `mer_sell` exige `not na(mer_sl_short)`. Si esto es lo que pasó, **el código está aplicando correctamente la regla de Fabian** — el bloqueo sería intencional, no un bug. La discrepancia con la entrada real de Fabian podría deberse a que su sistema descarta un nivel viejo que el nuestro todavía conserva como "opuesto válido" (`prev_m3_high`).
+2. **La vela exacta del ChOC no califica como `entry_bear`** (envolvente/martillo/doji) por forma de cuerpo/mecha. Por la regla de "solo primer toque" (ya confirmada en el Plan Técnico, pág.24-25), si la primera vela que toca el nivel no cumple el patrón, MER correctamente NO dispara ahí — tampoco sería un bug, sería el código siguiendo la regla de Fabian al pie de la letra.
+3. **Lag de M3**: `last_m3_low` podría no haberse actualizado todavía al momento exacto en que visualmente parece romperse, desplazando en qué bar el código realmente detecta `body_breaks_low`.
+
+**Por qué no se aplica otro fix todavía:** ya cometimos el error una vez de adivinar un umbral (la mecha del martillo) sin evidencia dura. Aplicar otro cambio a ciegas sobre cuál de las 3 hipótesis es la real arriesga romper algo que ya funciona bien (la regla de nivel único y la regla de primer toque son ambas reglas confirmadas de Fabian, no errores nuestros). Lo pendiente es instrumentar el código con un debug temporal (mostrar en pantalla `choc_bear`/`entry_bear`/`mer_sl_short`/`can_short` vela por vela) para la próxima vez que pase esto en vivo, en lugar de seguir reconstruyendo después de los hechos desde capturas.
+
+---
+
 ## Correcciones pendientes (acumulado)
 
 1. **[PRIORITARIO]** Ping-pong de estructura — lado MER **ya resuelto** (`mer_sl_long`/`mer_sl_short` bloquean si hay dos niveles m3 opuestos no cercanos). Lado MEC/`market_struct` mitigado parcialmente por el cooldown post-spike (ahora exclusivo de MEC, ver fix ~16:40), pero sigue pendiente extender la idea de "nivel único" directamente a `market_struct`.
@@ -193,6 +209,7 @@ La vela de ~08:30 tenía cuerpo 75-84% (activó `~BUY`, no `BUY` real). Para ent
 9. **[NUEVO]** "Variante fractal extendido" de niveles m3 (Plan Técnico pág.2-3): a veces el nivel real no está en la mecha de las dos velas que definen el par, sino en una vela adyacente del mismo movimiento con mecha más extrema. Gap confirmado al comparar capturas hoy (~4341 vs ~4342.5). No implementado — ambigüedad real de cómo delimitar el "fractal" algorítmicamente sin riesgo de repintado/inestabilidad.
 10. Validar en vivo el umbral exacto de "vela envolvente doji" del Plan Técnico (texto ambiguo, no traducido a código).
 11. **[NUEVO]** Antes de cada sesión, si hay noticias USD en el calendario de Forex Factory durante la ventana NY, llenar `sess_news_high`/`sess_news_med` con las ventanas ya calculadas (ver módulo `use_news_block`, añadido hoy).
+12. **[NUEVO PRIORITARIO]** El ChOC bajista de ~09:14 sigue sin disparar MER tras el fix de cooldown (ver hallazgo ~13:50) — 3 hipótesis abiertas (`mer_sl_short`=na por nivel único, `entry_bear` no califica en esa vela, o lag de M3). Falta instrumentar el código con debug bar-por-bar para confirmar cuál es la causa real antes de tocar nada más.
 
 ---
 
@@ -200,6 +217,6 @@ La vela de ~08:30 tenía cuerpo 75-84% (activó `~BUY`, no `BUY` real). Para ent
 
 **Archivo:** `XAU_estrategia_Scalping.pine`
 **Branch:** `claude/trading-strategy-inconsistencies-w9S9b`
-**Último cambio:** cooldown post-spike ajustado para bloquear solo MEC, no MER (ver fix ~16:40) — antes de eso: `use_limite` revertido a `false` (excepción explícita a la directiva "replicar exactamente a Fabian" — ver sesión 14:53) + módulo `use_cooldown` (post-spike) + `use_news_block` (bloqueo manual de noticias vía `sess_news_high`/`sess_news_med`), ambos siguen activados
+**Último cambio:** ninguno nuevo en el código — el fix de cooldown (bloquear solo MEC, no MER) sigue activo pero NO resolvió el caso del ChOC de las 09:14 (ver hallazgo ~13:50, sigue saliendo MEC ENV SELL). Pendiente decidir si se agrega instrumentación de debug antes de seguir tocando la lógica de entradas. Cambios previos sin tocar: `use_limite` en `false` (excepción explícita a la directiva "replicar exactamente a Fabian" — ver sesión 14:53), módulo `use_cooldown` (post-spike) + `use_news_block` (bloqueo manual de noticias vía `sess_news_high`/`sess_news_med`), ambos activados
 
 **Sesión en curso** — se continúa actualizando este log a medida que avanza el día.
