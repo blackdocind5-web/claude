@@ -196,6 +196,16 @@ La vela de ~08:30 tenía cuerpo 75-84% (activó `~BUY`, no `BUY` real). Para ent
 
 ---
 
+### ~13:56 EDT — Tabla de debug agregada + usuario propone Replay vela a vela
+
+**Decisión:** en vez de seguir adivinando, el usuario propuso usar TradingView Replay y avanzar vela a vela desde antes de las 09:09 hasta pasado las 09:18, leyendo el estado interno real en cada paso.
+
+**Cambio en el código:** nueva tabla `dbg` (abajo a la derecha, toggle `show_debug`, activado por defecto) que en cada vela muestra: ChOC del bar, forma de vela (bull/bear), niveles m3 (last/prev, para revisar la regla de nivel único), `mer_sl_long`/`mer_sl_short` (valor o `NA`), `can_long`/`can_short`, y el resultado final de `mer_buy`/`mer_sell` y `mec_buy`/`mec_sell`. Es temporal — se quita una vez identificada la causa real del caso del ChOC de las 09:14.
+
+**Siguiente paso:** usuario hace Replay desde ~09:09 EDT, avanza vela por vela hasta ~09:18, reporta lo que muestra `dbg` en cada paso — especialmente en la vela exacta donde aparece "CAMBIO DE ESTRUCTURA BAJISTA" (~09:14).
+
+---
+
 ## Correcciones pendientes (acumulado)
 
 1. **[PRIORITARIO]** Ping-pong de estructura — lado MER **ya resuelto** (`mer_sl_long`/`mer_sl_short` bloquean si hay dos niveles m3 opuestos no cercanos). Lado MEC/`market_struct` mitigado parcialmente por el cooldown post-spike (ahora exclusivo de MEC, ver fix ~16:40), pero sigue pendiente extender la idea de "nivel único" directamente a `market_struct`.

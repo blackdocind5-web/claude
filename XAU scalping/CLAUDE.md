@@ -32,6 +32,7 @@
 | Límite diario | **DESACTIVADO** (`use_limite = false`) — NUNCA activar en sesión en vivo: confirmado dos veces (11-jun, 12-jun) que cortar el día nos ciega para el resto de la comparación. Excepción explícita a la directiva 16-jun de replicar a Fabian: queremos ver TODAS las señales del día |
 | Bloqueo por noticias | **ACTIVADO** (`use_news_block = true`, desde 16-jun) — manual, ver sección abajo |
 | Cooldown post-spike | **ACTIVADO** (`use_cooldown = true`, desde 16-jun) — 15 velas tras spike ≥10pts, **solo bloquea MEC** (ajuste 16-jun tarde), ver sección abajo |
+| Tabla debug | **ACTIVADA** (`show_debug = true`, desde 16-jun tarde) — temporal, ver sección abajo |
 
 ## Lógica del sistema
 
@@ -68,6 +69,9 @@ En períodos volátiles post-noticia:
 El código entraba inmediatamente después de velas gigantes (noticias). Fabian espera ~15-20 minutos. Implementado como `use_cooldown`/`spike_size`/`cooldown_bars`: cualquier vela con rango ≥`spike_size` (10pts default) marca `last_spike_bar`, y `cooldown_bars` (15 default) velas siguientes quedan bloqueadas.
 
 **Ajuste (16-jun tarde):** el cooldown ya NO bloquea `can_trade` en general — solo bloquea `mec_buy`/`mec_sell` (`not in_cooldown` movido del `can_trade` compartido a las condiciones de MEC). Encontrado en vivo: un ChOC real podía ocurrir DENTRO de la ventana de cooldown (ej. spike de apertura ~09:00, ChOC bajista ~09:14, cooldown corriendo hasta ~09:15-18). Con el cooldown bloqueando todo, el MER no disparaba en el bar del ChOC; para cuando el cooldown terminaba, `market_struct` ya había cambiado, así que la primera entrada real salía como MEC ENV — exactamente el caso que Fabian señaló como "ahí tomé la entrada por MER" en una comparación de capturas. El ChOC + MER ES la señal de "el caos ya se calmó" que Fabian espera; bloquearla con un timer fijo es contraproducente. El ping-pong de estructura en MER ya está cubierto aparte por la regla de "nivel único" (`mer_sl_long`/`mer_sl_short`), así que MER no necesita la protección del cooldown. Tabla ahora muestra "SI (solo MER)" cuando el cooldown está activo pero el resto de condiciones permite operar.
+
+### Tabla de debug temporal (`show_debug`) — añadida 16-jun tarde
+El fix de cooldown (ver arriba) no resolvió un caso real visto en vivo: un ChOC bajista (~09:14) que sigue saliendo como "MEC ENV SELL" en vez de "MER SELL". Sin acceso a OHLC exacto ni al estado interno bar-por-bar, no se puede confirmar cuál de las 3 hipótesis abiertas es la causa (regla de nivel único bloqueando `mer_sl_short`, vela sin forma válida para `entry_bear`, o lag de M3) — ver `sesion_vivo_2026-06-16/sesion_log.md` (~13:50). Se agregó una segunda tabla (`dbg`, abajo a la derecha, toggle `show_debug`) que muestra en vivo por cada vela: ChOC del bar, forma de vela (bull/bear), niveles m3 (last/prev), `mer_sl_long`/`mer_sl_short` (valor o NA), `can_long`/`can_short`, y el resultado final de `mer_buy`/`mer_sell` y `mec_buy`/`mec_sell`. Pensada para usarse con TradingView Replay, vela a vela, en vez de reconstruir la causa desde capturas. Es temporal — quitar una vez confirmada la causa real.
 
 ### Pendientes menores
 - ~~Etiqueta numérica al final de cada línea m3~~ — hecho 16-jun (`lbl_m3_high`/`lbl_m3_low`)

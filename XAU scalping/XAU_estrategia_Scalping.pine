@@ -38,6 +38,7 @@ show_str    = input.bool(true, "Mostrar altos/bajos m3",      group="Visual")
 show_exit   = input.bool(true, "Mostrar SL y TP",             group="Visual")
 show_bg     = input.bool(true, "Fondo sesion activa",         group="Visual")
 m3_line_len = input.int(5,     "Longitud linea m3 (velas)",   group="Visual", minval=1, maxval=100)
+show_debug  = input.bool(true, "Mostrar tabla debug (temporal)", group="Visual")
 
 // ── SESION ───────────────────────────────────────────────────────────────────
 in_session = not na(time(timeframe.period, sess_ny, "America/New_York"))
@@ -331,3 +332,31 @@ if barstate.islast
     table.cell(tbl, 1, 3, str.tostring(day_tp) + " / " + str.tostring(day_sl), text_color=color.white, text_size=size.small)
     table.cell(tbl, 0, 4, "RR",             text_color=color.silver, text_size=size.small)
     table.cell(tbl, 1, 4, "1:" + str.tostring(rr_tp),        text_color=color.white, text_size=size.small)
+
+// ── TABLA DEBUG (temporal — para diagnostico vela a vela en replay) ─────────
+var table dbg = table.new(position.bottom_right, 2, 8, bgcolor=color.new(color.black,70), border_color=color.new(color.gray,40), border_width=1)
+if show_debug and barstate.islast
+    choc_txt  = choc_bull ? "ALCISTA" : choc_bear ? "BAJISTA" : "no"
+    entry_txt = entry_bull ? "BULL" : entry_bear ? "BEAR" : "no"
+    mer_sl_txt = (na(mer_sl_long) ? "NA" : str.tostring(mer_sl_long, format.mintick)) + " / " + (na(mer_sl_short) ? "NA" : str.tostring(mer_sl_short, format.mintick))
+    m3_high_txt = str.tostring(last_m3_high, format.mintick) + " / " + (na(prev_m3_high) ? "NA" : str.tostring(prev_m3_high, format.mintick))
+    m3_low_txt  = str.tostring(last_m3_low, format.mintick)  + " / " + (na(prev_m3_low)  ? "NA" : str.tostring(prev_m3_low, format.mintick))
+    can_txt   = (can_long ? "SI" : "no") + " / " + (can_short ? "SI" : "no")
+    mer_txt   = (mer_buy ? "SI" : "no") + " / " + (mer_sell ? "SI" : "no")
+    mec_txt   = (mec_buy ? "SI" : "no") + " / " + (mec_sell ? "SI" : "no")
+    table.cell(dbg, 0, 0, "ChOC (este bar)",     text_color=color.silver, text_size=size.tiny)
+    table.cell(dbg, 1, 0, choc_txt,              text_color=color.yellow, text_size=size.tiny)
+    table.cell(dbg, 0, 1, "Vela (bull/bear)",    text_color=color.silver, text_size=size.tiny)
+    table.cell(dbg, 1, 1, entry_txt,             text_color=color.yellow, text_size=size.tiny)
+    table.cell(dbg, 0, 2, "m3 high (last/prev)", text_color=color.silver, text_size=size.tiny)
+    table.cell(dbg, 1, 2, m3_high_txt,           text_color=color.yellow, text_size=size.tiny)
+    table.cell(dbg, 0, 3, "m3 low (last/prev)",  text_color=color.silver, text_size=size.tiny)
+    table.cell(dbg, 1, 3, m3_low_txt,            text_color=color.yellow, text_size=size.tiny)
+    table.cell(dbg, 0, 4, "MER SL (long/short)", text_color=color.silver, text_size=size.tiny)
+    table.cell(dbg, 1, 4, mer_sl_txt,            text_color=color.yellow, text_size=size.tiny)
+    table.cell(dbg, 0, 5, "Can long/short",      text_color=color.silver, text_size=size.tiny)
+    table.cell(dbg, 1, 5, can_txt,               text_color=color.yellow, text_size=size.tiny)
+    table.cell(dbg, 0, 6, "MER buy/sell",        text_color=color.silver, text_size=size.tiny)
+    table.cell(dbg, 1, 6, mer_txt,                text_color=color.yellow, text_size=size.tiny)
+    table.cell(dbg, 0, 7, "MEC buy/sell",        text_color=color.silver, text_size=size.tiny)
+    table.cell(dbg, 1, 7, mec_txt,                text_color=color.yellow, text_size=size.tiny)
