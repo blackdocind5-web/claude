@@ -31,7 +31,7 @@
 | Longitud líneas m3 | 5 velas |
 | Límite diario | **DESACTIVADO** (`use_limite = false`) — NUNCA activar en sesión en vivo: confirmado dos veces (11-jun, 12-jun) que cortar el día nos ciega para el resto de la comparación. Excepción explícita a la directiva 16-jun de replicar a Fabian: queremos ver TODAS las señales del día |
 | Bloqueo por noticias | **ACTIVADO** (`use_news_block = true`, desde 16-jun) — manual, ver sección abajo |
-| Cooldown post-spike | **ACTIVADO** (`use_cooldown = true`, desde 16-jun) — 15 velas tras spike ≥10pts, ver sección abajo |
+| Cooldown post-spike | **ACTIVADO** (`use_cooldown = true`, desde 16-jun) — 15 velas tras spike ≥10pts, **solo bloquea MEC** (ajuste 16-jun tarde), ver sección abajo |
 
 ## Lógica del sistema
 
@@ -64,8 +64,10 @@ En períodos volátiles post-noticia:
 
 **Solución de Fabian (encontrada 16-jun en Plan Técnico pág.26-27):** al ejecutar un MER solo puede existir UN alto/bajo m3 opuesto a la entrada. Si hay dos niveles m3 opuestos visibles, la ejecución se invalida — salvo que estén a ≤0.01% de distancia, en cuyo caso se extiende el SL al primer nivel y se ejecuta. **Esta regla YA está implementada** en `mer_sl_long`/`mer_sl_short` (bloquean el trade con `na` si hay dos niveles válidos y no están cerca). Pendiente: extender la misma idea a `market_struct`/MEC, que es donde el ping-pong real sigue ocurriendo (el market_struct cambia con solo romper el nuevo nivel, sin la validación de "nivel único").
 
-### ~~[PRIORITARIO] Cooldown post-spike~~ — implementado 16-jun
-El código entraba inmediatamente después de velas gigantes (noticias). Fabian espera ~15-20 minutos. Implementado como `use_cooldown`/`spike_size`/`cooldown_bars`: cualquier vela con rango ≥`spike_size` (10pts default) marca `last_spike_bar`, y `can_trade` se bloquea durante `cooldown_bars` (15 default) velas siguientes. También mitiga parcialmente el ping-pong de estructura, porque los niveles m3 espurios del rebote post-spike se forman dentro de esa misma ventana. Tabla muestra "NO-cooldown" cuando aplica.
+### ~~[PRIORITARIO] Cooldown post-spike~~ — implementado 16-jun, ajustado 16-jun tarde
+El código entraba inmediatamente después de velas gigantes (noticias). Fabian espera ~15-20 minutos. Implementado como `use_cooldown`/`spike_size`/`cooldown_bars`: cualquier vela con rango ≥`spike_size` (10pts default) marca `last_spike_bar`, y `cooldown_bars` (15 default) velas siguientes quedan bloqueadas.
+
+**Ajuste (16-jun tarde):** el cooldown ya NO bloquea `can_trade` en general — solo bloquea `mec_buy`/`mec_sell` (`not in_cooldown` movido del `can_trade` compartido a las condiciones de MEC). Encontrado en vivo: un ChOC real podía ocurrir DENTRO de la ventana de cooldown (ej. spike de apertura ~09:00, ChOC bajista ~09:14, cooldown corriendo hasta ~09:15-18). Con el cooldown bloqueando todo, el MER no disparaba en el bar del ChOC; para cuando el cooldown terminaba, `market_struct` ya había cambiado, así que la primera entrada real salía como MEC ENV — exactamente el caso que Fabian señaló como "ahí tomé la entrada por MER" en una comparación de capturas. El ChOC + MER ES la señal de "el caos ya se calmó" que Fabian espera; bloquearla con un timer fijo es contraproducente. El ping-pong de estructura en MER ya está cubierto aparte por la regla de "nivel único" (`mer_sl_long`/`mer_sl_short`), así que MER no necesita la protección del cooldown. Tabla ahora muestra "SI (solo MER)" cuando el cooldown está activo pero el resto de condiciones permite operar.
 
 ### Pendientes menores
 - ~~Etiqueta numérica al final de cada línea m3~~ — hecho 16-jun (`lbl_m3_high`/`lbl_m3_low`)

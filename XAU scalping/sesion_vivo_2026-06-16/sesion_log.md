@@ -161,9 +161,28 @@ La vela de ~08:30 tenía cuerpo 75-84% (activó `~BUY`, no `BUY` real). Para ent
 
 ---
 
+### ~16:40 EDT — Fix: cooldown post-spike bloqueaba el MER del ChOC de las 09:14
+
+**Contexto:** Usuario volvió a comparar dos capturas (su chart con la entrada real de Fabian vs nuestro "XAU Scalp") señalando específicamente la vela donde aparece la etiqueta "CAMBIO DE ESTRUCTURA BAJISTA" (~09:14-09:15) como el punto donde Fabian entró — pidiendo que ahí mismo dispare una señal MER.
+
+**Análisis:** Es el mismo hallazgo documentado a las 09:50 de hoy ("donde nuestro código marcó MEC, el criterio de Fabian correspondía más a MER"), pero esta vez se identificó la causa mecánica exacta:
+
+1. El movimiento post-apertura (09:00-09:09) tuvo una vela con rango ≥10pts → activó `last_spike_bar`, iniciando el cooldown de 15 velas (hasta ~09:15-18).
+2. El ChOC bajista real (`choc_bear`, etiqueta "CAMBIO DE ESTRUCTURA BAJISTA") ocurrió ~09:14, **dentro** de esa ventana de cooldown.
+3. Como `can_trade` incluía `not in_cooldown` de forma global, `mer_sell` no podía disparar en ese bar aunque `choc_bear` y `entry_bear` fueran verdaderos.
+4. Para cuando el cooldown terminó (~09:15-18), `market_struct` ya estaba en -1 desde el ChOC anterior, así que la primera entrada que pasó el filtro fue una continuación (`mec_sell`), etiquetada "MEC ENV SELL" — el mismo modelo equivocado que Fabian señaló.
+
+**Fix aplicado:** se sacó `not in_cooldown` de `can_trade` (compartido) y se agregó directamente a `mec_buy`/`mec_sell` únicamente. `mer_buy`/`mer_sell` ya no quedan sujetos al cooldown. Justificación: el ChOC + MER es precisamente la señal de "la estructura ya cambió, el caos terminó" que Fabian espera — bloquearla con un timer fijo era contraproducente. El riesgo que el cooldown mitigaba parcialmente (ping-pong de estructura) en el lado MER ya está cubierto por la regla de "nivel único" (`mer_sl_long`/`mer_sl_short` devuelven `na` si hay dos niveles m3 opuestos no cercanos), así que MER no necesitaba esa protección adicional. El lado MEC sigue bloqueado por cooldown porque ahí el ping-pong sigue sin protección dedicada (pendiente #1 de la lista).
+
+**Tabla actualizada:** "Puede operar" ahora muestra "SI (solo MER)" cuando el cooldown está activo pero el resto de condiciones (sesión/noticias/límite) permiten operar — antes decía "NO-cooldown" y bloqueaba todo.
+
+**Pendiente de confirmar en vivo:** que el próximo ChOC durante cooldown efectivamente dispare MER en el bar correcto.
+
+---
+
 ## Correcciones pendientes (acumulado)
 
-1. **[PRIORITARIO]** Ping-pong de estructura — lado MER **ya resuelto** (`mer_sl_long`/`mer_sl_short` bloquean si hay dos niveles m3 opuestos no cercanos). Lado MEC/`market_struct` mitigado parcialmente por el cooldown post-spike de hoy, pero sigue pendiente extender la idea de "nivel único" directamente a `market_struct`.
+1. **[PRIORITARIO]** Ping-pong de estructura — lado MER **ya resuelto** (`mer_sl_long`/`mer_sl_short` bloquean si hay dos niveles m3 opuestos no cercanos). Lado MEC/`market_struct` mitigado parcialmente por el cooldown post-spike (ahora exclusivo de MEC, ver fix ~16:40), pero sigue pendiente extender la idea de "nivel único" directamente a `market_struct`.
 2. ~~Cooldown post-spike~~ — **resuelto 16-jun**: `use_cooldown`/`spike_size`/`cooldown_bars` implementados, bloquean `can_trade` por N velas tras un spike.
 3. ~~Revisar umbral mecha en martillo (`lpct`/`upct` > 0.30)~~ — **resuelto 16-jun**: era un umbral inventado, no estaba en el Plan Técnico; corregido a mecha-a-favor reducida.
 4. Investigar lag estructural M3 vs reacción más rápida de Fabian en spikes — sigue pendiente, sin cambios hoy.
@@ -181,6 +200,6 @@ La vela de ~08:30 tenía cuerpo 75-84% (activó `~BUY`, no `BUY` real). Para ent
 
 **Archivo:** `XAU_estrategia_Scalping.pine`
 **Branch:** `claude/trading-strategy-inconsistencies-w9S9b`
-**Último cambio:** `use_limite` revertido a `false` (excepción explícita a la directiva "replicar exactamente a Fabian" — ver sesión 14:53) + nuevo módulo `use_cooldown` (post-spike) + `use_news_block` (bloqueo manual de noticias vía `sess_news_high`/`sess_news_med`) ambos siguen activados
+**Último cambio:** cooldown post-spike ajustado para bloquear solo MEC, no MER (ver fix ~16:40) — antes de eso: `use_limite` revertido a `false` (excepción explícita a la directiva "replicar exactamente a Fabian" — ver sesión 14:53) + módulo `use_cooldown` (post-spike) + `use_news_block` (bloqueo manual de noticias vía `sess_news_high`/`sess_news_med`), ambos siguen activados
 
 **Sesión en curso** — se continúa actualizando este log a medida que avanza el día.
