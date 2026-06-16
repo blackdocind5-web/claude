@@ -19,7 +19,12 @@ use_mec_start2 = input.bool(true,  "MEC — START (2 pullbacks)",      group="Mo
 use_mer        = input.bool(true,  "MER — Cambio de estructura",     group="Modulos activos")
 use_mart       = input.bool(true,  "Entrada: Martillo",              group="Modulos activos")
 use_doji       = input.bool(true,  "Entrada: Doji",                  group="Modulos activos")
-use_limite     = input.bool(false, "Limite diario (1TP / 2SL)",      group="Modulos activos")
+// Plan Operativo Fabian: el dia se detiene en 1 TP, o 1 SL+1TP, o 2 SL.
+// Activado por defecto desde el 16-jun para replicar exactamente su operativa.
+use_limite     = input.bool(true,  "Limite diario (1TP / 1SL+1TP / 2SL)", group="Modulos activos")
+use_news_block = input.bool(true,  "Bloqueo por noticias (manual)",  group="Modulos activos")
+sess_news_high = input.string("",  "Noticias alto impacto (HHMM-HHMM,...)",  group="Modulos activos")
+sess_news_med  = input.string("",  "Noticias medio impacto (HHMM-HHMM,...)", group="Modulos activos")
 
 // ── TOGGLES VISUALES ─────────────────────────────────────────────────────────
 show_lbl    = input.bool(true, "Mostrar BUY/SELL",           group="Visual")
@@ -31,6 +36,19 @@ m3_line_len = input.int(5,     "Longitud linea m3 (velas)",   group="Visual", mi
 
 // ── SESION ───────────────────────────────────────────────────────────────────
 in_session = not na(time(timeframe.period, sess_ny, "America/New_York"))
+
+// ── BLOQUEO POR NOTICIAS (Plan Operativo Fabian) ────────────────────────────
+// Forex Factory no tiene feed nativo en Pine: el usuario pega aqui las
+// ventanas del dia ya calculadas (alto impacto = 10min antes a 3min despues
+// del evento, medio impacto = 3min antes a 3min despues). Solo bloquea
+// NUEVAS entradas, nunca afecta el SL/TP de una operacion ya abierta.
+var bool in_news_high = false
+var bool in_news_med  = false
+if str.length(sess_news_high) > 0
+    in_news_high := not na(time(timeframe.period, sess_news_high, "America/New_York"))
+if str.length(sess_news_med) > 0
+    in_news_med := not na(time(timeframe.period, sess_news_med, "America/New_York"))
+in_news_block = in_news_high or in_news_med
 
 // ── DATOS M3 ─────────────────────────────────────────────────────────────────
 m3_high_price = request.security(syminfo.tickerid, "3", close[1] > open[1] and close < open ? math.max(high, high[1]) : na, lookahead=barmerge.lookahead_off, gaps=barmerge.gaps_on)
@@ -141,7 +159,7 @@ if exited_trade or hedged_trade
     else
         day_sl += 1
 
-can_trade = (not use_session or in_session) and (not use_limite or (day_tp == 0 and day_sl < 2))
+can_trade = (not use_session or in_session) and (not use_limite or (day_tp == 0 and day_sl < 2)) and (not use_news_block or not in_news_block)
 
 // ── VALIDACION MER ───────────────────────────────────────────────────────────
 both_lows_valid  = not na(prev_m3_low)  and prev_m3_low  < close and last_m3_low  < close
@@ -274,7 +292,10 @@ if barstate.islast
     table.cell(tbl, 1, 0, st,               text_color=color.white,  text_size=size.small)
     table.cell(tbl, 0, 1, "Sesion NY",      text_color=color.silver, text_size=size.small)
     table.cell(tbl, 1, 1, in_session ? "ACTIVA" : "CERRADA", text_color=color.white, text_size=size.small)
-    operar_txt = can_trade ? "SI" : (use_session and not in_session) ? "NO-sesion" : "NO-limite"
+    operar_txt = can_trade ? "SI" :
+        (use_session and not in_session)  ? "NO-sesion"  :
+        (use_news_block and in_news_block) ? "NO-noticia" :
+        "NO-limite"
     table.cell(tbl, 0, 2, "Puede operar",   text_color=color.silver, text_size=size.small)
     table.cell(tbl, 1, 2, operar_txt,       text_color=color.white,  text_size=size.small)
     table.cell(tbl, 0, 3, "TP / SL dia",    text_color=color.silver, text_size=size.small)

@@ -129,16 +129,39 @@ La vela de ~08:30 tenía cuerpo 75-84% (activó `~BUY`, no `BUY` real). Para ent
 
 ---
 
+### ~09:50 EDT — Comparación de capturas (Fabian vs nuestro) y nueva directiva
+
+**Contexto:** Usuario compartió dos capturas (su gráfico con la toma de decisión de Fabian vs el nuestro) pidiendo comparación completa: decisión, altos/bajos m3, tipo de entrada, velas.
+
+**Hallazgos de la comparación:**
+- **Patrón exclusivo nuestro:** la pre-señal (`~SELL`/`~BUY`, cuerpo 75-85%) no existe en el indicador de Fabian — es una capa de aviso que agregamos nosotros, sin equivalente en su sistema.
+- **Niveles m3 ligeramente distintos:** nuestro último alto/bajo m3 vs el de Fabian no coincidían exactamente (~4341 vs ~4342.5 aprox.) — probablemente por timing de cierre de vela M3 o por la regla de "variante fractal extendido" del Plan Técnico (pág.2-3, nivel real puede estar en una vela adyacente con mecha más extrema) que no tenemos implementada.
+- **Modelo de entrada distinto en el mismo movimiento:** donde nuestro código marcó MEC, el criterio de Fabian correspondía más a MER (entrada en el mismo bar del ChOC) — confirma que el timing de `market_struct` puede estar corriendo del lado nuestro antes de tiempo (mismo tema que el ping-pong de estructura ya documentado).
+- **Balance aproximado al momento de la comparación:** Fabian alrededor de +0.94R en la sesión.
+
+**Conclusión del usuario:** decidió que, en lugar de seguir comparando y reconciliando diferencia por diferencia, el código debe replicar EXACTAMENTE la operativa de Fabian — sus reglas están respaldadas por 8 meses de backtesting propio, así que se tratan como autoridad ("palabra santa"). Objetivo explícito: acercar nuestra rentabilidad a la de él (+1.35R semanal, semana 9-13 jun).
+
+**Cambios implementados a partir de esta directiva:**
+1. **`use_limite` activado por defecto** (`true`) — el día ahora se detiene igual que Fabian: 1 TP, o 1 SL+1TP, o 2 SL. Antes estaba desactivado a propósito solo para poder comparar señales sin cortar el día.
+2. **Nuevo módulo `use_news_block`** (manual) — releído el Plan Operativo completo (3 páginas) para extraer las reglas exactas de noticias: alto impacto = ventana -10min/+3min (no abrir ni cerrar), medio impacto = ventana -3min/+3min (solo bloquea aperturas nuevas, una operación abierta se puede sostener), orador de impacto medio con hora programada = tratar como alto impacto, 5 eventos de no-sostener-operación-abierta (Federal Funds Rate & Statement, NFP, CPI y/y, FOMC Minutes, Advance GDP q/q). Como TradingView/Pine no tiene feed nativo de calendario económico, se implementó como dos inputs de texto (`sess_news_high`, `sess_news_med`, formato `HHMM-HHMM`) que el usuario debe llenar antes de cada sesión con las ventanas ya calculadas del día. `can_trade` ahora exige `not in_news_block`; la tabla muestra "NO-noticia" cuando aplica.
+
+**No tocado todavía:** la "variante fractal extendido" de los niveles m3 (pendiente, ver hallazgo de comparación arriba) y el lag estructural M3 vs M1 en spikes — quedan en la lista de correcciones pendientes.
+
+---
+
 ## Correcciones pendientes (acumulado)
 
-1. **[PRIORITARIO]** Fix ping-pong de estructura (pendiente desde 11-12 jun) — **ahora con solución concreta de Fabian**: invalidar ejecución MER si hay dos niveles m3 opuestos visibles, salvo que estén a ≤0.01% de distancia (ver hallazgo de hoy en Plan Técnico pág. 26-27)
-2. **[PRIORITARIO]** Cooldown post-spike (pendiente desde 12 jun)
-3. **[NUEVO]** Revisar si `lpct > 0.30` / `upct > 0.30` en martillo es demasiado estricto vs criterio de Fabian — necesita datos OHLC de vela específica para confirmar
-4. **[NUEVO]** Investigar lag estructural M3 vs reacción más rápida de Fabian en spikes — posible necesidad de detectar quiebres usando M1 en vez de esperar cierre de M3
-5. **[NUEVO]** Evaluar implementar regla MER "solo primer toque" (no esperar envolvente posterior)
-6. **[NUEVO]** Evaluar implementar "Hedge Position" (cobertura automática al aparecer señal contraria en operación abierta)
-7. Etiqueta numérica en líneas m3 (pendiente)
-8. Texto "Cambio de estructura" en chart (pendiente)
+1. **[PRIORITARIO]** Ping-pong de estructura — lado MER **ya resuelto** (`mer_sl_long`/`mer_sl_short` bloquean si hay dos niveles m3 opuestos no cercanos). Pendiente: extender la misma idea de "nivel único" a `market_struct`/MEC, que es donde el ping-pong real sigue ocurriendo.
+2. **[PRIORITARIO]** Cooldown post-spike (pendiente desde 12 jun, snippet propuesto en CLAUDE.md sin aplicar)
+3. ~~Revisar umbral mecha en martillo (`lpct`/`upct` > 0.30)~~ — **resuelto 16-jun**: era un umbral inventado, no estaba en el Plan Técnico; corregido a mecha-a-favor reducida.
+4. Investigar lag estructural M3 vs reacción más rápida de Fabian en spikes — sigue pendiente, sin cambios hoy.
+5. ~~Evaluar regla MER "solo primer toque"~~ — **confirmado ya implementado**: `choc_bull`/`choc_bear` son pulsos de un solo bar, no es posible esperar una envolvente posterior.
+6. ~~Evaluar "Hedge Position"~~ — **confirmado que ya ocurre solo** por el netting nativo de `strategy.entry` en Pine sin pyramiding.
+7. ~~Etiqueta numérica en líneas m3~~ — hecho 16-jun.
+8. ~~Texto "Cambio de estructura" en chart~~ — hecho 16-jun.
+9. **[NUEVO]** "Variante fractal extendido" de niveles m3 (Plan Técnico pág.2-3): a veces el nivel real no está en la mecha de las dos velas que definen el par, sino en una vela adyacente del mismo movimiento con mecha más extrema. Gap confirmado al comparar capturas hoy (~4341 vs ~4342.5). No implementado — ambigüedad real de cómo delimitar el "fractal" algorítmicamente sin riesgo de repintado/inestabilidad.
+10. Validar en vivo el umbral exacto de "vela envolvente doji" del Plan Técnico (texto ambiguo, no traducido a código).
+11. **[NUEVO]** Antes de cada sesión, si hay noticias USD en el calendario de Forex Factory durante la ventana NY, llenar `sess_news_high`/`sess_news_med` con las ventanas ya calculadas (ver módulo `use_news_block`, añadido hoy).
 
 ---
 
@@ -146,6 +169,6 @@ La vela de ~08:30 tenía cuerpo 75-84% (activó `~BUY`, no `BUY` real). Para ent
 
 **Archivo:** `XAU_estrategia_Scalping.pine`
 **Branch:** `claude/trading-strategy-inconsistencies-w9S9b`
-**Último cambio:** `use_session` toggle + fix display "NO-sesion"
+**Último cambio:** directiva "replicar exactamente a Fabian" — `use_limite=true` por defecto + nuevo módulo `use_news_block` (bloqueo manual de noticias vía `sess_news_high`/`sess_news_med`)
 
 **Sesión en curso** — se continúa actualizando este log a medida que avanza el día.

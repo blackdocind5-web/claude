@@ -29,7 +29,8 @@
 | RR | 1:0.9 |
 | SL máximo | 200 puntos |
 | Longitud líneas m3 | 5 velas |
-| Límite diario | **DESACTIVADO** (`use_limite = false`) — NUNCA activar en sesión en vivo |
+| Límite diario | **ACTIVADO** (`use_limite = true`, desde 16-jun) — directiva: replicar exactamente la operativa de Fabian (1 TP / 1 SL+1TP / 2 SL detiene el día) |
+| Bloqueo por noticias | **ACTIVADO** (`use_news_block = true`, desde 16-jun) — manual, ver sección abajo |
 
 ## Lógica del sistema
 
@@ -82,8 +83,21 @@ in_cooldown = not na(last_spike_bar) and (bar_index - last_spike_bar) < cooldown
 - Verificar contador TP/SL día (lógica con `strategy.netprofit` puede tener timing issues)
 - Validar en vivo el umbral exacto de "vela envolvente doji" del Plan Técnico (texto ambiguo, no traducido a código)
 
+### Bloqueo por noticias (`use_news_block`) — añadido 16-jun
+**Directiva del usuario:** replicar exactamente la operativa de Fabian (8 meses de backtesting propio) en vez de solo comparar — incluye respetar sus ventanas de noticias del Plan Operativo.
+
+TradingView/Pine no tiene feed nativo de calendario económico, así que el bloqueo es **manual por inputs de texto**: `sess_news_high` y `sess_news_med` (formato `HHMM-HHMM`, separables por coma para varias ventanas el mismo día). El usuario debe calcularlas y pegarlas antes de la sesión:
+- **Alto impacto (rojo, USD, Forex Factory):** ventana = 10 min antes a 3 min después del evento. No abrir NI cerrar manualmente durante la ventana (nuestro código solo bloquea aperturas nuevas — el SL/TP de una operación ya abierta sigue activo, no se desactiva).
+- **Medio impacto (naranja, USD):** ventana = 3 min antes a 3 min después. Solo bloquea aperturas nuevas; una operación ya abierta puede mantenerse durante el evento.
+- Si un orador de impacto medio tiene hora programada específica → tratar como alto impacto.
+- 5 eventos que Fabian nunca sostiene una operación abierta a través de ellos: Federal Funds Rate & Statement, NFP, CPI y/y, FOMC Meeting Minutes, Advance GDP q/q (todos USD).
+- Feriados bancarios = día no operable (no hay automatización para esto, es decisión manual de no cargar el indicador ese día).
+- Se puede entrar después de la ventana al mismo precio que ofrecía la vela bloqueada, pero solo si el precio no alcanzó ya el nivel de SL durante la ventana.
+
+`can_trade` ahora exige `not in_news_block` además de sesión y límite diario. La tabla muestra "NO-noticia" cuando el bloqueo está activo.
+
 ## Documentos de Fabian (no son parte del repo, en uploads de la sesión)
-- **Plan Operativo** — horario, reglas de noticias (Forex Factory, ventanas por impacto), 3 escenarios de stop diario (1 TP / 1 SL+1TP / 2 SL)
+- **Plan Operativo** (releído completo 16-jun) — horario con notas DST; reglas de noticias: Forex Factory solo USD, feriados bancarios = no operable, alto impacto = ventana -10min/+3min (no abrir ni cerrar), medio impacto = ventana -3min/+3min (solo bloquea aperturas nuevas, una operación abierta se puede mantener), orador de impacto medio con hora programada = tratar como alto impacto, se puede entrar post-ventana al mismo precio si no se alcanzó el SL durante la ventana, 5 eventos de no-sostener-operación-abierta (Federal Funds Rate & Statement, NFP, CPI y/y, FOMC Minutes, Advance GDP q/q, todos USD); 3 escenarios de stop diario (1 TP / 1 SL+1TP / 2 SL)
 - **Plan Técnico** (31 págs) — la referencia más completa: estructura m3 (incl. variantes de fractal extendido), líneas punteadas (tendencial) vs continuas (reversión/ChOC), los 3 tipos de vela envolvente con sus % exactos, patrón START (morning/evening star), MEC (2 escenarios + 4 sub-tipos), MER (cambio de estructura + regla de "único nivel m3 opuesto" + "solo primer toque"), concepto **Hedge Position** (cobertura: si aparece señal contraria en operación abierta, se abre y se cierra la primera — esto YA pasa solo con el código actual gracias al netting nativo de `strategy.entry` en Pine, sin pyramiding), SL (último m3 ± reducción 40% si >20.000 pips), **RR 1:0.9 confirmado explícito en la última página**
 - **Apariencia del Indicador** — spec visual de las etiquetas BUY/SELL, ejemplos reales de trades
 
@@ -93,11 +107,17 @@ in_cooldown = not na(last_spike_bar) and (bar_index - last_spike_bar) < cooldown
 - `sesion_vivo_2026-06-16/sesion_log.md` — lag estructural M3, fix umbral martillo, hallazgos de los PDFs de Fabian (RR, Hedge Position, regla de nivel único m3)
 
 ## Resultado semanal Fabian (semana 9-13 Jun 2026)
-- **+1.35R** al cierre del viernes
+- **+1.35R** al cierre del viernes — benchmark a alcanzar (ver directiva 16-jun abajo)
+
+## Directiva 16-jun: replicar exactamente la operativa de Fabian
+El usuario pidió dejar de solo comparar señales y hacer que el código se comporte EXACTAMENTE como Fabian opera — sus reglas están validadas por 8 meses de backtesting propio, así que se tratan como autoridad. Objetivo explícito: acercarnos a su rentabilidad (+1.35R semanal). Cambios derivados de esta directiva:
+- `use_limite` pasa a `true` por defecto (antes desactivado solo para comparar señales sin cortar el día).
+- Nuevo módulo `use_news_block` (manual, ver sección de bugs/pendientes) para respetar las ventanas de noticias del Plan Operativo.
+- Cualquier futura discrepancia entre nuestro código y el comportamiento de Fabian debe resolverse a favor de Fabian, salvo que el Plan Técnico/Operativo sea ambiguo (en cuyo caso no se adivina, se deja pendiente de validar en vivo — ver doji).
 
 ## Reglas de sesión en vivo
 1. Leer el log de la última sesión antes de empezar
-2. Verificar que `use_limite = false`
+2. Verificar `use_limite = true` y `use_news_block = true` (default desde 16-jun); si hay noticias USD ese día, pedir al usuario las horas para llenar `sess_news_high`/`sess_news_med` antes de operar
 3. Verificar que hay UNA sola instancia del indicador cargada
 4. Rama de trabajo: `claude/trading-strategy-inconsistencies-w9S9b`
 5. Guardar capturas y análisis en `sesion_vivo_YYYY-MM-DD/sesion_log.md`
