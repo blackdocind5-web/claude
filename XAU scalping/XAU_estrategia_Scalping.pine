@@ -308,11 +308,16 @@ if barstate.islast
     table.cell(tbl, 1, 0, st,               text_color=color.white,  text_size=size.small)
     table.cell(tbl, 0, 1, "Sesion NY",      text_color=color.silver, text_size=size.small)
     table.cell(tbl, 1, 1, in_session ? "ACTIVA" : "CERRADA", text_color=color.white, text_size=size.small)
-    operar_txt = can_trade ? "SI" :
-        (use_session and not in_session)   ? "NO-sesion"   :
-        in_cooldown                        ? "NO-cooldown" :
-        (use_news_block and in_news_block) ? "NO-noticia"  :
-        "NO-limite"
+    operar_txt = "SI"
+    if not can_trade
+        if use_session and not in_session
+            operar_txt := "NO-sesion"
+        else if in_cooldown
+            operar_txt := "NO-cooldown"
+        else if use_news_block and in_news_block
+            operar_txt := "NO-noticia"
+        else
+            operar_txt := "NO-limite"
     table.cell(tbl, 0, 2, "Puede operar",   text_color=color.silver, text_size=size.small)
     table.cell(tbl, 1, 2, operar_txt,       text_color=color.white,  text_size=size.small)
     table.cell(tbl, 0, 3, "TP / SL dia",    text_color=color.silver, text_size=size.small)
