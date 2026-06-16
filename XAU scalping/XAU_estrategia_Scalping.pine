@@ -272,8 +272,18 @@ var label lbl_m3_low   = na
 // solo confirma continuacion), linea continua = nivel de reversion (su
 // quiebre es Cambio de Estructura / ChOC). El rol de cada nivel depende de
 // la estructura vigente, asi que el estilo se recalcula cada vela.
-high_style = market_struct == 1  ? line.style_dashed : line.style_solid
-low_style  = market_struct == -1 ? line.style_dashed : line.style_solid
+// Excepcion: durante m3_line_len bars post-ChOC el nivel roto permanece SOLID
+// para que la entrada MER sea visible contra el nivel que se acaba de romper.
+var int last_choc_bear_bar = na
+var int last_choc_bull_bar = na
+if choc_bear
+    last_choc_bear_bar := bar_index
+if choc_bull
+    last_choc_bull_bar := bar_index
+recent_choc_bear = not na(last_choc_bear_bar) and (bar_index - last_choc_bear_bar) < m3_line_len
+recent_choc_bull = not na(last_choc_bull_bar) and (bar_index - last_choc_bull_bar) < m3_line_len
+high_style = (market_struct == 1  and not recent_choc_bull) ? line.style_dashed : line.style_solid
+low_style  = (market_struct == -1 and not recent_choc_bear) ? line.style_dashed : line.style_solid
 
 if show_str
     if not na(m3_high_price)
