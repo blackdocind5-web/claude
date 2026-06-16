@@ -73,8 +73,12 @@ lpct   = rng_c > 0 ? lwck   / rng_c : 0.0
 
 env_bull  = close > open and bpct >= body_min and upct < (1.0 - body_min)
 env_bear  = close < open and bpct >= body_min and lpct < (1.0 - body_min)
-mart_bull = use_mart and close > open and bpct >= mart_min and bpct < body_min and lpct > 0.30
-mart_bear = use_mart and close < open and bpct >= mart_min and bpct < body_min and upct > 0.30
+// Martillo (Plan Tecnico Fabian pag.7): cuerpo 50-85% + mecha a favor de la
+// entrada reducida (mismo umbral que envolvente). La mecha opuesta no lleva
+// un % fijo: es simplemente lo que sobra. Antes usabamos lpct/upct > 0.30,
+// umbral inventado que no esta en el documento y bloqueaba entradas validas.
+mart_bull = use_mart and close > open and bpct >= mart_min and bpct < body_min and upct < (1.0 - body_min)
+mart_bear = use_mart and close < open and bpct >= mart_min and bpct < body_min and lpct < (1.0 - body_min)
 doji_bull = use_doji and close > open and bpct >= 0.15 and bpct < mart_min and lpct >= 0.15 and upct >= 0.15
 doji_bear = use_doji and close < open and bpct >= 0.15 and bpct < mart_min and lpct >= 0.15 and upct >= 0.15
 
@@ -210,18 +214,33 @@ if go_short
 // ── VISUALIZACION ────────────────────────────────────────────────────────────
 bgcolor(show_bg and in_session ? color.new(color.blue, 93) : na, title="Fondo sesion")
 
-var line line_m3_high = na
-var line line_m3_low  = na
+var line  line_m3_high = na
+var line  line_m3_low  = na
+var label lbl_m3_high  = na
+var label lbl_m3_low   = na
+
+// Plan Tecnico Fabian pag.3-4: linea punteada = nivel tendencial (su quiebre
+// solo confirma continuacion), linea continua = nivel de reversion (su
+// quiebre es Cambio de Estructura / ChOC). El rol de cada nivel depende de
+// la estructura vigente, asi que el estilo se recalcula cada vela.
+high_style = market_struct == 1  ? line.style_dashed : line.style_solid
+low_style  = market_struct == -1 ? line.style_dashed : line.style_solid
 
 if show_str
     if not na(m3_high_price)
-        line_m3_high := line.new(bar_index - 1, last_m3_high, bar_index + m3_line_len, last_m3_high, color=color.red,   style=line.style_dashed, width=2)
+        line_m3_high := line.new(bar_index - 1, last_m3_high, bar_index + m3_line_len, last_m3_high, color=color.red,   style=high_style, width=2)
+        lbl_m3_high  := label.new(bar_index + m3_line_len, last_m3_high, text=str.tostring(last_m3_high, format.mintick), color=color.new(color.red,100),   textcolor=color.red,   style=label.style_label_left, size=size.tiny)
     else if not na(line_m3_high)
         line.set_x2(line_m3_high, bar_index + m3_line_len)
+        line.set_style(line_m3_high, high_style)
+        label.set_x(lbl_m3_high, bar_index + m3_line_len)
     if not na(m3_low_price)
-        line_m3_low  := line.new(bar_index - 1, last_m3_low,  bar_index + m3_line_len, last_m3_low,  color=color.green, style=line.style_solid,  width=2)
+        line_m3_low := line.new(bar_index - 1, last_m3_low, bar_index + m3_line_len, last_m3_low, color=color.green, style=low_style, width=2)
+        lbl_m3_low  := label.new(bar_index + m3_line_len, last_m3_low, text=str.tostring(last_m3_low, format.mintick), color=color.new(color.green,100), textcolor=color.green, style=label.style_label_left, size=size.tiny)
     else if not na(line_m3_low)
         line.set_x2(line_m3_low, bar_index + m3_line_len)
+        line.set_style(line_m3_low, low_style)
+        label.set_x(lbl_m3_low, bar_index + m3_line_len)
 
 plot(show_exit and strategy.position_size != 0 ? trade_sl : na, title="SL", color=color.red,   style=plot.style_linebr, linewidth=1)
 plot(show_exit and strategy.position_size != 0 ? trade_tp : na, title="TP", color=color.green, style=plot.style_linebr, linewidth=1)
@@ -241,6 +260,11 @@ barcolor(bar_col, title="Color velas")
 
 choc_col = choc_bull ? color.new(color.green, 80) : choc_bear ? color.new(color.red, 80) : na
 bgcolor(choc_col, title="Cambio estructura")
+
+if choc_bull
+    label.new(bar_index, low,  text="CAMBIO DE ESTRUCTURA\nALCISTA", color=color.new(color.green,20), textcolor=color.white, style=label.style_label_up,   size=size.small)
+if choc_bear
+    label.new(bar_index, high, text="CAMBIO DE ESTRUCTURA\nBAJISTA", color=color.new(color.red,20),   textcolor=color.white, style=label.style_label_down, size=size.small)
 
 // ── TABLA INFO ───────────────────────────────────────────────────────────────
 var table tbl = table.new(position.top_right, 2, 5, bgcolor=color.new(color.black,70), border_color=color.new(color.gray,40), border_width=1)

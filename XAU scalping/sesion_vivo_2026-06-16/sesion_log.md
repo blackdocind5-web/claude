@@ -112,6 +112,23 @@ La vela de ~08:30 tenía cuerpo 75-84% (activó `~BUY`, no `BUY` real). Para ent
 
 ---
 
+### ~09:45 EDT — Cambios al código a partir de los hallazgos del Plan Técnico
+
+**Aclaración:** el Plan Técnico se leyó completo (31 páginas, en dos tandas por límite de herramienta) antes de reportar el RR. La comparación regla por regla del documento contra el código sí encontró una inconsistencia real que se corrigió:
+
+1. **Fix martillo:** `lpct > 0.30` / `upct > 0.30` era un umbral inventado por nosotros, no está en el Plan Técnico. La regla real de Fabian es cuerpo 50-85% + mecha A FAVOR de la entrada reducida (mismo umbral que envolvente, <15%) — la mecha opuesta no lleva % fijo. Cambiado a `upct < (1.0 - body_min)` (bull) / `lpct < (1.0 - body_min)` (bear). **Esto probablemente explica las 2 entradas de martillo perdidas en el rally de las 08:30 de hoy.**
+2. **Líneas m3 dinámicas:** ahora el estilo (punteada/continua) depende del rol vigente según `market_struct` — punteada = nivel tendencial, continua = nivel de reversión/ChOC — igual que el Plan Técnico pág.3-4. Antes alto m3 siempre era punteado y bajo m3 siempre continuo, sin importar la estructura.
+3. **Etiqueta numérica en cada línea m3** (precio al final de la línea) — pendiente desde sesiones anteriores, implementado.
+4. **Texto "CAMBIO DE ESTRUCTURA ALCISTA/BAJISTA"** en el ChOC — pendiente desde sesiones anteriores, implementado.
+
+**No tocado (ambigüedad real en el documento):** la "vela envolvente doji" del Plan Técnico (pág.8-9) tiene un umbral de 15%/85% descrito en texto que admite más de una lectura razonable. Se dejó nuestra definición de "doji" actual sin cambios para no meter un bug nuevo en código que se está usando en vivo ahora mismo — queda pendiente validarlo comparando señales reales.
+
+**No hacía falta tocar:**
+- Regla de "único nivel m3 opuesto" en MER — ya estaba implementada (`mer_sl_long`/`mer_sl_short` devuelven `na` y bloquean el trade si hay dos niveles válidos no cercanos).
+- "Hedge Position" (cobertura) — ya ocurre sola por el comportamiento nativo de `strategy.entry` en Pine sin pyramiding (al entrar en dirección contraria revierte la posición).
+
+---
+
 ## Correcciones pendientes (acumulado)
 
 1. **[PRIORITARIO]** Fix ping-pong de estructura (pendiente desde 11-12 jun) — **ahora con solución concreta de Fabian**: invalidar ejecución MER si hay dos niveles m3 opuestos visibles, salvo que estén a ≤0.01% de distancia (ver hallazgo de hoy en Plan Técnico pág. 26-27)

@@ -40,9 +40,9 @@
 - **ChOC bajista** = vela m1 cierra con cuerpo por debajo del último bajo m3 con ≥0.01% de quiebre, estando en estructura alcista
 
 ### Tipos de entrada (velas m1)
-- **Envolvente**: cuerpo ≥ 85% del rango total
-- **Martillo**: cuerpo 50-85%, mecha opuesta >30%
-- **Doji**: cuerpo 15-50%, ambas mechas ≥15%
+- **Envolvente**: cuerpo ≥ 85% del rango total, mecha opuesta reducida
+- **Martillo**: cuerpo 50-85%, mecha A FAVOR de la entrada reducida (<15%) — la mecha opuesta no tiene % fijo, es lo que sobra. (Fix 16-jun: antes exigíamos mecha opuesta >30%, umbral inventado que no está en el Plan Técnico de Fabian y bloqueaba entradas válidas — ver sesión 16-jun)
+- **Doji**: cuerpo 15-50%, ambas mechas ≥15% — aproximación nuestra a la "vela de indecisión" de Fabian; el Plan Técnico tiene una "vela envolvente doji" con un umbral distinto y ambiguo en el texto (15%/85%) que NO se tradujo al código por falta de certeza — pendiente de validar en vivo
 - **Pre-señal (~BUY/~SELL)**: cuerpo 75-85% — avisa sin entrar operación
 
 ### Modelos
@@ -60,6 +60,8 @@ En períodos volátiles post-noticia:
 
 **Consecuencia:** Entra por MEC ENV cuando debería ser MER. La vela es válida pero el modelo y el timing son incorrectos.
 
+**Solución de Fabian (encontrada 16-jun en Plan Técnico pág.26-27):** al ejecutar un MER solo puede existir UN alto/bajo m3 opuesto a la entrada. Si hay dos niveles m3 opuestos visibles, la ejecución se invalida — salvo que estén a ≤0.01% de distancia, en cuyo caso se extiende el SL al primer nivel y se ejecuta. **Esta regla YA está implementada** en `mer_sl_long`/`mer_sl_short` (bloquean el trade con `na` si hay dos niveles válidos y no están cerca). Pendiente: extender la misma idea a `market_struct`/MEC, que es donde el ping-pong real sigue ocurriendo (el market_struct cambia con solo romper el nuevo nivel, sin la validación de "nivel único").
+
 ### [PRIORITARIO] Cooldown post-spike
 El código entra inmediatamente después de velas gigantes (noticias). Fabian espera ~15-20 minutos.
 
@@ -75,13 +77,20 @@ in_cooldown = not na(last_spike_bar) and (bar_index - last_spike_bar) < cooldown
 ```
 
 ### Pendientes menores
-- Etiqueta numérica al final de cada línea m3 (como Fabian: "GB High: 4,073.9")
-- Texto "Cambio de estructura" en chart cuando ocurre ChOC
+- ~~Etiqueta numérica al final de cada línea m3~~ — hecho 16-jun (`lbl_m3_high`/`lbl_m3_low`)
+- ~~Texto "Cambio de estructura" en chart cuando ocurre ChOC~~ — hecho 16-jun
 - Verificar contador TP/SL día (lógica con `strategy.netprofit` puede tener timing issues)
+- Validar en vivo el umbral exacto de "vela envolvente doji" del Plan Técnico (texto ambiguo, no traducido a código)
+
+## Documentos de Fabian (no son parte del repo, en uploads de la sesión)
+- **Plan Operativo** — horario, reglas de noticias (Forex Factory, ventanas por impacto), 3 escenarios de stop diario (1 TP / 1 SL+1TP / 2 SL)
+- **Plan Técnico** (31 págs) — la referencia más completa: estructura m3 (incl. variantes de fractal extendido), líneas punteadas (tendencial) vs continuas (reversión/ChOC), los 3 tipos de vela envolvente con sus % exactos, patrón START (morning/evening star), MEC (2 escenarios + 4 sub-tipos), MER (cambio de estructura + regla de "único nivel m3 opuesto" + "solo primer toque"), concepto **Hedge Position** (cobertura: si aparece señal contraria en operación abierta, se abre y se cierra la primera — esto YA pasa solo con el código actual gracias al netting nativo de `strategy.entry` en Pine, sin pyramiding), SL (último m3 ± reducción 40% si >20.000 pips), **RR 1:0.9 confirmado explícito en la última página**
+- **Apariencia del Indicador** — spec visual de las etiquetas BUY/SELL, ejemplos reales de trades
 
 ## Sesiones grabadas
 - `sesion_vivo_2026-06-11/sesion_log.md` — primera sesión en vivo, muchos bugs corregidos
 - `sesion_vivo_2026-06-12/sesion_log.md` — trampa doble post-Michigan, nuestro código 2TP vs Fabian 2SL
+- `sesion_vivo_2026-06-16/sesion_log.md` — lag estructural M3, fix umbral martillo, hallazgos de los PDFs de Fabian (RR, Hedge Position, regla de nivel único m3)
 
 ## Resultado semanal Fabian (semana 9-13 Jun 2026)
 - **+1.35R** al cierre del viernes
