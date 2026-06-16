@@ -206,6 +206,32 @@ La vela de ~08:30 tenía cuerpo 75-84% (activó `~BUY`, no `BUY` real). Para ent
 
 ---
 
+### ~17:01 EDT — Replay confirmó causa exacta: mer_sl_short = NA por "nivel único" con niveles alejados
+
+**Replay llegó al bar exacto del ChOC bajista.** Debug table mostró:
+
+| Campo | Valor |
+|---|---|
+| ChOC (este bar) | BAJISTA ✓ |
+| Vela (bull/bear) | BEAR ✓ |
+| m3 high (last/prev) | 4354.950 / 4347.185 |
+| m3 low (last/prev) | 4341.600 / 4339.355 |
+| MER SL (long/short) | **4341.600 / NA** ← culpable |
+| Can long/short | SI / SI ✓ |
+| MER buy/sell | no / no |
+
+Todas las condiciones para MER SELL se cumplían (ChOC, forma de vela, sesión, posición libre) EXCEPTO `mer_sl_short = NA`. La causa: `both_highs_valid = true` (dos altos m3 encima del precio: 4354.950 y 4347.185) y no están dentro de 0.01% → código bloqueaba con `na`.
+
+**Hallazgo:** los dos altos están a 7.765 pts de distancia entre sí. El nivel 4347.185 es un pico intermedio del rally pre-apertura, ya superado por el pico final de 4354.950. Fabian usó 4354.950 como SL ("el sl es hasta el último alto") y entró sin bloqueo — confirmado visualmente: caja roja de TP/SL visible en el chart del replay apunta exactamente a 4354.950 como techo y 4327.150 como objetivo (= entrada ~4340.395 − (14.555 pts × 0.9) ≈ 4327.3).
+
+**Interpretación corregida de la regla:** la regla de "nivel único" (Plan Técnico pág.26-27) bloquea cuando los dos niveles son CERCANOS entre sí (escenario ping-pong donde ambos crean ambigüedad real de cuál es el SL). Cuando están LEJOS (fases distintas del mercado), Fabian simplemente usa el más extremo (`last_m3_high`) como SL. El bloqueo con `na` para niveles alejados era una implementación demasiado conservadora.
+
+**Fix aplicado:** `mer_sl_long`/`mer_sl_short` ahora devuelven `last_m3_low`/`last_m3_high` cuando los dos niveles existen pero están lejos entre sí, en vez de `na`. El bloqueo con `na` queda reservado solo para niveles cercanos (ping-pong), que son los que crean ambigüedad genuina. Commit + push realizados.
+
+---
+
+---
+
 ## Correcciones pendientes (acumulado)
 
 1. **[PRIORITARIO]** Ping-pong de estructura — lado MER **ya resuelto** (`mer_sl_long`/`mer_sl_short` bloquean si hay dos niveles m3 opuestos no cercanos). Lado MEC/`market_struct` mitigado parcialmente por el cooldown post-spike (ahora exclusivo de MEC, ver fix ~16:40), pero sigue pendiente extender la idea de "nivel único" directamente a `market_struct`.

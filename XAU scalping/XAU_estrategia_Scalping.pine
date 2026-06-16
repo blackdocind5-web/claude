@@ -186,17 +186,24 @@ if exited_trade or hedged_trade
 can_trade = (not use_session or in_session) and (not use_limite or (day_tp == 0 and day_sl < 2)) and (not use_news_block or not in_news_block)
 
 // ── VALIDACION MER ───────────────────────────────────────────────────────────
+// Regla de "nivel unico" (Plan Tecnico pag.26-27): si hay dos niveles m3
+// opuestos CERCANOS (<=0.01%), el SL se extiende al primero (mas extremo) y
+// se ejecuta. Si estan LEJOS entre si, Fabian igual entra usando el mas
+// extremo como SL — confirmado en replay 16-jun: dos altos m3 separados 7pts
+// (4354.950 / 4347.185), el SL fue 4354.950 y la entrada se tomó sin bloqueo.
+// El bloqueo con 'na' solo aplica en el escenario ping-pong con niveles
+// cercanos, que son los que crean ambigüedad real de SL.
 both_lows_valid  = not na(prev_m3_low)  and prev_m3_low  < close and last_m3_low  < close
 two_lows_close   = both_lows_valid and math.abs(last_m3_low - prev_m3_low) / last_m3_low <= min_brk
 mer_sl_long  = not both_lows_valid  ? last_m3_low  :
                two_lows_close       ? math.min(last_m3_low, prev_m3_low) :
-               na
+               last_m3_low
 
 both_highs_valid = not na(prev_m3_high) and prev_m3_high > close and last_m3_high > close
 two_highs_close  = both_highs_valid and math.abs(last_m3_high - prev_m3_high) / last_m3_high <= min_brk
 mer_sl_short = not both_highs_valid ? last_m3_high :
                two_highs_close      ? math.max(last_m3_high, prev_m3_high) :
-               na
+               last_m3_high
 
 // ── SENALES DE ENTRADA ───────────────────────────────────────────────────────
 can_long  = strategy.position_size <= 0
