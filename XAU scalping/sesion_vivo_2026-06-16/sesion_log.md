@@ -149,10 +149,22 @@ La vela de ~08:30 tenía cuerpo 75-84% (activó `~BUY`, no `BUY` real). Para ent
 
 ---
 
+### ~14:53 EDT — Corrección: `use_limite` se revierte a desactivado, se agrega cooldown post-spike
+
+**Contexto:** el usuario aclaró la directiva anterior: replicar la operativa de Fabian línea por línea, EXCEPTO el límite diario de entradas — porque en sesión en vivo queremos ver TODAS las señales del día para comparar, no que el código se quede mudo el resto de la sesión después del primer TP/SL.
+
+**Releídos `sesion_vivo_2026-06-11` y `sesion_vivo_2026-06-12` completos** para confirmar el motivo original: en ambas sesiones pasadas se aprendió (dos veces, de forma independiente) que activar `use_limite` corta toda señal posterior y arruina la comparación visual con Fabian — no es una regla de Fabian que debamos imitar, es una limitación de nuestra herramienta de comparación. El cambio de las 09:45 (activar `use_limite=true`) se revierte: vuelve a `false` por defecto.
+
+**Cooldown post-spike implementado** (pendiente desde 11-jun y 12-jun, marcado [PRIORITARIO] en ambas sesiones): nuevo `use_cooldown` + `spike_size` (10pts default) + `cooldown_bars` (15 default). Cualquier vela M1 con rango ≥`spike_size` marca `last_spike_bar`; `can_trade` se bloquea durante las siguientes `cooldown_bars` velas. Replica la paciencia de Fabian tras noticias ("Fabian espera ~15-20 minutos" — confirmado en ambas sesiones pasadas) y de paso mitiga parte del ping-pong de estructura, porque los niveles m3 espurios del rebote post-spike se forman justo en esa ventana. Tabla muestra "NO-cooldown" cuando aplica.
+
+**Se mantiene sin cambios:** `use_news_block` (no es un corte de día completo, son ventanas acotadas de pocos minutos — no entra en conflicto con "ver todo el día").
+
+---
+
 ## Correcciones pendientes (acumulado)
 
-1. **[PRIORITARIO]** Ping-pong de estructura — lado MER **ya resuelto** (`mer_sl_long`/`mer_sl_short` bloquean si hay dos niveles m3 opuestos no cercanos). Pendiente: extender la misma idea de "nivel único" a `market_struct`/MEC, que es donde el ping-pong real sigue ocurriendo.
-2. **[PRIORITARIO]** Cooldown post-spike (pendiente desde 12 jun, snippet propuesto en CLAUDE.md sin aplicar)
+1. **[PRIORITARIO]** Ping-pong de estructura — lado MER **ya resuelto** (`mer_sl_long`/`mer_sl_short` bloquean si hay dos niveles m3 opuestos no cercanos). Lado MEC/`market_struct` mitigado parcialmente por el cooldown post-spike de hoy, pero sigue pendiente extender la idea de "nivel único" directamente a `market_struct`.
+2. ~~Cooldown post-spike~~ — **resuelto 16-jun**: `use_cooldown`/`spike_size`/`cooldown_bars` implementados, bloquean `can_trade` por N velas tras un spike.
 3. ~~Revisar umbral mecha en martillo (`lpct`/`upct` > 0.30)~~ — **resuelto 16-jun**: era un umbral inventado, no estaba en el Plan Técnico; corregido a mecha-a-favor reducida.
 4. Investigar lag estructural M3 vs reacción más rápida de Fabian en spikes — sigue pendiente, sin cambios hoy.
 5. ~~Evaluar regla MER "solo primer toque"~~ — **confirmado ya implementado**: `choc_bull`/`choc_bear` son pulsos de un solo bar, no es posible esperar una envolvente posterior.
@@ -169,6 +181,6 @@ La vela de ~08:30 tenía cuerpo 75-84% (activó `~BUY`, no `BUY` real). Para ent
 
 **Archivo:** `XAU_estrategia_Scalping.pine`
 **Branch:** `claude/trading-strategy-inconsistencies-w9S9b`
-**Último cambio:** directiva "replicar exactamente a Fabian" — `use_limite=true` por defecto + nuevo módulo `use_news_block` (bloqueo manual de noticias vía `sess_news_high`/`sess_news_med`)
+**Último cambio:** `use_limite` revertido a `false` (excepción explícita a la directiva "replicar exactamente a Fabian" — ver sesión 14:53) + nuevo módulo `use_cooldown` (post-spike) + `use_news_block` (bloqueo manual de noticias vía `sess_news_high`/`sess_news_med`) ambos siguen activados
 
 **Sesión en curso** — se continúa actualizando este log a medida que avanza el día.

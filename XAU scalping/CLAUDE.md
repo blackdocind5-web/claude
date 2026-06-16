@@ -29,8 +29,9 @@
 | RR | 1:0.9 |
 | SL máximo | 200 puntos |
 | Longitud líneas m3 | 5 velas |
-| Límite diario | **ACTIVADO** (`use_limite = true`, desde 16-jun) — directiva: replicar exactamente la operativa de Fabian (1 TP / 1 SL+1TP / 2 SL detiene el día) |
+| Límite diario | **DESACTIVADO** (`use_limite = false`) — NUNCA activar en sesión en vivo: confirmado dos veces (11-jun, 12-jun) que cortar el día nos ciega para el resto de la comparación. Excepción explícita a la directiva 16-jun de replicar a Fabian: queremos ver TODAS las señales del día |
 | Bloqueo por noticias | **ACTIVADO** (`use_news_block = true`, desde 16-jun) — manual, ver sección abajo |
+| Cooldown post-spike | **ACTIVADO** (`use_cooldown = true`, desde 16-jun) — 15 velas tras spike ≥10pts, ver sección abajo |
 
 ## Lógica del sistema
 
@@ -63,19 +64,8 @@ En períodos volátiles post-noticia:
 
 **Solución de Fabian (encontrada 16-jun en Plan Técnico pág.26-27):** al ejecutar un MER solo puede existir UN alto/bajo m3 opuesto a la entrada. Si hay dos niveles m3 opuestos visibles, la ejecución se invalida — salvo que estén a ≤0.01% de distancia, en cuyo caso se extiende el SL al primer nivel y se ejecuta. **Esta regla YA está implementada** en `mer_sl_long`/`mer_sl_short` (bloquean el trade con `na` si hay dos niveles válidos y no están cerca). Pendiente: extender la misma idea a `market_struct`/MEC, que es donde el ping-pong real sigue ocurriendo (el market_struct cambia con solo romper el nuevo nivel, sin la validación de "nivel único").
 
-### [PRIORITARIO] Cooldown post-spike
-El código entra inmediatamente después de velas gigantes (noticias). Fabian espera ~15-20 minutos.
-
-**Implementación propuesta:**
-```pine
-spike_size   = input.float(10.0, "Tamaño mínimo spike (pts)")
-cooldown_bars = input.int(15,   "Velas de espera post-spike")
-var int last_spike_bar = na
-if (high - low) >= spike_size
-    last_spike_bar := bar_index
-in_cooldown = not na(last_spike_bar) and (bar_index - last_spike_bar) < cooldown_bars
-// agregar: and not in_cooldown a can_trade
-```
+### ~~[PRIORITARIO] Cooldown post-spike~~ — implementado 16-jun
+El código entraba inmediatamente después de velas gigantes (noticias). Fabian espera ~15-20 minutos. Implementado como `use_cooldown`/`spike_size`/`cooldown_bars`: cualquier vela con rango ≥`spike_size` (10pts default) marca `last_spike_bar`, y `can_trade` se bloquea durante `cooldown_bars` (15 default) velas siguientes. También mitiga parcialmente el ping-pong de estructura, porque los niveles m3 espurios del rebote post-spike se forman dentro de esa misma ventana. Tabla muestra "NO-cooldown" cuando aplica.
 
 ### Pendientes menores
 - ~~Etiqueta numérica al final de cada línea m3~~ — hecho 16-jun (`lbl_m3_high`/`lbl_m3_low`)
@@ -109,15 +99,20 @@ TradingView/Pine no tiene feed nativo de calendario económico, así que el bloq
 ## Resultado semanal Fabian (semana 9-13 Jun 2026)
 - **+1.35R** al cierre del viernes — benchmark a alcanzar (ver directiva 16-jun abajo)
 
-## Directiva 16-jun: replicar exactamente la operativa de Fabian
-El usuario pidió dejar de solo comparar señales y hacer que el código se comporte EXACTAMENTE como Fabian opera — sus reglas están validadas por 8 meses de backtesting propio, así que se tratan como autoridad. Objetivo explícito: acercarnos a su rentabilidad (+1.35R semanal). Cambios derivados de esta directiva:
-- `use_limite` pasa a `true` por defecto (antes desactivado solo para comparar señales sin cortar el día).
-- Nuevo módulo `use_news_block` (manual, ver sección de bugs/pendientes) para respetar las ventanas de noticias del Plan Operativo.
-- Cualquier futura discrepancia entre nuestro código y el comportamiento de Fabian debe resolverse a favor de Fabian, salvo que el Plan Técnico/Operativo sea ambiguo (en cuyo caso no se adivina, se deja pendiente de validar en vivo — ver doji).
+## Directiva 16-jun: replicar exactamente la operativa de Fabian (con una excepción)
+El usuario pidió dejar de solo comparar señales y hacer que el código se comporte EXACTAMENTE como Fabian opera — sus reglas están validadas por 8 meses de backtesting propio, así que se tratan como autoridad. Objetivo explícito: acercarnos a su rentabilidad (+1.35R semanal).
+
+**Excepción explícita del usuario:** el límite diario de entradas (`use_limite`) se queda DESACTIVADO. La razón es de la herramienta, no de la estrategia: en sesión en vivo queremos ver TODAS las señales del día para comparar contra Fabian vela por vela, no que el código se quede mudo el resto de la sesión después del primer TP/SL. Esto ya se había aprendido dos veces (11-jun, 12-jun) antes de la directiva del 16-jun — un primer intento de activarlo el 16-jun se revirtió por la misma razón.
+
+Cambios SÍ aplicados por esta directiva:
+- Nuevo módulo `use_news_block` (manual) para respetar las ventanas de noticias del Plan Operativo.
+- Nuevo módulo `use_cooldown` (post-spike, pendiente desde 11/12-jun) para replicar la paciencia de Fabian tras velas de noticia.
+- Fix de umbral de martillo (ver sección de tipos de entrada arriba).
+- Cualquier futura discrepancia entre nuestro código y el comportamiento de Fabian debe resolverse a favor de Fabian, salvo (a) que el Plan Técnico/Operativo sea ambiguo (no se adivina, se deja pendiente — ver doji) o (b) que sea una regla de corte total de señales como `use_limite`, que por ahora se mantiene excluida.
 
 ## Reglas de sesión en vivo
 1. Leer el log de la última sesión antes de empezar
-2. Verificar `use_limite = true` y `use_news_block = true` (default desde 16-jun); si hay noticias USD ese día, pedir al usuario las horas para llenar `sess_news_high`/`sess_news_med` antes de operar
+2. Verificar `use_limite = false` (NUNCA activar), `use_news_block = true` y `use_cooldown = true`; si hay noticias USD ese día, pedir al usuario las horas para llenar `sess_news_high`/`sess_news_med` antes de operar
 3. Verificar que hay UNA sola instancia del indicador cargada
 4. Rama de trabajo: `claude/trading-strategy-inconsistencies-w9S9b`
 5. Guardar capturas y análisis en `sesion_vivo_YYYY-MM-DD/sesion_log.md`

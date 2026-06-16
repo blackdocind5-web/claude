@@ -20,11 +20,16 @@ use_mer        = input.bool(true,  "MER — Cambio de estructura",     group="Mo
 use_mart       = input.bool(true,  "Entrada: Martillo",              group="Modulos activos")
 use_doji       = input.bool(true,  "Entrada: Doji",                  group="Modulos activos")
 // Plan Operativo Fabian: el dia se detiene en 1 TP, o 1 SL+1TP, o 2 SL.
-// Activado por defecto desde el 16-jun para replicar exactamente su operativa.
-use_limite     = input.bool(true,  "Limite diario (1TP / 1SL+1TP / 2SL)", group="Modulos activos")
+// Mantenido en false (confirmado dos veces en sesiones 11-jun y 12-jun): activarlo
+// corta toda senal por el resto del dia, y el objetivo en vivo es ver TODAS las
+// senales del dia para comparar contra Fabian, no replicar su corte diario real.
+use_limite     = input.bool(false, "Limite diario (1TP / 1SL+1TP / 2SL)", group="Modulos activos")
 use_news_block = input.bool(true,  "Bloqueo por noticias (manual)",  group="Modulos activos")
 sess_news_high = input.string("",  "Noticias alto impacto (HHMM-HHMM,...)",  group="Modulos activos")
 sess_news_med  = input.string("",  "Noticias medio impacto (HHMM-HHMM,...)", group="Modulos activos")
+use_cooldown   = input.bool(true,  "Cooldown post-spike",            group="Modulos activos")
+spike_size     = input.float(10.0, "Tamano minimo spike (pts)",      group="Modulos activos", minval=1.0, step=0.5)
+cooldown_bars  = input.int(15,     "Velas de espera post-spike",     group="Modulos activos", minval=1)
 
 // ── TOGGLES VISUALES ─────────────────────────────────────────────────────────
 show_lbl    = input.bool(true, "Mostrar BUY/SELL",           group="Visual")
@@ -49,6 +54,17 @@ if str.length(sess_news_high) > 0
 if str.length(sess_news_med) > 0
     in_news_med := not na(time(timeframe.period, sess_news_med, "America/New_York"))
 in_news_block = in_news_high or in_news_med
+
+// ── COOLDOWN POST-SPIKE (pendiente desde 11/12-jun, propuesto por Fabian) ───
+// Fabian espera ~15-20min tras una vela de noticia gigante antes de operar;
+// el codigo entraba de inmediato. Tambien mitiga el ping-pong de estructura,
+// porque los niveles m3 espurios que genera el rebote post-spike se forman
+// justo dentro de esta ventana.
+var int last_spike_bar = na
+big_candle = (high - low) >= spike_size
+if big_candle
+    last_spike_bar := bar_index
+in_cooldown = use_cooldown and not na(last_spike_bar) and (bar_index - last_spike_bar) < cooldown_bars
 
 // ── DATOS M3 ─────────────────────────────────────────────────────────────────
 m3_high_price = request.security(syminfo.tickerid, "3", close[1] > open[1] and close < open ? math.max(high, high[1]) : na, lookahead=barmerge.lookahead_off, gaps=barmerge.gaps_on)
@@ -159,7 +175,7 @@ if exited_trade or hedged_trade
     else
         day_sl += 1
 
-can_trade = (not use_session or in_session) and (not use_limite or (day_tp == 0 and day_sl < 2)) and (not use_news_block or not in_news_block)
+can_trade = (not use_session or in_session) and (not use_limite or (day_tp == 0 and day_sl < 2)) and (not use_news_block or not in_news_block) and not in_cooldown
 
 // ── VALIDACION MER ───────────────────────────────────────────────────────────
 both_lows_valid  = not na(prev_m3_low)  and prev_m3_low  < close and last_m3_low  < close
@@ -293,8 +309,9 @@ if barstate.islast
     table.cell(tbl, 0, 1, "Sesion NY",      text_color=color.silver, text_size=size.small)
     table.cell(tbl, 1, 1, in_session ? "ACTIVA" : "CERRADA", text_color=color.white, text_size=size.small)
     operar_txt = can_trade ? "SI" :
-        (use_session and not in_session)  ? "NO-sesion"  :
-        (use_news_block and in_news_block) ? "NO-noticia" :
+        (use_session and not in_session)   ? "NO-sesion"   :
+        in_cooldown                        ? "NO-cooldown" :
+        (use_news_block and in_news_block) ? "NO-noticia"  :
         "NO-limite"
     table.cell(tbl, 0, 2, "Puede operar",   text_color=color.silver, text_size=size.small)
     table.cell(tbl, 1, 2, operar_txt,       text_color=color.white,  text_size=size.small)
