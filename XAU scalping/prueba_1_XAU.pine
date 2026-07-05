@@ -1,0 +1,384 @@
+//@version=5
+strategy(title="XAUUSD Prueba 1 MEC/MER", shorttitle="XAU P1", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=1, pyramiding=0, commission_type=strategy.commission.cash_per_contract, commission_value=0, slippage=2, max_bars_back=1000, calc_on_every_tick=false)
+
+// ── INPUTS GENERALES ────────────────────────────────────────────────────────
+sess_ny    = input.session("0901-1059", "Sesion New York")
+rr_tp      = input.float(0.9,    "Ratio TP (RR 1:x)",         minval=0.1,     step=0.05)
+body_min   = input.float(0.85,   "Cuerpo min Envolvente",      minval=0.5,     step=0.05)
+body_warn  = input.float(0.75,   "Cuerpo pre-señal (~)",        minval=0.5,     step=0.05)
+mart_min   = input.float(0.50,   "Cuerpo min Martillo",        minval=0.3,     step=0.05)
+max_sl_pts = input.float(200.0,  "SL maximo en puntos",        minval=5.0,     step=1.0)
+sl_red     = input.float(0.40,   "Reduccion SL si supera max", minval=0.1,     step=0.05)
+min_brk    = input.float(0.0001, "Quiebre minimo valido",      minval=0.00001, step=0.00001)
+
+// ── TOGGLES DE MODULOS ───────────────────────────────────────────────────────
+use_session    = input.bool(true,  "Respetar horario de sesion",     group="Modulos activos")
+use_mec_env    = input.bool(true,  "MEC — Envolvente (1 pullback)",  group="Modulos activos")
+use_mec_start1 = input.bool(true,  "MEC — START (1 pullback)",       group="Modulos activos")
+use_mec_start2 = input.bool(true,  "MEC — START (2 pullbacks)",      group="Modulos activos")
+use_mer        = input.bool(true,  "MER — Cambio de estructura",     group="Modulos activos")
+use_mart       = input.bool(true,  "Entrada: Martillo",              group="Modulos activos")
+use_doji       = input.bool(true,  "Entrada: Doji",                  group="Modulos activos")
+// Plan Operativo Fabian: el dia se detiene en 1 TP, o 1 SL+1TP, o 2 SL.
+// Mantenido en false (confirmado dos veces en sesiones 11-jun y 12-jun): activarlo
+// corta toda senal por el resto del dia, y el objetivo en vivo es ver TODAS las
+// senales del dia para comparar contra Fabian, no replicar su corte diario real.
+use_limite     = input.bool(false, "Limite diario (1TP / 1SL+1TP / 2SL)", group="Modulos activos")
+use_news_block = input.bool(true,  "Bloqueo por noticias (manual)",  group="Modulos activos")
+sess_news_high = input.string("",  "Noticias alto impacto (HHMM-HHMM,...)",  group="Modulos activos")
+sess_news_med  = input.string("",  "Noticias medio impacto (HHMM-HHMM,...)", group="Modulos activos")
+use_cooldown   = input.bool(true,  "Cooldown post-spike",            group="Modulos activos")
+spike_size     = input.float(10.0, "Tamano minimo spike (pts)",      group="Modulos activos", minval=1.0, step=0.5)
+cooldown_bars  = input.int(15,     "Velas de espera post-spike",     group="Modulos activos", minval=1)
+
+// ── TOGGLES VISUALES ─────────────────────────────────────────────────────────
+show_lbl    = input.bool(true, "Mostrar BUY/SELL",           group="Visual")
+show_warn   = input.bool(true, "Mostrar pre-señales (~)",     group="Visual")
+show_str    = input.bool(true, "Mostrar altos/bajos m3",      group="Visual")
+show_exit   = input.bool(true, "Mostrar SL y TP",             group="Visual")
+show_bg     = input.bool(true, "Fondo sesion activa",         group="Visual")
+m3_line_len = input.int(5,     "Longitud linea m3 (velas)",   group="Visual", minval=1, maxval=100)
+show_debug  = input.bool(true, "Mostrar tabla debug (temporal)", group="Visual")
+
+// ── SESION ───────────────────────────────────────────────────────────────────
+in_session = not na(time(timeframe.period, sess_ny, "America/New_York"))
+
+// ── BLOQUEO POR NOTICIAS (Plan Operativo Fabian) ────────────────────────────
+// Forex Factory no tiene feed nativo en Pine: el usuario pega aqui las
+// ventanas del dia ya calculadas (alto impacto = 10min antes a 3min despues
+// del evento, medio impacto = 3min antes a 3min despues). Solo bloquea
+// NUEVAS entradas, nunca afecta el SL/TP de una operacion ya abierta.
+var bool in_news_high = false
+var bool in_news_med  = false
+if str.length(sess_news_high) > 0
+    in_news_high := not na(time(timeframe.period, sess_news_high, "America/New_York"))
+if str.length(sess_news_med) > 0
+    in_news_med := not na(time(timeframe.period, sess_news_med, "America/New_York"))
+in_news_block = in_news_high or in_news_med
+
+// ── COOLDOWN POST-SPIKE (pendiente desde 11/12-jun, propuesto por Fabian) ───
+// Fabian espera ~15-20min tras una vela de noticia gigante antes de operar;
+// el codigo entraba de inmediato. Tambien mitiga el ping-pong de estructura,
+// porque los niveles m3 espurios que genera el rebote post-spike se forman
+// justo dentro de esta ventana.
+var int last_spike_bar = na
+big_candle = (high - low) >= spike_size
+if big_candle
+    last_spike_bar := bar_index
+in_cooldown = use_cooldown and not na(last_spike_bar) and (bar_index - last_spike_bar) < cooldown_bars
+
+// ── DATOS M3 ─────────────────────────────────────────────────────────────────
+m3_high_price = request.security(syminfo.tickerid, "3", close[1] > open[1] and close < open ? math.max(high, high[1]) : na, lookahead=barmerge.lookahead_off, gaps=barmerge.gaps_on)
+m3_low_price  = request.security(syminfo.tickerid, "3", close[1] < open[1] and close > open ? math.min(low,  low[1])  : na, lookahead=barmerge.lookahead_off, gaps=barmerge.gaps_on)
+
+var float last_m3_high = na
+var float last_m3_low  = na
+var float prev_m3_high = na
+var float prev_m3_low  = na
+
+if not na(m3_high_price)
+    prev_m3_high := last_m3_high
+    last_m3_high := m3_high_price
+if not na(m3_low_price)
+    prev_m3_low  := last_m3_low
+    last_m3_low  := m3_low_price
+
+// ── ESTRUCTURA M3 ────────────────────────────────────────────────────────────
+var int market_struct = 0
+
+body_breaks_high = not na(last_m3_high) and close > last_m3_high and close > open and (close - last_m3_high) / last_m3_high >= min_brk
+body_breaks_low  = not na(last_m3_low)  and close < last_m3_low  and close < open and (last_m3_low - close)  / last_m3_low  >= min_brk
+
+choc_bull = body_breaks_high and market_struct == -1
+choc_bear = body_breaks_low  and market_struct ==  1
+
+if body_breaks_high
+    market_struct := 1
+if body_breaks_low
+    market_struct := -1
+
+// ── PATRONES DE VELAS m1 ─────────────────────────────────────────────────────
+rng_c  = high - low
+body_c = math.abs(close - open)
+uwck   = high - math.max(open, close)
+lwck   = math.min(open, close) - low
+bpct   = rng_c > 0 ? body_c / rng_c : 0.0
+upct   = rng_c > 0 ? uwck   / rng_c : 0.0
+lpct   = rng_c > 0 ? lwck   / rng_c : 0.0
+
+env_bull  = close > open and bpct >= body_min and upct < (1.0 - body_min)
+env_bear  = close < open and bpct >= body_min and lpct < (1.0 - body_min)
+// Martillo (Plan Tecnico Fabian pag.7): cuerpo 50-85% + mecha a favor de la
+// entrada reducida (mismo umbral que envolvente). La mecha opuesta no lleva
+// un % fijo: es simplemente lo que sobra. Antes usabamos lpct/upct > 0.30,
+// umbral inventado que no esta en el documento y bloqueaba entradas validas.
+mart_bull = use_mart and close > open and bpct >= mart_min and bpct < body_min and upct < (1.0 - body_min)
+mart_bear = use_mart and close < open and bpct >= mart_min and bpct < body_min and lpct < (1.0 - body_min)
+// PRUEBA 1 (5-jul-2026): Plan Tecnico pag.7-8 describe doji con cuerpo
+// "cercano al 15%", no "exactamente >=15%". Bajamos el piso de 0.15 a 0.05
+// para capturar cuerpos muy pequeños (5-14%) que Fabian clasifica como doji
+// visualmente con la Cuadricula de Gann. Hipotesis surgida del ChOC bar
+// ~09:15 del 5-jul que Fabian tomo como MER pero nuestro codigo rechazo.
+doji_bull = use_doji and close > open and bpct >= 0.05 and bpct < mart_min and lpct >= 0.15 and upct >= 0.15
+doji_bear = use_doji and close < open and bpct >= 0.05 and bpct < mart_min and lpct >= 0.15 and upct >= 0.15
+
+entry_bull = env_bull or mart_bull or doji_bull
+entry_bear = env_bear or mart_bear or doji_bear
+
+pre_bull = close > open and bpct >= body_warn and bpct < body_min and upct < (1.0 - body_warn)
+pre_bear = close < open and bpct >= body_warn and bpct < body_min and lpct < (1.0 - body_warn)
+
+pb_to_bull = close[1] < open[1]
+pb_to_bear = close[1] > open[1]
+
+// ── MEC ENVOLVENTE ───────────────────────────────────────────────────────────
+cont_bull_env  = close > high[1] and (close - high[1]) / high[1] >= min_brk
+cont_bear_env  = close < low[1]  and (low[1] - close)  / low[1]  >= min_brk
+
+// ── MEC START 1 pullback ─────────────────────────────────────────────────────
+bpct_1        = (high[1] - low[1]) > 0 ? math.abs(close[1] - open[1]) / (high[1] - low[1]) : 0.0
+indecion_bull = bpct_1 <= 0.5001 and close[1] > open[1]
+indecion_bear = bpct_1 <= 0.5001 and close[1] < open[1]
+pb2_to_bull   = close[2] < open[2]
+pb2_to_bear   = close[2] > open[2]
+not_3bull     = not (close > open and close[1] > open[1] and close[2] > open[2])
+not_3bear     = not (close < open and close[1] < open[1] and close[2] < open[2])
+start_bull    = pb2_to_bull and indecion_bull and entry_bull and not_3bull
+start_bear    = pb2_to_bear and indecion_bear and entry_bear and not_3bear
+
+pre_pb_high     = math.max(high[1], high[2])
+pre_pb_low      = math.min(low[1],  low[2])
+cont_bull_start = close > pre_pb_high and (close - pre_pb_high) / pre_pb_high >= min_brk
+cont_bear_start = close < pre_pb_low  and (pre_pb_low - close)  / pre_pb_low  >= min_brk
+
+// ── MEC START 2 pullbacks ────────────────────────────────────────────────────
+pb2_both_bull    = close[2] < open[2] and close[3] < open[3]
+pb2_both_bear    = close[2] > open[2] and close[3] > open[3]
+pre_pb_high2     = math.max(high[1], high[2], high[3])
+pre_pb_low2      = math.min(low[1],  low[2],  low[3])
+cont_bull_start2 = close > pre_pb_high2 and (close - pre_pb_high2) / pre_pb_high2 >= min_brk
+cont_bear_start2 = close < pre_pb_low2  and (pre_pb_low2 - close)  / pre_pb_low2  >= min_brk
+start_bull2      = pb2_both_bull and indecion_bull and entry_bull and not_3bull
+start_bear2      = pb2_both_bear and indecion_bear and entry_bear and not_3bear
+
+// ── CONTADOR DIARIO ──────────────────────────────────────────────────────────
+var int day_tp   = 0
+var int day_sl   = 0
+var int prev_day = na
+
+curr_day = dayofmonth(time)
+if na(prev_day) or curr_day != prev_day
+    day_tp   := 0
+    day_sl   := 0
+    prev_day := curr_day
+
+was_in_trade = strategy.position_size[1] != 0
+exited_trade = was_in_trade and strategy.position_size == 0
+hedged_trade = was_in_trade and strategy.position_size != 0 and math.sign(strategy.position_size) != math.sign(strategy.position_size[1])
+if exited_trade or hedged_trade
+    if strategy.netprofit > strategy.netprofit[1]
+        day_tp += 1
+    else
+        day_sl += 1
+
+// Nota 16-jun (tarde): el cooldown post-spike SOLO bloquea MEC. Un MER es
+// exactamente la señal que Fabian espera DURANTE el caos post-noticia (el
+// ChOC confirma que la estructura ya cambio) — bloquearlo con el mismo
+// temporizador retrasaba la entrada hasta que el cooldown terminaba, y para
+// entonces el market_struct ya habia cambiado, asi que la entrada real
+// salia mal etiquetada como MEC en vez de MER. El ping-pong de estructura en
+// MER ya esta cubierto por la regla de "nivel unico" (mer_sl_long/short).
+can_trade = (not use_session or in_session) and (not use_limite or (day_tp == 0 and day_sl < 2)) and (not use_news_block or not in_news_block)
+
+// ── VALIDACION MER ───────────────────────────────────────────────────────────
+// Regla de "nivel unico" (Plan Tecnico pag.26-27): si hay dos niveles m3
+// opuestos CERCANOS (<=0.01%), el SL se extiende al primero (mas extremo) y
+// se ejecuta. Si estan LEJOS entre si, Fabian igual entra usando el mas
+// extremo como SL — confirmado en replay 16-jun: dos altos m3 separados 7pts
+// (4354.950 / 4347.185), el SL fue 4354.950 y la entrada se tomó sin bloqueo.
+// El bloqueo con 'na' solo aplica en el escenario ping-pong con niveles
+// cercanos, que son los que crean ambigüedad real de SL.
+both_lows_valid  = not na(prev_m3_low)  and prev_m3_low  < close and last_m3_low  < close
+two_lows_close   = both_lows_valid and math.abs(last_m3_low - prev_m3_low) / last_m3_low <= min_brk
+mer_sl_long  = not both_lows_valid  ? last_m3_low  :
+               two_lows_close       ? math.min(last_m3_low, prev_m3_low) :
+               last_m3_low
+
+both_highs_valid = not na(prev_m3_high) and prev_m3_high > close and last_m3_high > close
+two_highs_close  = both_highs_valid and math.abs(last_m3_high - prev_m3_high) / last_m3_high <= min_brk
+mer_sl_short = not both_highs_valid ? last_m3_high :
+               two_highs_close      ? math.max(last_m3_high, prev_m3_high) :
+               last_m3_high
+
+// ── SENALES DE ENTRADA ───────────────────────────────────────────────────────
+can_long  = strategy.position_size <= 0
+can_short = strategy.position_size >= 0
+
+mec_buy  = can_trade and not in_cooldown and can_long  and market_struct ==  1 and (
+     (use_mec_env    and pb_to_bull  and entry_bull and cont_bull_env)   or
+     (use_mec_start1 and start_bull  and cont_bull_start)                or
+     (use_mec_start2 and start_bull2 and cont_bull_start2))
+
+mec_sell = can_trade and not in_cooldown and can_short and market_struct == -1 and (
+     (use_mec_env    and pb_to_bear  and entry_bear and cont_bear_env)   or
+     (use_mec_start1 and start_bear  and cont_bear_start)                or
+     (use_mec_start2 and start_bear2 and cont_bear_start2))
+
+mer_buy  = can_trade and can_long  and use_mer and choc_bull and entry_bull and not na(mer_sl_long)
+mer_sell = can_trade and can_short and use_mer and choc_bear and entry_bear and not na(mer_sl_short)
+
+go_long  = mec_buy  or mer_buy
+go_short = mec_sell or mer_sell
+
+pre_long  = show_warn and can_long  and market_struct ==  1 and not go_long  and (
+     (use_mec_env and pb_to_bull and pre_bull and cont_bull_env) or
+     (use_mer     and choc_bull  and pre_bull and not na(mer_sl_long)))
+pre_short = show_warn and can_short and market_struct == -1 and not go_short and (
+     (use_mec_env and pb_to_bear and pre_bear and cont_bear_env) or
+     (use_mer     and choc_bear  and pre_bear and not na(mer_sl_short)))
+
+// ── SL / TP ──────────────────────────────────────────────────────────────────
+var float trade_sl = na
+var float trade_tp = na
+
+if go_long
+    sl_ref  = mer_buy ? mer_sl_long : (not na(last_m3_low) ? last_m3_low : close - close * 0.002)
+    sl_dist = close - sl_ref
+    if sl_dist > max_sl_pts
+        sl_dist := sl_dist * (1.0 - sl_red)
+        sl_ref  := close - sl_dist
+    trade_sl := sl_ref
+    trade_tp := close + sl_dist * rr_tp
+    long_comment = mer_buy ? "MER BUY" : (start_bull or start_bull2) ? "MEC START BUY" : "MEC ENV BUY"
+    strategy.entry("Long",  strategy.long,  comment=long_comment)
+    strategy.exit("Long X", "Long",  stop=trade_sl, limit=trade_tp)
+
+if go_short
+    sl_ref  = mer_sell ? mer_sl_short : (not na(last_m3_high) ? last_m3_high : close + close * 0.002)
+    sl_dist = sl_ref - close
+    if sl_dist > max_sl_pts
+        sl_dist := sl_dist * (1.0 - sl_red)
+        sl_ref  := close + sl_dist
+    trade_sl := sl_ref
+    trade_tp := close - sl_dist * rr_tp
+    short_comment = mer_sell ? "MER SELL" : (start_bear or start_bear2) ? "MEC START SELL" : "MEC ENV SELL"
+    strategy.entry("Short", strategy.short, comment=short_comment)
+    strategy.exit("Short X","Short", stop=trade_sl, limit=trade_tp)
+
+// ── VISUALIZACION ────────────────────────────────────────────────────────────
+bgcolor(show_bg and in_session ? color.new(color.blue, 93) : na, title="Fondo sesion")
+
+var line  line_m3_high = na
+var line  line_m3_low  = na
+var label lbl_m3_high  = na
+var label lbl_m3_low   = na
+
+// Plan Tecnico Fabian pag.3-4: linea punteada = nivel tendencial (su quiebre
+// solo confirma continuacion), linea continua = nivel de reversion (su
+// quiebre es Cambio de Estructura / ChOC). El rol de cada nivel depende de
+// la estructura vigente, asi que el estilo se recalcula cada vela.
+// Excepcion: durante m3_line_len bars post-ChOC el nivel roto permanece SOLID
+// para que la entrada MER sea visible contra el nivel que se acaba de romper.
+var int last_choc_bear_bar = na
+var int last_choc_bull_bar = na
+if choc_bear
+    last_choc_bear_bar := bar_index
+if choc_bull
+    last_choc_bull_bar := bar_index
+recent_choc_bear = not na(last_choc_bear_bar) and (bar_index - last_choc_bear_bar) < m3_line_len
+recent_choc_bull = not na(last_choc_bull_bar) and (bar_index - last_choc_bull_bar) < m3_line_len
+high_style = (market_struct == 1  and not recent_choc_bull) ? line.style_dashed : line.style_solid
+low_style  = (market_struct == -1 and not recent_choc_bear) ? line.style_dashed : line.style_solid
+
+if show_str
+    if not na(m3_high_price)
+        line_m3_high := line.new(bar_index - 1, last_m3_high, bar_index + m3_line_len, last_m3_high, color=color.red,   style=high_style, width=2)
+        lbl_m3_high  := label.new(bar_index + m3_line_len, last_m3_high, text=str.tostring(last_m3_high, format.mintick), color=color.new(color.red,100),   textcolor=color.red,   style=label.style_label_left, size=size.tiny)
+    else if not na(line_m3_high)
+        line.set_x2(line_m3_high, bar_index + m3_line_len)
+        line.set_style(line_m3_high, high_style)
+        label.set_x(lbl_m3_high, bar_index + m3_line_len)
+    if not na(m3_low_price)
+        line_m3_low := line.new(bar_index - 1, last_m3_low, bar_index + m3_line_len, last_m3_low, color=color.green, style=low_style, width=2)
+        lbl_m3_low  := label.new(bar_index + m3_line_len, last_m3_low, text=str.tostring(last_m3_low, format.mintick), color=color.new(color.green,100), textcolor=color.green, style=label.style_label_left, size=size.tiny)
+    else if not na(line_m3_low)
+        line.set_x2(line_m3_low, bar_index + m3_line_len)
+        line.set_style(line_m3_low, low_style)
+        label.set_x(lbl_m3_low, bar_index + m3_line_len)
+
+plot(show_exit and strategy.position_size != 0 ? trade_sl : na, title="SL", color=color.red,   style=plot.style_linebr, linewidth=1)
+plot(show_exit and strategy.position_size != 0 ? trade_tp : na, title="TP", color=color.green, style=plot.style_linebr, linewidth=1)
+
+atr14 = ta.atr(14)
+if show_lbl and go_long
+    label.new(bar_index, low  - atr14 * 0.4, text="BUY",   color=color.new(color.gray,15),   textcolor=color.white, style=label.style_label_up,   size=size.normal)
+if show_lbl and go_short
+    label.new(bar_index, high + atr14 * 0.4, text="SELL",  color=color.new(color.gray,15),   textcolor=color.white, style=label.style_label_down, size=size.normal)
+if pre_long
+    label.new(bar_index, low  - atr14 * 0.2, text="~BUY",  color=color.new(color.blue,40),   textcolor=color.white, style=label.style_label_up,   size=size.small)
+if pre_short
+    label.new(bar_index, high + atr14 * 0.2, text="~SELL", color=color.new(color.orange,20), textcolor=color.white, style=label.style_label_down, size=size.small)
+
+bar_col  = close > open ? color.new(color.green, 20) : color.new(color.red, 20)
+barcolor(bar_col, title="Color velas")
+
+choc_col = choc_bull ? color.new(color.green, 80) : choc_bear ? color.new(color.red, 80) : na
+bgcolor(choc_col, title="Cambio estructura")
+
+if choc_bull
+    label.new(bar_index, low,  text="CAMBIO DE ESTRUCTURA\nALCISTA", color=color.new(color.green,20), textcolor=color.white, style=label.style_label_up,   size=size.small)
+if choc_bear
+    label.new(bar_index, high, text="CAMBIO DE ESTRUCTURA\nBAJISTA", color=color.new(color.red,20),   textcolor=color.white, style=label.style_label_down, size=size.small)
+
+// ── TABLA INFO ───────────────────────────────────────────────────────────────
+var table tbl = table.new(position.top_right, 2, 5, bgcolor=color.new(color.black,70), border_color=color.new(color.gray,40), border_width=1)
+if barstate.islast
+    st = market_struct == 1 ? "ALCISTA" : market_struct == -1 ? "BAJISTA" : "NEUTRAL"
+    table.cell(tbl, 0, 0, "Estructura m3",  text_color=color.silver, text_size=size.small)
+    table.cell(tbl, 1, 0, st,               text_color=color.white,  text_size=size.small)
+    table.cell(tbl, 0, 1, "Sesion NY",      text_color=color.silver, text_size=size.small)
+    table.cell(tbl, 1, 1, in_session ? "ACTIVA" : "CERRADA", text_color=color.white, text_size=size.small)
+    operar_txt = "SI"
+    if not can_trade
+        if use_session and not in_session
+            operar_txt := "NO-sesion"
+        else if use_news_block and in_news_block
+            operar_txt := "NO-noticia"
+        else
+            operar_txt := "NO-limite"
+    else if in_cooldown
+        operar_txt := "SI (solo MER)"
+    table.cell(tbl, 0, 2, "Puede operar",   text_color=color.silver, text_size=size.small)
+    table.cell(tbl, 1, 2, operar_txt,       text_color=color.white,  text_size=size.small)
+    table.cell(tbl, 0, 3, "TP / SL dia",    text_color=color.silver, text_size=size.small)
+    table.cell(tbl, 1, 3, str.tostring(day_tp) + " / " + str.tostring(day_sl), text_color=color.white, text_size=size.small)
+    table.cell(tbl, 0, 4, "RR",             text_color=color.silver, text_size=size.small)
+    table.cell(tbl, 1, 4, "1:" + str.tostring(rr_tp),        text_color=color.white, text_size=size.small)
+
+// ── TABLA DEBUG (temporal — para diagnostico vela a vela en replay) ─────────
+var table dbg = table.new(position.bottom_right, 2, 8, bgcolor=color.new(color.black,70), border_color=color.new(color.gray,40), border_width=1)
+if show_debug and barstate.islast
+    choc_txt  = choc_bull ? "ALCISTA" : choc_bear ? "BAJISTA" : "no"
+    entry_txt = entry_bull ? "BULL" : entry_bear ? "BEAR" : "no"
+    mer_sl_txt = (na(mer_sl_long) ? "NA" : str.tostring(mer_sl_long, format.mintick)) + " / " + (na(mer_sl_short) ? "NA" : str.tostring(mer_sl_short, format.mintick))
+    m3_high_txt = str.tostring(last_m3_high, format.mintick) + " / " + (na(prev_m3_high) ? "NA" : str.tostring(prev_m3_high, format.mintick))
+    m3_low_txt  = str.tostring(last_m3_low, format.mintick)  + " / " + (na(prev_m3_low)  ? "NA" : str.tostring(prev_m3_low, format.mintick))
+    can_txt   = (can_long ? "SI" : "no") + " / " + (can_short ? "SI" : "no")
+    mer_txt   = (mer_buy ? "SI" : "no") + " / " + (mer_sell ? "SI" : "no")
+    mec_txt   = (mec_buy ? "SI" : "no") + " / " + (mec_sell ? "SI" : "no")
+    table.cell(dbg, 0, 0, "ChOC (este bar)",     text_color=color.silver, text_size=size.tiny)
+    table.cell(dbg, 1, 0, choc_txt,              text_color=color.yellow, text_size=size.tiny)
+    table.cell(dbg, 0, 1, "Vela (bull/bear)",    text_color=color.silver, text_size=size.tiny)
+    table.cell(dbg, 1, 1, entry_txt,             text_color=color.yellow, text_size=size.tiny)
+    table.cell(dbg, 0, 2, "m3 high (last/prev)", text_color=color.silver, text_size=size.tiny)
+    table.cell(dbg, 1, 2, m3_high_txt,           text_color=color.yellow, text_size=size.tiny)
+    table.cell(dbg, 0, 3, "m3 low (last/prev)",  text_color=color.silver, text_size=size.tiny)
+    table.cell(dbg, 1, 3, m3_low_txt,            text_color=color.yellow, text_size=size.tiny)
+    table.cell(dbg, 0, 4, "MER SL (long/short)", text_color=color.silver, text_size=size.tiny)
+    table.cell(dbg, 1, 4, mer_sl_txt,            text_color=color.yellow, text_size=size.tiny)
+    table.cell(dbg, 0, 5, "Can long/short",      text_color=color.silver, text_size=size.tiny)
+    table.cell(dbg, 1, 5, can_txt,               text_color=color.yellow, text_size=size.tiny)
+    table.cell(dbg, 0, 6, "MER buy/sell",        text_color=color.silver, text_size=size.tiny)
+    table.cell(dbg, 1, 6, mer_txt,                text_color=color.yellow, text_size=size.tiny)
+    table.cell(dbg, 0, 7, "MEC buy/sell",        text_color=color.silver, text_size=size.tiny)
+    table.cell(dbg, 1, 7, mec_txt,                text_color=color.yellow, text_size=size.tiny)
