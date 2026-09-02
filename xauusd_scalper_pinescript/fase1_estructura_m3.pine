@@ -88,8 +88,8 @@ var string tendencia = "indefinida"  // "alcista" | "bajista" | "indefinida"
 
 maxExtMs = extensionBarras * timeframe.in_seconds("1") * 1000
 
-// -- nuevo alto M3: reemplaza al activo solo si es más alto --
-if esAltoM3 and (na(altoM3Activo) or nivelAlto > altoM3Activo)
+// -- nuevo alto M3: SIEMPRE se toma el último creado (se reacciona al presente del mercado) --
+if esAltoM3
     if not na(altoLinea)
         line.set_x2(altoLinea, time)
     altoM3Activo := nivelAlto
@@ -98,8 +98,8 @@ if esAltoM3 and (na(altoM3Activo) or nivelAlto > altoM3Activo)
     if mostrarEtiquetas
         label.new(bar_index, nivelAlto, "Alto M3", style=label.style_label_down, color=color.new(color.white, 100), textcolor=colorPunteada, size=size.tiny)
 
-// -- nuevo bajo M3: reemplaza al activo solo si es más bajo --
-if esBajoM3 and (na(bajoM3Activo) or nivelBajo < bajoM3Activo)
+// -- nuevo bajo M3: SIEMPRE se toma el último creado (se reacciona al presente del mercado) --
+if esBajoM3
     if not na(bajoLinea)
         line.set_x2(bajoLinea, time)
     bajoM3Activo := nivelBajo
