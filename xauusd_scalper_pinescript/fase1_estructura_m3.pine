@@ -91,7 +91,10 @@ maxExtMs = extensionBarras * timeframe.in_seconds("1") * 1000
 // -- nuevo alto M3: SIEMPRE se toma el último creado (se reacciona al presente del mercado) --
 if esAltoM3
     if not na(altoLinea)
-        line.set_x2(altoLinea, time)
+        // el anterior nivel, al quedar reemplazado por uno más relevante antes de ser
+        // tocado por el precio, solo se prolonga hasta 10 barras M1 desde SU propia
+        // formación (no hasta el momento en que aparece el nuevo nivel)
+        line.set_x2(altoLinea, int(math.min(time, altoM3Inicio + maxExtMs)))
     altoM3Activo := nivelAlto
     altoM3Inicio := t3_1
     altoLinea := line.new(x1=t3_1, y1=nivelAlto, x2=time, y2=nivelAlto, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
@@ -101,7 +104,9 @@ if esAltoM3
 // -- nuevo bajo M3: SIEMPRE se toma el último creado (se reacciona al presente del mercado) --
 if esBajoM3
     if not na(bajoLinea)
-        line.set_x2(bajoLinea, time)
+        // mismo criterio que en el alto: se prolonga solo hasta 10 barras desde
+        // su propia formación, no hasta el momento del nuevo nivel
+        line.set_x2(bajoLinea, int(math.min(time, bajoM3Inicio + maxExtMs)))
     bajoM3Activo := nivelBajo
     bajoM3Inicio := t3_1
     bajoLinea := line.new(x1=t3_1, y1=nivelBajo, x2=time, y2=nivelBajo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
