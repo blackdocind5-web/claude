@@ -6,10 +6,18 @@ indicator("XAUUSD Scalper — Estructura M3 (Fase 1)", overlay=true, max_lines_c
 // Desarrollado para Fabián — sistema discrecional scalper XAUUSD
 //
 // Qué hace esta fase:
-//   1. Detecta altos y bajos M3 (patrón de 2 velas) mientras el gráfico
-//      corre en M1, usando request.security() para traer los datos M3.
+//   1. Detecta altos y bajos M3 mientras el gráfico corre en M1, usando
+//      request.security() para traer los datos M3. La detección se basa en
+//      "tramos" (rachas de velas M3 del mismo lado, tolerando doji como
+//      continuación) -- el alto/bajo M3 se forma en el límite entre dos
+//      tramos opuestos consecutivos, y su nivel es el extremo (máximo o
+//      mínimo) de TODO el tramo de cada lado, sin importar si la mecha más
+//      relevante está en la vela adyacente al límite o varias velas antes
+//      o después.
 //   2. Dibuja el alto/bajo M3 "activo" como una línea horizontal que se
 //      extiende hasta que el precio la toca, o hasta 10 barras M1 sin toque.
+//      Mientras el tramo de confirmación sigue extendiéndose, el nivel se
+//      actualiza en el mismo trazo (no crea una línea nueva por cada vela).
 //   3. Cuando el precio quiebra el nivel, la línea queda marcada:
 //        - PUNTEADA = quiebre a favor de la tendencia vigente (continuación)
 //        - CONTINUA = quiebre del nivel opuesto (cambio de estructura)
@@ -23,11 +31,6 @@ indicator("XAUUSD Scalper — Estructura M3 (Fase 1)", overlay=true, max_lines_c
 //   - No detecta velas de entrada (envolvente / start) en M1.
 //   - No arma el modelo MEC, no calcula SL/TP, no dibuja la señal BUY/SELL.
 //   - No aplica el filtro de noticias, límite diario ni PnL semanal.
-//   - La variante de "mecha extendida" (fractal) está implementada SOLO en
-//     sentido hacia atrás (velas anteriores al ancla del patrón). El caso de
-//     extensión hacia velas posteriores (mencionado en la regla original)
-//     todavía no tiene un ejemplo confirmado — pendiente de validar con
-//     Fabián antes de sumarlo.
 // ============================================================================
 
 // ---------------------------- INPUTS ----------------------------
@@ -57,37 +60,28 @@ bgcolor(mostrarSesiones and enAsia  ? colorAsia  : na, title="Sesión Asia")
 
 // ---------------------------- DATOS M3 ----------------------------
 [o3, h3, l3, c3, t3] = request.security(syminfo.tickerid, "3", [open, high, low, close, time], lookahead=barmerge.lookahead_off)
-
 nuevaVelaM3 = ta.change(t3) != 0  // se cumple en la primer barra M1 de cada nueva vela M3
 
-// Historial de velas M3 CERRADAS (arrays: el último índice es la más reciente).
-// Se necesita historial (no solo las últimas 2) porque el alto/bajo M3 puede
-// formarse con la mecha de una vela más atrás en el tiempo -- ver "variante
-// de mecha extendida" más abajo.
-MAX_HIST = 30
-var array<float> histO = array.new_float()
-var array<float> histH = array.new_float()
-var array<float> histL = array.new_float()
-var array<float> histC = array.new_float()
-var array<int>   histT = array.new_int()
+// ---------------------------- RASTREADOR DE TRAMOS (RUNS) M3 ----------------------------
+// Un "tramo" es una racha de velas M3 consecutivas del mismo lado (alcista o
+// bajista); un doji (cierre = apertura) siempre continúa el tramo vigente,
+// nunca lo corta. El alto/bajo M3 se forma en el límite entre dos tramos
+// opuestos consecutivos, y su nivel es el extremo de TODO el tramo de cada
+// lado -- así cubre tanto la mecha más relevante estando varias velas antes
+// del límite (tramo ancla largo) como varias velas después (tramo de
+// confirmación largo), sin tratarlas como casos distintos.
+var string curDir = na       // dirección del tramo vigente: "alcista" | "bajista"
+var float curHigh = na
+var int   curHighT = na
+var float curLow = na
+var int   curLowT = na
 
-if nuevaVelaM3
-    // la vela que se acaba de cerrar quedó representada, en la barra anterior, por o3[1]/h3[1]/...
-    array.push(histO, o3[1])
-    array.push(histH, h3[1])
-    array.push(histL, l3[1])
-    array.push(histC, c3[1])
-    array.push(histT, t3[1])
-    if array.size(histO) > MAX_HIST
-        array.shift(histO), array.shift(histH), array.shift(histL), array.shift(histC), array.shift(histT)
+var string prevDir = na      // dirección del tramo anterior (ya cerrado)
+var float prevHigh = na
+var int   prevHighT = na
+var float prevLow = na
+var int   prevLowT = na
 
-// ---------------------------- DETECCIÓN ALTO/BAJO M3 (con variante de fractal) ----------------------------
-// Alto M3  = vela alcista "ancla" (estrictamente direccional) seguida de vela
-//            bajista o doji que confirma. Si la/s vela/s ANTERIORES a la ancla
-//            también son alcistas o doji (mismo impulso), el nivel se extiende
-//            hacia atrás y se toma el máximo de todo ese tramo -- no solo del
-//            par base de 2 velas.
-// Bajo M3  = simétrico, con velas bajistas.
 esAltoM3 = false
 esBajoM3 = false
 nivelAlto = float(na)
@@ -95,42 +89,47 @@ nivelBajo = float(na)
 altoRunInicio = int(na)
 bajoRunInicio = int(na)
 
-n = array.size(histC)
-if nuevaVelaM3 and n >= 2
-    c0 = array.get(histC, n - 1), o0 = array.get(histO, n - 1)
-    c1 = array.get(histC, n - 2), o1 = array.get(histO, n - 2)
+if nuevaVelaM3
+    // la vela que se acaba de cerrar quedó representada, en la barra anterior, por o3[1]/h3[1]/...
+    o0 = o3[1]
+    h0 = h3[1]
+    l0 = l3[1]
+    c0 = c3[1]
+    t0 = t3[1]
+    candleDir = c0 > o0 ? "alcista" : c0 < o0 ? "bajista" : "doji"
 
-    // -- Alto M3: ancla alcista (candle_1) estricta + confirmación bajista/doji (candle_0) --
-    if (c1 > o1) and (c0 <= o0)
-        esAltoM3 := true
-        nivelAlto := math.max(array.get(histH, n - 1), array.get(histH, n - 2))
-        altoRunInicio := array.get(histT, n - 2)
-        idx = n - 3
-        siguiendoImpulso = true
-        while siguiendoImpulso and idx >= 0
-            ci = array.get(histC, idx), oi = array.get(histO, idx)
-            if ci >= oi  // sigue siendo alcista o doji: mismo impulso, se extiende el nivel
-                nivelAlto := math.max(nivelAlto, array.get(histH, idx))
-                altoRunInicio := array.get(histT, idx)
-                idx -= 1
-            else
-                siguiendoImpulso := false
+    if na(curDir)
+        // primera vela direccional del historial: arranca el primer tramo
+        if candleDir != "doji"
+            curDir := candleDir
+            curHigh := h0, curHighT := t0
+            curLow := l0, curLowT := t0
+    else if candleDir == curDir or candleDir == "doji"
+        // continúa el tramo vigente (doji siempre continúa, nunca lo corta)
+        if h0 > curHigh
+            curHigh := h0, curHighT := t0
+        if l0 < curLow
+            curLow := l0, curLowT := t0
+    else
+        // cambio real de dirección: se cierra el tramo vigente, arranca uno nuevo
+        prevDir := curDir, prevHigh := curHigh, prevHighT := curHighT, prevLow := curLow, prevLowT := curLowT
+        curDir := candleDir
+        curHigh := h0, curHighT := t0
+        curLow := l0, curLowT := t0
 
-    // -- Bajo M3: ancla bajista (candle_1) estricta + confirmación alcista/doji (candle_0) --
-    if (c1 < o1) and (c0 >= o0)
-        esBajoM3 := true
-        nivelBajo := math.min(array.get(histL, n - 1), array.get(histL, n - 2))
-        bajoRunInicio := array.get(histT, n - 2)
-        idx = n - 3
-        siguiendoImpulso = true
-        while siguiendoImpulso and idx >= 0
-            ci = array.get(histC, idx), oi = array.get(histO, idx)
-            if ci <= oi  // sigue siendo bajista o doji: mismo impulso, se extiende el nivel
-                nivelBajo := math.min(nivelBajo, array.get(histL, idx))
-                bajoRunInicio := array.get(histT, idx)
-                idx -= 1
-            else
-                siguiendoImpulso := false
+    // Detección de patrón: se reevalúa en CADA vela mientras el tramo de
+    // confirmación siga vigente, así el nivel se actualiza si se extiende
+    // (ver ejemplo real: alto M3 06:42-06:51 donde la 2da vela bajista de
+    // confirmación tenía la mecha más alta, no la 1ra).
+    if not na(prevDir) and prevDir != curDir
+        if prevDir == "alcista" and curDir == "bajista"
+            esAltoM3 := true
+            nivelAlto := math.max(prevHigh, curHigh)
+            altoRunInicio := prevHighT
+        if prevDir == "bajista" and curDir == "alcista"
+            esBajoM3 := true
+            nivelBajo := math.min(prevLow, curLow)
+            bajoRunInicio := prevLowT
 
 // ---------------------------- ESTADO: nivel activo, líneas, tendencia ----------------------------
 var line altoLinea = na
@@ -139,34 +138,48 @@ var float altoM3Activo = na
 var float bajoM3Activo = na
 var int altoM3Inicio = na
 var int bajoM3Inicio = na
+var bool altoRoto = false   // ya fue quebrado por el precio -> no se debe re-extender su x2
+var bool bajoRoto = false
 var string tendencia = "indefinida"  // "alcista" | "bajista" | "indefinida"
 
 maxExtMs = extensionBarras * timeframe.in_seconds("1") * 1000
 
-// -- nuevo alto M3: SIEMPRE se toma el último creado (se reacciona al presente del mercado) --
+// -- alto M3 --
 if esAltoM3
-    if not na(altoLinea)
-        // el anterior nivel, al quedar reemplazado por uno más relevante antes de ser
-        // tocado por el precio, solo se prolonga hasta 10 barras M1 desde SU propia
-        // formación (no hasta el momento en que aparece el nuevo nivel)
-        line.set_x2(altoLinea, int(math.min(time, altoM3Inicio + maxExtMs)))
-    altoM3Activo := nivelAlto
-    altoM3Inicio := altoRunInicio
-    altoLinea := line.new(x1=altoRunInicio, y1=nivelAlto, x2=time, y2=nivelAlto, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
-    if mostrarEtiquetas
-        label.new(bar_index, nivelAlto, "Alto M3", style=label.style_label_down, color=color.new(color.white, 100), textcolor=colorPunteada, size=size.tiny)
+    if not na(altoM3Inicio) and altoM3Inicio == altoRunInicio
+        // el tramo de confirmación se extendió: actualizo el mismo nivel,
+        // no creo una línea nueva por cada vela
+        altoM3Activo := nivelAlto
+        line.set_y1(altoLinea, nivelAlto)
+        line.set_y2(altoLinea, nivelAlto)
+    else
+        if not na(altoLinea) and not altoRoto
+            // el anterior nivel, al quedar reemplazado por uno nuevo antes de ser
+            // tocado por el precio, solo se prolonga hasta 10 barras M1 desde SU
+            // propia formación (no hasta el momento en que aparece el nuevo nivel)
+            line.set_x2(altoLinea, int(math.min(time, altoM3Inicio + maxExtMs)))
+        altoM3Activo := nivelAlto
+        altoM3Inicio := altoRunInicio
+        altoRoto := false
+        altoLinea := line.new(x1=altoRunInicio, y1=nivelAlto, x2=time, y2=nivelAlto, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+        if mostrarEtiquetas
+            label.new(bar_index, nivelAlto, "Alto M3", style=label.style_label_down, color=color.new(color.white, 100), textcolor=colorPunteada, size=size.tiny)
 
-// -- nuevo bajo M3: SIEMPRE se toma el último creado (se reacciona al presente del mercado) --
+// -- bajo M3 --
 if esBajoM3
-    if not na(bajoLinea)
-        // mismo criterio que en el alto: se prolonga solo hasta 10 barras desde
-        // su propia formación, no hasta el momento del nuevo nivel
-        line.set_x2(bajoLinea, int(math.min(time, bajoM3Inicio + maxExtMs)))
-    bajoM3Activo := nivelBajo
-    bajoM3Inicio := bajoRunInicio
-    bajoLinea := line.new(x1=bajoRunInicio, y1=nivelBajo, x2=time, y2=nivelBajo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
-    if mostrarEtiquetas
-        label.new(bar_index, nivelBajo, "Bajo M3", style=label.style_label_up, color=color.new(color.white, 100), textcolor=colorPunteada, size=size.tiny)
+    if not na(bajoM3Inicio) and bajoM3Inicio == bajoRunInicio
+        bajoM3Activo := nivelBajo
+        line.set_y1(bajoLinea, nivelBajo)
+        line.set_y2(bajoLinea, nivelBajo)
+    else
+        if not na(bajoLinea) and not bajoRoto
+            line.set_x2(bajoLinea, int(math.min(time, bajoM3Inicio + maxExtMs)))
+        bajoM3Activo := nivelBajo
+        bajoM3Inicio := bajoRunInicio
+        bajoRoto := false
+        bajoLinea := line.new(x1=bajoRunInicio, y1=nivelBajo, x2=time, y2=nivelBajo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+        if mostrarEtiquetas
+            label.new(bar_index, nivelBajo, "Bajo M3", style=label.style_label_up, color=color.new(color.white, 100), textcolor=colorPunteada, size=size.tiny)
 
 // -- extender líneas activas hasta 10 barras M1 sin toque --
 if not na(altoLinea) and not na(altoM3Activo)
@@ -189,6 +202,7 @@ if quiebreAlto
         label.new(bar_index, nivelQuebrado, esCambioEstructura ? "Cambio de estructura ▲" : "Quiebre alto M3 ▲", style=label.style_label_down, color=esCambioEstructura ? colorContinua : colorPunteada, textcolor=color.white, size=size.tiny)
     tendencia := "alcista"
     altoM3Activo := na
+    altoRoto := true
 
 if quiebreBajo
     nivelQuebrado = bajoM3Activo
@@ -201,6 +215,7 @@ if quiebreBajo
         label.new(bar_index, nivelQuebrado, esCambioEstructura ? "Cambio de estructura ▼" : "Quiebre bajo M3 ▼", style=label.style_label_up, color=esCambioEstructura ? colorContinua : colorPunteada, textcolor=color.white, size=size.tiny)
     tendencia := "bajista"
     bajoM3Activo := na
+    bajoRoto := true
 
 // ---------------------------- PANEL DE ESTADO ----------------------------
 var table panel = table.new(position.top_right, 1, 2, border_width=1)
