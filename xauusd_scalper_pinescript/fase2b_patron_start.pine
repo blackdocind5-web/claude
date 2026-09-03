@@ -1,0 +1,108 @@
+//@version=5
+indicator("XAUUSD Scalper — Patrón Start (Fase 2b)", overlay=true, max_labels_count=500)
+
+// ============================================================================
+// FASE 2b — Patrón Start (vela de indecisión + envolvente de continuación) en M1
+// Desarrollado para Fabián — sistema discrecional scalper XAUUSD
+//
+// Estructura: 1+ velas de pullback (contra la dirección D) + 1 vela de
+// indecisión (doji o pinbar) + 1 vela envolvente de continuación (confirma
+// la dirección D). Se invalida si la vela de entrada es la 3ra consecutiva
+// del mismo color.
+//
+// Convención direccional (igual que en la Fase 2a, y confirmado que la vela
+// de indecisión usa el MISMO marco): para BUY, 0=low/1=high; para SELL,
+// 0=high/1=low -- siempre "0=extremo en contra, 1=extremo a favor" de la
+// dirección D que el patrón termina confirmando.
+//
+// Vela de indecisión válida: cuerpo% <= 50% (tolerancia 0,01%: <= 50,01%)
+// Y NO cumple los parámetros de "envolvente martillo" en el mismo marco D
+// (si los cumpliera, es una vela con volumen, no de indecisión).
+//
+// Supuesto sin confirmar (cosmético, no afecta validez): la etiqueta
+// Doji/Pinbar de la vela de indecisión se asigna comparando qué tan
+// parecidas son sus dos mechas -- Fabián no dio un umbral numérico para
+// esa distinción, así que es solo para lectura visual.
+//
+// Qué NO hace todavía:
+//   - No arma el modelo MEC (esto es el "modelo de entrada", no el gatillo
+//     final -- MEC exige además la validación de quiebre de estructura).
+//   - No calcula SL/TP ni dibuja la señal BUY/SELL final -- eso es Fase 3.
+//   - No aplica la flexibilización del 85% ni el límite diario -- Fase 5.
+// ============================================================================
+
+// ---------------------------- INPUTS ----------------------------
+mostrarEtiquetas = input.bool(true, "Mostrar etiquetas de clasificación")
+
+// ---------------------------- CLASIFICADOR DE ENVOLVENTE (vela de confirmación, candle[0]) ----------------------------
+rango = high - low
+esAlcista = close > open
+esBajista = close < open
+
+nivelOpenBuy  = rango > 0 ? (open - low) / rango : na
+nivelCloseBuy = rango > 0 ? (close - low) / rango : na
+cuerpoPctBuy  = nivelCloseBuy - nivelOpenBuy
+
+esEstandarBuy = esAlcista and cuerpoPctBuy >= 0.85
+esMartilloBuy = esAlcista and not esEstandarBuy and nivelOpenBuy >= 0.50 and nivelCloseBuy >= 0.85
+esDojiEnvBuy  = esAlcista and not esEstandarBuy and not esMartilloBuy and ((nivelOpenBuy >= 0.15 and nivelCloseBuy >= 0.85) or (nivelOpenBuy < 0.15 and nivelCloseBuy >= 0.90))
+esEnvolventeBuy = esEstandarBuy or esMartilloBuy or esDojiEnvBuy
+
+nivelOpenSell  = rango > 0 ? (high - open) / rango : na
+nivelCloseSell = rango > 0 ? (high - close) / rango : na
+cuerpoPctSell  = nivelCloseSell - nivelOpenSell
+
+esEstandarSell = esBajista and cuerpoPctSell >= 0.85
+esMartilloSell = esBajista and not esEstandarSell and nivelOpenSell >= 0.50 and nivelCloseSell >= 0.85
+esDojiEnvSell  = esBajista and not esEstandarSell and not esMartilloSell and ((nivelOpenSell >= 0.15 and nivelCloseSell >= 0.85) or (nivelOpenSell < 0.15 and nivelCloseSell >= 0.90))
+esEnvolventeSell = esEstandarSell or esMartilloSell or esDojiEnvSell
+
+tipoEnvBuy  = esEstandarBuy  ? "Estándar" : esMartilloBuy  ? "Martillo" : esDojiEnvBuy  ? "Doji" : na
+tipoEnvSell = esEstandarSell ? "Estándar" : esMartilloSell ? "Martillo" : esDojiEnvSell ? "Doji" : na
+
+// ---------------------------- VELA DE INDECISIÓN (candle[1]) ----------------------------
+rangoInd = high[1] - low[1]
+TOLERANCIA = 0.0001  // 0,01%
+
+// -- medida en marco D=BUY --
+nivelOpenIndBuy  = rangoInd > 0 ? (open[1] - low[1]) / rangoInd : na
+nivelCloseIndBuy = rangoInd > 0 ? (close[1] - low[1]) / rangoInd : na
+cuerpoIndBuy = math.abs(nivelCloseIndBuy - nivelOpenIndBuy)
+esMartilloIndBuy = nivelOpenIndBuy >= 0.50 and nivelCloseIndBuy >= 0.85
+esIndecisionBuy = cuerpoIndBuy <= 0.50 + TOLERANCIA and not esMartilloIndBuy
+
+wickContraBuy = math.min(nivelOpenIndBuy, nivelCloseIndBuy)
+wickFavorBuy  = 1 - math.max(nivelOpenIndBuy, nivelCloseIndBuy)
+tipoIndBuy = esIndecisionBuy ? (math.abs(wickContraBuy - wickFavorBuy) <= 0.15 ? "Doji" : "Pinbar") : na
+
+// -- medida en marco D=SELL --
+nivelOpenIndSell  = rangoInd > 0 ? (high[1] - open[1]) / rangoInd : na
+nivelCloseIndSell = rangoInd > 0 ? (high[1] - close[1]) / rangoInd : na
+cuerpoIndSell = math.abs(nivelCloseIndSell - nivelOpenIndSell)
+esMartilloIndSell = nivelOpenIndSell >= 0.50 and nivelCloseIndSell >= 0.85
+esIndecisionSell = cuerpoIndSell <= 0.50 + TOLERANCIA and not esMartilloIndSell
+
+wickContraSell = math.min(nivelOpenIndSell, nivelCloseIndSell)
+wickFavorSell  = 1 - math.max(nivelOpenIndSell, nivelCloseIndSell)
+tipoIndSell = esIndecisionSell ? (math.abs(wickContraSell - wickFavorSell) <= 0.15 ? "Doji" : "Pinbar") : na
+
+// ---------------------------- PULLBACK (candle[2] contrario a D) ----------------------------
+pullbackParaBuy  = close[2] < open[2]
+pullbackParaSell = close[2] > open[2]
+
+// ---------------------------- INVALIDACIÓN: 3 velas consecutivas del mismo color ----------------------------
+mismoColor3 = (close > open and close[1] > open[1] and close[2] > open[2]) or (close < open and close[1] < open[1] and close[2] < open[2])
+
+// ---------------------------- PATRÓN START ----------------------------
+esStartBuy  = esEnvolventeBuy  and esIndecisionBuy  and pullbackParaBuy  and not mismoColor3
+esStartSell = esEnvolventeSell and esIndecisionSell and pullbackParaSell and not mismoColor3
+
+// ---------------------------- VISUALIZACIÓN ----------------------------
+if mostrarEtiquetas and esStartBuy
+    label.new(bar_index, low, "START BUY\n" + tipoIndBuy + " → " + tipoEnvBuy, style=label.style_label_up, color=color.new(color.green, 0), textcolor=color.white, size=size.tiny)
+
+if mostrarEtiquetas and esStartSell
+    label.new(bar_index, high, "START SELL\n" + tipoIndSell + " → " + tipoEnvSell, style=label.style_label_down, color=color.new(color.red, 0), textcolor=color.white, size=size.tiny)
+
+plotshape(esStartBuy, title="Start BUY", style=shape.triangleup, location=location.belowbar, color=color.new(color.lime, 0), size=size.small)
+plotshape(esStartSell, title="Start SELL", style=shape.triangledown, location=location.abovebar, color=color.new(color.maroon, 0), size=size.small)

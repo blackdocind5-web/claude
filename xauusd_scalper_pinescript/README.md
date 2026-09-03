@@ -19,10 +19,11 @@ en un único indicador.
   envolvente en M1 (estándar / martillo / doji, BUY y SELL) + contexto de
   pullback (vela anterior de color contrario). Fórmulas validadas letra por
   letra contra velas reales de Fabián (03/09).
-- [ ] **Fase 2b**: patrón Start (vela de indecisión doji/pinbar + envolvente
-  de continuación), invalidación de 3ª vela consecutiva del mismo color —
-  pendiente de confirmar la convención de niveles para las velas de
-  indecisión.
+- [x] **Fase 2b — `fase2b_patron_start.pine`**: patrón Start (vela de
+  indecisión doji/pinbar + envolvente de continuación), pullback previo,
+  invalidación de 3ª vela consecutiva del mismo color. La vela de
+  indecisión usa el mismo marco direccional (0=contra, 1=favor) que la
+  envolvente, confirmado por Fabián.
 - [ ] **Fase 3**: Modelo de Entrada Continuación (MEC) — quiebre-pullback-
   continuación con validación de 0,01%, señal visual BUY/SELL (globo +
   ficha de la operación), filtrado por sesión operativa, alertas push.
