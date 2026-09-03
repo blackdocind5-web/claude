@@ -15,9 +15,14 @@ en un único indicador.
   (altos/bajos por patrón de 2 velas, líneas punteada/continua, BOS/CHoCH) +
   sombreado de sesiones operativas (Pre-NY 07-09 EST y Asia 20-22 EST,
   Lunes a Jueves).
-- [ ] **Fase 2**: patrones de entrada en M1 — envolvente (estándar / martillo
-  / doji), patrón Start (indecisión + envolvente), invalidación de 3ª vela
-  consecutiva del mismo color.
+- [x] **Fase 2a — `fase2a_patron_envolvente.pine`**: clasificador de vela
+  envolvente en M1 (estándar / martillo / doji, BUY y SELL) + contexto de
+  pullback (vela anterior de color contrario). Fórmulas validadas letra por
+  letra contra velas reales de Fabián (03/09).
+- [ ] **Fase 2b**: patrón Start (vela de indecisión doji/pinbar + envolvente
+  de continuación), invalidación de 3ª vela consecutiva del mismo color —
+  pendiente de confirmar la convención de niveles para las velas de
+  indecisión.
 - [ ] **Fase 3**: Modelo de Entrada Continuación (MEC) — quiebre-pullback-
   continuación con validación de 0,01%, señal visual BUY/SELL (globo +
   ficha de la operación), filtrado por sesión operativa, alertas push.

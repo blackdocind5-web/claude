@@ -1,0 +1,92 @@
+//@version=5
+indicator("XAUUSD Scalper — Patrón Envolvente (Fase 2a)", overlay=true, max_labels_count=500)
+
+// ============================================================================
+// FASE 2a — Clasificador de vela envolvente en M1
+// Desarrollado para Fabián — sistema discrecional scalper XAUUSD
+//
+// Corre directo en el gráfico M1 (a diferencia de la Fase 1, acá no hace
+// falta traer datos de otro timeframe -- la vela de entrada SE OBSERVA Y
+// EJECUTA en M1).
+//
+// Qué hace:
+//   Clasifica cada vela M1 cerrada como envolvente ESTÁNDAR, MARTILLO o
+//   DOJI (para compra o para venta), y exige que la vela anterior sea de
+//   color contrario (pullback mínimo) para marcarla como señal candidata.
+//
+// Fórmulas (BUY, osea vela alcista; SELL es todo espejado):
+//   nivelOpen  = (open  - low) / (high - low)   -> 0 = low, 1 = high
+//   nivelClose = (close - low) / (high - low)
+//   cuerpo%    = nivelClose - nivelOpen
+//
+//   ESTÁNDAR: cuerpo% >= 85%
+//   MARTILLO: nivelOpen >= 50% Y nivelClose >= 85%
+//   DOJI:     (nivelOpen >= 15% Y nivelClose >= 85%)
+//             O (nivelOpen < 15% Y nivelClose >= 90%)   <- excepción
+//   Validado letra por letra contra 3 velas reales de Fabián (03/09).
+//
+// Qué NO hace todavía:
+//   - No exige el patrón Start (vela de indecisión + envolvente) -- eso es
+//     la Fase 2b, pendiente de confirmar la convención de niveles para las
+//     velas de indecisión (doji/pinbar) antes de programarla.
+//   - No aplica la flexibilización del 85% atada al PnL semanal (eso se
+//     suma en la Fase 5, cuando exista el simulador de resultado).
+//   - No arma el modelo MEC ni calcula SL/TP -- eso es la Fase 3.
+//   - No filtra por sesión operativa -- este script es para validar el
+//     clasificador de velas en cualquier horario; el filtro de sesión se
+//     aplica sobre la señal final, no sobre esta clasificación.
+// ============================================================================
+
+// ---------------------------- INPUTS ----------------------------
+mostrarEtiquetas = input.bool(true, "Mostrar etiquetas de clasificación")
+mostrarSoloValidas = input.bool(true, "Mostrar solo velas válidas (ocultar descartadas)")
+
+// ---------------------------- CLASIFICACIÓN DE LA VELA CERRADA ----------------------------
+rango = high - low
+esAlcista = close > open
+esBajista = close < open
+
+// -- BUY: 0 = low, 1 = high --
+nivelOpenBuy  = rango > 0 ? (open - low) / rango : na
+nivelCloseBuy = rango > 0 ? (close - low) / rango : na
+cuerpoPctBuy  = nivelCloseBuy - nivelOpenBuy
+
+esEstandarBuy = esAlcista and cuerpoPctBuy >= 0.85
+esMartilloBuy = esAlcista and not esEstandarBuy and nivelOpenBuy >= 0.50 and nivelCloseBuy >= 0.85
+esDojiBuy     = esAlcista and not esEstandarBuy and not esMartilloBuy and ((nivelOpenBuy >= 0.15 and nivelCloseBuy >= 0.85) or (nivelOpenBuy < 0.15 and nivelCloseBuy >= 0.90))
+esEnvolventeBuy = esEstandarBuy or esMartilloBuy or esDojiBuy
+
+// -- SELL: 0 = high, 1 = low --
+nivelOpenSell  = rango > 0 ? (high - open) / rango : na
+nivelCloseSell = rango > 0 ? (high - close) / rango : na
+cuerpoPctSell  = nivelCloseSell - nivelOpenSell
+
+esEstandarSell = esBajista and cuerpoPctSell >= 0.85
+esMartilloSell = esBajista and not esEstandarSell and nivelOpenSell >= 0.50 and nivelCloseSell >= 0.85
+esDojiSell     = esBajista and not esEstandarSell and not esMartilloSell and ((nivelOpenSell >= 0.15 and nivelCloseSell >= 0.85) or (nivelOpenSell < 0.15 and nivelCloseSell >= 0.90))
+esEnvolventeSell = esEstandarSell or esMartilloSell or esDojiSell
+
+// ---------------------------- CONTEXTO: pullback previo (vela contraria) ----------------------------
+pullbackParaBuy  = close[1] < open[1]   // vela anterior bajista
+pullbackParaSell = close[1] > open[1]   // vela anterior alcista
+
+candidataBuy  = esEnvolventeBuy  and pullbackParaBuy
+candidataSell = esEnvolventeSell and pullbackParaSell
+
+tipoBuy  = esEstandarBuy  ? "Estándar" : esMartilloBuy  ? "Martillo" : esDojiBuy  ? "Doji" : na
+tipoSell = esEstandarSell ? "Estándar" : esMartilloSell ? "Martillo" : esDojiSell ? "Doji" : na
+
+// ---------------------------- VISUALIZACIÓN ----------------------------
+mostrarBuy  = candidataBuy  or (esEnvolventeBuy  and not mostrarSoloValidas)
+mostrarSell = candidataSell or (esEnvolventeSell and not mostrarSoloValidas)
+
+if mostrarEtiquetas and mostrarBuy
+    txt = candidataBuy ? "BUY\n" + tipoBuy : tipoBuy + " (sin pullback)"
+    label.new(bar_index, low, txt, style=label.style_label_up, color=candidataBuy ? color.new(color.green, 0) : color.new(color.gray, 60), textcolor=color.white, size=size.tiny)
+
+if mostrarEtiquetas and mostrarSell
+    txt = candidataSell ? "SELL\n" + tipoSell : tipoSell + " (sin pullback)"
+    label.new(bar_index, high, txt, style=label.style_label_down, color=candidataSell ? color.new(color.red, 0) : color.new(color.gray, 60), textcolor=color.white, size=size.tiny)
+
+plotshape(candidataBuy, title="Envolvente BUY", style=shape.triangleup, location=location.belowbar, color=color.new(color.green, 0), size=size.tiny)
+plotshape(candidataSell, title="Envolvente SELL", style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 0), size=size.tiny)
