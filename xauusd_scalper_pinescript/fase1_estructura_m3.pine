@@ -71,8 +71,11 @@ if nuevaVelaM3
 // ---------------------------- DETECCIÓN ALTO/BAJO M3 ----------------------------
 // Alto M3  = vela alcista (candle_1) seguida de vela bajista (candle_0)
 // Bajo M3  = vela bajista (candle_1) seguida de vela alcista (candle_0)
-esAltoM3 = nuevaVelaM3 and not na(c3_1) and (c3_1 > o3_1) and (c3_0 < o3_0)
-esBajoM3 = nuevaVelaM3 and not na(c3_1) and (c3_1 < o3_1) and (c3_0 > o3_0)
+// La primera vela del par debe ser un impulso real (estrictamente direccional).
+// La segunda vela acepta doji (cierre = apertura): un doji bajista-leve sigue
+// completando un alto, y un doji alcista-leve sigue completando un bajo.
+esAltoM3 = nuevaVelaM3 and not na(c3_1) and (c3_1 > o3_1) and (c3_0 <= o3_0)
+esBajoM3 = nuevaVelaM3 and not na(c3_1) and (c3_1 < o3_1) and (c3_0 >= o3_0)
 
 nivelAlto = math.max(h3_1, h3_0)
 nivelBajo = math.min(l3_1, l3_0)
