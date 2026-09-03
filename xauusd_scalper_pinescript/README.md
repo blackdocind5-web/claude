@@ -41,12 +41,14 @@ en un único indicador.
 - Filtro de noticias: **solo recordatorio visual**, sin bloqueo automático
   (Forex Factory no es accesible en vivo desde Pine Script).
 
-## Simplificaciones conocidas — pendientes de calibrar
+## Notas de la Fase 1
 
-- La variante de "mecha extendida en vela adyacente" (fractal) para marcar
-  el alto/bajo M3 **no está implementada** en la Fase 1 — se usa siempre el
-  par base de 2 velas. Se ajusta con ejemplos reales una vez validada la
-  base.
+- La detección de alto/bajo M3 usa un modelo de "tramos" (rachas de velas
+  M3 del mismo lado, doji tolerado como continuación): el nivel se forma en
+  el límite entre dos tramos opuestos y toma el extremo de todo el tramo de
+  cada lado, sea la mecha relevante hacia atrás o hacia adelante en el
+  tiempo. Validado contra 2 ejemplos reales de Fabián (uno de cada
+  dirección) el 03/09.
 
 ## Cómo probar la Fase 1
 
