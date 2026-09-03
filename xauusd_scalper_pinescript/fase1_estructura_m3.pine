@@ -23,10 +23,11 @@ indicator("XAUUSD Scalper — Estructura M3 (Fase 1)", overlay=true, max_lines_c
 //   - No detecta velas de entrada (envolvente / start) en M1.
 //   - No arma el modelo MEC, no calcula SL/TP, no dibuja la señal BUY/SELL.
 //   - No aplica el filtro de noticias, límite diario ni PnL semanal.
-//   - La variante de "mecha extendida en vela adyacente" del alto/bajo M3
-//     (fractal) NO está implementada todavía — se usa siempre el par de
-//     2 velas base. La calibramos juntos después de ver cómo pinta esto
-//     contra tus gráficos reales.
+//   - La variante de "mecha extendida" (fractal) está implementada SOLO en
+//     sentido hacia atrás (velas anteriores al ancla del patrón). El caso de
+//     extensión hacia velas posteriores (mencionado en la regla original)
+//     todavía no tiene un ejemplo confirmado — pendiente de validar con
+//     Fabián antes de sumarlo.
 // ============================================================================
 
 // ---------------------------- INPUTS ----------------------------
@@ -57,28 +58,79 @@ bgcolor(mostrarSesiones and enAsia  ? colorAsia  : na, title="Sesión Asia")
 // ---------------------------- DATOS M3 ----------------------------
 [o3, h3, l3, c3, t3] = request.security(syminfo.tickerid, "3", [open, high, low, close, time], lookahead=barmerge.lookahead_off)
 
-// Historial de las últimas 2 velas M3 CERRADAS (candle_0 = la más reciente, candle_1 = la anterior)
-var float o3_0 = na, var float h3_0 = na, var float l3_0 = na, var float c3_0 = na, var int t3_0 = na
-var float o3_1 = na, var float h3_1 = na, var float l3_1 = na, var float c3_1 = na, var int t3_1 = na
-
 nuevaVelaM3 = ta.change(t3) != 0  // se cumple en la primer barra M1 de cada nueva vela M3
+
+// Historial de velas M3 CERRADAS (arrays: el último índice es la más reciente).
+// Se necesita historial (no solo las últimas 2) porque el alto/bajo M3 puede
+// formarse con la mecha de una vela más atrás en el tiempo -- ver "variante
+// de mecha extendida" más abajo.
+MAX_HIST = 30
+var array<float> histO = array.new_float()
+var array<float> histH = array.new_float()
+var array<float> histL = array.new_float()
+var array<float> histC = array.new_float()
+var array<int>   histT = array.new_int()
 
 if nuevaVelaM3
     // la vela que se acaba de cerrar quedó representada, en la barra anterior, por o3[1]/h3[1]/...
-    o3_1 := o3_0, h3_1 := h3_0, l3_1 := l3_0, c3_1 := c3_0, t3_1 := t3_0
-    o3_0 := o3[1], h3_0 := h3[1], l3_0 := l3[1], c3_0 := c3[1], t3_0 := t3[1]
+    array.push(histO, o3[1])
+    array.push(histH, h3[1])
+    array.push(histL, l3[1])
+    array.push(histC, c3[1])
+    array.push(histT, t3[1])
+    if array.size(histO) > MAX_HIST
+        array.shift(histO), array.shift(histH), array.shift(histL), array.shift(histC), array.shift(histT)
 
-// ---------------------------- DETECCIÓN ALTO/BAJO M3 ----------------------------
-// Alto M3  = vela alcista (candle_1) seguida de vela bajista (candle_0)
-// Bajo M3  = vela bajista (candle_1) seguida de vela alcista (candle_0)
-// La primera vela del par debe ser un impulso real (estrictamente direccional).
-// La segunda vela acepta doji (cierre = apertura): un doji bajista-leve sigue
-// completando un alto, y un doji alcista-leve sigue completando un bajo.
-esAltoM3 = nuevaVelaM3 and not na(c3_1) and (c3_1 > o3_1) and (c3_0 <= o3_0)
-esBajoM3 = nuevaVelaM3 and not na(c3_1) and (c3_1 < o3_1) and (c3_0 >= o3_0)
+// ---------------------------- DETECCIÓN ALTO/BAJO M3 (con variante de fractal) ----------------------------
+// Alto M3  = vela alcista "ancla" (estrictamente direccional) seguida de vela
+//            bajista o doji que confirma. Si la/s vela/s ANTERIORES a la ancla
+//            también son alcistas o doji (mismo impulso), el nivel se extiende
+//            hacia atrás y se toma el máximo de todo ese tramo -- no solo del
+//            par base de 2 velas.
+// Bajo M3  = simétrico, con velas bajistas.
+esAltoM3 = false
+esBajoM3 = false
+nivelAlto = float(na)
+nivelBajo = float(na)
+altoRunInicio = int(na)
+bajoRunInicio = int(na)
 
-nivelAlto = math.max(h3_1, h3_0)
-nivelBajo = math.min(l3_1, l3_0)
+n = array.size(histC)
+if nuevaVelaM3 and n >= 2
+    c0 = array.get(histC, n - 1), o0 = array.get(histO, n - 1)
+    c1 = array.get(histC, n - 2), o1 = array.get(histO, n - 2)
+
+    // -- Alto M3: ancla alcista (candle_1) estricta + confirmación bajista/doji (candle_0) --
+    if (c1 > o1) and (c0 <= o0)
+        esAltoM3 := true
+        nivelAlto := math.max(array.get(histH, n - 1), array.get(histH, n - 2))
+        altoRunInicio := array.get(histT, n - 2)
+        idx = n - 3
+        siguiendoImpulso = true
+        while siguiendoImpulso and idx >= 0
+            ci = array.get(histC, idx), oi = array.get(histO, idx)
+            if ci >= oi  // sigue siendo alcista o doji: mismo impulso, se extiende el nivel
+                nivelAlto := math.max(nivelAlto, array.get(histH, idx))
+                altoRunInicio := array.get(histT, idx)
+                idx -= 1
+            else
+                siguiendoImpulso := false
+
+    // -- Bajo M3: ancla bajista (candle_1) estricta + confirmación alcista/doji (candle_0) --
+    if (c1 < o1) and (c0 >= o0)
+        esBajoM3 := true
+        nivelBajo := math.min(array.get(histL, n - 1), array.get(histL, n - 2))
+        bajoRunInicio := array.get(histT, n - 2)
+        idx = n - 3
+        siguiendoImpulso = true
+        while siguiendoImpulso and idx >= 0
+            ci = array.get(histC, idx), oi = array.get(histO, idx)
+            if ci <= oi  // sigue siendo bajista o doji: mismo impulso, se extiende el nivel
+                nivelBajo := math.min(nivelBajo, array.get(histL, idx))
+                bajoRunInicio := array.get(histT, idx)
+                idx -= 1
+            else
+                siguiendoImpulso := false
 
 // ---------------------------- ESTADO: nivel activo, líneas, tendencia ----------------------------
 var line altoLinea = na
@@ -99,8 +151,8 @@ if esAltoM3
         // formación (no hasta el momento en que aparece el nuevo nivel)
         line.set_x2(altoLinea, int(math.min(time, altoM3Inicio + maxExtMs)))
     altoM3Activo := nivelAlto
-    altoM3Inicio := t3_1
-    altoLinea := line.new(x1=t3_1, y1=nivelAlto, x2=time, y2=nivelAlto, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+    altoM3Inicio := altoRunInicio
+    altoLinea := line.new(x1=altoRunInicio, y1=nivelAlto, x2=time, y2=nivelAlto, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
     if mostrarEtiquetas
         label.new(bar_index, nivelAlto, "Alto M3", style=label.style_label_down, color=color.new(color.white, 100), textcolor=colorPunteada, size=size.tiny)
 
@@ -111,8 +163,8 @@ if esBajoM3
         // su propia formación, no hasta el momento del nuevo nivel
         line.set_x2(bajoLinea, int(math.min(time, bajoM3Inicio + maxExtMs)))
     bajoM3Activo := nivelBajo
-    bajoM3Inicio := t3_1
-    bajoLinea := line.new(x1=t3_1, y1=nivelBajo, x2=time, y2=nivelBajo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+    bajoM3Inicio := bajoRunInicio
+    bajoLinea := line.new(x1=bajoRunInicio, y1=nivelBajo, x2=time, y2=nivelBajo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
     if mostrarEtiquetas
         label.new(bar_index, nivelBajo, "Bajo M3", style=label.style_label_up, color=color.new(color.white, 100), textcolor=colorPunteada, size=size.tiny)
 
