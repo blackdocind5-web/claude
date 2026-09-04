@@ -1,0 +1,307 @@
+//@version=5
+indicator("XAUUSD Scalper — Base Consolidada (Fases 1+2)", overlay=true, max_lines_count=500, max_labels_count=500)
+
+// ============================================================================
+// BASE CONSOLIDADA — une Fase 1 (estructura M3 + sesiones) y Fase 2
+// (envolvente + patrón Start) en un solo script. Es el punto de partida de
+// la Fase 3 (MEC + SL/TP + señal final), que necesita ambas piezas
+// funcionando juntas -- Pine Script no puede hacer que un indicador lea
+// datos de otro.
+//
+// NINGUNA lógica validada se modificó al consolidar -- solo se renombraron
+// algunas variables que se repetían entre los 3 archivos originales
+// (mostrarEtiquetas -> mostrarEtiquetasM3 / mostrarEtiquetasEnvolvente /
+// mostrarEtiquetasStart) y se evitó recalcular dos veces la clasificación
+// de envolvente (Fase 2b la reutiliza de Fase 2a en vez de duplicarla).
+//
+// A partir de acá reemplaza a fase1_estructura_m3.pine,
+// fase2a_patron_envolvente.pine y fase2b_patron_start.pine -- cargar solo
+// este archivo.
+// ============================================================================
+
+// ============================================================================
+// SECCIÓN 1 — SESIONES OPERATIVAS (Fase 1)
+// ============================================================================
+grpSesiones = "Sesiones operativas"
+mostrarSesiones = input.bool(true, "Sombrear sesiones en el gráfico", group=grpSesiones)
+colorPreNY = input.color(color.new(#2962ff, 88), "Color sesión Pre-NY (07-09 EST)", group=grpSesiones)
+colorAsia  = input.color(color.new(#ff9800, 88), "Color sesión Asia (20-22 EST)", group=grpSesiones)
+
+// Días Pine: 1=Domingo 2=Lunes 3=Martes 4=Miércoles 5=Jueves 6=Viernes 7=Sábado
+sesionPreNYStr = "0700-0900:2345"
+sesionAsiaStr  = "2000-2200:2345"
+
+enPreNY = not na(time(timeframe.period, sesionPreNYStr, "America/New_York"))
+enAsia  = not na(time(timeframe.period, sesionAsiaStr, "America/New_York"))
+enSesionOperativa = enPreNY or enAsia  // <- se reutiliza para filtrar la señal final en Fase 3
+
+bgcolor(mostrarSesiones and enPreNY ? colorPreNY : na, title="Sesión Pre-NY")
+bgcolor(mostrarSesiones and enAsia  ? colorAsia  : na, title="Sesión Asia")
+
+// ============================================================================
+// SECCIÓN 2 — ESTRUCTURA DE MERCADO M3 (Fase 1)
+// ============================================================================
+grpEstructura = "Estructura M3"
+colorPunteada    = input.color(color.new(#787b86, 0), "Línea punteada (continuación)", group=grpEstructura)
+colorContinua    = input.color(color.new(#ff5252, 0), "Línea continua (cambio de estructura)", group=grpEstructura)
+extensionBarras  = input.int(10, "Extensión sin toque (barras M1)", minval=1, group=grpEstructura)
+mostrarEtiquetasM3 = input.bool(true, "Mostrar etiquetas Alto M3 / Bajo M3", group=grpEstructura)
+
+[o3, h3, l3, c3, t3] = request.security(syminfo.tickerid, "3", [open, high, low, close, time], lookahead=barmerge.lookahead_off)
+nuevaVelaM3 = ta.change(t3) != 0
+
+var string curDir = na
+var float curHigh = na
+var int   curHighT = na
+var float curLow = na
+var int   curLowT = na
+
+var string prevDir = na
+var float prevHigh = na
+var int   prevHighT = na
+var float prevLow = na
+var int   prevLowT = na
+
+esAltoM3 = false
+esBajoM3 = false
+nivelAlto = float(na)
+nivelBajo = float(na)
+altoRunInicio = int(na)
+bajoRunInicio = int(na)
+
+if nuevaVelaM3
+    o0 = o3[1]
+    h0 = h3[1]
+    l0 = l3[1]
+    c0 = c3[1]
+    t0 = t3[1]
+    candleDir = c0 > o0 ? "alcista" : c0 < o0 ? "bajista" : "doji"
+
+    if na(curDir)
+        if candleDir != "doji"
+            curDir := candleDir
+            curHigh := h0, curHighT := t0
+            curLow := l0, curLowT := t0
+    else if candleDir == curDir or candleDir == "doji"
+        if h0 > curHigh
+            curHigh := h0, curHighT := t0
+        if l0 < curLow
+            curLow := l0, curLowT := t0
+    else
+        prevDir := curDir, prevHigh := curHigh, prevHighT := curHighT, prevLow := curLow, prevLowT := curLowT
+        curDir := candleDir
+        curHigh := h0, curHighT := t0
+        curLow := l0, curLowT := t0
+
+    if not na(prevDir) and prevDir != curDir
+        if prevDir == "alcista" and curDir == "bajista"
+            esAltoM3 := true
+            nivelAlto := math.max(prevHigh, curHigh)
+            altoRunInicio := prevHighT
+        if prevDir == "bajista" and curDir == "alcista"
+            esBajoM3 := true
+            nivelBajo := math.min(prevLow, curLow)
+            bajoRunInicio := prevLowT
+
+var line altoLinea = na
+var line bajoLinea = na
+var float altoM3Activo = na
+var float bajoM3Activo = na
+var int altoM3Inicio = na
+var int bajoM3Inicio = na
+var bool altoRoto = false
+var bool bajoRoto = false
+var string tendencia = "indefinida"  // "alcista" | "bajista" | "indefinida"
+
+maxExtMs = extensionBarras * timeframe.in_seconds("1") * 1000
+
+if esAltoM3
+    if not na(altoM3Inicio) and altoM3Inicio == altoRunInicio
+        altoM3Activo := nivelAlto
+        line.set_y1(altoLinea, nivelAlto)
+        line.set_y2(altoLinea, nivelAlto)
+    else
+        if not na(altoLinea) and not altoRoto
+            line.set_x2(altoLinea, int(math.min(time, altoM3Inicio + maxExtMs)))
+        altoM3Activo := nivelAlto
+        altoM3Inicio := altoRunInicio
+        altoRoto := false
+        altoLinea := line.new(x1=altoRunInicio, y1=nivelAlto, x2=time, y2=nivelAlto, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+        if mostrarEtiquetasM3
+            label.new(bar_index, nivelAlto, "Alto M3", style=label.style_label_down, color=color.new(color.white, 100), textcolor=colorPunteada, size=size.tiny)
+
+if esBajoM3
+    if not na(bajoM3Inicio) and bajoM3Inicio == bajoRunInicio
+        bajoM3Activo := nivelBajo
+        line.set_y1(bajoLinea, nivelBajo)
+        line.set_y2(bajoLinea, nivelBajo)
+    else
+        if not na(bajoLinea) and not bajoRoto
+            line.set_x2(bajoLinea, int(math.min(time, bajoM3Inicio + maxExtMs)))
+        bajoM3Activo := nivelBajo
+        bajoM3Inicio := bajoRunInicio
+        bajoRoto := false
+        bajoLinea := line.new(x1=bajoRunInicio, y1=nivelBajo, x2=time, y2=nivelBajo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+        if mostrarEtiquetasM3
+            label.new(bar_index, nivelBajo, "Bajo M3", style=label.style_label_up, color=color.new(color.white, 100), textcolor=colorPunteada, size=size.tiny)
+
+if not na(altoLinea) and not na(altoM3Activo)
+    line.set_x2(altoLinea, int(math.min(time, altoM3Inicio + maxExtMs)))
+if not na(bajoLinea) and not na(bajoM3Activo)
+    line.set_x2(bajoLinea, int(math.min(time, bajoM3Inicio + maxExtMs)))
+
+quiebreAlto = not na(altoM3Activo) and ta.crossover(close, altoM3Activo)
+quiebreBajo = not na(bajoM3Activo) and ta.crossunder(close, bajoM3Activo)
+
+// se reutiliza en Fase 3 para saber si el último quiebre fue continuación (BOS) o cambio de estructura (CHoCH)
+var bool ultimoQuiebreFueCambioEstructura = false
+
+if quiebreAlto
+    nivelQuebradoAlto = altoM3Activo
+    esCambioEstructuraAlto = tendencia == "bajista"
+    line.set_x2(altoLinea, time)
+    line.set_style(altoLinea, esCambioEstructuraAlto ? line.style_solid : line.style_dotted)
+    line.set_color(altoLinea, esCambioEstructuraAlto ? colorContinua : colorPunteada)
+    line.set_width(altoLinea, esCambioEstructuraAlto ? 2 : 1)
+    if mostrarEtiquetasM3
+        label.new(bar_index, nivelQuebradoAlto, esCambioEstructuraAlto ? "Cambio de estructura ▲" : "Quiebre alto M3 ▲", style=label.style_label_down, color=esCambioEstructuraAlto ? colorContinua : colorPunteada, textcolor=color.white, size=size.tiny)
+    tendencia := "alcista"
+    altoM3Activo := na
+    altoRoto := true
+    ultimoQuiebreFueCambioEstructura := esCambioEstructuraAlto
+
+if quiebreBajo
+    nivelQuebradoBajo = bajoM3Activo
+    esCambioEstructuraBajo = tendencia == "alcista"
+    line.set_x2(bajoLinea, time)
+    line.set_style(bajoLinea, esCambioEstructuraBajo ? line.style_solid : line.style_dotted)
+    line.set_color(bajoLinea, esCambioEstructuraBajo ? colorContinua : colorPunteada)
+    line.set_width(bajoLinea, esCambioEstructuraBajo ? 2 : 1)
+    if mostrarEtiquetasM3
+        label.new(bar_index, nivelQuebradoBajo, esCambioEstructuraBajo ? "Cambio de estructura ▼" : "Quiebre bajo M3 ▼", style=label.style_label_up, color=esCambioEstructuraBajo ? colorContinua : colorPunteada, textcolor=color.white, size=size.tiny)
+    tendencia := "bajista"
+    bajoM3Activo := na
+    bajoRoto := true
+    ultimoQuiebreFueCambioEstructura := esCambioEstructuraBajo
+
+// ============================================================================
+// SECCIÓN 3 — CLASIFICADOR DE VELA ENVOLVENTE EN M1 (Fase 2a)
+// ============================================================================
+grpEnvolvente = "Patrón envolvente (M1)"
+mostrarEtiquetasEnvolvente = input.bool(true, "Mostrar etiquetas de envolvente", group=grpEnvolvente)
+mostrarSoloValidas = input.bool(true, "Mostrar solo envolventes válidas (ocultar descartadas)", group=grpEnvolvente)
+modoDebug = input.bool(false, "Modo debug envolvente (nivelOpen/nivelClose/pullback en TODAS las velas)", group=grpEnvolvente)
+
+rango = high - low
+esAlcista = close > open
+esBajista = close < open
+
+// -- BUY: 0 = low, 1 = high --
+nivelOpenBuy  = rango > 0 ? (open - low) / rango : na
+nivelCloseBuy = rango > 0 ? (close - low) / rango : na
+cuerpoPctBuy  = nivelCloseBuy - nivelOpenBuy
+
+esEstandarBuy = esAlcista and cuerpoPctBuy >= 0.85
+esMartilloBuy = esAlcista and not esEstandarBuy and nivelOpenBuy >= 0.50 and nivelCloseBuy >= 0.85
+esDojiBuy     = esAlcista and not esEstandarBuy and not esMartilloBuy and ((nivelOpenBuy >= 0.15 and nivelCloseBuy >= 0.85) or (nivelOpenBuy < 0.15 and nivelCloseBuy >= 0.90))
+esEnvolventeBuy = esEstandarBuy or esMartilloBuy or esDojiBuy
+
+// -- SELL: 0 = high, 1 = low --
+nivelOpenSell  = rango > 0 ? (high - open) / rango : na
+nivelCloseSell = rango > 0 ? (high - close) / rango : na
+cuerpoPctSell  = nivelCloseSell - nivelOpenSell
+
+esEstandarSell = esBajista and cuerpoPctSell >= 0.85
+esMartilloSell = esBajista and not esEstandarSell and nivelOpenSell >= 0.50 and nivelCloseSell >= 0.85
+esDojiSell     = esBajista and not esEstandarSell and not esMartilloSell and ((nivelOpenSell >= 0.15 and nivelCloseSell >= 0.85) or (nivelOpenSell < 0.15 and nivelCloseSell >= 0.90))
+esEnvolventeSell = esEstandarSell or esMartilloSell or esDojiSell
+
+// pullback inmediato (1 vela contraria antes de la vela envolvente misma) -- distinto del pullback del patrón Start
+pullbackEnvolventeBuy  = close[1] < open[1]
+pullbackEnvolventeSell = close[1] > open[1]
+
+candidataEnvolventeBuy  = esEnvolventeBuy  and pullbackEnvolventeBuy
+candidataEnvolventeSell = esEnvolventeSell and pullbackEnvolventeSell
+
+tipoEnvBuy  = esEstandarBuy  ? "Estándar" : esMartilloBuy  ? "Martillo" : esDojiBuy  ? "Doji" : na
+tipoEnvSell = esEstandarSell ? "Estándar" : esMartilloSell ? "Martillo" : esDojiSell ? "Doji" : na
+
+mostrarEnvBuy  = candidataEnvolventeBuy  or (esEnvolventeBuy  and not mostrarSoloValidas)
+mostrarEnvSell = candidataEnvolventeSell or (esEnvolventeSell and not mostrarSoloValidas)
+
+if mostrarEtiquetasEnvolvente and mostrarEnvBuy
+    txtEnvBuy = candidataEnvolventeBuy ? "BUY\n" + tipoEnvBuy : tipoEnvBuy + " (sin pullback)"
+    label.new(bar_index, low, txtEnvBuy, style=label.style_label_up, color=candidataEnvolventeBuy ? color.new(color.green, 0) : color.new(color.gray, 60), textcolor=color.white, size=size.tiny)
+
+if mostrarEtiquetasEnvolvente and mostrarEnvSell
+    txtEnvSell = candidataEnvolventeSell ? "SELL\n" + tipoEnvSell : tipoEnvSell + " (sin pullback)"
+    label.new(bar_index, high, txtEnvSell, style=label.style_label_down, color=candidataEnvolventeSell ? color.new(color.red, 0) : color.new(color.gray, 60), textcolor=color.white, size=size.tiny)
+
+plotshape(candidataEnvolventeBuy, title="Envolvente BUY", style=shape.triangleup, location=location.belowbar, color=color.new(color.green, 0), size=size.tiny)
+plotshape(candidataEnvolventeSell, title="Envolvente SELL", style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 0), size=size.tiny)
+
+if modoDebug and (esAlcista or esBajista)
+    nO = esAlcista ? nivelOpenBuy : nivelOpenSell
+    nC = esAlcista ? nivelCloseBuy : nivelCloseSell
+    pb = esAlcista ? pullbackEnvolventeBuy : pullbackEnvolventeSell
+    env = esAlcista ? esEnvolventeBuy : esEnvolventeSell
+    txtDebug = (esAlcista ? "▲ " : "▼ ") + "nO:" + str.tostring(nO * 100, "#.##") + "% nC:" + str.tostring(nC * 100, "#.##") + "%\nPB:" + (pb ? "sí" : "no") + " Env:" + (env ? "sí" : "no")
+    label.new(bar_index, esAlcista ? high : low, txtDebug, style=esAlcista ? label.style_label_down : label.style_label_up, color=color.new(color.blue, 70), textcolor=color.white, size=size.tiny)
+
+// ============================================================================
+// SECCIÓN 4 — PATRÓN START: indecisión + envolvente de continuación (Fase 2b)
+// ============================================================================
+grpStart = "Patrón Start (M1)"
+mostrarEtiquetasStart = input.bool(true, "Mostrar etiquetas de patrón Start", group=grpStart)
+
+rangoInd = high[1] - low[1]
+TOLERANCIA = 0.0001  // 0,01%
+
+// -- vela de indecisión (candle[1]) medida en marco D=BUY --
+nivelOpenIndBuy  = rangoInd > 0 ? (open[1] - low[1]) / rangoInd : na
+nivelCloseIndBuy = rangoInd > 0 ? (close[1] - low[1]) / rangoInd : na
+cuerpoIndBuy = math.abs(nivelCloseIndBuy - nivelOpenIndBuy)
+esMartilloIndBuy = nivelOpenIndBuy >= 0.50 and nivelCloseIndBuy >= 0.85
+esIndecisionBuy = cuerpoIndBuy <= 0.50 + TOLERANCIA and not esMartilloIndBuy
+
+wickContraBuy = math.min(nivelOpenIndBuy, nivelCloseIndBuy)
+wickFavorBuy  = 1 - math.max(nivelOpenIndBuy, nivelCloseIndBuy)
+tipoIndBuy = esIndecisionBuy ? (math.abs(wickContraBuy - wickFavorBuy) <= 0.15 ? "Doji" : "Pinbar") : na
+
+// -- vela de indecisión (candle[1]) medida en marco D=SELL --
+nivelOpenIndSell  = rangoInd > 0 ? (high[1] - open[1]) / rangoInd : na
+nivelCloseIndSell = rangoInd > 0 ? (high[1] - close[1]) / rangoInd : na
+cuerpoIndSell = math.abs(nivelCloseIndSell - nivelOpenIndSell)
+esMartilloIndSell = nivelOpenIndSell >= 0.50 and nivelCloseIndSell >= 0.85
+esIndecisionSell = cuerpoIndSell <= 0.50 + TOLERANCIA and not esMartilloIndSell
+
+wickContraSell = math.min(nivelOpenIndSell, nivelCloseIndSell)
+wickFavorSell  = 1 - math.max(nivelOpenIndSell, nivelCloseIndSell)
+tipoIndSell = esIndecisionSell ? (math.abs(wickContraSell - wickFavorSell) <= 0.15 ? "Doji" : "Pinbar") : na
+
+// pullback del patrón Start: candle[2] contrario a D (distinto de pullbackEnvolventeBuy/Sell, que mira candle[1])
+pullbackStartBuy  = close[2] < open[2]
+pullbackStartSell = close[2] > open[2]
+
+// invalidación: 3 velas consecutivas del mismo color
+mismoColor3 = (close > open and close[1] > open[1] and close[2] > open[2]) or (close < open and close[1] < open[1] and close[2] < open[2])
+
+esStartBuy  = esEnvolventeBuy  and esIndecisionBuy  and pullbackStartBuy  and not mismoColor3
+esStartSell = esEnvolventeSell and esIndecisionSell and pullbackStartSell and not mismoColor3
+
+if mostrarEtiquetasStart and esStartBuy
+    label.new(bar_index, low, "START BUY\n" + tipoIndBuy + " → " + tipoEnvBuy, style=label.style_label_up, color=color.new(color.green, 0), textcolor=color.white, size=size.tiny)
+
+if mostrarEtiquetasStart and esStartSell
+    label.new(bar_index, high, "START SELL\n" + tipoIndSell + " → " + tipoEnvSell, style=label.style_label_down, color=color.new(color.red, 0), textcolor=color.white, size=size.tiny)
+
+plotshape(esStartBuy, title="Start BUY", style=shape.triangleup, location=location.belowbar, color=color.new(color.lime, 0), size=size.small)
+plotshape(esStartSell, title="Start SELL", style=shape.triangledown, location=location.abovebar, color=color.new(color.maroon, 0), size=size.small)
+
+// ============================================================================
+// SECCIÓN 5 — PANEL DE ESTADO
+// ============================================================================
+var table panel = table.new(position.top_right, 1, 2, border_width=1)
+if barstate.islast
+    table.cell(panel, 0, 0, "Tendencia: " + tendencia, text_color=color.white, bgcolor=tendencia == "alcista" ? color.new(color.green, 40) : tendencia == "bajista" ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(panel, 0, 1, enSesionOperativa ? (enPreNY ? "Sesión: Pre-NY" : "Sesión: Asia") : "Fuera de sesión", text_color=color.white, bgcolor=enSesionOperativa ? color.new(color.blue, 40) : color.new(color.gray, 70))

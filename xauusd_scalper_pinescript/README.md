@@ -24,6 +24,10 @@ en un único indicador.
   invalidación de 3ª vela consecutiva del mismo color. La vela de
   indecisión usa el mismo marco direccional (0=contra, 1=favor) que la
   envolvente, confirmado por Fabián.
+- [x] **Base consolidada — `fase3_base_consolidada.pine`**: une Fase 1
+  (sesiones + estructura M3) y Fase 2 (envolvente + Start) en un solo
+  script — reemplaza a los 3 archivos anteriores, que se mantienen solo de
+  referencia. Punto de partida de la Fase 3.
 - [ ] **Fase 3**: Modelo de Entrada Continuación (MEC) — quiebre-pullback-
   continuación con validación de 0,01%, señal visual BUY/SELL (globo +
   ficha de la operación), filtrado por sesión operativa, alertas push.
