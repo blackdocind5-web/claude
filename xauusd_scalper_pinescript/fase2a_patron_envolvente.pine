@@ -40,6 +40,7 @@ indicator("XAUUSD Scalper — Patrón Envolvente (Fase 2a)", overlay=true, max_l
 // ---------------------------- INPUTS ----------------------------
 mostrarEtiquetas = input.bool(true, "Mostrar etiquetas de clasificación")
 mostrarSoloValidas = input.bool(true, "Mostrar solo velas válidas (ocultar descartadas)")
+modoDebug = input.bool(false, "Modo debug (mostrar nivelOpen/nivelClose/pullback en TODAS las velas)")
 
 // ---------------------------- CLASIFICACIÓN DE LA VELA CERRADA ----------------------------
 rango = high - low
@@ -90,3 +91,16 @@ if mostrarEtiquetas and mostrarSell
 
 plotshape(candidataBuy, title="Envolvente BUY", style=shape.triangleup, location=location.belowbar, color=color.new(color.green, 0), size=size.tiny)
 plotshape(candidataSell, title="Envolvente SELL", style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 0), size=size.tiny)
+
+// ---------------------------- MODO DEBUG ----------------------------
+// Muestra, en TODAS las velas (alcistas o bajistas), los valores exactos que
+// calculó el script: nivelOpen/nivelClose en el marco correspondiente a su
+// propio color, si el pullback dio true, y si clasificó como envolvente.
+// Sirve para comparar directamente contra un cálculo a mano, vela por vela.
+if modoDebug and (esAlcista or esBajista)
+    nO = esAlcista ? nivelOpenBuy : nivelOpenSell
+    nC = esAlcista ? nivelCloseBuy : nivelCloseSell
+    pb = esAlcista ? pullbackParaBuy : pullbackParaSell
+    env = esAlcista ? esEnvolventeBuy : esEnvolventeSell
+    txtDebug = (esAlcista ? "▲ " : "▼ ") + "nO:" + str.tostring(nO * 100, "#.##") + "% nC:" + str.tostring(nC * 100, "#.##") + "%\nPB:" + (pb ? "sí" : "no") + " Env:" + (env ? "sí" : "no")
+    label.new(bar_index, esAlcista ? high : low, txtDebug, style=esAlcista ? label.style_label_down : label.style_label_up, color=color.new(color.blue, 70), textcolor=color.white, size=size.tiny)
