@@ -299,9 +299,85 @@ plotshape(esStartBuy, title="Start BUY", style=shape.triangleup, location=locati
 plotshape(esStartSell, title="Start SELL", style=shape.triangledown, location=location.abovebar, color=color.new(color.maroon, 0), size=size.small)
 
 // ============================================================================
-// SECCIÓN 5 — PANEL DE ESTADO
+// SECCIÓN 6 — MODELO MEC (Fase 3)
 // ============================================================================
-var table panel = table.new(position.top_right, 1, 2, border_width=1)
+// mecListo = true  -> habilitado para entrar a favor de la `tendencia` vigente
+//   - Se arma INMEDIATO en un quiebre BOS (continuación), siempre que no
+//     haya una búsqueda de Continuación pendiente en curso.
+//   - En un quiebre CHoCH (cambio de estructura) se resetea a false y
+//     arranca la búsqueda Quiebre -> Pullback -> Continuación en M1.
+// esperandoContinuacion = true mientras esa búsqueda está en curso.
+// extremoQuiebre = nivel que la Continuación debe superar (con cuerpo,
+//   umbral 0,01%). Se extiende vela a vela durante el quiebre Y la vela de
+//   reversión que arranca el pullback (para capturar su mecha si es donde
+//   realmente está el extremo); una vez que arranca el pullback queda FIJO,
+//   sin importar cuántos intentos fallidos o niveles M3 nuevos aparezcan
+//   mientras tanto. Se reinicia por completo si el precio rompe de vuelta
+//   el CHoCH contrario (vuelve a la estructura anterior).
+grpMEC = "Modelo MEC"
+mostrarDebugMEC = input.bool(true, "Modo debug MEC (sombreado de búsqueda + etiquetas de señal)", group=grpMEC)
+UMBRAL_QUIEBRE = 0.0001  // 0,01%
+
+var bool esperandoContinuacion = false
+var bool huboPullbackEnBusqueda = false
+var float extremoQuiebre = na
+var bool mecListo = false
+
+if quiebreAlto
+    if esCambioEstructuraAlto
+        esperandoContinuacion := true
+        huboPullbackEnBusqueda := false
+        extremoQuiebre := high
+        mecListo := false
+    else if not esperandoContinuacion
+        mecListo := true
+
+if quiebreBajo
+    if esCambioEstructuraBajo
+        esperandoContinuacion := true
+        huboPullbackEnBusqueda := false
+        extremoQuiebre := low
+        mecListo := false
+    else if not esperandoContinuacion
+        mecListo := true
+
+if esperandoContinuacion
+    esVelaAFavor   = tendencia == "alcista" ? close > open : close < open
+    esVelaEnContra = tendencia == "alcista" ? close < open : close > open
+
+    if not huboPullbackEnBusqueda
+        // fase de impulso (quiebre) + vela de reversión: el extremo se sigue extendiendo
+        extremoQuiebre := tendencia == "alcista" ? math.max(extremoQuiebre, high) : math.min(extremoQuiebre, low)
+        if esVelaEnContra
+            huboPullbackEnBusqueda := true  // esta misma vela ya quedó incorporada arriba
+    else
+        // ya hubo pullback: cualquier vela a favor de acá en más es un intento de Continuación
+        if esVelaAFavor
+            umbral = tendencia == "alcista" ? extremoQuiebre * (1 + UMBRAL_QUIEBRE) : extremoQuiebre * (1 - UMBRAL_QUIEBRE)
+            confirmaContinuacion = tendencia == "alcista" ? close > umbral : close < umbral
+            if confirmaContinuacion
+                mecListo := true
+                esperandoContinuacion := false
+            // si no confirma, seguimos esperando -- el nivel extremoQuiebre NO se toca
+
+// -- Señal MEC "en bruto": todavía sin SL/TP, sin filtro de sesión, sin
+//    control de "una señal por vela hasta invalidarse" -- eso es el próximo
+//    incremento de la Fase 3. Esto es solo para validar el motor MEC.
+mecBuyBruto  = mecListo and tendencia == "alcista" and (candidataEnvolventeBuy  or esStartBuy)
+mecSellBruto = mecListo and tendencia == "bajista" and (candidataEnvolventeSell or esStartSell)
+
+if mostrarDebugMEC
+    bgcolor(esperandoContinuacion ? color.new(color.yellow, 85) : na, title="Esperando Continuación MEC")
+    if mecBuyBruto
+        label.new(bar_index, low, "MEC BUY ✓", style=label.style_label_up, color=color.new(color.teal, 0), textcolor=color.white, size=size.small)
+    if mecSellBruto
+        label.new(bar_index, high, "MEC SELL ✓", style=label.style_label_down, color=color.new(color.purple, 0), textcolor=color.white, size=size.small)
+
+// ============================================================================
+// SECCIÓN 7 — PANEL DE ESTADO
+// ============================================================================
+var table panel = table.new(position.top_right, 1, 3, border_width=1)
 if barstate.islast
     table.cell(panel, 0, 0, "Tendencia: " + tendencia, text_color=color.white, bgcolor=tendencia == "alcista" ? color.new(color.green, 40) : tendencia == "bajista" ? color.new(color.red, 40) : color.new(color.gray, 40))
     table.cell(panel, 0, 1, enSesionOperativa ? (enPreNY ? "Sesión: Pre-NY" : "Sesión: Asia") : "Fuera de sesión", text_color=color.white, bgcolor=enSesionOperativa ? color.new(color.blue, 40) : color.new(color.gray, 70))
+    table.cell(panel, 0, 2, "MEC: " + (mecListo ? "listo" : esperandoContinuacion ? "esperando continuación" : "no armado"), text_color=color.white, bgcolor=mecListo ? color.new(color.teal, 40) : esperandoContinuacion ? color.new(color.orange, 40) : color.new(color.gray, 70))

@@ -28,9 +28,15 @@ en un único indicador.
   (sesiones + estructura M3) y Fase 2 (envolvente + Start) en un solo
   script — reemplaza a los 3 archivos anteriores, que se mantienen solo de
   referencia. Punto de partida de la Fase 3.
-- [ ] **Fase 3**: Modelo de Entrada Continuación (MEC) — quiebre-pullback-
-  continuación con validación de 0,01%, señal visual BUY/SELL (globo +
-  ficha de la operación), filtrado por sesión operativa, alertas push.
+- [x] **Fase 3 (parte 1) — motor MEC**: bandera unificada `mecListo`
+  (BOS→arma inmediato si no hay búsqueda pendiente; CHoCH→resetea y
+  arranca Quiebre→Pullback→Continuación en M1 con validación 0,01%,
+  nivel fijo desde que arranca el pullback, reinicio ante CHoCH
+  contrario). Señal "en bruto" (`mecBuyBruto`/`mecSellBruto`) para
+  validar el motor antes de sumar SL/TP.
+- [ ] **Fase 3 (parte 2)**: SL/TP, filtro de sesión sobre la señal final,
+  "una señal por vela hasta invalidarse", señal visual BUY/SELL (globo +
+  ficha de la operación), alertas push.
 - [ ] **Fase 4**: gestión de salida (SL en último alto/bajo M3 con reducción
   del 40% si supera 20.000 pips, TP en RR 1:0,9), Hedge Position.
 - [ ] **Fase 5**: límite diario (1 TP / 1 SL+1 TP / 2 SL) y flexibilización
