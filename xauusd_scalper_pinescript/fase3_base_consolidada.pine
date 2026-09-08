@@ -313,12 +313,14 @@ plotshape(esStartSell, title="Start SELL", style=shape.triangledown, location=lo
 //     arranca la búsqueda Quiebre -> Pullback -> Continuación en M1.
 // esperandoContinuacion = true mientras esa búsqueda está en curso.
 // extremoQuiebre = nivel que la Continuación debe superar (con cuerpo,
-//   umbral 0,01%). Se extiende vela a vela durante el quiebre Y la vela de
-//   reversión que arranca el pullback (para capturar su mecha si es donde
-//   realmente está el extremo); una vez que arranca el pullback queda FIJO,
-//   sin importar cuántos intentos fallidos o niveles M3 nuevos aparezcan
-//   mientras tanto. Se reinicia por completo si el precio rompe de vuelta
-//   el CHoCH contrario (vuelve a la estructura anterior).
+//   umbral 0,01%). Se extiende con CUALQUIER vela durante el impulso, y con
+//   CUALQUIER vela en contra en cualquier punto del pullback (no solo la
+//   primera -- la mecha más relevante puede estar en una vela de pullback
+//   tardía). Solo dejar de extenderse cuando la Continuación finalmente se
+//   confirma; los intentos fallidos de Continuación no lo mueven, pero más
+//   velas de pullback después de un intento fallido sí pueden seguir
+//   extendiéndolo. Se reinicia por completo si el precio rompe de vuelta el
+//   CHoCH contrario (vuelve a la estructura anterior).
 grpMEC = "Modelo MEC"
 mostrarDebugMEC = input.bool(true, "Modo debug MEC (sombreado de búsqueda + etiquetas de señal)", group=grpMEC)
 UMBRAL_QUIEBRE = 0.0001  // 0,01%
