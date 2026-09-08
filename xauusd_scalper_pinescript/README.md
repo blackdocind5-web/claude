@@ -50,19 +50,22 @@ en un único indicador.
 - **Estética minimalista, solo la señal final**: los triángulos/etiquetas de
   debug de envolvente candidata y patrón Start (útiles en su momento para
   validar el volumen de cada vela letra por letra contra los gráficos
-  reales de Fabián) se retiraron del dibujo por completo -- generaban
-  demasiada información en pantalla y no aportan nada una vez que el
-  clasificador ya está validado. Las etiquetas de Alto/Bajo M3 y
-  quiebre/cambio de estructura quedaron con su toggle apagado por defecto
-  (grupo "Estructura M3"). Lo único que se dibuja de fábrica es el **cartel
-  de señal MEC BUY/SELL**: un label estilo "nube" gris con la ficha completa
-  de la operación (Estructura M3, Posicionamiento, Ejecución, Fecha, Hora de
-  entrada) -- "Resultado" y "Hora de salida" se suman cuando exista el
-  simulador de SL/TP. El cálculo interno (M3, envolvente, Start) sigue
-  corriendo siempre igual -- el motor MEC lo necesita -- solo se apagó el
-  DIBUJO intermedio. Esto además libera casi todo el cupo compartido de 500
-  labels de TradingView para las señales de entrada, que son las únicas que
-  importan para operar y las que más historial necesitan.
+  reales de Fabián), y las etiquetas de Alto/Bajo M3 y quiebre/cambio de
+  estructura, se retiraron del dibujo por completo -- generaban demasiada
+  información en pantalla y no aportan nada una vez que el clasificador ya
+  está validado. Lo único que se dibuja de fábrica es el **cartel de señal
+  BUY/SELL**: un label estilo "nube" gris claro con texto blanco en
+  mayúsculas, sin datos adicionales (la "ficha de la operación" -- Estructura
+  M3, Posicionamiento, Ejecución, etc. -- fue solo contexto para desarrollar
+  el motor, nunca parte del diseño final del cartel). El cálculo interno (M3,
+  envolvente, Start) sigue corriendo siempre igual -- el motor MEC lo
+  necesita -- solo se apagó el DIBUJO intermedio. Esto además libera casi
+  todo el cupo compartido de 500 labels de TradingView para las señales de
+  entrada, que son las únicas que importan para operar y las que más
+  historial necesitan.
+- **Paleta sobria**: línea M3 continua (cambio de estructura) en negro por
+  defecto, sombreado de ambas sesiones (Pre-NY y Asia) en gris claro por
+  defecto -- antes eran azul/naranja.
 
 - El indicador corre sobre el gráfico **M1** (donde se ejecuta) y trae la
   estructura M3 por detrás con `request.security()`.
