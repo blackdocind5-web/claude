@@ -9,10 +9,15 @@ indicator("XAUUSD Scalper — Base Consolidada (Fases 1+2)", overlay=true, max_l
 // datos de otro.
 //
 // NINGUNA lógica validada se modificó al consolidar -- solo se renombraron
-// algunas variables que se repetían entre los 3 archivos originales
-// (mostrarEtiquetas -> mostrarEtiquetasM3 / mostrarEtiquetasEnvolvente /
-// mostrarEtiquetasStart) y se evitó recalcular dos veces la clasificación
-// de envolvente (Fase 2b la reutiliza de Fase 2a en vez de duplicarla).
+// algunas variables que se repetían entre los 3 archivos originales y se
+// evitó recalcular dos veces la clasificación de envolvente (Fase 2b la
+// reutiliza de Fase 2a en vez de duplicarla).
+//
+// Las etiquetas/triángulos de debug de las Fases 2a/2b (envolvente y patrón
+// Start sueltos) ya se retiraron del dibujo -- cumplieron su función para
+// validar el volumen de cada vela letra por letra contra los gráficos
+// reales, pero el cálculo se mantiene intacto porque el motor MEC lo sigue
+// necesitando. Estética final: solo el cartel de señal MEC BUY/SELL.
 //
 // A partir de acá reemplaza a fase1_estructura_m3.pine,
 // fase2a_patron_envolvente.pine y fase2b_patron_start.pine -- cargar solo
@@ -194,12 +199,10 @@ if quiebreBajo
 // ============================================================================
 // SECCIÓN 3 — CLASIFICADOR DE VELA ENVOLVENTE EN M1 (Fase 2a)
 // ============================================================================
-grpEnvolvente = "Patrón envolvente (M1)"
-mostrarEtiquetasEnvolvente = input.bool(false, "Mostrar etiquetas de envolvente (consume cupo de labels)", group=grpEnvolvente)
-mostrarFormasEnvolvente = input.bool(false, "Mostrar triángulos de envolvente candidata", group=grpEnvolvente)
-mostrarSoloValidas = input.bool(true, "Mostrar solo envolventes válidas (ocultar descartadas)", group=grpEnvolvente)
-modoDebug = input.bool(false, "Modo debug envolvente (nivelOpen/nivelClose/pullback en TODAS las velas)", group=grpEnvolvente)
-
+// Sin controles visuales propios -- esto fue el clasificador de la Fase 2a,
+// útil en su momento para validar letra por letra el volumen de cada vela
+// contra los gráficos reales de Fabián. Ya validado, el motor MEC (Sección 6)
+// es el único que consume estas variables; no se dibuja nada de esta sección.
 rango = high - low
 esAlcista = close > open
 esBajista = close < open
@@ -234,35 +237,10 @@ candidataEnvolventeSell = esEnvolventeSell and pullbackEnvolventeSell
 tipoEnvBuy  = esEstandarBuy  ? "Estándar" : esMartilloBuy  ? "Martillo" : esDojiBuy  ? "Doji" : na
 tipoEnvSell = esEstandarSell ? "Estándar" : esMartilloSell ? "Martillo" : esDojiSell ? "Doji" : na
 
-mostrarEnvBuy  = candidataEnvolventeBuy  or (esEnvolventeBuy  and not mostrarSoloValidas)
-mostrarEnvSell = candidataEnvolventeSell or (esEnvolventeSell and not mostrarSoloValidas)
-
-if mostrarEtiquetasEnvolvente and mostrarEnvBuy
-    txtEnvBuy = candidataEnvolventeBuy ? "BUY\n" + tipoEnvBuy : tipoEnvBuy + " (sin pullback)"
-    label.new(bar_index, low, txtEnvBuy, style=label.style_label_up, color=candidataEnvolventeBuy ? color.new(color.green, 0) : color.new(color.gray, 60), textcolor=color.white, size=size.tiny)
-
-if mostrarEtiquetasEnvolvente and mostrarEnvSell
-    txtEnvSell = candidataEnvolventeSell ? "SELL\n" + tipoEnvSell : tipoEnvSell + " (sin pullback)"
-    label.new(bar_index, high, txtEnvSell, style=label.style_label_down, color=candidataEnvolventeSell ? color.new(color.red, 0) : color.new(color.gray, 60), textcolor=color.white, size=size.tiny)
-
-plotshape(mostrarFormasEnvolvente and candidataEnvolventeBuy, title="Envolvente BUY", style=shape.triangleup, location=location.belowbar, color=color.new(color.green, 0), size=size.tiny)
-plotshape(mostrarFormasEnvolvente and candidataEnvolventeSell, title="Envolvente SELL", style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 0), size=size.tiny)
-
-if modoDebug and (esAlcista or esBajista)
-    nO = esAlcista ? nivelOpenBuy : nivelOpenSell
-    nC = esAlcista ? nivelCloseBuy : nivelCloseSell
-    pb = esAlcista ? pullbackEnvolventeBuy : pullbackEnvolventeSell
-    env = esAlcista ? esEnvolventeBuy : esEnvolventeSell
-    txtDebug = (esAlcista ? "▲ " : "▼ ") + "nO:" + str.tostring(nO * 100, "#.##") + "% nC:" + str.tostring(nC * 100, "#.##") + "%\nPB:" + (pb ? "sí" : "no") + " Env:" + (env ? "sí" : "no")
-    label.new(bar_index, esAlcista ? high : low, txtDebug, style=esAlcista ? label.style_label_down : label.style_label_up, color=color.new(color.blue, 70), textcolor=color.white, size=size.tiny)
-
 // ============================================================================
 // SECCIÓN 4 — PATRÓN START: indecisión + envolvente de continuación (Fase 2b)
 // ============================================================================
-grpStart = "Patrón Start (M1)"
-mostrarEtiquetasStart = input.bool(false, "Mostrar etiquetas de patrón Start (consume cupo de labels)", group=grpStart)
-mostrarFormasStart = input.bool(false, "Mostrar triángulos de patrón Start", group=grpStart)
-
+// Sin controles visuales propios, misma razón que la Sección 3.
 rangoInd = high[1] - low[1]
 TOLERANCIA = 0.0001  // 0,01%
 
@@ -298,15 +276,6 @@ mismoColor3 = (close > open and close[1] > open[1] and close[2] > open[2]) or (c
 esStartBuy  = esEnvolventeBuy  and esIndecisionBuy  and pullbackStartBuy  and not mismoColor3
 esStartSell = esEnvolventeSell and esIndecisionSell and pullbackStartSell and not mismoColor3
 
-if mostrarEtiquetasStart and esStartBuy
-    label.new(bar_index, low, "START BUY\n" + tipoIndBuy + " → " + tipoEnvBuy, style=label.style_label_up, color=color.new(color.green, 0), textcolor=color.white, size=size.tiny)
-
-if mostrarEtiquetasStart and esStartSell
-    label.new(bar_index, high, "START SELL\n" + tipoIndSell + " → " + tipoEnvSell, style=label.style_label_down, color=color.new(color.red, 0), textcolor=color.white, size=size.tiny)
-
-plotshape(mostrarFormasStart and esStartBuy, title="Start BUY", style=shape.triangleup, location=location.belowbar, color=color.new(color.lime, 0), size=size.small)
-plotshape(mostrarFormasStart and esStartSell, title="Start SELL", style=shape.triangledown, location=location.abovebar, color=color.new(color.maroon, 0), size=size.small)
-
 // ============================================================================
 // SECCIÓN 6 — MODELO MEC (Fase 3)
 // ============================================================================
@@ -336,7 +305,7 @@ plotshape(mostrarFormasStart and esStartSell, title="Start SELL", style=shape.tr
 //   extendiéndolo. Se reinicia por completo si el precio rompe de vuelta el
 //   CHoCH contrario (vuelve a la estructura anterior).
 grpMEC = "Modelo MEC"
-mostrarSenalMEC = input.bool(true, "Mostrar señal final MEC BUY/SELL ✓ (etiqueta + marcador)", group=grpMEC)
+mostrarSenalMEC = input.bool(true, "Mostrar cartel de señal final BUY/SELL", group=grpMEC)
 mostrarZonaBusquedaMEC = input.bool(false, "Sombrear zona de búsqueda de Continuación (debug)", group=grpMEC)
 UMBRAL_QUIEBRE = 0.0001  // 0,01%
 
@@ -417,16 +386,40 @@ mecSellSenal = mecSellBruto and enSesionOperativa
 // va en la expresión de color, no envolviendo la llamada
 bgcolor(mostrarZonaBusquedaMEC and esperandoContinuacion ? color.new(color.yellow, 85) : na, title="Esperando Continuación MEC (debug)")
 
-if mostrarSenalMEC and mecBuySenal
-    label.new(bar_index, low, "MEC BUY ✓", style=label.style_label_up, color=color.new(color.teal, 0), textcolor=color.white, size=size.small)
-if mostrarSenalMEC and mecSellSenal
-    label.new(bar_index, high, "MEC SELL ✓", style=label.style_label_down, color=color.new(color.purple, 0), textcolor=color.white, size=size.small)
+// ---------------------------- CARTEL DE SEÑAL (nube gris sobria) ----------------------------
+// Reemplaza al triángulo + etiqueta chica -- un único label estilo "nube" con
+// la ficha completa de la operación, tal como se definió al arrancar el
+// proyecto. "Resultado" y "Hora de salida" quedan afuera hasta que exista el
+// simulador de SL/TP (Fase 3 parte 2 / Fase 4).
+pad2(n) => n < 10 ? "0" + str.tostring(n) : str.tostring(n)
 
-// plotshape (a diferencia de label.new) no consume el cupo de 500 objetos
-// -- queda como marcador visual persistente aunque las etiquetas de texto
-// se borren al revisar sesiones viejas por el límite de labels de TradingView
-plotshape(mostrarSenalMEC and mecBuySenal, title="MEC BUY", style=shape.triangleup, location=location.belowbar, color=color.new(color.teal, 0), size=size.small)
-plotshape(mostrarSenalMEC and mecSellSenal, title="MEC SELL", style=shape.triangledown, location=location.abovebar, color=color.new(color.purple, 0), size=size.small)
+fechaSenal = pad2(dayofmonth(time, "America/New_York")) + "/" + pad2(month(time, "America/New_York")) + "/" + str.tostring(year(time, "America/New_York"))
+horaSenal  = pad2(hour(time, "America/New_York")) + ":" + pad2(minute(time, "America/New_York"))
+
+estructuraTxt = (tendencia == "alcista" ? "Alcista" : "Bajista") + " (" + (ultimoQuiebreFueCambioEstructura ? "CHoCH" : "BOS") + ")"
+
+ejecucionTxtBuy  = esStartBuy  ? ("Start (" + tipoIndBuy  + " → " + tipoEnvBuy  + ")") : ("Envolvente " + tipoEnvBuy)
+ejecucionTxtSell = esStartSell ? ("Start (" + tipoIndSell + " → " + tipoEnvSell + ")") : ("Envolvente " + tipoEnvSell)
+
+colorCartel = color.new(#3a3e4a, 0)
+
+if mostrarSenalMEC and mecBuySenal
+    txtBuy = "▲ BUY\n" +
+             "Estructura M3: " + estructuraTxt + "\n" +
+             "Posicionamiento: MEC\n" +
+             "Ejecución: " + ejecucionTxtBuy + "\n" +
+             "Fecha: " + fechaSenal + "\n" +
+             "Hora de entrada: " + horaSenal
+    label.new(bar_index, low, txtBuy, style=label.style_label_up, color=colorCartel, textcolor=color.white, size=size.normal)
+
+if mostrarSenalMEC and mecSellSenal
+    txtSell = "▼ SELL\n" +
+              "Estructura M3: " + estructuraTxt + "\n" +
+              "Posicionamiento: MEC\n" +
+              "Ejecución: " + ejecucionTxtSell + "\n" +
+              "Fecha: " + fechaSenal + "\n" +
+              "Hora de entrada: " + horaSenal
+    label.new(bar_index, high, txtSell, style=label.style_label_down, color=colorCartel, textcolor=color.white, size=size.normal)
 
 // ============================================================================
 // SECCIÓN 7 — PANEL DE ESTADO
