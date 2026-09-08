@@ -29,8 +29,8 @@ indicator("XAUUSD Scalper — Base Consolidada (Fases 1+2)", overlay=true, max_l
 // ============================================================================
 grpSesiones = "Sesiones operativas"
 mostrarSesiones = input.bool(true, "Sombrear sesiones en el gráfico", group=grpSesiones)
-colorPreNY = input.color(color.new(#2962ff, 88), "Color sesión Pre-NY (07-09 EST)", group=grpSesiones)
-colorAsia  = input.color(color.new(#ff9800, 88), "Color sesión Asia (20-22 EST)", group=grpSesiones)
+colorPreNY = input.color(color.new(#d3d3d3, 85), "Color sesión Pre-NY (07-09 EST)", group=grpSesiones)
+colorAsia  = input.color(color.new(#d3d3d3, 85), "Color sesión Asia (20-22 EST)", group=grpSesiones)
 
 // Días Pine: 1=Domingo 2=Lunes 3=Martes 4=Miércoles 5=Jueves 6=Viernes 7=Sábado
 // Pre-NY: Lunes a Viernes (2=Lunes ... 6=Viernes) | Asia: Domingo a Jueves (1=Domingo ... 5=Jueves)
@@ -49,9 +49,8 @@ bgcolor(mostrarSesiones and enAsia  ? colorAsia  : na, title="Sesión Asia")
 // ============================================================================
 grpEstructura = "Estructura M3"
 colorPunteada    = input.color(color.new(#787b86, 0), "Línea punteada (continuación)", group=grpEstructura)
-colorContinua    = input.color(color.new(#ff5252, 0), "Línea continua (cambio de estructura)", group=grpEstructura)
+colorContinua    = input.color(color.new(color.black, 0), "Línea continua (cambio de estructura)", group=grpEstructura)
 extensionBarras  = input.int(10, "Extensión sin toque (barras M1)", minval=1, group=grpEstructura)
-mostrarEtiquetasM3 = input.bool(false, "Mostrar etiquetas Alto M3 / Bajo M3 (consume cupo de labels)", group=grpEstructura)
 
 [o3, h3, l3, c3, t3] = request.security(syminfo.tickerid, "3", [open, high, low, close, time], lookahead=barmerge.lookahead_off)
 nuevaVelaM3 = ta.change(t3) != 0
@@ -133,8 +132,6 @@ if esAltoM3
         altoM3Inicio := altoRunInicio
         altoRoto := false
         altoLinea := line.new(x1=altoRunInicio, y1=nivelAlto, x2=time, y2=nivelAlto, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
-        if mostrarEtiquetasM3
-            label.new(bar_index, nivelAlto, "Alto M3", style=label.style_label_down, color=color.new(color.white, 100), textcolor=colorPunteada, size=size.tiny)
 
 if esBajoM3
     if not na(bajoM3Inicio) and bajoM3Inicio == bajoRunInicio
@@ -148,8 +145,6 @@ if esBajoM3
         bajoM3Inicio := bajoRunInicio
         bajoRoto := false
         bajoLinea := line.new(x1=bajoRunInicio, y1=nivelBajo, x2=time, y2=nivelBajo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
-        if mostrarEtiquetasM3
-            label.new(bar_index, nivelBajo, "Bajo M3", style=label.style_label_up, color=color.new(color.white, 100), textcolor=colorPunteada, size=size.tiny)
 
 if not na(altoLinea) and not na(altoM3Activo)
     line.set_x2(altoLinea, int(math.min(time, altoM3Inicio + maxExtMs)))
@@ -175,8 +170,6 @@ if quiebreAlto
     line.set_style(altoLinea, esCambioEstructuraAlto ? line.style_solid : line.style_dotted)
     line.set_color(altoLinea, esCambioEstructuraAlto ? colorContinua : colorPunteada)
     line.set_width(altoLinea, esCambioEstructuraAlto ? 2 : 1)
-    if mostrarEtiquetasM3
-        label.new(bar_index, nivelQuebradoAlto, esCambioEstructuraAlto ? "Cambio de estructura ▲" : "Quiebre alto M3 ▲", style=label.style_label_down, color=esCambioEstructuraAlto ? colorContinua : colorPunteada, textcolor=color.white, size=size.tiny)
     tendencia := "alcista"
     altoM3Activo := na
     altoRoto := true
@@ -189,8 +182,6 @@ if quiebreBajo
     line.set_style(bajoLinea, esCambioEstructuraBajo ? line.style_solid : line.style_dotted)
     line.set_color(bajoLinea, esCambioEstructuraBajo ? colorContinua : colorPunteada)
     line.set_width(bajoLinea, esCambioEstructuraBajo ? 2 : 1)
-    if mostrarEtiquetasM3
-        label.new(bar_index, nivelQuebradoBajo, esCambioEstructuraBajo ? "Cambio de estructura ▼" : "Quiebre bajo M3 ▼", style=label.style_label_up, color=esCambioEstructuraBajo ? colorContinua : colorPunteada, textcolor=color.white, size=size.tiny)
     tendencia := "bajista"
     bajoM3Activo := na
     bajoRoto := true
@@ -386,40 +377,18 @@ mecSellSenal = mecSellBruto and enSesionOperativa
 // va en la expresión de color, no envolviendo la llamada
 bgcolor(mostrarZonaBusquedaMEC and esperandoContinuacion ? color.new(color.yellow, 85) : na, title="Esperando Continuación MEC (debug)")
 
-// ---------------------------- CARTEL DE SEÑAL (nube gris sobria) ----------------------------
-// Reemplaza al triángulo + etiqueta chica -- un único label estilo "nube" con
-// la ficha completa de la operación, tal como se definió al arrancar el
-// proyecto. "Resultado" y "Hora de salida" quedan afuera hasta que exista el
-// simulador de SL/TP (Fase 3 parte 2 / Fase 4).
-pad2(n) => n < 10 ? "0" + str.tostring(n) : str.tostring(n)
-
-fechaSenal = pad2(dayofmonth(time, "America/New_York")) + "/" + pad2(month(time, "America/New_York")) + "/" + str.tostring(year(time, "America/New_York"))
-horaSenal  = pad2(hour(time, "America/New_York")) + ":" + pad2(minute(time, "America/New_York"))
-
-estructuraTxt = (tendencia == "alcista" ? "Alcista" : "Bajista") + " (" + (ultimoQuiebreFueCambioEstructura ? "CHoCH" : "BOS") + ")"
-
-ejecucionTxtBuy  = esStartBuy  ? ("Start (" + tipoIndBuy  + " → " + tipoEnvBuy  + ")") : ("Envolvente " + tipoEnvBuy)
-ejecucionTxtSell = esStartSell ? ("Start (" + tipoIndSell + " → " + tipoEnvSell + ")") : ("Envolvente " + tipoEnvSell)
-
-colorCartel = color.new(#3a3e4a, 0)
+// ---------------------------- CARTEL DE SEÑAL (nube gris claro, solo BUY/SELL) ----------------------------
+// Nube minimalista: fondo gris claro, texto blanco en mayúsculas. BUY debajo
+// de la vela de entrada (apunta hacia arriba), SELL arriba (apunta hacia
+// abajo). Sin ficha de datos -- eso era contexto para mí, no parte del
+// diseño final del cartel.
+colorCartel = color.new(color.silver, 0)
 
 if mostrarSenalMEC and mecBuySenal
-    txtBuy = "▲ BUY\n" +
-             "Estructura M3: " + estructuraTxt + "\n" +
-             "Posicionamiento: MEC\n" +
-             "Ejecución: " + ejecucionTxtBuy + "\n" +
-             "Fecha: " + fechaSenal + "\n" +
-             "Hora de entrada: " + horaSenal
-    label.new(bar_index, low, txtBuy, style=label.style_label_up, color=colorCartel, textcolor=color.white, size=size.normal)
+    label.new(bar_index, low, "BUY", style=label.style_label_up, color=colorCartel, textcolor=color.white, size=size.normal)
 
 if mostrarSenalMEC and mecSellSenal
-    txtSell = "▼ SELL\n" +
-              "Estructura M3: " + estructuraTxt + "\n" +
-              "Posicionamiento: MEC\n" +
-              "Ejecución: " + ejecucionTxtSell + "\n" +
-              "Fecha: " + fechaSenal + "\n" +
-              "Hora de entrada: " + horaSenal
-    label.new(bar_index, high, txtSell, style=label.style_label_down, color=colorCartel, textcolor=color.white, size=size.normal)
+    label.new(bar_index, high, "SELL", style=label.style_label_down, color=colorCartel, textcolor=color.white, size=size.normal)
 
 // ============================================================================
 // SECCIÓN 7 — PANEL DE ESTADO
