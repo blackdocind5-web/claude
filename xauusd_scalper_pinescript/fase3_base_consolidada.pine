@@ -382,12 +382,22 @@ bgcolor(mostrarZonaBusquedaMEC and esperandoContinuacion ? color.new(color.yello
 // de la vela de entrada (apunta hacia arriba), SELL arriba (apunta hacia
 // abajo). Sin ficha de datos -- eso era contexto para mí, no parte del
 // diseño final del cartel.
+//
+// barstate.isconfirmed: el cartel SOLO se dibuja en la ejecución final y
+// confirmada de la vela M1 (cuando ya cerró), nunca en un tick intermedio
+// mientras la vela todavía se está formando. Sin este freno, TradingView
+// recalcula el script en cada tick de la vela en curso -- si en algún tick
+// intermedio la vela luce momentáneamente como una envolvente/Start válida
+// y el precio se revierte antes de que cierre el minuto, quedaría una
+// etiqueta fantasma dibujada que Pine no borra solo. El patrón envolvente/
+// Start se define con el open/close/high/low FINAL de la vela, así que no
+// existe forma honesta de confirmarlo antes de que esa vela cierre.
 colorCartel = color.new(color.silver, 0)
 
-if mostrarSenalMEC and mecBuySenal
+if mostrarSenalMEC and mecBuySenal and barstate.isconfirmed
     label.new(bar_index, low, "BUY", style=label.style_label_up, color=colorCartel, textcolor=color.white, size=size.normal)
 
-if mostrarSenalMEC and mecSellSenal
+if mostrarSenalMEC and mecSellSenal and barstate.isconfirmed
     label.new(bar_index, high, "SELL", style=label.style_label_down, color=colorCartel, textcolor=color.white, size=size.normal)
 
 // ============================================================================

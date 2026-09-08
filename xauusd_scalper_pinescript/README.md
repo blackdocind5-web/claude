@@ -66,6 +66,17 @@ en un único indicador.
 - **Paleta sobria**: línea M3 continua (cambio de estructura) en negro por
   defecto, sombreado de ambas sesiones (Pre-NY y Asia) en gris claro por
   defecto -- antes eran azul/naranja.
+- **Cartel BUY/SELL no repinta**: se dibuja solo con `barstate.isconfirmed`,
+  es decir únicamente en el cierre real y confirmado de la vela M1 de
+  entrada, nunca en un tick intermedio mientras la vela todavía se está
+  formando. El patrón envolvente/Start se define con el open/close/high/low
+  FINAL de la vela, así que no hay forma honesta de confirmarlo antes de
+  ese cierre -- sin este freno, un tick intermedio que luzca momentáneamente
+  válido podía dejar una etiqueta fantasma si el precio se revertía antes de
+  que cerrara el minuto. El panel de estado ("MEC: listo / esperando
+  continuación / no armado") sigue siendo el anticipo legítimo: "listo"
+  significa que la próxima vela que cierre como envolvente o Start válida
+  dispara la señal de inmediato, sin necesidad de un quiebre nuevo.
 
 - El indicador corre sobre el gráfico **M1** (donde se ejecuta) y trae la
   estructura M3 por detrás con `request.security()`.
