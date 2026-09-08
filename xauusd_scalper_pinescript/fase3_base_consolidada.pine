@@ -419,6 +419,12 @@ if mostrarDebugMEC and mecBuySenal
 if mostrarDebugMEC and mecSellSenal
     label.new(bar_index, high, "MEC SELL ✓", style=label.style_label_down, color=color.new(color.purple, 0), textcolor=color.white, size=size.small)
 
+// plotshape (a diferencia de label.new) no consume el cupo de 500 objetos
+// -- queda como marcador visual persistente aunque las etiquetas de texto
+// se borren al revisar sesiones viejas por el límite de labels de TradingView
+plotshape(mecBuySenal, title="MEC BUY", style=shape.triangleup, location=location.belowbar, color=color.new(color.teal, 0), size=size.small)
+plotshape(mecSellSenal, title="MEC SELL", style=shape.triangledown, location=location.abovebar, color=color.new(color.purple, 0), size=size.small)
+
 // ============================================================================
 // SECCIÓN 7 — PANEL DE ESTADO
 // ============================================================================
