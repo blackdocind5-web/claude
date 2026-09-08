@@ -47,6 +47,17 @@ en un único indicador.
 
 ## Decisiones de diseño (confirmadas con Fabián)
 
+- **Etiquetas apagadas por defecto salvo la señal final**: como TradingView
+  comparte un único cupo de 500 labels entre TODO el indicador, las
+  etiquetas de Alto/Bajo M3, quiebre/cambio de estructura, envolvente y
+  patrón Start pasaron a estar OFF por defecto (quedan como toggle para
+  debug puntual). Solo "MEC BUY ✓" / "MEC SELL ✓" se dibuja de fábrica --
+  así el historial disponible de señales de entrada (lo único que importa
+  para operar) dura muchas más sesiones atrás antes de que TradingView
+  empiece a borrar las etiquetas más viejas. El cálculo interno (M3,
+  envolvente, Start) sigue corriendo igual siempre -- el motor MEC lo
+  necesita -- solo se apagó el DIBUJO.
+
 - El indicador corre sobre el gráfico **M1** (donde se ejecuta) y trae la
   estructura M3 por detrás con `request.security()`.
 - Límite diario y flexibilización del 85%: **automatizados por simulación**

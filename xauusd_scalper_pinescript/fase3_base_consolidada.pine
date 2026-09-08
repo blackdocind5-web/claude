@@ -46,7 +46,7 @@ grpEstructura = "Estructura M3"
 colorPunteada    = input.color(color.new(#787b86, 0), "Línea punteada (continuación)", group=grpEstructura)
 colorContinua    = input.color(color.new(#ff5252, 0), "Línea continua (cambio de estructura)", group=grpEstructura)
 extensionBarras  = input.int(10, "Extensión sin toque (barras M1)", minval=1, group=grpEstructura)
-mostrarEtiquetasM3 = input.bool(true, "Mostrar etiquetas Alto M3 / Bajo M3", group=grpEstructura)
+mostrarEtiquetasM3 = input.bool(false, "Mostrar etiquetas Alto M3 / Bajo M3 (consume cupo de labels)", group=grpEstructura)
 
 [o3, h3, l3, c3, t3] = request.security(syminfo.tickerid, "3", [open, high, low, close, time], lookahead=barmerge.lookahead_off)
 nuevaVelaM3 = ta.change(t3) != 0
@@ -195,7 +195,8 @@ if quiebreBajo
 // SECCIÓN 3 — CLASIFICADOR DE VELA ENVOLVENTE EN M1 (Fase 2a)
 // ============================================================================
 grpEnvolvente = "Patrón envolvente (M1)"
-mostrarEtiquetasEnvolvente = input.bool(true, "Mostrar etiquetas de envolvente", group=grpEnvolvente)
+mostrarEtiquetasEnvolvente = input.bool(false, "Mostrar etiquetas de envolvente (consume cupo de labels)", group=grpEnvolvente)
+mostrarFormasEnvolvente = input.bool(false, "Mostrar triángulos de envolvente candidata", group=grpEnvolvente)
 mostrarSoloValidas = input.bool(true, "Mostrar solo envolventes válidas (ocultar descartadas)", group=grpEnvolvente)
 modoDebug = input.bool(false, "Modo debug envolvente (nivelOpen/nivelClose/pullback en TODAS las velas)", group=grpEnvolvente)
 
@@ -244,8 +245,8 @@ if mostrarEtiquetasEnvolvente and mostrarEnvSell
     txtEnvSell = candidataEnvolventeSell ? "SELL\n" + tipoEnvSell : tipoEnvSell + " (sin pullback)"
     label.new(bar_index, high, txtEnvSell, style=label.style_label_down, color=candidataEnvolventeSell ? color.new(color.red, 0) : color.new(color.gray, 60), textcolor=color.white, size=size.tiny)
 
-plotshape(candidataEnvolventeBuy, title="Envolvente BUY", style=shape.triangleup, location=location.belowbar, color=color.new(color.green, 0), size=size.tiny)
-plotshape(candidataEnvolventeSell, title="Envolvente SELL", style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 0), size=size.tiny)
+plotshape(mostrarFormasEnvolvente and candidataEnvolventeBuy, title="Envolvente BUY", style=shape.triangleup, location=location.belowbar, color=color.new(color.green, 0), size=size.tiny)
+plotshape(mostrarFormasEnvolvente and candidataEnvolventeSell, title="Envolvente SELL", style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 0), size=size.tiny)
 
 if modoDebug and (esAlcista or esBajista)
     nO = esAlcista ? nivelOpenBuy : nivelOpenSell
@@ -259,7 +260,8 @@ if modoDebug and (esAlcista or esBajista)
 // SECCIÓN 4 — PATRÓN START: indecisión + envolvente de continuación (Fase 2b)
 // ============================================================================
 grpStart = "Patrón Start (M1)"
-mostrarEtiquetasStart = input.bool(true, "Mostrar etiquetas de patrón Start", group=grpStart)
+mostrarEtiquetasStart = input.bool(false, "Mostrar etiquetas de patrón Start (consume cupo de labels)", group=grpStart)
+mostrarFormasStart = input.bool(false, "Mostrar triángulos de patrón Start", group=grpStart)
 
 rangoInd = high[1] - low[1]
 TOLERANCIA = 0.0001  // 0,01%
@@ -302,8 +304,8 @@ if mostrarEtiquetasStart and esStartBuy
 if mostrarEtiquetasStart and esStartSell
     label.new(bar_index, high, "START SELL\n" + tipoIndSell + " → " + tipoEnvSell, style=label.style_label_down, color=color.new(color.red, 0), textcolor=color.white, size=size.tiny)
 
-plotshape(esStartBuy, title="Start BUY", style=shape.triangleup, location=location.belowbar, color=color.new(color.lime, 0), size=size.small)
-plotshape(esStartSell, title="Start SELL", style=shape.triangledown, location=location.abovebar, color=color.new(color.maroon, 0), size=size.small)
+plotshape(mostrarFormasStart and esStartBuy, title="Start BUY", style=shape.triangleup, location=location.belowbar, color=color.new(color.lime, 0), size=size.small)
+plotshape(mostrarFormasStart and esStartSell, title="Start SELL", style=shape.triangledown, location=location.abovebar, color=color.new(color.maroon, 0), size=size.small)
 
 // ============================================================================
 // SECCIÓN 6 — MODELO MEC (Fase 3)
@@ -334,7 +336,8 @@ plotshape(esStartSell, title="Start SELL", style=shape.triangledown, location=lo
 //   extendiéndolo. Se reinicia por completo si el precio rompe de vuelta el
 //   CHoCH contrario (vuelve a la estructura anterior).
 grpMEC = "Modelo MEC"
-mostrarDebugMEC = input.bool(true, "Modo debug MEC (sombreado de búsqueda + etiquetas de señal)", group=grpMEC)
+mostrarSenalMEC = input.bool(true, "Mostrar señal final MEC BUY/SELL ✓ (etiqueta + marcador)", group=grpMEC)
+mostrarZonaBusquedaMEC = input.bool(false, "Sombrear zona de búsqueda de Continuación (debug)", group=grpMEC)
 UMBRAL_QUIEBRE = 0.0001  // 0,01%
 
 var bool esperandoContinuacion = false
@@ -412,18 +415,18 @@ mecSellSenal = mecSellBruto and enSesionOperativa
 
 // bgcolor() no puede llamarse dentro de un `if` en Pine -- la condicionalidad
 // va en la expresión de color, no envolviendo la llamada
-bgcolor(mostrarDebugMEC and esperandoContinuacion ? color.new(color.yellow, 85) : na, title="Esperando Continuación MEC")
+bgcolor(mostrarZonaBusquedaMEC and esperandoContinuacion ? color.new(color.yellow, 85) : na, title="Esperando Continuación MEC (debug)")
 
-if mostrarDebugMEC and mecBuySenal
+if mostrarSenalMEC and mecBuySenal
     label.new(bar_index, low, "MEC BUY ✓", style=label.style_label_up, color=color.new(color.teal, 0), textcolor=color.white, size=size.small)
-if mostrarDebugMEC and mecSellSenal
+if mostrarSenalMEC and mecSellSenal
     label.new(bar_index, high, "MEC SELL ✓", style=label.style_label_down, color=color.new(color.purple, 0), textcolor=color.white, size=size.small)
 
 // plotshape (a diferencia de label.new) no consume el cupo de 500 objetos
 // -- queda como marcador visual persistente aunque las etiquetas de texto
 // se borren al revisar sesiones viejas por el límite de labels de TradingView
-plotshape(mecBuySenal, title="MEC BUY", style=shape.triangleup, location=location.belowbar, color=color.new(color.teal, 0), size=size.small)
-plotshape(mecSellSenal, title="MEC SELL", style=shape.triangledown, location=location.abovebar, color=color.new(color.purple, 0), size=size.small)
+plotshape(mostrarSenalMEC and mecBuySenal, title="MEC BUY", style=shape.triangleup, location=location.belowbar, color=color.new(color.teal, 0), size=size.small)
+plotshape(mostrarSenalMEC and mecSellSenal, title="MEC SELL", style=shape.triangledown, location=location.abovebar, color=color.new(color.purple, 0), size=size.small)
 
 // ============================================================================
 // SECCIÓN 7 — PANEL DE ESTADO
