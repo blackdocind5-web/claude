@@ -350,20 +350,27 @@ if esperandoContinuacion
     esVelaAFavor   = tendencia == "alcista" ? close > open : close < open
     esVelaEnContra = tendencia == "alcista" ? close < open : close > open
 
-    if not huboPullbackEnBusqueda
-        // fase de impulso (quiebre) + vela de reversión: el extremo se sigue extendiendo
+    // el extremo se extiende con CUALQUIER vela mientras todavía no hubo
+    // pullback (fase de impulso), Y con CUALQUIER vela en contra en
+    // cualquier punto posterior del pullback (no solo la primera) --
+    // la mecha más relevante puede estar en una vela de pullback tardía,
+    // no necesariamente en la de reversión inicial
+    if esVelaEnContra or not huboPullbackEnBusqueda
         extremoQuiebre := tendencia == "alcista" ? math.max(extremoQuiebre, high) : math.min(extremoQuiebre, low)
-        if esVelaEnContra
-            huboPullbackEnBusqueda := true  // esta misma vela ya quedó incorporada arriba
-    else
-        // ya hubo pullback: cualquier vela a favor de acá en más es un intento de Continuación
-        if esVelaAFavor
-            umbral = tendencia == "alcista" ? extremoQuiebre * (1 + UMBRAL_QUIEBRE) : extremoQuiebre * (1 - UMBRAL_QUIEBRE)
-            confirmaContinuacion = tendencia == "alcista" ? close > umbral : close < umbral
-            if confirmaContinuacion
-                mecListo := true
-                esperandoContinuacion := false
-            // si no confirma, seguimos esperando -- el nivel extremoQuiebre NO se toca
+
+    if esVelaEnContra
+        huboPullbackEnBusqueda := true
+
+    // una vez que ya hubo al menos 1 vela de pullback, cualquier vela a
+    // favor es un intento de Continuación
+    if huboPullbackEnBusqueda and esVelaAFavor
+        umbral = tendencia == "alcista" ? extremoQuiebre * (1 + UMBRAL_QUIEBRE) : extremoQuiebre * (1 - UMBRAL_QUIEBRE)
+        confirmaContinuacion = tendencia == "alcista" ? close > umbral : close < umbral
+        if confirmaContinuacion
+            mecListo := true
+            esperandoContinuacion := false
+        // si no confirma, seguimos esperando -- si después vienen más velas
+        // en contra, el nivel se sigue pudiendo extender más arriba/abajo
 
 // -- Señal MEC "en bruto": todavía sin SL/TP, sin
 //    control de "una señal por vela hasta invalidarse" -- eso es el próximo
