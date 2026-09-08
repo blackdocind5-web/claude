@@ -156,9 +156,13 @@ quiebreBajo = not na(bajoM3Activo) and ta.crossunder(close, bajoM3Activo)
 // se reutiliza en Fase 3 para saber si el último quiebre fue continuación (BOS) o cambio de estructura (CHoCH)
 var bool ultimoQuiebreFueCambioEstructura = false
 
+// alcance global (no local a los bloques de abajo) porque la Sección 6 (MEC) también los necesita
+esCambioEstructuraAlto = false
+esCambioEstructuraBajo = false
+
 if quiebreAlto
     nivelQuebradoAlto = altoM3Activo
-    esCambioEstructuraAlto = tendencia == "bajista"
+    esCambioEstructuraAlto := tendencia == "bajista"
     line.set_x2(altoLinea, time)
     line.set_style(altoLinea, esCambioEstructuraAlto ? line.style_solid : line.style_dotted)
     line.set_color(altoLinea, esCambioEstructuraAlto ? colorContinua : colorPunteada)
@@ -172,7 +176,7 @@ if quiebreAlto
 
 if quiebreBajo
     nivelQuebradoBajo = bajoM3Activo
-    esCambioEstructuraBajo = tendencia == "alcista"
+    esCambioEstructuraBajo := tendencia == "alcista"
     line.set_x2(bajoLinea, time)
     line.set_style(bajoLinea, esCambioEstructuraBajo ? line.style_solid : line.style_dotted)
     line.set_color(bajoLinea, esCambioEstructuraBajo ? colorContinua : colorPunteada)
@@ -366,12 +370,14 @@ if esperandoContinuacion
 mecBuyBruto  = mecListo and tendencia == "alcista" and (candidataEnvolventeBuy  or esStartBuy)
 mecSellBruto = mecListo and tendencia == "bajista" and (candidataEnvolventeSell or esStartSell)
 
-if mostrarDebugMEC
-    bgcolor(esperandoContinuacion ? color.new(color.yellow, 85) : na, title="Esperando Continuación MEC")
-    if mecBuyBruto
-        label.new(bar_index, low, "MEC BUY ✓", style=label.style_label_up, color=color.new(color.teal, 0), textcolor=color.white, size=size.small)
-    if mecSellBruto
-        label.new(bar_index, high, "MEC SELL ✓", style=label.style_label_down, color=color.new(color.purple, 0), textcolor=color.white, size=size.small)
+// bgcolor() no puede llamarse dentro de un `if` en Pine -- la condicionalidad
+// va en la expresión de color, no envolviendo la llamada
+bgcolor(mostrarDebugMEC and esperandoContinuacion ? color.new(color.yellow, 85) : na, title="Esperando Continuación MEC")
+
+if mostrarDebugMEC and mecBuyBruto
+    label.new(bar_index, low, "MEC BUY ✓", style=label.style_label_up, color=color.new(color.teal, 0), textcolor=color.white, size=size.small)
+if mostrarDebugMEC and mecSellBruto
+    label.new(bar_index, high, "MEC SELL ✓", style=label.style_label_down, color=color.new(color.purple, 0), textcolor=color.white, size=size.small)
 
 // ============================================================================
 // SECCIÓN 7 — PANEL DE ESTADO
