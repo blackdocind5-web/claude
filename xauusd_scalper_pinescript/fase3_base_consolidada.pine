@@ -28,8 +28,9 @@ colorPreNY = input.color(color.new(#2962ff, 88), "Color sesión Pre-NY (07-09 ES
 colorAsia  = input.color(color.new(#ff9800, 88), "Color sesión Asia (20-22 EST)", group=grpSesiones)
 
 // Días Pine: 1=Domingo 2=Lunes 3=Martes 4=Miércoles 5=Jueves 6=Viernes 7=Sábado
-sesionPreNYStr = "0700-0900:2345"
-sesionAsiaStr  = "2000-2200:2345"
+// Pre-NY: Lunes a Viernes (2=Lunes ... 6=Viernes) | Asia: Domingo a Jueves (1=Domingo ... 5=Jueves)
+sesionPreNYStr = "0700-0900:23456"
+sesionAsiaStr  = "2000-2200:12345"
 
 enPreNY = not na(time(timeframe.period, sesionPreNYStr, "America/New_York"))
 enAsia  = not na(time(timeframe.period, sesionAsiaStr, "America/New_York"))
@@ -364,19 +365,25 @@ if esperandoContinuacion
                 esperandoContinuacion := false
             // si no confirma, seguimos esperando -- el nivel extremoQuiebre NO se toca
 
-// -- Señal MEC "en bruto": todavía sin SL/TP, sin filtro de sesión, sin
+// -- Señal MEC "en bruto": todavía sin SL/TP, sin
 //    control de "una señal por vela hasta invalidarse" -- eso es el próximo
 //    incremento de la Fase 3. Esto es solo para validar el motor MEC.
 mecBuyBruto  = mecListo and tendencia == "alcista" and (candidataEnvolventeBuy  or esStartBuy)
 mecSellBruto = mecListo and tendencia == "bajista" and (candidataEnvolventeSell or esStartSell)
 
+// filtro de sesión: el motor MEC sigue corriendo las 24hs por detrás (para no
+// perder el hilo de la estructura), pero la señal solo se MUESTRA dentro de
+// Pre-NY / Asia
+mecBuySenal  = mecBuyBruto  and enSesionOperativa
+mecSellSenal = mecSellBruto and enSesionOperativa
+
 // bgcolor() no puede llamarse dentro de un `if` en Pine -- la condicionalidad
 // va en la expresión de color, no envolviendo la llamada
 bgcolor(mostrarDebugMEC and esperandoContinuacion ? color.new(color.yellow, 85) : na, title="Esperando Continuación MEC")
 
-if mostrarDebugMEC and mecBuyBruto
+if mostrarDebugMEC and mecBuySenal
     label.new(bar_index, low, "MEC BUY ✓", style=label.style_label_up, color=color.new(color.teal, 0), textcolor=color.white, size=size.small)
-if mostrarDebugMEC and mecSellBruto
+if mostrarDebugMEC and mecSellSenal
     label.new(bar_index, high, "MEC SELL ✓", style=label.style_label_down, color=color.new(color.purple, 0), textcolor=color.white, size=size.small)
 
 // ============================================================================
