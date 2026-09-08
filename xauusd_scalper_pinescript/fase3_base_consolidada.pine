@@ -312,10 +312,16 @@ plotshape(esStartSell, title="Start SELL", style=shape.triangledown, location=lo
 //
 // Cualquier quiebre válido (CHoCH o BOS, no importa cuál) dispara la MISMA
 // búsqueda Quiebre -> Pullback -> Continuación en M1 -- no hay dos caminos
-// distintos. Cada Alto M3 nuevo que se rompe (siga o no habiendo tendencia
-// ya confirmada) exige su propia validación de 0,01% antes de habilitar una
-// entrada nueva; la única diferencia entre CHoCH y BOS es si además cambia
-// la `tendencia` (eso ya lo resuelve la Fase 1 en la Sección 2). Un cruce
+// distintos. Cada Alto/Bajo M3 nuevo exige su propia validación de 0,01%
+// antes de habilitar una entrada nueva, y esto se dispara de DOS formas:
+//   1. Un cruce válido (ta.crossover/crossunder con 0,01%) del nivel activo.
+//   2. La formación misma de un Alto/Bajo M3 NUEVO (puede reemplazar al
+//      anterior sin que el precio lo haya "cruzado" -- ej: el precio ya
+//      venía por encima y este es simplemente el nuevo techo del impulso).
+// Sin el punto 2, un mecListo viejo quedaba "colgado" en true aunque ya
+// hubiera un Alto/Bajo M3 nuevo sin superar todavía.
+// La única diferencia entre CHoCH y BOS sigue siendo si además cambia la
+// `tendencia` (eso ya lo resuelve la Fase 1 en la Sección 2). Un cruce
 // débil (<0,01%) simplemente no reinicia nada -- se ignora para MEC.
 // esperandoContinuacion = true mientras esa búsqueda está en curso.
 // extremoQuiebre = nivel que la Continuación debe superar (con cuerpo,
@@ -348,6 +354,22 @@ if quiebreBajo and close < nivelQuebradoBajo * (1 - UMBRAL_QUIEBRE)
     esperandoContinuacion := true
     huboPullbackEnBusqueda := false
     extremoQuiebre := low
+    mecListo := false
+
+// un Alto/Bajo M3 NUEVO también reinicia la búsqueda, aunque el precio no lo
+// haya "cruzado" (puede reemplazar al anterior sin que haya un ta.crossover
+// de por medio -- ej: el precio ya venía arriba y este es el nuevo techo del
+// impulso). Cada Alto/Bajo M3 nuevo exige su propia validación de 0,01%.
+if esAltoM3 and tendencia == "alcista"
+    esperandoContinuacion := true
+    huboPullbackEnBusqueda := false
+    extremoQuiebre := nivelAlto
+    mecListo := false
+
+if esBajoM3 and tendencia == "bajista"
+    esperandoContinuacion := true
+    huboPullbackEnBusqueda := false
+    extremoQuiebre := nivelBajo
     mecListo := false
 
 if esperandoContinuacion
