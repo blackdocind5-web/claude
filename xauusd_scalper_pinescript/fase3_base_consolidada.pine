@@ -160,9 +160,11 @@ var bool ultimoQuiebreFueCambioEstructura = false
 // alcance global (no local a los bloques de abajo) porque la Sección 6 (MEC) también los necesita
 esCambioEstructuraAlto = false
 esCambioEstructuraBajo = false
+nivelQuebradoAlto = float(na)
+nivelQuebradoBajo = float(na)
 
 if quiebreAlto
-    nivelQuebradoAlto = altoM3Activo
+    nivelQuebradoAlto := altoM3Activo
     esCambioEstructuraAlto := tendencia == "bajista"
     line.set_x2(altoLinea, time)
     line.set_style(altoLinea, esCambioEstructuraAlto ? line.style_solid : line.style_dotted)
@@ -176,7 +178,7 @@ if quiebreAlto
     ultimoQuiebreFueCambioEstructura := esCambioEstructuraAlto
 
 if quiebreBajo
-    nivelQuebradoBajo = bajoM3Activo
+    nivelQuebradoBajo := bajoM3Activo
     esCambioEstructuraBajo := tendencia == "alcista"
     line.set_x2(bajoLinea, time)
     line.set_style(bajoLinea, esCambioEstructuraBajo ? line.style_solid : line.style_dotted)
@@ -307,8 +309,13 @@ plotshape(esStartSell, title="Start SELL", style=shape.triangledown, location=lo
 // SECCIÓN 6 — MODELO MEC (Fase 3)
 // ============================================================================
 // mecListo = true  -> habilitado para entrar a favor de la `tendencia` vigente
-//   - Se arma INMEDIATO en un quiebre BOS (continuación), siempre que no
-//     haya una búsqueda de Continuación pendiente en curso.
+//   - Se arma INMEDIATO en un quiebre BOS (continuación), siempre que no haya
+//     una búsqueda de Continuación pendiente en curso Y el quiebre haya
+//     superado el nivel con cuerpo por >=0,01% (mismo umbral que la
+//     Continuación). Un cruce débil (<0,01%) NO arma mecListo -- por ahora
+//     se ignora sin más (no queda "en espera" de fortalecerse después, a
+//     diferencia del camino CHoCH); si esto genera falsos negativos en la
+//     práctica, se puede sumar seguimiento igual que en la búsqueda CHoCH.
 //   - En un quiebre CHoCH (cambio de estructura) se resetea a false y
 //     arranca la búsqueda Quiebre -> Pullback -> Continuación en M1.
 // esperandoContinuacion = true mientras esa búsqueda está en curso.
@@ -336,7 +343,9 @@ if quiebreAlto
         huboPullbackEnBusqueda := false
         extremoQuiebre := high
         mecListo := false
-    else if not esperandoContinuacion
+    else if not esperandoContinuacion and close > nivelQuebradoAlto * (1 + UMBRAL_QUIEBRE)
+        // BOS -- exige la misma validación de 0,01% que la Continuación;
+        // un cruce débil (< 0,01%) no arma mecListo, se ignora para MEC
         mecListo := true
 
 if quiebreBajo
@@ -345,7 +354,7 @@ if quiebreBajo
         huboPullbackEnBusqueda := false
         extremoQuiebre := low
         mecListo := false
-    else if not esperandoContinuacion
+    else if not esperandoContinuacion and close < nivelQuebradoBajo * (1 - UMBRAL_QUIEBRE)
         mecListo := true
 
 if esperandoContinuacion
