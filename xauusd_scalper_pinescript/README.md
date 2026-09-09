@@ -53,6 +53,12 @@ en un único indicador.
   apertura tiene que caer en la banda angosta 40%-50% (antes era cualquier
   punto >=50%). Un nivelOpen por encima de esa banda (cuerpo más grande)
   pasa a evaluarse como envolvente Doji en su lugar.
+- [x] **Fase 3 (parte 1) — ramas del Doji corregidas (09/09)**: estaban
+  INVERTIDAS desde la Fase 2a. nivelOpen >= 15% (el open queda más lejos del
+  extremo) exige el cierre más estricto (90%); nivelOpen < 15% (open ya casi
+  en el extremo) se conforma con 85%. Caso real que lo destapó: SELL 31/08
+  08:25, nivelOpen 24,80% exigía cierre >=90%, cerró en 86,64% -- inválida
+  (el motor la había marcado válida con la fórmula vieja).
 - [ ] **Fase 3 (parte 2)**: SL/TP, filtro de sesión sobre la señal final,
   "una señal por vela hasta invalidarse", señal visual BUY/SELL (globo +
   ficha de la operación), alertas push.

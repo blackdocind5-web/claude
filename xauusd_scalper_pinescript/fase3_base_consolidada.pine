@@ -209,6 +209,12 @@ if quiebreBajo
 // en cualquier punto >=50%, como era antes). Un nivelOpen por encima de esa
 // banda (cuerpo más grande) pasa a evaluarse como envolvente Doji en su
 // lugar -- confirmado por Fabián el 09/09.
+//
+// Doji: las dos ramas estaban INVERTIDAS desde la Fase 2a -- corregido el
+// 09/09. nivelOpen >= 15% (el open queda más lejos del extremo) exige el
+// cierre más estricto (90%); nivelOpen < 15% (open ya casi en el extremo)
+// se conforma con 85%. Caso real que lo destapó: SELL 31/08 08:25,
+// nivelOpen 24,80% (>=15%) exigía cierre >=90%, cerró en 86,64% -- inválida.
 grpEnvolvente = "Patrón envolvente / Start"
 TOLERANCIA_CUERPO = input.float(0.01, "Margen sobre 85%/90% de cuerpo (grilla de Gann a mano)", minval=0, maxval=0.05, step=0.005, group=grpEnvolvente)
 
@@ -227,7 +233,10 @@ esEstandarBuy = esAlcista and cuerpoPctBuy >= 0.85 - TOLERANCIA_CUERPO
 // 40%-50%, no en cualquier punto >=50%. Un nivelOpen por encima de esa banda
 // (cuerpo más grande) pasa a evaluarse como envolvente Doji en su lugar.
 esMartilloBuy = esAlcista and not esEstandarBuy and nivelOpenBuy >= 0.40 - TOLERANCIA_CUERPO and nivelOpenBuy <= 0.50 + TOLERANCIA_CUERPO and nivelCloseBuy >= 0.85 - TOLERANCIA_CUERPO
-esDojiBuy     = esAlcista and not esEstandarBuy and not esMartilloBuy and ((nivelOpenBuy >= 0.15 and nivelCloseBuy >= 0.85 - TOLERANCIA_CUERPO) or (nivelOpenBuy < 0.15 and nivelCloseBuy >= 0.90 - TOLERANCIA_CUERPO))
+// nivelOpen >= 15% (el open queda más lejos del extremo) exige el cierre
+// más estricto (90%); nivelOpen < 15% (open ya casi en el extremo) se
+// conforma con 85% -- corregido el 09/09, estaba invertido desde la Fase 2a.
+esDojiBuy     = esAlcista and not esEstandarBuy and not esMartilloBuy and ((nivelOpenBuy >= 0.15 and nivelCloseBuy >= 0.90 - TOLERANCIA_CUERPO) or (nivelOpenBuy < 0.15 and nivelCloseBuy >= 0.85 - TOLERANCIA_CUERPO))
 esEnvolventeBuy = esEstandarBuy or esMartilloBuy or esDojiBuy
 
 // -- SELL: 0 = high, 1 = low --
@@ -237,7 +246,7 @@ cuerpoPctSell  = nivelCloseSell - nivelOpenSell
 
 esEstandarSell = esBajista and cuerpoPctSell >= 0.85 - TOLERANCIA_CUERPO
 esMartilloSell = esBajista and not esEstandarSell and nivelOpenSell >= 0.40 - TOLERANCIA_CUERPO and nivelOpenSell <= 0.50 + TOLERANCIA_CUERPO and nivelCloseSell >= 0.85 - TOLERANCIA_CUERPO
-esDojiSell     = esBajista and not esEstandarSell and not esMartilloSell and ((nivelOpenSell >= 0.15 and nivelCloseSell >= 0.85 - TOLERANCIA_CUERPO) or (nivelOpenSell < 0.15 and nivelCloseSell >= 0.90 - TOLERANCIA_CUERPO))
+esDojiSell     = esBajista and not esEstandarSell and not esMartilloSell and ((nivelOpenSell >= 0.15 and nivelCloseSell >= 0.90 - TOLERANCIA_CUERPO) or (nivelOpenSell < 0.15 and nivelCloseSell >= 0.85 - TOLERANCIA_CUERPO))
 esEnvolventeSell = esEstandarSell or esMartilloSell or esDojiSell
 
 // pullback inmediato (1 vela contraria antes de la vela envolvente misma) -- distinto del pullback del patrón Start
