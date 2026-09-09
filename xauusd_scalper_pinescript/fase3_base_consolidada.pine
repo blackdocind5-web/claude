@@ -311,22 +311,24 @@ esStartSell = esEnvolventeSell and esIndecisionSell and pullbackStartSell and no
 // que superar, ella misma, el nivel más reciente con el umbral configurado
 // (`UMBRAL_QUIEBRE`, default 0,005%) de volumen. Por
 // eso `extremoQuiebre` es un nivel que se extiende con la mecha de TODA
-// vela M1 (a favor o en contra, la haya superado o no) desde el último
-// reset, y sigue extendiéndose aunque `mecListo` ya esté en true -- un
-// alto/bajo M1 nuevo que se forme después (todavía no confirmado como
-// Alto/Bajo M3) también hay que superarlo para la PRÓXIMA entrada.
+// vela M1 (a favor o en contra, la haya superado o no) SIEMPRE, corra o no
+// una búsqueda activa -- así el nivel sigue creciendo con la tendencia
+// aunque `mecListo` ya esté en true.
 //
-// Reset (arranca de cero la búsqueda, `extremoQuiebre` = el nivel recién
-// quebrado o el nuevo Alto/Bajo M3):
-//   1. Cualquier quiebreAlto/quiebreBajo (CHoCH o BOS) -- sin exigir el
-//      umbral acá: esa exigencia se aplica en cada intento de superar el nivel,
-//      no en el arranque de la búsqueda. Exigirla también acá desincroniza
-//      el motor de la `tendencia` (que cambia con cualquier cruce, débil o
-//      no, ya en la Sección 2) y dejaba `extremoQuiebre` con un valor
-//      viejo del lado contrario.
-//   2. La formación misma de un Alto/Bajo M3 NUEVO a favor de la tendencia
-//      vigente (puede reemplazar al anterior sin que el precio lo haya
-//      "cruzado").
+// Reset COMPLETO (pierde `mecListo` y hay que rearmar `huboPullbackEnBusqueda`
+// desde cero) SOLO ante un CHoCH real -- cuando `esCambioEstructuraAlto` o
+// `esCambioEstructuraBajo` es true, es decir la tendencia efectivamente
+// cambia. Un BOS (mismo quiebre, pero la tendencia sigue igual) o la
+// formación de un Alto/Bajo M3 nuevo EN LA MISMA dirección NO resetean nada
+// -- el nivel ya se extiende solo, vela a vela, con el bloque de abajo.
+// Corregido el 09/09: antes cualquier BOS (no solo el CHoCH) reseteaba todo,
+// lo cual en una tendencia sana con varios BOS seguidos (normal, sin cambio
+// real de estructura) tiraba abajo `mecListo` una y otra vez, dejando el
+// motor "esperando Continuación" casi toda la sesión en vez de sostenerse
+// listo. Caso real que lo destapó: BUY 03/09 20:55, pullback largo y mixto
+// con varios BOS internos sin cambio de tendencia real.
+// (El primerísimo quiebre de la sesión, viniendo de tendencia "indefinida",
+// también inicializa el nivel aunque no sea técnicamente un CHoCH.)
 //
 // Confirmación de Continuación: una vez que hubo al menos 1 vela de
 // pullback desde el reset, la primera vela a favor que cierra superando
@@ -355,28 +357,18 @@ var bool huboPullbackEnBusqueda = false
 var float extremoQuiebre = na
 var bool mecListo = false
 
-if quiebreAlto
+// "or na(extremoQuiebre)" cubre el primerísimo quiebre de la sesión: viniendo
+// de tendencia "indefinida" (nunca hubo un lado opuesto establecido),
+// esCambioEstructuraAlto/Bajo da false, pero igual hay que inicializar el
+// nivel esa primera vez o el motor nunca arrancaría.
+if quiebreAlto and (esCambioEstructuraAlto or na(extremoQuiebre))
     huboPullbackEnBusqueda := false
     extremoQuiebre := high
     mecListo := false
 
-if quiebreBajo
+if quiebreBajo and (esCambioEstructuraBajo or na(extremoQuiebre))
     huboPullbackEnBusqueda := false
     extremoQuiebre := low
-    mecListo := false
-
-// un Alto/Bajo M3 NUEVO también reinicia la búsqueda, aunque el precio no lo
-// haya "cruzado" (puede reemplazar al anterior sin que haya un ta.crossover
-// de por medio -- ej: el precio ya venía arriba y este es el nuevo techo del
-// impulso).
-if esAltoM3 and tendencia == "alcista"
-    huboPullbackEnBusqueda := false
-    extremoQuiebre := nivelAlto
-    mecListo := false
-
-if esBajoM3 and tendencia == "bajista"
-    huboPullbackEnBusqueda := false
-    extremoQuiebre := nivelBajo
     mecListo := false
 
 esVelaAFavor = false

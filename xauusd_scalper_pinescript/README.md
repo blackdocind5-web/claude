@@ -67,6 +67,17 @@ en un único indicador.
   exacto. Bajar el umbral a la mitad cubre todo lo que esa herramienta
   redondearía hacia "0,01%". Caso real que lo motivó: BUY 02/09 07:12,
   volumen real 0,00742% (nivel 4.315,905 -> cierre 4.316,225).
+- [x] **Fase 3 (parte 1) — reset solo ante CHoCH real (09/09)**: antes,
+  CUALQUIER quiebre válido (CHoCH o BOS) reseteaba `mecListo` y
+  `huboPullbackEnBusqueda` desde cero. En una tendencia sana con varios BOS
+  seguidos (normal, sin cambio real de estructura) eso tiraba abajo
+  `mecListo` una y otra vez, dejando el motor "esperando Continuación" casi
+  toda la sesión en vez de sostenerse listo. Ahora el reset completo ocurre
+  SOLO cuando `esCambioEstructuraAlto`/`esCambioEstructuraBajo` es true (la
+  tendencia efectivamente cambia); un BOS o un Alto/Bajo M3 nuevo en la
+  misma dirección ya no resetean nada -- el nivel se sigue extendiendo solo,
+  vela a vela. Caso real que lo destapó: BUY 03/09 20:55, pullback largo y
+  mixto con varios BOS internos sin cambio de tendencia real.
 - [ ] **Fase 3 (parte 2)**: SL/TP, filtro de sesión sobre la señal final,
   "una señal por vela hasta invalidarse", señal visual BUY/SELL (globo +
   ficha de la operación), alertas push.
