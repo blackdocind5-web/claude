@@ -59,6 +59,14 @@ en un único indicador.
   en el extremo) se conforma con 85%. Caso real que lo destapó: SELL 31/08
   08:25, nivelOpen 24,80% exigía cierre >=90%, cerró en 86,64% -- inválida
   (el motor la había marcado válida con la fórmula vieja).
+- [x] **Fase 3 (parte 1) — umbral de quiebre a 0,005% (09/09)**: `UMBRAL_QUIEBRE`
+  pasa a ser un input configurable, default 0,005% (la mitad del 0,01%
+  original). Fabián mide este volumen con la herramienta "rango de precios"
+  de TradingView, que redondea a 2 decimales -- un volumen real de 0,00742%
+  ya le aparece como "0,01%" en pantalla, indistinguible de un 0,01000%
+  exacto. Bajar el umbral a la mitad cubre todo lo que esa herramienta
+  redondearía hacia "0,01%". Caso real que lo motivó: BUY 02/09 07:12,
+  volumen real 0,00742% (nivel 4.315,905 -> cierre 4.316,225).
 - [ ] **Fase 3 (parte 2)**: SL/TP, filtro de sesión sobre la señal final,
   "una señal por vela hasta invalidarse", señal visual BUY/SELL (globo +
   ficha de la operación), alertas push.

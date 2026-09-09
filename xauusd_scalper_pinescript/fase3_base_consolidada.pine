@@ -308,7 +308,8 @@ esStartSell = esEnvolventeSell and esIndecisionSell and pullbackStartSell and no
 // Regla general ("todos los niveles a la izquierda", confirmada por
 // Fabián): para que UNA ENTRADA PUNTUAL sea válida no alcanza con que
 // `mecListo` esté en true -- esa vela concreta (envolvente o Start) tiene
-// que superar, ella misma, el nivel más reciente con 0,01% de volumen. Por
+// que superar, ella misma, el nivel más reciente con el umbral configurado
+// (`UMBRAL_QUIEBRE`, default 0,005%) de volumen. Por
 // eso `extremoQuiebre` es un nivel que se extiende con la mecha de TODA
 // vela M1 (a favor o en contra, la haya superado o no) desde el último
 // reset, y sigue extendiéndose aunque `mecListo` ya esté en true -- un
@@ -317,8 +318,8 @@ esStartSell = esEnvolventeSell and esIndecisionSell and pullbackStartSell and no
 //
 // Reset (arranca de cero la búsqueda, `extremoQuiebre` = el nivel recién
 // quebrado o el nuevo Alto/Bajo M3):
-//   1. Cualquier quiebreAlto/quiebreBajo (CHoCH o BOS) -- sin exigir 0,01%
-//      acá: esa exigencia se aplica en cada intento de superar el nivel,
+//   1. Cualquier quiebreAlto/quiebreBajo (CHoCH o BOS) -- sin exigir el
+//      umbral acá: esa exigencia se aplica en cada intento de superar el nivel,
 //      no en el arranque de la búsqueda. Exigirla también acá desincroniza
 //      el motor de la `tendencia` (que cambia con cualquier cruce, débil o
 //      no, ya en la Sección 2) y dejaba `extremoQuiebre` con un valor
@@ -329,7 +330,7 @@ esStartSell = esEnvolventeSell and esIndecisionSell and pullbackStartSell and no
 //
 // Confirmación de Continuación: una vez que hubo al menos 1 vela de
 // pullback desde el reset, la primera vela a favor que cierra superando
-// `extremoQuiebre` con 0,01% marca `mecListo := true`.
+// `extremoQuiebre` con el umbral configurado marca `mecListo := true`.
 //
 // Validación de CADA entrada: en TODAS las velas (haya o no búsqueda de
 // pullback en curso) se recalcula si esta vela puntual superó el nivel
@@ -337,10 +338,18 @@ esStartSell = esEnvolventeSell and esIndecisionSell and pullbackStartSell and no
 // La señal final exige `mecListo` (ya hubo una Continuación válida en este
 // tramo) Y `superaNivelAhora` en ESA vela puntual -- una reentrada
 // posterior no hereda gratis la validación original.
+//
+// UMBRAL_QUIEBRE: default 0,005% (mitad del 0,01% original), no 0,01%
+// literal. Fabián mide este volumen con la herramienta "rango de precios"
+// de TradingView, que redondea a 2 decimales -- un volumen real de
+// 0,00742% ya le aparece como "0,01%" en pantalla, indistinguible de un
+// 0,01000% exacto. Bajar el umbral a la mitad cubre todo lo que esa
+// herramienta redondearía hacia "0,01%". Caso real que lo motivó: BUY
+// 02/09 07:12, volumen real 0,00742% (nivel 4.315,905 -> cierre 4.316,225).
 grpMEC = "Modelo MEC"
 mostrarSenalMEC = input.bool(true, "Mostrar cartel de señal final BUY/SELL", group=grpMEC)
 mostrarZonaBusquedaMEC = input.bool(false, "Sombrear zona de búsqueda de Continuación (debug)", group=grpMEC)
-UMBRAL_QUIEBRE = 0.0001  // 0,01%
+UMBRAL_QUIEBRE = input.float(0.00005, "Umbral mínimo de quiebre/Continuación (rango de precios redondea a 2 decimales)", minval=0, maxval=0.001, step=0.00001, group=grpMEC)
 
 var bool huboPullbackEnBusqueda = false
 var float extremoQuiebre = na
