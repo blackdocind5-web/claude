@@ -73,10 +73,16 @@ en un único indicador.
   FINAL de la vela, así que no hay forma honesta de confirmarlo antes de
   ese cierre -- sin este freno, un tick intermedio que luzca momentáneamente
   válido podía dejar una etiqueta fantasma si el precio se revertía antes de
-  que cerrara el minuto. El panel de estado ("MEC: listo / esperando
-  continuación / no armado") sigue siendo el anticipo legítimo: "listo"
-  significa que la próxima vela que cierre como envolvente o Start válida
-  dispara la señal de inmediato, sin necesidad de un quiebre nuevo.
+  que cerrara el minuto. El panel de estado ("No Entry" / "Waiting for MEC" /
+  "MEC ready") sigue siendo el anticipo legítimo: "MEC ready" significa que
+  la próxima vela que cierre como envolvente o Start válida dispara la señal
+  de inmediato, sin necesidad de un quiebre nuevo.
+- **Panel de estado en inglés y reducido a 2 celdas**: "Tendencia: Alcista/
+  Bajista" pasó a "Uptrend (BUY)" / "Downtrend (SELL)"; "no armado" /
+  "esperando continuación" / "MEC: listo" pasaron a "No Entry" / "Waiting for
+  MEC" / "MEC ready". La celda del medio (sesión activa / fuera de sesión)
+  se eliminó -- el sombreado de fondo de cada sesión ya cumple esa función,
+  mostrarlo dos veces era redundante.
 
 - El indicador corre sobre el gráfico **M1** (donde se ejecuta) y trae la
   estructura M3 por detrás con `request.security()`.

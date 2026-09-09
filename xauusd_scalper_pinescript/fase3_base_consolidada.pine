@@ -403,8 +403,7 @@ if mostrarSenalMEC and mecSellSenal and barstate.isconfirmed
 // ============================================================================
 // SECCIÓN 7 — PANEL DE ESTADO
 // ============================================================================
-var table panel = table.new(position.top_right, 1, 3, border_width=1)
+var table panel = table.new(position.top_right, 1, 2, border_width=1)
 if barstate.islast
-    table.cell(panel, 0, 0, "Tendencia: " + tendencia, text_color=color.white, bgcolor=tendencia == "alcista" ? color.new(color.green, 40) : tendencia == "bajista" ? color.new(color.red, 40) : color.new(color.gray, 40))
-    table.cell(panel, 0, 1, enSesionOperativa ? (enPreNY ? "Sesión: Pre-NY" : "Sesión: Asia") : "Fuera de sesión", text_color=color.white, bgcolor=enSesionOperativa ? color.new(color.blue, 40) : color.new(color.gray, 70))
-    table.cell(panel, 0, 2, "MEC: " + (mecListo ? "listo" : esperandoContinuacion ? "esperando continuación" : "no armado"), text_color=color.white, bgcolor=mecListo ? color.new(color.teal, 40) : esperandoContinuacion ? color.new(color.orange, 40) : color.new(color.gray, 70))
+    table.cell(panel, 0, 0, tendencia == "alcista" ? "Uptrend (BUY)" : tendencia == "bajista" ? "Downtrend (SELL)" : "Undefined", text_color=color.white, bgcolor=tendencia == "alcista" ? color.new(color.green, 40) : tendencia == "bajista" ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(panel, 0, 1, mecListo ? "MEC ready" : esperandoContinuacion ? "Waiting for MEC" : "No Entry", text_color=color.white, bgcolor=mecListo ? color.new(color.teal, 40) : esperandoContinuacion ? color.new(color.orange, 40) : color.new(color.gray, 70))
