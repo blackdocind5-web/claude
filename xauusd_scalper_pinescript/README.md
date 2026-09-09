@@ -39,6 +39,15 @@ en un único indicador.
   arranque, solo en cada intento de superar el nivel) o ante un Alto/Bajo M3
   nuevo. Señal "en bruto" (`mecBuyBruto`/`mecSellBruto`) para validar el
   motor antes de sumar SL/TP.
+- [x] **Fase 3 (parte 1) — margen de estimación visual (09/09)**: los cortes
+  de 85%/90% de cuerpo del clasificador de envolvente (Sección 3) y de la
+  vela de indecisión del patrón Start (Sección 4) se relajan con
+  `TOLERANCIA_CUERPO` (input, default 1 punto porcentual). Motivo: Fabián
+  mide el volumen a ojo con una grilla de Gann dibujada a mano, sin
+  decimales -- exigirle al código una precisión matemática perfecta sobre
+  un corte que él mismo definió visualmente es más estricto que el propio
+  método que se está formalizando. Caso real que lo motivó: vela de 30/08
+  20:35, cuerpo 84,60%, confirmada por Fabián como Estándar válida.
 - [ ] **Fase 3 (parte 2)**: SL/TP, filtro de sesión sobre la señal final,
   "una señal por vela hasta invalidarse", señal visual BUY/SELL (globo +
   ficha de la operación), alertas push.
