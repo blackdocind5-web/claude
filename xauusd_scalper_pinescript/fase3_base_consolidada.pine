@@ -270,51 +270,57 @@ esStartSell = esEnvolventeSell and esIndecisionSell and pullbackStartSell and no
 // ============================================================================
 // SECCIÓN 6 — MODELO MEC (Fase 3)
 // ============================================================================
-// mecListo = true  -> habilitado para entrar a favor de la `tendencia` vigente
+// mecListo = true  -> ya hubo al menos una Continuación confirmada desde el
+//   último reset (la estructura está habilitada para buscar entradas a favor
+//   de la `tendencia` vigente).
 //
-// Cualquier quiebre válido (CHoCH o BOS, no importa cuál) dispara la MISMA
-// búsqueda Quiebre -> Pullback -> Continuación en M1 -- no hay dos caminos
-// distintos. Cada Alto/Bajo M3 nuevo exige su propia validación de 0,01%
-// antes de habilitar una entrada nueva, y esto se dispara de DOS formas:
-//   1. Un cruce válido (ta.crossover/crossunder con 0,01%) del nivel activo.
-//   2. La formación misma de un Alto/Bajo M3 NUEVO (puede reemplazar al
-//      anterior sin que el precio lo haya "cruzado" -- ej: el precio ya
-//      venía por encima y este es simplemente el nuevo techo del impulso).
-// Sin el punto 2, un mecListo viejo quedaba "colgado" en true aunque ya
-// hubiera un Alto/Bajo M3 nuevo sin superar todavía.
-// La única diferencia entre CHoCH y BOS sigue siendo si además cambia la
-// `tendencia` (eso ya lo resuelve la Fase 1 en la Sección 2). Un cruce
-// débil (<0,01%) simplemente no reinicia nada -- se ignora para MEC.
-// esperandoContinuacion = true mientras esa búsqueda está en curso.
-// extremoQuiebre = nivel que la Continuación debe superar (con cuerpo,
-//   umbral 0,01%). Se extiende con CUALQUIER vela durante el impulso, y con
-//   CUALQUIER vela en contra en cualquier punto del pullback (no solo la
-//   primera -- la mecha más relevante puede estar en una vela de pullback
-//   tardía). Solo dejar de extenderse cuando la Continuación finalmente se
-//   confirma; los intentos fallidos de Continuación no lo mueven, pero más
-//   velas de pullback después de un intento fallido sí pueden seguir
-//   extendiéndolo. Se reinicia por completo si el precio rompe de vuelta el
-//   CHoCH contrario (vuelve a la estructura anterior).
+// Regla general ("todos los niveles a la izquierda", confirmada por
+// Fabián): para que UNA ENTRADA PUNTUAL sea válida no alcanza con que
+// `mecListo` esté en true -- esa vela concreta (envolvente o Start) tiene
+// que superar, ella misma, el nivel más reciente con 0,01% de volumen. Por
+// eso `extremoQuiebre` es un nivel que se extiende con la mecha de TODA
+// vela M1 (a favor o en contra, la haya superado o no) desde el último
+// reset, y sigue extendiéndose aunque `mecListo` ya esté en true -- un
+// alto/bajo M1 nuevo que se forme después (todavía no confirmado como
+// Alto/Bajo M3) también hay que superarlo para la PRÓXIMA entrada.
+//
+// Reset (arranca de cero la búsqueda, `extremoQuiebre` = el nivel recién
+// quebrado o el nuevo Alto/Bajo M3):
+//   1. Cualquier quiebreAlto/quiebreBajo (CHoCH o BOS) -- sin exigir 0,01%
+//      acá: esa exigencia se aplica en cada intento de superar el nivel,
+//      no en el arranque de la búsqueda. Exigirla también acá desincroniza
+//      el motor de la `tendencia` (que cambia con cualquier cruce, débil o
+//      no, ya en la Sección 2) y dejaba `extremoQuiebre` con un valor
+//      viejo del lado contrario.
+//   2. La formación misma de un Alto/Bajo M3 NUEVO a favor de la tendencia
+//      vigente (puede reemplazar al anterior sin que el precio lo haya
+//      "cruzado").
+//
+// Confirmación de Continuación: una vez que hubo al menos 1 vela de
+// pullback desde el reset, la primera vela a favor que cierra superando
+// `extremoQuiebre` con 0,01% marca `mecListo := true`.
+//
+// Validación de CADA entrada: en TODAS las velas (haya o no búsqueda de
+// pullback en curso) se recalcula si esta vela puntual superó el nivel
+// vigente (`superaNivelAhora`) ANTES de que su propia mecha lo actualice.
+// La señal final exige `mecListo` (ya hubo una Continuación válida en este
+// tramo) Y `superaNivelAhora` en ESA vela puntual -- una reentrada
+// posterior no hereda gratis la validación original.
 grpMEC = "Modelo MEC"
 mostrarSenalMEC = input.bool(true, "Mostrar cartel de señal final BUY/SELL", group=grpMEC)
 mostrarZonaBusquedaMEC = input.bool(false, "Sombrear zona de búsqueda de Continuación (debug)", group=grpMEC)
 UMBRAL_QUIEBRE = 0.0001  // 0,01%
 
-var bool esperandoContinuacion = false
 var bool huboPullbackEnBusqueda = false
 var float extremoQuiebre = na
 var bool mecListo = false
 
-// cualquier quiebre válido (CHoCH o BOS) de un Alto/Bajo M3 arranca o
-// reinicia la búsqueda de Continuación -- un cruce débil (<0,01%) se ignora
-if quiebreAlto and close > nivelQuebradoAlto * (1 + UMBRAL_QUIEBRE)
-    esperandoContinuacion := true
+if quiebreAlto
     huboPullbackEnBusqueda := false
     extremoQuiebre := high
     mecListo := false
 
-if quiebreBajo and close < nivelQuebradoBajo * (1 - UMBRAL_QUIEBRE)
-    esperandoContinuacion := true
+if quiebreBajo
     huboPullbackEnBusqueda := false
     extremoQuiebre := low
     mecListo := false
@@ -322,50 +328,48 @@ if quiebreBajo and close < nivelQuebradoBajo * (1 - UMBRAL_QUIEBRE)
 // un Alto/Bajo M3 NUEVO también reinicia la búsqueda, aunque el precio no lo
 // haya "cruzado" (puede reemplazar al anterior sin que haya un ta.crossover
 // de por medio -- ej: el precio ya venía arriba y este es el nuevo techo del
-// impulso). Cada Alto/Bajo M3 nuevo exige su propia validación de 0,01%.
+// impulso).
 if esAltoM3 and tendencia == "alcista"
-    esperandoContinuacion := true
     huboPullbackEnBusqueda := false
     extremoQuiebre := nivelAlto
     mecListo := false
 
 if esBajoM3 and tendencia == "bajista"
-    esperandoContinuacion := true
     huboPullbackEnBusqueda := false
     extremoQuiebre := nivelBajo
     mecListo := false
 
-if esperandoContinuacion
-    esVelaAFavor   = tendencia == "alcista" ? close > open : close < open
-    esVelaEnContra = tendencia == "alcista" ? close < open : close > open
+esVelaAFavor = false
+esVelaEnContra = false
+superaNivelAhora = false
 
-    // el extremo se extiende con CUALQUIER vela mientras todavía no hubo
-    // pullback (fase de impulso), Y con CUALQUIER vela en contra en
-    // cualquier punto posterior del pullback (no solo la primera) --
-    // la mecha más relevante puede estar en una vela de pullback tardía,
-    // no necesariamente en la de reversión inicial
-    if esVelaEnContra or not huboPullbackEnBusqueda
-        extremoQuiebre := tendencia == "alcista" ? math.max(extremoQuiebre, high) : math.min(extremoQuiebre, low)
+if tendencia != "indefinida" and not na(extremoQuiebre)
+    esVelaAFavor := tendencia == "alcista" ? close > open : close < open
+    esVelaEnContra := tendencia == "alcista" ? close < open : close > open
+
+    umbral = tendencia == "alcista" ? extremoQuiebre * (1 + UMBRAL_QUIEBRE) : extremoQuiebre * (1 - UMBRAL_QUIEBRE)
+    superaNivelAhora := tendencia == "alcista" ? close > umbral : close < umbral
 
     if esVelaEnContra
         huboPullbackEnBusqueda := true
 
-    // una vez que ya hubo al menos 1 vela de pullback, cualquier vela a
-    // favor es un intento de Continuación
-    if huboPullbackEnBusqueda and esVelaAFavor
-        umbral = tendencia == "alcista" ? extremoQuiebre * (1 + UMBRAL_QUIEBRE) : extremoQuiebre * (1 - UMBRAL_QUIEBRE)
-        confirmaContinuacion = tendencia == "alcista" ? close > umbral : close < umbral
-        if confirmaContinuacion
-            mecListo := true
-            esperandoContinuacion := false
-        // si no confirma, seguimos esperando -- si después vienen más velas
-        // en contra, el nivel se sigue pudiendo extender más arriba/abajo
+    // una vez que ya hubo al menos 1 vela de pullback, la primera vela a
+    // favor que supera el nivel vigente confirma la Continuación
+    if huboPullbackEnBusqueda and esVelaAFavor and superaNivelAhora
+        mecListo := true
+
+    // el nivel se extiende SIEMPRE con la mecha de esta vela, haya
+    // superado o no -- pasa a ser el próximo "nivel a la izquierda" a
+    // batir, incluso después de que mecListo ya esté en true
+    extremoQuiebre := tendencia == "alcista" ? math.max(extremoQuiebre, high) : math.min(extremoQuiebre, low)
+
+esperandoContinuacion = tendencia != "indefinida" and not mecListo
 
 // -- Señal MEC "en bruto": todavía sin SL/TP, sin
 //    control de "una señal por vela hasta invalidarse" -- eso es el próximo
 //    incremento de la Fase 3. Esto es solo para validar el motor MEC.
-mecBuyBruto  = mecListo and tendencia == "alcista" and (candidataEnvolventeBuy  or esStartBuy)
-mecSellBruto = mecListo and tendencia == "bajista" and (candidataEnvolventeSell or esStartSell)
+mecBuyBruto  = mecListo and tendencia == "alcista" and superaNivelAhora and (candidataEnvolventeBuy  or esStartBuy)
+mecSellBruto = mecListo and tendencia == "bajista" and superaNivelAhora and (candidataEnvolventeSell or esStartSell)
 
 // filtro de sesión: el motor MEC sigue corriendo las 24hs por detrás (para no
 // perder el hilo de la estructura), pero la señal solo se MUESTRA dentro de

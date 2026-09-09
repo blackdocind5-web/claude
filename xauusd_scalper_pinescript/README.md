@@ -28,12 +28,17 @@ en un único indicador.
   (sesiones + estructura M3) y Fase 2 (envolvente + Start) en un solo
   script — reemplaza a los 3 archivos anteriores, que se mantienen solo de
   referencia. Punto de partida de la Fase 3.
-- [x] **Fase 3 (parte 1) — motor MEC**: bandera unificada `mecListo`
-  (BOS→arma inmediato si no hay búsqueda pendiente; CHoCH→resetea y
-  arranca Quiebre→Pullback→Continuación en M1 con validación 0,01%,
-  nivel fijo desde que arranca el pullback, reinicio ante CHoCH
-  contrario). Señal "en bruto" (`mecBuyBruto`/`mecSellBruto`) para
-  validar el motor antes de sumar SL/TP.
+- [x] **Fase 3 (parte 1) — motor MEC**: bandera `mecListo` (ya hubo una
+  Continuación confirmada desde el último reset) + regla "todos los niveles
+  a la izquierda" (confirmada por Fabián el 09/09): `extremoQuiebre` se
+  extiende con la mecha de TODA vela M1 sin importar si `mecListo` ya está
+  en true, y cada entrada puntual (no solo la Continuación original) tiene
+  que volver a superar el nivel vigente con 0,01% por sí misma -- una
+  reentrada no hereda gratis la validación de una vela anterior. Reset ante
+  cualquier quiebreAlto/quiebreBajo (CHoCH o BOS, sin exigir 0,01% en el
+  arranque, solo en cada intento de superar el nivel) o ante un Alto/Bajo M3
+  nuevo. Señal "en bruto" (`mecBuyBruto`/`mecSellBruto`) para validar el
+  motor antes de sumar SL/TP.
 - [ ] **Fase 3 (parte 2)**: SL/TP, filtro de sesión sobre la señal final,
   "una señal por vela hasta invalidarse", señal visual BUY/SELL (globo +
   ficha de la operación), alertas push.
