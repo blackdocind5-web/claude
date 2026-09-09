@@ -48,6 +48,11 @@ en un único indicador.
   un corte que él mismo definió visualmente es más estricto que el propio
   método que se está formalizando. Caso real que lo motivó: vela de 30/08
   20:35, cuerpo 84,60%, confirmada por Fabián como Estándar válida.
+- [x] **Fase 3 (parte 1) — banda de Martillo (09/09)**: Martillo exige un
+  cuerpo CHICO (tal como lo indica su nombre): el nivel del lado de la
+  apertura tiene que caer en la banda angosta 40%-50% (antes era cualquier
+  punto >=50%). Un nivelOpen por encima de esa banda (cuerpo más grande)
+  pasa a evaluarse como envolvente Doji en su lugar.
 - [ ] **Fase 3 (parte 2)**: SL/TP, filtro de sesión sobre la señal final,
   "una señal por vela hasta invalidarse", señal visual BUY/SELL (globo +
   ficha de la operación), alertas push.

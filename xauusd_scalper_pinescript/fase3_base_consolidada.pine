@@ -203,6 +203,12 @@ if quiebreBajo
 // exigiendo cuerpo dominante), solo reconoce que ese método de referencia
 // no resuelve más allá de este margen. Caso real que lo motivó: vela de
 // 30/08 20:35, cuerpo 84,60% -- Fabián la confirmó como Estándar válida.
+//
+// Martillo exige un cuerpo CHICO (tal como lo indica su nombre): el nivel
+// del lado de la apertura tiene que caer en la banda angosta 40%-50% (no
+// en cualquier punto >=50%, como era antes). Un nivelOpen por encima de esa
+// banda (cuerpo más grande) pasa a evaluarse como envolvente Doji en su
+// lugar -- confirmado por Fabián el 09/09.
 grpEnvolvente = "Patrón envolvente / Start"
 TOLERANCIA_CUERPO = input.float(0.01, "Margen sobre 85%/90% de cuerpo (grilla de Gann a mano)", minval=0, maxval=0.05, step=0.005, group=grpEnvolvente)
 
@@ -216,7 +222,11 @@ nivelCloseBuy = rango > 0 ? (close - low) / rango : na
 cuerpoPctBuy  = nivelCloseBuy - nivelOpenBuy
 
 esEstandarBuy = esAlcista and cuerpoPctBuy >= 0.85 - TOLERANCIA_CUERPO
-esMartilloBuy = esAlcista and not esEstandarBuy and nivelOpenBuy >= 0.50 and nivelCloseBuy >= 0.85 - TOLERANCIA_CUERPO
+// Martillo exige un cuerpo CHICO (tal como lo indica su nombre): el extremo
+// del cuerpo del lado de la apertura tiene que caer en la banda angosta
+// 40%-50%, no en cualquier punto >=50%. Un nivelOpen por encima de esa banda
+// (cuerpo más grande) pasa a evaluarse como envolvente Doji en su lugar.
+esMartilloBuy = esAlcista and not esEstandarBuy and nivelOpenBuy >= 0.40 - TOLERANCIA_CUERPO and nivelOpenBuy <= 0.50 + TOLERANCIA_CUERPO and nivelCloseBuy >= 0.85 - TOLERANCIA_CUERPO
 esDojiBuy     = esAlcista and not esEstandarBuy and not esMartilloBuy and ((nivelOpenBuy >= 0.15 and nivelCloseBuy >= 0.85 - TOLERANCIA_CUERPO) or (nivelOpenBuy < 0.15 and nivelCloseBuy >= 0.90 - TOLERANCIA_CUERPO))
 esEnvolventeBuy = esEstandarBuy or esMartilloBuy or esDojiBuy
 
@@ -226,7 +236,7 @@ nivelCloseSell = rango > 0 ? (high - close) / rango : na
 cuerpoPctSell  = nivelCloseSell - nivelOpenSell
 
 esEstandarSell = esBajista and cuerpoPctSell >= 0.85 - TOLERANCIA_CUERPO
-esMartilloSell = esBajista and not esEstandarSell and nivelOpenSell >= 0.50 and nivelCloseSell >= 0.85 - TOLERANCIA_CUERPO
+esMartilloSell = esBajista and not esEstandarSell and nivelOpenSell >= 0.40 - TOLERANCIA_CUERPO and nivelOpenSell <= 0.50 + TOLERANCIA_CUERPO and nivelCloseSell >= 0.85 - TOLERANCIA_CUERPO
 esDojiSell     = esBajista and not esEstandarSell and not esMartilloSell and ((nivelOpenSell >= 0.15 and nivelCloseSell >= 0.85 - TOLERANCIA_CUERPO) or (nivelOpenSell < 0.15 and nivelCloseSell >= 0.90 - TOLERANCIA_CUERPO))
 esEnvolventeSell = esEstandarSell or esMartilloSell or esDojiSell
 
@@ -251,7 +261,7 @@ TOLERANCIA = 0.0001  // 0,01%
 nivelOpenIndBuy  = rangoInd > 0 ? (open[1] - low[1]) / rangoInd : na
 nivelCloseIndBuy = rangoInd > 0 ? (close[1] - low[1]) / rangoInd : na
 cuerpoIndBuy = math.abs(nivelCloseIndBuy - nivelOpenIndBuy)
-esMartilloIndBuy = nivelOpenIndBuy >= 0.50 and nivelCloseIndBuy >= 0.85 - TOLERANCIA_CUERPO
+esMartilloIndBuy = nivelOpenIndBuy >= 0.40 - TOLERANCIA_CUERPO and nivelOpenIndBuy <= 0.50 + TOLERANCIA_CUERPO and nivelCloseIndBuy >= 0.85 - TOLERANCIA_CUERPO
 esIndecisionBuy = cuerpoIndBuy <= 0.50 + TOLERANCIA and not esMartilloIndBuy
 
 wickContraBuy = math.min(nivelOpenIndBuy, nivelCloseIndBuy)
@@ -262,7 +272,7 @@ tipoIndBuy = esIndecisionBuy ? (math.abs(wickContraBuy - wickFavorBuy) <= 0.15 ?
 nivelOpenIndSell  = rangoInd > 0 ? (high[1] - open[1]) / rangoInd : na
 nivelCloseIndSell = rangoInd > 0 ? (high[1] - close[1]) / rangoInd : na
 cuerpoIndSell = math.abs(nivelCloseIndSell - nivelOpenIndSell)
-esMartilloIndSell = nivelOpenIndSell >= 0.50 and nivelCloseIndSell >= 0.85 - TOLERANCIA_CUERPO
+esMartilloIndSell = nivelOpenIndSell >= 0.40 - TOLERANCIA_CUERPO and nivelOpenIndSell <= 0.50 + TOLERANCIA_CUERPO and nivelCloseIndSell >= 0.85 - TOLERANCIA_CUERPO
 esIndecisionSell = cuerpoIndSell <= 0.50 + TOLERANCIA and not esMartilloIndSell
 
 wickContraSell = math.min(nivelOpenIndSell, nivelCloseIndSell)
