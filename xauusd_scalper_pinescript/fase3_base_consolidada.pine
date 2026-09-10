@@ -361,14 +361,28 @@ var bool mecListo = false
 // de tendencia "indefinida" (nunca hubo un lado opuesto establecido),
 // esCambioEstructuraAlto/Bajo da false, pero igual hay que inicializar el
 // nivel esa primera vez o el motor nunca arrancaría.
+//
+// El reset toma el máximo/mínimo de las últimas 4 velas M1 (esta + 3 para
+// atrás), no solo la vela actual -- porque la vela M3 que contiene el
+// quiebre real recién queda "cerrada y reconocida" por el código hasta 3
+// velas M1 después (la estructura M3 agrupa de a 3 minutos, y solo se
+// procesa cuando el gráfico M1 llega al siguiente bloque). Sin este
+// colchón, `extremoQuiebre` arrancaba con el mínimo/máximo de la vela
+// donde el código RECONOCE el quiebre (tarde), no de la vela que
+// realmente lo originó -- un nivel mucho más fácil de superar, que
+// generaba señales falsas. Caso real que lo destapó: SELL 07/09 20:47 --
+// el quiebre real fue en la vela de las 20:43 (mínimo 4.418,830), pero el
+// código recién lo reconoció en la de las 20:45 (mínimo 4.420,620,
+// bastante más alto), y la vela de las 20:47 superaba ese segundo nivel
+// sin superar el real.
 if quiebreAlto and (esCambioEstructuraAlto or na(extremoQuiebre))
     huboPullbackEnBusqueda := false
-    extremoQuiebre := high
+    extremoQuiebre := math.max(math.max(high, high[1]), math.max(high[2], high[3]))
     mecListo := false
 
 if quiebreBajo and (esCambioEstructuraBajo or na(extremoQuiebre))
     huboPullbackEnBusqueda := false
-    extremoQuiebre := low
+    extremoQuiebre := math.min(math.min(low, low[1]), math.min(low[2], low[3]))
     mecListo := false
 
 esVelaAFavor = false

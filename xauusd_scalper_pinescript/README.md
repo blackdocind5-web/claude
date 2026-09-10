@@ -78,6 +78,18 @@ en un único indicador.
   misma dirección ya no resetean nada -- el nivel se sigue extendiendo solo,
   vela a vela. Caso real que lo destapó: BUY 03/09 20:55, pullback largo y
   mixto con varios BOS internos sin cambio de tendencia real.
+- [x] **Fase 3 (parte 1) — colchón de 4 velas en el reset (10/09)**: el
+  reset de `extremoQuiebre` toma el máximo/mínimo de las últimas 4 velas M1
+  (esta + 3 para atrás), no solo la vela actual. La estructura M3 agrupa de
+  a 3 minutos y el código recién "reconoce" un quiebre hasta 3 velas M1
+  después de que ocurrió de verdad (cuando el gráfico M1 llega al siguiente
+  bloque de 3 minutos) -- sin este colchón, `extremoQuiebre` arrancaba con
+  el mínimo/máximo de la vela donde el código RECONOCE el quiebre (tarde),
+  no de la vela que lo originó, dando un nivel mucho más fácil de superar y
+  señales falsas. Caso real que lo destapó: SELL 07/09 20:47 -- el quiebre
+  real fue en la vela de las 20:43 (mínimo 4.418,830), el código recién lo
+  reconoció en la de las 20:45 (mínimo 4.420,620), y la vela de las 20:47
+  superaba ese segundo nivel sin superar el real.
 - [ ] **Fase 3 (parte 2)**: SL/TP, filtro de sesión sobre la señal final,
   "una señal por vela hasta invalidarse", señal visual BUY/SELL (globo +
   ficha de la operación), alertas push.
