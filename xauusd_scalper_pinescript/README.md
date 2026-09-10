@@ -119,6 +119,22 @@ en un único indicador.
   líneas de la sesión de Asia del 07/09 ya no se veían (el histórico visible
   llegaba solo hasta 08/09 12:15h) justo en medio de la depuración del caso
   SELL 07/09 20:47.
+- [x] **Fase 3 (parte 1) — reconocimiento M3 solo en cierre confirmado (10/09)**:
+  el bloque que reconoce una vela M3 nueva (Sección 2) se ejecutaba en CADA
+  tick intradía mientras la vela M1 todavía se estaba formando en vivo, no
+  solo en su cierre. TradingView recalcula `request.security()` en cada
+  tick, y el motor de tramos (`curDir`/`curHigh`/`prevDir`/`prevHigh`, todas
+  `var`, persisten para siempre) podía leer en un tick transitorio un estado
+  que saltaba un pivote intermedio -- una vez saltado queda pegado ahí para
+  el resto de la corrida, porque esas variables nunca se resetean. Ahora el
+  bloque exige `barstate.isconfirmed` (mismo freno que ya usa el cartel
+  BUY/SELL): el reconocimiento ocurre una sola vez por vela M1, en su cierre
+  real. Caso real que lo destapó: CHoCH alcista 10/09 07:25 (Pre-NY) -- el
+  Alto M3 correcto era 4.384,490 (ancla 07:18, tras el flip alcista→bajista
+  de la vela de 07:21), pero en M1 el indicador nunca reconoció ese pivote y
+  saltó directo del nivel anterior (4.385,890, ancla 07:12) a marcarlo como
+  CHoCH; en el gráfico M3 nativo (cada vela se evalúa una sola vez, en su
+  cierre) el nivel se vio siempre correcto.
 - [ ] **Fase 3 (parte 2)**: SL/TP, filtro de sesión sobre la señal final,
   "una señal por vela hasta invalidarse", señal visual BUY/SELL (globo +
   ficha de la operación), alertas push.
