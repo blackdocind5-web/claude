@@ -51,6 +51,7 @@ grpEstructura = "Estructura M3"
 colorPunteada    = input.color(color.new(#787b86, 0), "Línea punteada (continuación)", group=grpEstructura)
 colorContinua    = input.color(color.new(color.black, 0), "Línea continua (cambio de estructura)", group=grpEstructura)
 extensionBarras  = input.int(10, "Extensión sin toque (barras M1)", minval=1, group=grpEstructura)
+limitarLineasASesion = input.bool(true, "Dibujar líneas M3 solo durante Pre-NY/Asia (más historial dentro del cupo de 500 líneas)", group=grpEstructura)
 
 [o3, h3, l3, c3, t3] = request.security(syminfo.tickerid, "3", [open, high, low, close, time], lookahead=barmerge.lookahead_off)
 nuevaVelaM3 = ta.change(t3) != 0
@@ -116,39 +117,67 @@ var int altoM3Inicio = na
 var int bajoM3Inicio = na
 var bool altoRoto = false
 var bool bajoRoto = false
+var bool altoLineaActiva = false  // hay una línea DIBUJADA para el altoM3Activo vigente -- nace/muere con la sesión operativa, el NIVEL en sí (altoM3Activo) sigue existiendo igual
+var bool bajoLineaActiva = false
 var string tendencia = "indefinida"  // "alcista" | "bajista" | "indefinida"
 
 maxExtMs = extensionBarras * timeframe.in_seconds("1") * 1000
 
+// dibujarLineasM3: el motor interno (altoM3Activo/bajoM3Activo, quiebreAlto/
+// quiebreBajo, tendencia, todo lo que el MEC necesita) sigue corriendo las
+// 24hs -- acá solo se apaga el DIBUJO de las líneas, que es lo que consume
+// el cupo compartido de 500 líneas de TradingView. Pre-NY + Asia ocupan
+// ~17% del día, así que esto multiplica por ~6 el historial visible de
+// líneas antes de que empiecen a borrarse las más viejas. El interruptor
+// (limitarLineasASesion) queda disponible por si hace falta ver la
+// estructura completa fuera de esas horas para depurar un caso puntual.
+dibujarLineasM3 = not limitarLineasASesion or enSesionOperativa
+
 if esAltoM3
     if not na(altoM3Inicio) and altoM3Inicio == altoRunInicio
         altoM3Activo := nivelAlto
-        line.set_y1(altoLinea, nivelAlto)
-        line.set_y2(altoLinea, nivelAlto)
+        if altoLineaActiva
+            line.set_y1(altoLinea, nivelAlto)
+            line.set_y2(altoLinea, nivelAlto)
     else
-        if not na(altoLinea) and not altoRoto
+        if altoLineaActiva and not altoRoto
             line.set_x2(altoLinea, int(math.min(time, altoM3Inicio + maxExtMs)))
         altoM3Activo := nivelAlto
         altoM3Inicio := altoRunInicio
         altoRoto := false
-        altoLinea := line.new(x1=altoRunInicio, y1=nivelAlto, x2=time, y2=nivelAlto, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+        altoLineaActiva := dibujarLineasM3
+        if altoLineaActiva
+            altoLinea := line.new(x1=altoRunInicio, y1=nivelAlto, x2=time, y2=nivelAlto, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
 
 if esBajoM3
     if not na(bajoM3Inicio) and bajoM3Inicio == bajoRunInicio
         bajoM3Activo := nivelBajo
-        line.set_y1(bajoLinea, nivelBajo)
-        line.set_y2(bajoLinea, nivelBajo)
+        if bajoLineaActiva
+            line.set_y1(bajoLinea, nivelBajo)
+            line.set_y2(bajoLinea, nivelBajo)
     else
-        if not na(bajoLinea) and not bajoRoto
+        if bajoLineaActiva and not bajoRoto
             line.set_x2(bajoLinea, int(math.min(time, bajoM3Inicio + maxExtMs)))
         bajoM3Activo := nivelBajo
         bajoM3Inicio := bajoRunInicio
         bajoRoto := false
-        bajoLinea := line.new(x1=bajoRunInicio, y1=nivelBajo, x2=time, y2=nivelBajo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+        bajoLineaActiva := dibujarLineasM3
+        if bajoLineaActiva
+            bajoLinea := line.new(x1=bajoRunInicio, y1=nivelBajo, x2=time, y2=nivelBajo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
 
-if not na(altoLinea) and not na(altoM3Activo)
+// si el nivel ya estaba activo desde antes de entrar en sesión (o justo se
+// prendió el interruptor), recién ahora lo dibuja -- arranca la línea en su
+// x1 real (altoM3Inicio/bajoM3Inicio), no en la barra actual
+if dibujarLineasM3 and not altoLineaActiva and not na(altoM3Activo)
+    altoLineaActiva := true
+    altoLinea := line.new(x1=altoM3Inicio, y1=altoM3Activo, x2=time, y2=altoM3Activo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+if dibujarLineasM3 and not bajoLineaActiva and not na(bajoM3Activo)
+    bajoLineaActiva := true
+    bajoLinea := line.new(x1=bajoM3Inicio, y1=bajoM3Activo, x2=time, y2=bajoM3Activo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+
+if altoLineaActiva and not na(altoM3Activo)
     line.set_x2(altoLinea, int(math.min(time, altoM3Inicio + maxExtMs)))
-if not na(bajoLinea) and not na(bajoM3Activo)
+if bajoLineaActiva and not na(bajoM3Activo)
     line.set_x2(bajoLinea, int(math.min(time, bajoM3Inicio + maxExtMs)))
 
 quiebreAlto = not na(altoM3Activo) and ta.crossover(close, altoM3Activo)
@@ -166,25 +195,29 @@ nivelQuebradoBajo = float(na)
 if quiebreAlto
     nivelQuebradoAlto := altoM3Activo
     esCambioEstructuraAlto := tendencia == "bajista"
-    line.set_x2(altoLinea, time)
-    line.set_style(altoLinea, esCambioEstructuraAlto ? line.style_solid : line.style_dotted)
-    line.set_color(altoLinea, esCambioEstructuraAlto ? colorContinua : colorPunteada)
-    line.set_width(altoLinea, esCambioEstructuraAlto ? 2 : 1)
+    if altoLineaActiva
+        line.set_x2(altoLinea, time)
+        line.set_style(altoLinea, esCambioEstructuraAlto ? line.style_solid : line.style_dotted)
+        line.set_color(altoLinea, esCambioEstructuraAlto ? colorContinua : colorPunteada)
+        line.set_width(altoLinea, esCambioEstructuraAlto ? 2 : 1)
     tendencia := "alcista"
     altoM3Activo := na
     altoRoto := true
+    altoLineaActiva := false
     ultimoQuiebreFueCambioEstructura := esCambioEstructuraAlto
 
 if quiebreBajo
     nivelQuebradoBajo := bajoM3Activo
     esCambioEstructuraBajo := tendencia == "alcista"
-    line.set_x2(bajoLinea, time)
-    line.set_style(bajoLinea, esCambioEstructuraBajo ? line.style_solid : line.style_dotted)
-    line.set_color(bajoLinea, esCambioEstructuraBajo ? colorContinua : colorPunteada)
-    line.set_width(bajoLinea, esCambioEstructuraBajo ? 2 : 1)
+    if bajoLineaActiva
+        line.set_x2(bajoLinea, time)
+        line.set_style(bajoLinea, esCambioEstructuraBajo ? line.style_solid : line.style_dotted)
+        line.set_color(bajoLinea, esCambioEstructuraBajo ? colorContinua : colorPunteada)
+        line.set_width(bajoLinea, esCambioEstructuraBajo ? 2 : 1)
     tendencia := "bajista"
     bajoM3Activo := na
     bajoRoto := true
+    bajoLineaActiva := false
     ultimoQuiebreFueCambioEstructura := esCambioEstructuraBajo
 
 // ============================================================================
@@ -206,15 +239,16 @@ if quiebreBajo
 //
 // Martillo exige un cuerpo CHICO (tal como lo indica su nombre): el nivel
 // del lado de la apertura tiene que caer en la banda angosta 40%-50% (no
-// en cualquier punto >=50%, como era antes). Un nivelOpen por encima de esa
-// banda (cuerpo más grande) pasa a evaluarse como envolvente Doji en su
-// lugar -- confirmado por Fabián el 09/09.
+// en cualquier punto >=50%, como era antes) -- confirmado por Fabián el
+// 09/09.
 //
 // Doji: las dos ramas estaban INVERTIDAS desde la Fase 2a -- corregido el
 // 09/09. nivelOpen >= 15% (el open queda más lejos del extremo) exige el
 // cierre más estricto (90%); nivelOpen < 15% (open ya casi en el extremo)
 // se conforma con 85%. Caso real que lo destapó: SELL 31/08 08:25,
 // nivelOpen 24,80% (>=15%) exigía cierre >=90%, cerró en 86,64% -- inválida.
+// Un nivelOpen por ENCIMA de la banda de Martillo (>50%+TOL) ya NO se
+// evalúa como Doji -- ver el techo agregado el 10/09 más abajo.
 grpEnvolvente = "Patrón envolvente / Start"
 TOLERANCIA_CUERPO = input.float(0.01, "Margen sobre 85%/90% de cuerpo (grilla de Gann a mano)", minval=0, maxval=0.05, step=0.005, group=grpEnvolvente)
 
@@ -230,13 +264,21 @@ cuerpoPctBuy  = nivelCloseBuy - nivelOpenBuy
 esEstandarBuy = esAlcista and cuerpoPctBuy >= 0.85 - TOLERANCIA_CUERPO
 // Martillo exige un cuerpo CHICO (tal como lo indica su nombre): el extremo
 // del cuerpo del lado de la apertura tiene que caer en la banda angosta
-// 40%-50%, no en cualquier punto >=50%. Un nivelOpen por encima de esa banda
-// (cuerpo más grande) pasa a evaluarse como envolvente Doji en su lugar.
+// 40%-50%.
 esMartilloBuy = esAlcista and not esEstandarBuy and nivelOpenBuy >= 0.40 - TOLERANCIA_CUERPO and nivelOpenBuy <= 0.50 + TOLERANCIA_CUERPO and nivelCloseBuy >= 0.85 - TOLERANCIA_CUERPO
 // nivelOpen >= 15% (el open queda más lejos del extremo) exige el cierre
 // más estricto (90%); nivelOpen < 15% (open ya casi en el extremo) se
 // conforma con 85% -- corregido el 09/09, estaba invertido desde la Fase 2a.
-esDojiBuy     = esAlcista and not esEstandarBuy and not esMartilloBuy and ((nivelOpenBuy >= 0.15 and nivelCloseBuy >= 0.90 - TOLERANCIA_CUERPO) or (nivelOpenBuy < 0.15 and nivelCloseBuy >= 0.85 - TOLERANCIA_CUERPO))
+// Techo en 40%-TOL (10/09): un nivelOpen por ENCIMA de la banda de Martillo
+// ya NO se evalúa como Doji -- significa que más de la mitad del rango es
+// mecha en contra antes de la apertura, la misma forma que la Sección 4
+// reconoce como vela de indecisión/pinbar, no una vela envolvente decisiva
+// por más lejos que llegue el cierre. Caso real que lo destapó: SELL 10/09
+// 08:30, nivelOpen 64,96% y cierre 91,62% (pasaba la regla vieja del 90%)
+// con un cuerpo real de apenas 26,66% -- Fabián la identificó a mano como
+// pinbar bajista, vela de indecisión del patrón Start confirmado recién en
+// la vela siguiente (08:31).
+esDojiBuy     = esAlcista and not esEstandarBuy and not esMartilloBuy and nivelOpenBuy < 0.40 - TOLERANCIA_CUERPO and ((nivelOpenBuy >= 0.15 and nivelCloseBuy >= 0.90 - TOLERANCIA_CUERPO) or (nivelOpenBuy < 0.15 and nivelCloseBuy >= 0.85 - TOLERANCIA_CUERPO))
 esEnvolventeBuy = esEstandarBuy or esMartilloBuy or esDojiBuy
 
 // -- SELL: 0 = high, 1 = low --
@@ -246,7 +288,7 @@ cuerpoPctSell  = nivelCloseSell - nivelOpenSell
 
 esEstandarSell = esBajista and cuerpoPctSell >= 0.85 - TOLERANCIA_CUERPO
 esMartilloSell = esBajista and not esEstandarSell and nivelOpenSell >= 0.40 - TOLERANCIA_CUERPO and nivelOpenSell <= 0.50 + TOLERANCIA_CUERPO and nivelCloseSell >= 0.85 - TOLERANCIA_CUERPO
-esDojiSell     = esBajista and not esEstandarSell and not esMartilloSell and ((nivelOpenSell >= 0.15 and nivelCloseSell >= 0.90 - TOLERANCIA_CUERPO) or (nivelOpenSell < 0.15 and nivelCloseSell >= 0.85 - TOLERANCIA_CUERPO))
+esDojiSell     = esBajista and not esEstandarSell and not esMartilloSell and nivelOpenSell < 0.40 - TOLERANCIA_CUERPO and ((nivelOpenSell >= 0.15 and nivelCloseSell >= 0.90 - TOLERANCIA_CUERPO) or (nivelOpenSell < 0.15 and nivelCloseSell >= 0.85 - TOLERANCIA_CUERPO))
 esEnvolventeSell = esEstandarSell or esMartilloSell or esDojiSell
 
 // pullback inmediato (1 vela contraria antes de la vela envolvente misma) -- distinto del pullback del patrón Start

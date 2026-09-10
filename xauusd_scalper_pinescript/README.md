@@ -90,6 +90,35 @@ en un único indicador.
   real fue en la vela de las 20:43 (mínimo 4.418,830), el código recién lo
   reconoció en la de las 20:45 (mínimo 4.420,620), y la vela de las 20:47
   superaba ese segundo nivel sin superar el real.
+- [x] **Fase 3 (parte 1) — techo de 40% en el Doji (10/09)**: la rama Doji
+  del clasificador de envolvente (Sección 3) no tenía techo en `nivelOpen` --
+  aceptaba cualquier valor por encima de la banda de Martillo (40%-50%)
+  mientras el cierre llegara a 90%/85%, sin importar cuán grande fuera la
+  mecha en contra antes de la apertura. Eso permitía que una vela con más de
+  la mitad del rango como mecha en contra (la MISMA forma que la Sección 4
+  reconoce como vela de indecisión/pinbar) pasara como envolvente Doji
+  decisiva. Ahora Doji exige `nivelOpen < 40%-TOLERANCIA_CUERPO` -- por
+  encima de eso la vela ya no es ningún tipo de envolvente, sea cual sea el
+  cierre. Caso real que lo destapó: SELL 10/09 08:30 (Pre-NY), nivelOpen
+  64,96%, cierre 91,62% (pasaba la regla vieja del 90%) con un cuerpo real
+  de apenas 26,66% -- Fabián la identificó a mano como pinbar bajista, vela
+  de indecisión de un patrón Start confirmado recién en la vela siguiente
+  (08:31, envolvente Estándar con cuerpo 95,61%, pullback en 08:29).
+- [x] **Fase 3 (parte 1) — líneas M3 limitadas a la sesión operativa (10/09)**:
+  el motor interno de estructura M3 (`altoM3Activo`/`bajoM3Activo`, detección
+  de quiebres, `tendencia`) sigue corriendo las 24hs -- el MEC lo necesita
+  para no perder el hilo fuera de sesión. Lo que cambió es el DIBUJO de las
+  líneas (`line.new()`), que es lo que consume el cupo compartido de 500
+  líneas de TradingView (el mismo límite ya mitigado antes para labels).
+  Nuevo input `limitarLineasASesion` (default activado): las líneas de
+  estructura M3 solo se dibujan durante Pre-NY/Asia, que ocupan ~17% del
+  día -- esto multiplica por ~6 el historial visible de líneas antes de que
+  empiecen a borrarse las más viejas. El interruptor queda disponible para
+  apagarlo puntualmente si hace falta ver la estructura completa fuera de
+  esas horas para depurar un caso. Motivado por: Fabián detectó que las
+  líneas de la sesión de Asia del 07/09 ya no se veían (el histórico visible
+  llegaba solo hasta 08/09 12:15h) justo en medio de la depuración del caso
+  SELL 07/09 20:47.
 - [ ] **Fase 3 (parte 2)**: SL/TP, filtro de sesión sobre la señal final,
   "una señal por vela hasta invalidarse", señal visual BUY/SELL (globo +
   ficha de la operación), alertas push.
