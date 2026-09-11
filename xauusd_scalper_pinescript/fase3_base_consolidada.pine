@@ -29,19 +29,40 @@ indicator("XAUUSD Scalper — Base Consolidada (Fases 1+2)", overlay=true, max_l
 // ============================================================================
 grpSesiones = "Sesiones operativas"
 mostrarSesiones = input.bool(true, "Sombrear sesiones en el gráfico", group=grpSesiones)
-colorPreNY = input.color(color.new(#d3d3d3, 85), "Color sesión Pre-NY (07-09 EST)", group=grpSesiones)
-colorAsia  = input.color(color.new(#d3d3d3, 85), "Color sesión Asia (20-22 EST)", group=grpSesiones)
+// Escala de grises distinta por sesión (10/09), para diferenciarlas de un
+// vistazo -- Pre-NY más clara, NY intermedia, Asia más oscura. Se bajó la
+// transparencia de 85 a 78 para que el gris más claro (Pre-NY) no se pierda
+// contra el fondo blanco del gráfico.
+colorPreNY = input.color(color.new(#cccccc, 78), "Color sesión Pre-NY (07-09 EST)", group=grpSesiones)
+colorNY    = input.color(color.new(#b3b3b3, 78), "Color sesión NY (09-11 EST)", group=grpSesiones)
+colorAsia  = input.color(color.new(#999999, 78), "Color sesión Asia (20-22 EST)", group=grpSesiones)
 
 // Días Pine: 1=Domingo 2=Lunes 3=Martes 4=Miércoles 5=Jueves 6=Viernes 7=Sábado
-// Pre-NY: Lunes a Viernes (2=Lunes ... 6=Viernes) | Asia: Domingo a Jueves (1=Domingo ... 5=Jueves)
+// Pre-NY y NY: Lunes a Viernes (2=Lunes ... 6=Viernes) | Asia: Domingo a
+// Jueves (1=Domingo ... 5=Jueves)
 sesionPreNYStr = "0700-0900:23456"
+sesionNYStr    = "0900-1100:23456"
 sesionAsiaStr  = "2000-2200:12345"
 
+// Colchón de 15 minutos ANTES de la apertura de Pre-NY y de Asia (10/09):
+// Fabián hace un análisis previo a cada sesión y quiere ver la estructura
+// M3 ya armada antes de que abra, para anticiparse. Solo afecta el DIBUJO
+// de las líneas M3 (Sección 2, dibujarLineasM3) -- no agranda la sesión
+// operativa en sí (sombreado, señal BUY/SELL), que sigue arrancando a la
+// hora real de cada sesión. NY no lleva colchón propio porque arranca
+// justo donde termina Pre-NY, sin hueco que anticipar.
+colchonPreNYStr = "0645-0700:23456"
+colchonAsiaStr  = "1945-2000:12345"
+
 enPreNY = not na(time(timeframe.period, sesionPreNYStr, "America/New_York"))
+enNY    = not na(time(timeframe.period, sesionNYStr, "America/New_York"))
 enAsia  = not na(time(timeframe.period, sesionAsiaStr, "America/New_York"))
-enSesionOperativa = enPreNY or enAsia  // <- se reutiliza para filtrar la señal final en Fase 3
+enColchonPreNY = not na(time(timeframe.period, colchonPreNYStr, "America/New_York"))
+enColchonAsia  = not na(time(timeframe.period, colchonAsiaStr, "America/New_York"))
+enSesionOperativa = enPreNY or enNY or enAsia  // <- se reutiliza para filtrar la señal final en Fase 3
 
 bgcolor(mostrarSesiones and enPreNY ? colorPreNY : na, title="Sesión Pre-NY")
+bgcolor(mostrarSesiones and enNY    ? colorNY    : na, title="Sesión NY")
 bgcolor(mostrarSesiones and enAsia  ? colorAsia  : na, title="Sesión Asia")
 
 // ============================================================================
@@ -51,8 +72,7 @@ grpEstructura = "Estructura M3"
 colorPunteada    = input.color(color.new(#787b86, 0), "Línea punteada (continuación)", group=grpEstructura)
 colorContinua    = input.color(color.new(color.black, 0), "Línea continua (cambio de estructura)", group=grpEstructura)
 extensionBarras  = input.int(10, "Extensión sin toque (barras M1)", minval=1, group=grpEstructura)
-limitarLineasASesion = input.bool(true, "Dibujar líneas M3 solo durante Pre-NY/Asia (más historial dentro del cupo de 500 líneas)", group=grpEstructura)
-mostrarDebugM3 = input.bool(false, "DEBUG temporal: etiqueta con el valor exacto de cada Alto/Bajo M3 reconocido", group=grpEstructura)
+limitarLineasASesion = input.bool(true, "Dibujar líneas M3 solo durante sesiones + colchón de 15min antes de Pre-NY/Asia (más historial dentro del cupo de 500 líneas)", group=grpEstructura)
 
 [o3, h3, l3, c3, t3] = request.security(syminfo.tickerid, "3", [open, high, low, close, time], lookahead=barmerge.lookahead_off)
 nuevaVelaM3 = ta.change(t3) != 0
@@ -144,12 +164,12 @@ maxExtMs = extensionBarras * timeframe.in_seconds("1") * 1000
 // dibujarLineasM3: el motor interno (altoM3Activo/bajoM3Activo, quiebreAlto/
 // quiebreBajo, tendencia, todo lo que el MEC necesita) sigue corriendo las
 // 24hs -- acá solo se apaga el DIBUJO de las líneas, que es lo que consume
-// el cupo compartido de 500 líneas de TradingView. Pre-NY + Asia ocupan
-// ~17% del día, así que esto multiplica por ~6 el historial visible de
-// líneas antes de que empiecen a borrarse las más viejas. El interruptor
+// el cupo compartido de 500 líneas de TradingView. El interruptor
 // (limitarLineasASesion) queda disponible por si hace falta ver la
 // estructura completa fuera de esas horas para depurar un caso puntual.
-dibujarLineasM3 = not limitarLineasASesion or enSesionOperativa
+// Incluye el colchón de 15min antes de Pre-NY/Asia (10/09) para que Fabián
+// vea la estructura ya armada antes de la apertura y pueda anticiparse.
+dibujarLineasM3 = not limitarLineasASesion or enSesionOperativa or enColchonPreNY or enColchonAsia
 
 if esAltoM3
     if not na(altoM3Inicio) and altoM3Inicio == altoRunInicio
@@ -182,15 +202,6 @@ if esBajoM3
         bajoLineaActiva := dibujarLineasM3
         if bajoLineaActiva
             bajoLinea := line.new(x1=bajoRunInicio, y1=nivelBajo, x2=time, y2=nivelBajo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
-
-// DEBUG TEMPORAL (10/09): etiqueta con el valor y el ancla exactos de CADA
-// Alto/Bajo M3 que el motor reconoce, para comparar contra los valores
-// esperados a mano cuando hay una duda como la del CHoCH de las 07:25.
-// Sacar esta sección una vez resuelto el caso.
-if mostrarDebugM3 and esAltoM3
-    label.new(bar_index, high, "A:" + str.tostring(nivelAlto, "#.###") + " @" + str.format_time(altoRunInicio, "HH:mm", "America/New_York"), style=label.style_label_down, color=color.new(color.blue, 0), textcolor=color.white, size=size.tiny)
-if mostrarDebugM3 and esBajoM3
-    label.new(bar_index, low, "B:" + str.tostring(nivelBajo, "#.###") + " @" + str.format_time(bajoRunInicio, "HH:mm", "America/New_York"), style=label.style_label_up, color=color.new(color.purple, 0), textcolor=color.white, size=size.tiny)
 
 // si el nivel ya estaba activo desde antes de entrar en sesión (o justo se
 // prendió el interruptor), recién ahora lo dibuja -- arranca la línea en su
@@ -488,7 +499,7 @@ mecSellBruto = mecListo and tendencia == "bajista" and superaNivelAhora and (can
 
 // filtro de sesión: el motor MEC sigue corriendo las 24hs por detrás (para no
 // perder el hilo de la estructura), pero la señal solo se MUESTRA dentro de
-// Pre-NY / Asia
+// Pre-NY / NY / Asia
 mecBuySenal  = mecBuyBruto  and enSesionOperativa
 mecSellSenal = mecSellBruto and enSesionOperativa
 

@@ -149,6 +149,26 @@ en un único indicador.
   parece afectar las señales de entrada -- retomar más adelante si hace
   falta. La etiqueta `mostrarDebugM3` queda en el código (apagada por
   defecto) para cuando se retome.
+- [x] **Fase 3 (parte 1) — cierre de la fase (10/09)**: tres ajustes finales
+  antes de pasar a la parte 2:
+  - Se retiró la herramienta de debug temporal (`mostrarDebugM3` y sus
+    etiquetas) que sirvió para encontrar el reconocimiento M3 duplicado.
+  - **Sesión NY (09-11 EST, Lunes a Viernes)** agregada como tercera sesión
+    operativa, con el mismo tratamiento que Pre-NY y Asia: sombreado de
+    fondo, estructura M3 (Altos/Bajos, líneas) y señal final BUY/SELL.
+    Sombreado en escala de grises distinta por sesión para diferenciarlas
+    de un vistazo -- Pre-NY más clara (`#cccccc`), NY intermedia
+    (`#b3b3b3`), Asia más oscura (`#999999`), todas a 78% de transparencia
+    (antes 85%, para que el gris más claro no se pierda contra el fondo
+    blanco del gráfico).
+  - **Colchón de 15 minutos antes de Pre-NY (06:45) y de Asia (19:45)**:
+    la estructura M3 (Altos/Bajos, líneas) ya se dibuja desde ese
+    horario, no recién con la apertura -- Fabián hace un análisis previo a
+    cada sesión y quiere ver la estructura armada de antemano para
+    anticiparse. Solo afecta el DIBUJO de las líneas, no la sesión
+    operativa en sí (sombreado, señal BUY/SELL), que sigue arrancando a la
+    hora real de cada sesión. NY no lleva colchón propio: arranca justo
+    donde termina Pre-NY, sin hueco que anticipar.
 - [ ] **Fase 3 (parte 2)**: SL/TP, filtro de sesión sobre la señal final,
   "una señal por vela hasta invalidarse", señal visual BUY/SELL (globo +
   ficha de la operación), alertas push.
@@ -179,8 +199,10 @@ en un único indicador.
   entrada, que son las únicas que importan para operar y las que más
   historial necesitan.
 - **Paleta sobria**: línea M3 continua (cambio de estructura) en negro por
-  defecto, sombreado de ambas sesiones (Pre-NY y Asia) en gris claro por
-  defecto -- antes eran azul/naranja.
+  defecto, sombreado de las tres sesiones (Pre-NY, NY y Asia) en escala de
+  grises por defecto -- antes eran azul/naranja. Desde el 10/09 cada sesión
+  tiene su propio tono de gris (Pre-NY más clara, NY intermedia, Asia más
+  oscura) para diferenciarlas de un vistazo.
 - **Cartel BUY/SELL no repinta**: se dibuja solo con `barstate.isconfirmed`,
   es decir únicamente en el cierre real y confirmado de la vela M1 de
   entrada, nunca en un tick intermedio mientras la vela todavía se está
@@ -205,7 +227,7 @@ en un único indicador.
   (el script seguí precio a precio si el SL o TP teórico de cada señal se
   tocó primero, ya que no hay forma de leer los fills reales de MT5).
 - Conteo de "primer/segundo trade" para la flexibilización: **por sesión**
-  (Pre-NY y Asia llevan cada una su propio contador).
+  (Pre-NY, NY y Asia llevan cada una su propio contador).
 - Filtro de noticias: **solo recordatorio visual**, sin bloqueo automático
   (Forex Factory no es accesible en vivo desde Pine Script).
 
