@@ -113,7 +113,11 @@ nivelBajo = float(na)
 altoRunInicio = int(na)
 bajoRunInicio = int(na)
 
-if nuevaVelaM3 and (na(ultimoT0Procesado) or t3[1] != ultimoT0Procesado)
+// PRUEBA TEMPORAL (11/09): guardia anti-duplicados DESACTIVADA para probar
+// si es la causante del atraso de 2 velas de más detectado en el Bajo M3
+// del BUY 09:28 (NY) -- vuelve el riesgo de reconocimiento duplicado
+// (etiqueta repetida), aceptable por unas velas mientras se prueba.
+if nuevaVelaM3  // and (na(ultimoT0Procesado) or t3[1] != ultimoT0Procesado)
     o0 = o3[1]
     h0 = h3[1]
     l0 = l3[1]
