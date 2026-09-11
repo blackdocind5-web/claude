@@ -100,12 +100,20 @@ var int   prevLowT = na
 // se chequea na(ultimoT0Procesado) explícito, nunca t3[1] != na a secas.
 var int ultimoT0Procesado = na
 
-// procesarVelaM3 (11/09): corre UNA vela M3 (apertura o0, máximo h0, mínimo
-// l0, cierre c0, hora de apertura t0) por el motor de tramos
-// (curDir/curHigh/curLow/prevDir/prevHigh/prevLow, todas var de arriba).
-// Se separó en función para poder "reproducir" más de una vela M3 dentro de
-// la misma vela M1 -- ver por qué en el bloque de abajo.
-procesarVelaM3(o0, h0, l0, c0, t0) =>
+// procesarVelaM3 (11/09, corregido 11/09): corre UNA vela M3 (apertura o0,
+// máximo h0, mínimo l0, cierre c0, hora de apertura t0) por el motor de
+// tramos. Se separó en función para poder "reproducir" más de una vela M3
+// dentro de la misma vela M1 -- ver por qué en el bloque de abajo.
+//
+// OJO -- restricción real de Pine v5 (no lo que yo había asumido antes):
+// una función definida con `=>` NO puede reasignar (:=) variables del
+// scope GLOBAL, ni siquiera si son `var` (error real de compilación:
+// "Cannot modify global variable 'curDir' in function"). Por eso acá la
+// función NO toca curDir/curHigh/.../prevLowT directamente -- recibe el
+// estado actual como parámetros (sufijo In) y DEVUELVE el estado nuevo
+// (sufijo Out); quien la llama (scope global, más abajo) es quien hace
+// `curDir := ...` etc. con el resultado.
+procesarVelaM3(o0, h0, l0, c0, t0, dirIn, highIn, highTIn, lowIn, lowTIn, prevDirIn, prevHighIn, prevHighTIn, prevLowIn, prevLowTIn) =>
     candleDir = c0 > o0 ? "alcista" : c0 < o0 ? "bajista" : "doji"
     esAltoLocal = false
     esBajoLocal = false
@@ -114,43 +122,54 @@ procesarVelaM3(o0, h0, l0, c0, t0) =>
     altoRunInicioLocal = int(na)
     bajoRunInicioLocal = int(na)
 
-    if na(curDir)
+    dirOut = dirIn
+    highOut = highIn
+    highTOut = highTIn
+    lowOut = lowIn
+    lowTOut = lowTIn
+    prevDirOut = prevDirIn
+    prevHighOut = prevHighIn
+    prevHighTOut = prevHighTIn
+    prevLowOut = prevLowIn
+    prevLowTOut = prevLowTIn
+
+    if na(dirIn)
         if candleDir != "doji"
-            curDir := candleDir
-            curHigh := h0
-            curHighT := t0
-            curLow := l0
-            curLowT := t0
-    else if candleDir == curDir or candleDir == "doji"
-        if h0 > curHigh
-            curHigh := h0
-            curHighT := t0
-        if l0 < curLow
-            curLow := l0
-            curLowT := t0
+            dirOut := candleDir
+            highOut := h0
+            highTOut := t0
+            lowOut := l0
+            lowTOut := t0
+    else if candleDir == dirIn or candleDir == "doji"
+        if h0 > highIn
+            highOut := h0
+            highTOut := t0
+        if l0 < lowIn
+            lowOut := l0
+            lowTOut := t0
     else
-        prevDir := curDir
-        prevHigh := curHigh
-        prevHighT := curHighT
-        prevLow := curLow
-        prevLowT := curLowT
-        curDir := candleDir
-        curHigh := h0
-        curHighT := t0
-        curLow := l0
-        curLowT := t0
+        prevDirOut := dirIn
+        prevHighOut := highIn
+        prevHighTOut := highTIn
+        prevLowOut := lowIn
+        prevLowTOut := lowTIn
+        dirOut := candleDir
+        highOut := h0
+        highTOut := t0
+        lowOut := l0
+        lowTOut := t0
 
-    if not na(prevDir) and prevDir != curDir
-        if prevDir == "alcista" and curDir == "bajista"
+    if not na(prevDirOut) and prevDirOut != dirOut
+        if prevDirOut == "alcista" and dirOut == "bajista"
             esAltoLocal := true
-            nivelAltoLocal := math.max(prevHigh, curHigh)
-            altoRunInicioLocal := prevHighT
-        if prevDir == "bajista" and curDir == "alcista"
+            nivelAltoLocal := math.max(prevHighOut, highOut)
+            altoRunInicioLocal := prevHighTOut
+        if prevDirOut == "bajista" and dirOut == "alcista"
             esBajoLocal := true
-            nivelBajoLocal := math.min(prevLow, curLow)
-            bajoRunInicioLocal := prevLowT
+            nivelBajoLocal := math.min(prevLowOut, lowOut)
+            bajoRunInicioLocal := prevLowTOut
 
-    [esAltoLocal, esBajoLocal, nivelAltoLocal, nivelBajoLocal, altoRunInicioLocal, bajoRunInicioLocal]
+    [dirOut, highOut, highTOut, lowOut, lowTOut, prevDirOut, prevHighOut, prevHighTOut, prevLowOut, prevLowTOut, esAltoLocal, esBajoLocal, nivelAltoLocal, nivelBajoLocal, altoRunInicioLocal, bajoRunInicioLocal]
 
 esAltoM3 = false
 esBajoM3 = false
@@ -173,7 +192,17 @@ bajoRunInicio = int(na)
 // reflejarla.
 if nuevaVelaM3
     if not na(t3[3]) and (na(ultimoT0Procesado) or t3[3] > ultimoT0Procesado)
-        [esA3, esB3, nA3, nB3, arI3, brI3] = procesarVelaM3(o3[3], h3[3], l3[3], c3[3], t3[3])
+        [d3, hh3, hT3, ll3, lT3, pD3, pH3, pHT3, pL3, pLT3, esA3, esB3, nA3, nB3, arI3, brI3] = procesarVelaM3(o3[3], h3[3], l3[3], c3[3], t3[3], curDir, curHigh, curHighT, curLow, curLowT, prevDir, prevHigh, prevHighT, prevLow, prevLowT)
+        curDir := d3
+        curHigh := hh3
+        curHighT := hT3
+        curLow := ll3
+        curLowT := lT3
+        prevDir := pD3
+        prevHigh := pH3
+        prevHighT := pHT3
+        prevLow := pL3
+        prevLowT := pLT3
         ultimoT0Procesado := t3[3]
         if esA3
             esAltoM3 := true
@@ -185,7 +214,17 @@ if nuevaVelaM3
             bajoRunInicio := brI3
 
     if not na(t3[2]) and (na(ultimoT0Procesado) or t3[2] > ultimoT0Procesado)
-        [esA2, esB2, nA2, nB2, arI2, brI2] = procesarVelaM3(o3[2], h3[2], l3[2], c3[2], t3[2])
+        [d2, hh2, hT2, ll2, lT2, pD2, pH2, pHT2, pL2, pLT2, esA2, esB2, nA2, nB2, arI2, brI2] = procesarVelaM3(o3[2], h3[2], l3[2], c3[2], t3[2], curDir, curHigh, curHighT, curLow, curLowT, prevDir, prevHigh, prevHighT, prevLow, prevLowT)
+        curDir := d2
+        curHigh := hh2
+        curHighT := hT2
+        curLow := ll2
+        curLowT := lT2
+        prevDir := pD2
+        prevHigh := pH2
+        prevHighT := pHT2
+        prevLow := pL2
+        prevLowT := pLT2
         ultimoT0Procesado := t3[2]
         if esA2
             esAltoM3 := true
@@ -197,7 +236,17 @@ if nuevaVelaM3
             bajoRunInicio := brI2
 
     if not na(t3[1]) and (na(ultimoT0Procesado) or t3[1] > ultimoT0Procesado)
-        [esA1, esB1, nA1, nB1, arI1, brI1] = procesarVelaM3(o3[1], h3[1], l3[1], c3[1], t3[1])
+        [d1, hh1, hT1, ll1, lT1, pD1, pH1, pHT1, pL1, pLT1, esA1, esB1, nA1, nB1, arI1, brI1] = procesarVelaM3(o3[1], h3[1], l3[1], c3[1], t3[1], curDir, curHigh, curHighT, curLow, curLowT, prevDir, prevHigh, prevHighT, prevLow, prevLowT)
+        curDir := d1
+        curHigh := hh1
+        curHighT := hT1
+        curLow := ll1
+        curLowT := lT1
+        prevDir := pD1
+        prevHigh := pH1
+        prevHighT := pHT1
+        prevLow := pL1
+        prevLowT := pLT1
         ultimoT0Procesado := t3[1]
         if esA1
             esAltoM3 := true

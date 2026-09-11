@@ -175,6 +175,23 @@ en un único indicador.
   se corre por el motor antes de seguir, así ninguna vela queda salteada
   sin importar cuántas velas M1 tarde en aparecer. Pendiente: que Fabián
   confirme sobre los dos casos reales que el SL ya da el valor correcto.
+- [x] **RESUELTO (11/09) -- `procesarVelaM3` no compilaba: "Cannot modify
+  global variable 'curDir' in function" (y ~19 errores más iguales)**: al
+  pegar el fix anterior en el editor de Pine, TradingView lo rechazó. Causa:
+  asumí (mal, sin compilarlo) que una función `=>` puede reasignar variables
+  del scope global con `:=` -- Pine v5 no lo permite para tipos simples
+  (int/float/string/bool), aunque sean `var`. La función original escribía
+  directo sobre `curDir`/`curHigh`/`curLow`/`prevDir`/`prevHigh`/`prevLow` y
+  eso es justamente lo prohibido. Fix: `procesarVelaM3` ahora es una función
+  pura -- recibe el estado actual como parámetros (`dirIn`, `highIn`, etc.) y
+  **devuelve** el estado nuevo (`dirOut`, `highOut`, etc.) en la tupla de
+  salida, junto con lo que ya devolvía antes (esAlto/esBajo/niveles/inicios).
+  Quien llama a la función (scope global, en el bloque de reconocimiento con
+  `t3[3]`/`t3[2]`/`t3[1]`) es quien hace `curDir := ...` etc. con cada
+  resultado, y encadena ese estado a la siguiente llamada dentro de la misma
+  vela M1 (para que el replay de varias velas M3 salteadas siga funcionando
+  igual que antes). Ningún cambio de lógica del motor de tramos -- mismo
+  comportamiento, ahora en una forma que sí compila.
 - [x] **Fase 3 (parte 1) — cierre de la fase (10/09)**: tres ajustes finales
   antes de pasar a la parte 2:
   - Se retiró la herramienta de debug temporal (`mostrarDebugM3` y sus
