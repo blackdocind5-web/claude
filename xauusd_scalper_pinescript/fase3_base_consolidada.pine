@@ -52,6 +52,7 @@ colorPunteada    = input.color(color.new(#787b86, 0), "Línea punteada (continua
 colorContinua    = input.color(color.new(color.black, 0), "Línea continua (cambio de estructura)", group=grpEstructura)
 extensionBarras  = input.int(10, "Extensión sin toque (barras M1)", minval=1, group=grpEstructura)
 limitarLineasASesion = input.bool(true, "Dibujar líneas M3 solo durante Pre-NY/Asia (más historial dentro del cupo de 500 líneas)", group=grpEstructura)
+mostrarDebugM3 = input.bool(false, "DEBUG temporal: etiqueta con el valor exacto de cada Alto/Bajo M3 reconocido", group=grpEstructura)
 
 [o3, h3, l3, c3, t3] = request.security(syminfo.tickerid, "3", [open, high, low, close, time], lookahead=barmerge.lookahead_off)
 nuevaVelaM3 = ta.change(t3) != 0
@@ -180,6 +181,15 @@ if esBajoM3
         bajoLineaActiva := dibujarLineasM3
         if bajoLineaActiva
             bajoLinea := line.new(x1=bajoRunInicio, y1=nivelBajo, x2=time, y2=nivelBajo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+
+// DEBUG TEMPORAL (10/09): etiqueta con el valor y el ancla exactos de CADA
+// Alto/Bajo M3 que el motor reconoce, para comparar contra los valores
+// esperados a mano cuando hay una duda como la del CHoCH de las 07:25.
+// Sacar esta sección una vez resuelto el caso.
+if mostrarDebugM3 and esAltoM3
+    label.new(bar_index, high, "A:" + str.tostring(nivelAlto, "#.###") + " @" + str.format_time(altoRunInicio, "HH:mm", "America/New_York"), style=label.style_label_down, color=color.new(color.blue, 0), textcolor=color.white, size=size.tiny)
+if mostrarDebugM3 and esBajoM3
+    label.new(bar_index, low, "B:" + str.tostring(nivelBajo, "#.###") + " @" + str.format_time(bajoRunInicio, "HH:mm", "America/New_York"), style=label.style_label_up, color=color.new(color.purple, 0), textcolor=color.white, size=size.tiny)
 
 // si el nivel ya estaba activo desde antes de entrar en sesión (o justo se
 // prendió el interruptor), recién ahora lo dibuja -- arranca la línea en su
