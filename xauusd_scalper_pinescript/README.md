@@ -145,10 +145,20 @@ en un único indicador.
   parece quedar en el valor correcto. Se probaron dos causas (repintado
   intradía con `barstate.isconfirmed`, reconocimiento duplicado) sin
   resultado sobre este síntoma puntual. Fabián decidió pausar esta
-  investigación (10/09) para no perder más tiempo en un tema visual que no
-  parece afectar las señales de entrada -- retomar más adelante si hace
-  falta. La etiqueta `mostrarDebugM3` queda en el código (apagada por
-  defecto) para cuando se retome.
+  investigación (10/09) para no perder más tiempo en un tema que en ese
+  momento parecía solo visual.
+- [ ] **REABIERTO (11/09) -- mismo bug, ahora afecta un cálculo real**: al
+  agregar el SL/TP (Fase 3 parte 2, más abajo), Fabián encontró un caso
+  donde el SL de un BUY (11/09 09:28, NY) usó un Bajo M3 viejo (4.381,420,
+  par bajista/alcista 09:15/09:18) en vez del correcto (4.380,605, par
+  09:21/09:24) -- mismo patrón que el CHoCH del 07:25: el rastreo manual del
+  motor de tramos dice que `bajoM3Activo` debería haberse actualizado al
+  segundo pivote antes de la señal, pero el valor usado fue el primero.
+  Como ahora afecta el SL real (no solo una línea), se reabre la
+  investigación. Se agregó de nuevo `mostrarDebugM3`, esta vez con un
+  `plot()` (no etiquetas) del valor EXACTO de `altoM3Activo`/`bajoM3Activo`
+  en cada vela M1, leíble directo en la Ventana de Datos, para encontrar en
+  qué vela exacta el valor no se actualiza como debería.
 - [x] **Fase 3 (parte 1) — cierre de la fase (10/09)**: tres ajustes finales
   antes de pasar a la parte 2:
   - Se retiró la herramienta de debug temporal (`mostrarDebugM3` y sus

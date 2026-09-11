@@ -73,6 +73,7 @@ colorPunteada    = input.color(color.new(#787b86, 0), "Línea punteada (continua
 colorContinua    = input.color(color.new(color.black, 0), "Línea continua (cambio de estructura)", group=grpEstructura)
 extensionBarras  = input.int(10, "Extensión sin toque (barras M1)", minval=1, group=grpEstructura)
 limitarLineasASesion = input.bool(true, "Dibujar líneas M3 solo durante sesiones + colchón de 15min antes de Pre-NY/Asia (más historial dentro del cupo de 500 líneas)", group=grpEstructura)
+mostrarDebugM3 = input.bool(false, "DEBUG temporal: valor exacto de altoM3Activo/bajoM3Activo bar a bar (Ventana de Datos)", group=grpEstructura)
 
 [o3, h3, l3, c3, t3] = request.security(syminfo.tickerid, "3", [open, high, low, close, time], lookahead=barmerge.lookahead_off)
 nuevaVelaM3 = ta.change(t3) != 0
@@ -265,6 +266,15 @@ if quiebreBajo
     bajoRoto := true
     bajoLineaActiva := false
     ultimoQuiebreFueCambioEstructura := esCambioEstructuraBajo
+
+// DEBUG TEMPORAL (11/09): valor EXACTO de altoM3Activo/bajoM3Activo en CADA
+// vela M1, para leer directo en la Ventana de Datos sin depender de
+// etiquetas ni de mi interpretación -- se agrega para investigar el caso
+// del BUY 11/09 09:28 (NY), donde el SL usó un Bajo M3 viejo (4.381,420)
+// en vez del correcto (4.380,605) pese a que el rastreo manual del código
+// dice que debería haberse actualizado antes de las 09:28.
+plot(mostrarDebugM3 ? altoM3Activo : na, title="DEBUG altoM3Activo", color=color.blue, style=plot.style_circles, linewidth=2)
+plot(mostrarDebugM3 ? bajoM3Activo : na, title="DEBUG bajoM3Activo", color=color.purple, style=plot.style_circles, linewidth=2)
 
 // ============================================================================
 // SECCIÓN 3 — CLASIFICADOR DE VELA ENVOLVENTE EN M1 (Fase 2a)
