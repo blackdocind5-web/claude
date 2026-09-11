@@ -119,21 +119,23 @@ en un único indicador.
   líneas de la sesión de Asia del 07/09 ya no se veían (el histórico visible
   llegaba solo hasta 08/09 12:15h) justo en medio de la depuración del caso
   SELL 07/09 20:47.
-- [ ] **Fase 3 (parte 1) — investigando: línea continua M1 con nivel viejo
-  en un CHoCH (10/09)**: caso real: CHoCH alcista 10/09 07:25 (Pre-NY), M1
-  mostró la línea continua en 4.385,890 (ancla 07:12) en vez del Alto M3
-  correcto, 4.384,490 (ancla 07:18, tras el flip alcista→bajista de la vela
-  de 07:21) -- en el gráfico M3 nativo el nivel se vio siempre bien.
-  Se probó exigir `barstate.isconfirmed` en el reconocimiento de vela M3
-  nueva (Sección 2), pensando en un problema de repintado intradía -- **se
-  revirtió**: el caso se reprodujo sobre velas ya cerradas hacía horas
-  (`isconfirmed` no cambia nada ahí) y además metía un delay visible en el
-  trazado de líneas en vivo que a Fabián no le gustó. Con una etiqueta de
-  debug temporal (`mostrarDebugM3`) se confirmó que el motor SÍ reconoce
-  internamente el pivote correcto (4.384,49 @ 07:18) -- el problema está
-  puntualmente en el reemplazo del objeto `line` cuando aparece un Alto M3
-  nuevo antes de que se rompa el anterior, no en el cálculo del nivel. Aún
-  sin resolver.
+- [x] **Fase 3 (parte 1) — reconocimiento M3 duplicado (10/09)**: caso real:
+  CHoCH alcista 10/09 07:25 (Pre-NY), M1 mostró la línea continua en
+  4.385,890 (ancla 07:12) en vez del Alto M3 correcto, 4.384,490 (ancla
+  07:18, tras el flip alcista→bajista de la vela de 07:21) -- en el gráfico
+  M3 nativo el nivel se vio siempre bien. Se probó exigir
+  `barstate.isconfirmed` en el reconocimiento de vela M3 nueva pensando en
+  un problema de repintado intradía -- **se revirtió**: el caso se
+  reprodujo sobre velas ya cerradas hacía horas (`isconfirmed` no cambia
+  nada ahí) y además metía un delay visible en el trazado de líneas en vivo
+  que a Fabián no le gustó. Con una etiqueta de debug temporal
+  (`mostrarDebugM3`) se detectó la causa real: el mismo pivote (Alto M3 de
+  07:03) quedaba reconocido DOS VECES -- `ta.change(t3)` disparándose más
+  de una vez para la misma vela M3 ya cerrada, lo que podía hacer que el
+  motor de tramos reprocesara una vela y retrocediera a un pivote viejo.
+  Ahora se guarda la apertura (`t3[1]`) de la última vela M3 realmente
+  procesada y se ignora cualquier disparo repetido para esa misma vela --
+  no cambia el resultado de una secuencia normal, solo evita reprocesar.
 - [ ] **Fase 3 (parte 2)**: SL/TP, filtro de sesión sobre la señal final,
   "una señal por vela hasta invalidarse", señal visual BUY/SELL (globo +
   ficha de la operación), alertas push.

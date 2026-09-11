@@ -57,6 +57,18 @@ mostrarDebugM3 = input.bool(false, "DEBUG temporal: etiqueta con el valor exacto
 [o3, h3, l3, c3, t3] = request.security(syminfo.tickerid, "3", [open, high, low, close, time], lookahead=barmerge.lookahead_off)
 nuevaVelaM3 = ta.change(t3) != 0
 
+// var ultimoT0Procesado (10/09): con el debug de valores exactos se detectó
+// que un mismo pivote (ej. Alto M3 de 07:03) podía quedar reconocido DOS
+// veces -- ta.change(t3) disparándose más de una vez para la misma vela M3
+// ya cerrada. Sin este freno, un reconocimiento duplicado vuelve a correr
+// todo el motor de tramos sobre la MISMA vela, lo que puede hacerlo procesar
+// el estado en un orden distinto al real y retroceder a un pivote viejo.
+// Guardar el t0 (apertura de la vela M3, t3[1]) de la última vela realmente
+// procesada evita reprocesar la misma vela más de una vez, sin cambiar en
+// nada el resultado de una secuencia normal (donde cada vela ya se procesa
+// una sola vez).
+var int ultimoT0Procesado = na
+
 var string curDir = na
 var float curHigh = na
 var int   curHighT = na
@@ -76,12 +88,13 @@ nivelBajo = float(na)
 altoRunInicio = int(na)
 bajoRunInicio = int(na)
 
-if nuevaVelaM3
+if nuevaVelaM3 and t3[1] != ultimoT0Procesado
     o0 = o3[1]
     h0 = h3[1]
     l0 = l3[1]
     c0 = c3[1]
     t0 = t3[1]
+    ultimoT0Procesado := t0
     candleDir = c0 > o0 ? "alcista" : c0 < o0 ? "bajista" : "doji"
 
     if na(curDir)
