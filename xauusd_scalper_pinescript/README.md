@@ -147,18 +147,34 @@ en un único indicador.
   resultado sobre este síntoma puntual. Fabián decidió pausar esta
   investigación (10/09) para no perder más tiempo en un tema que en ese
   momento parecía solo visual.
-- [ ] **REABIERTO (11/09) -- mismo bug, ahora afecta un cálculo real**: al
-  agregar el SL/TP (Fase 3 parte 2, más abajo), Fabián encontró un caso
-  donde el SL de un BUY (11/09 09:28, NY) usó un Bajo M3 viejo (4.381,420,
-  par bajista/alcista 09:15/09:18) en vez del correcto (4.380,605, par
-  09:21/09:24) -- mismo patrón que el CHoCH del 07:25: el rastreo manual del
-  motor de tramos dice que `bajoM3Activo` debería haberse actualizado al
-  segundo pivote antes de la señal, pero el valor usado fue el primero.
-  Como ahora afecta el SL real (no solo una línea), se reabre la
-  investigación. Se agregó de nuevo `mostrarDebugM3`, esta vez con un
-  `plot()` (no etiquetas) del valor EXACTO de `altoM3Activo`/`bajoM3Activo`
-  en cada vela M1, leíble directo en la Ventana de Datos, para encontrar en
-  qué vela exacta el valor no se actualiza como debería.
+- [x] **RESUELTO (11/09) -- reconocimiento M3 con "replay" de velas
+  salteadas**: al agregar el SL/TP (Fase 3 parte 2, más abajo), Fabián
+  encontró dos casos reales donde el Alto/Bajo M3 activo quedaba en un
+  valor VIEJO varias velas M1 de más de lo esperado -- BUY 11/09 09:28 (NY):
+  `bajoM3Activo` debía actualizarse a 4.380,605 (par bajista/alcista
+  09:21/09:24) al llegar a la vela de las 09:27, pero siguió en el valor
+  anterior (4.381,420, par 09:15/09:18) hasta la vela de las 09:29 -- 2
+  velas M1 de atraso. SELL 09/09 08:25 (Pre-NY): mismo patrón, con un Alto
+  M3 viejo (confirmado a las 08:12, nivel 4.404,845) en vez del correcto
+  (confirmado a las 08:24, nivel 4.400,375).
+  Con `mostrarDebugM3` (un `plot()` del valor EXACTO de
+  `altoM3Activo`/`bajoM3Activo` en cada vela, leíble en la Ventana de
+  Datos) se probó primero si la guardia anti-duplicados (`ultimoT0Procesado`)
+  era la causa -- **descartado**: desactivándola temporalmente el atraso
+  persistió igual. Los dos casos reales tampoco muestran un sesgo "seguro"
+  consistente (en uno el nivel viejo daba un SL más ajustado que el
+  correcto, en el otro uno más amplio), así que no alcanzaba con un parche
+  tipo "usar siempre el nivel más lejano".
+  La causa real: el código asumía que `t3[1]` siempre trae la vela M3
+  inmediatamente siguiente a la última procesada, pero `request.security()`
+  a veces tarda más de una vela M1 en reflejar el cierre real de una vela
+  M3, dejando una vela intermedia sin procesar. Fix: el reconocimiento
+  (Sección 2) ahora se separó en una función (`procesarVelaM3`) y revisa
+  `t3[3]`, `t3[2]` y `t3[1]` en orden cronológico en cada `nuevaVelaM3` --
+  cualquier vela M3 más nueva que la última procesada (`ultimoT0Procesado`)
+  se corre por el motor antes de seguir, así ninguna vela queda salteada
+  sin importar cuántas velas M1 tarde en aparecer. Pendiente: que Fabián
+  confirme sobre los dos casos reales que el SL ya da el valor correcto.
 - [x] **Fase 3 (parte 1) — cierre de la fase (10/09)**: tres ajustes finales
   antes de pasar a la parte 2:
   - Se retiró la herramienta de debug temporal (`mostrarDebugM3` y sus

@@ -78,22 +78,6 @@ mostrarDebugM3 = input.bool(false, "DEBUG temporal: valor exacto de altoM3Activo
 [o3, h3, l3, c3, t3] = request.security(syminfo.tickerid, "3", [open, high, low, close, time], lookahead=barmerge.lookahead_off)
 nuevaVelaM3 = ta.change(t3) != 0
 
-// var ultimoT0Procesado (10/09): con el debug de valores exactos se detectó
-// que un mismo pivote (ej. Alto M3 de 07:03) podía quedar reconocido DOS
-// veces -- ta.change(t3) disparándose más de una vez para la misma vela M3
-// ya cerrada. Sin este freno, un reconocimiento duplicado vuelve a correr
-// todo el motor de tramos sobre la MISMA vela, lo que puede hacerlo procesar
-// el estado en un orden distinto al real y retroceder a un pivote viejo.
-// Guardar el t0 (apertura de la vela M3, t3[1]) de la última vela realmente
-// procesada evita reprocesar la misma vela más de una vez, sin cambiar en
-// nada el resultado de una secuencia normal (donde cada vela ya se procesa
-// una sola vez).
-var int ultimoT0Procesado = na
-// OJO: comparar contra na con != no funciona como se espera en Pine (na
-// "envenena" la comparación y da false en vez de true) -- por eso el chequeo
-// de abajo usa na(ultimoT0Procesado) explícito para la primerísima vela, en
-// vez de confiar en que t3[1] != na dé true.
-
 var string curDir = na
 var float curHigh = na
 var int   curHighT = na
@@ -106,6 +90,68 @@ var int   prevHighT = na
 var float prevLow = na
 var int   prevLowT = na
 
+// var ultimoT0Procesado: guarda la apertura (t0) de la última vela M3
+// REALMENTE procesada por el motor de tramos -- evita reprocesar la misma
+// vela dos veces (bug del 10/09: un pivote podía quedar reconocido DOS
+// veces) y, desde el 11/09, también permite detectar y recuperar velas M3
+// SALTEADAS (ver procesarVelaM3 y el bloque de reconocimiento más abajo).
+// OJO: comparar contra na con != no funciona como se espera en Pine (na
+// "envenena" la comparación y da false en vez de true) -- por eso siempre
+// se chequea na(ultimoT0Procesado) explícito, nunca t3[1] != na a secas.
+var int ultimoT0Procesado = na
+
+// procesarVelaM3 (11/09): corre UNA vela M3 (apertura o0, máximo h0, mínimo
+// l0, cierre c0, hora de apertura t0) por el motor de tramos
+// (curDir/curHigh/curLow/prevDir/prevHigh/prevLow, todas var de arriba).
+// Se separó en función para poder "reproducir" más de una vela M3 dentro de
+// la misma vela M1 -- ver por qué en el bloque de abajo.
+procesarVelaM3(o0, h0, l0, c0, t0) =>
+    candleDir = c0 > o0 ? "alcista" : c0 < o0 ? "bajista" : "doji"
+    esAltoLocal = false
+    esBajoLocal = false
+    nivelAltoLocal = float(na)
+    nivelBajoLocal = float(na)
+    altoRunInicioLocal = int(na)
+    bajoRunInicioLocal = int(na)
+
+    if na(curDir)
+        if candleDir != "doji"
+            curDir := candleDir
+            curHigh := h0
+            curHighT := t0
+            curLow := l0
+            curLowT := t0
+    else if candleDir == curDir or candleDir == "doji"
+        if h0 > curHigh
+            curHigh := h0
+            curHighT := t0
+        if l0 < curLow
+            curLow := l0
+            curLowT := t0
+    else
+        prevDir := curDir
+        prevHigh := curHigh
+        prevHighT := curHighT
+        prevLow := curLow
+        prevLowT := curLowT
+        curDir := candleDir
+        curHigh := h0
+        curHighT := t0
+        curLow := l0
+        curLowT := t0
+
+    if not na(prevDir) and prevDir != curDir
+        if prevDir == "alcista" and curDir == "bajista"
+            esAltoLocal := true
+            nivelAltoLocal := math.max(prevHigh, curHigh)
+            altoRunInicioLocal := prevHighT
+        if prevDir == "bajista" and curDir == "alcista"
+            esBajoLocal := true
+            nivelBajoLocal := math.min(prevLow, curLow)
+            bajoRunInicioLocal := prevLowT
+
+    [esAltoLocal, esBajoLocal, nivelAltoLocal, nivelBajoLocal, altoRunInicioLocal, bajoRunInicioLocal]
+
 esAltoM3 = false
 esBajoM3 = false
 nivelAlto = float(na)
@@ -113,44 +159,54 @@ nivelBajo = float(na)
 altoRunInicio = int(na)
 bajoRunInicio = int(na)
 
-// PRUEBA TEMPORAL (11/09): guardia anti-duplicados DESACTIVADA para probar
-// si es la causante del atraso de 2 velas de más detectado en el Bajo M3
-// del BUY 09:28 (NY) -- vuelve el riesgo de reconocimiento duplicado
-// (etiqueta repetida), aceptable por unas velas mientras se prueba.
-if nuevaVelaM3  // and (na(ultimoT0Procesado) or t3[1] != ultimoT0Procesado)
-    o0 = o3[1]
-    h0 = h3[1]
-    l0 = l3[1]
-    c0 = c3[1]
-    t0 = t3[1]
-    ultimoT0Procesado := t0
-    candleDir = c0 > o0 ? "alcista" : c0 < o0 ? "bajista" : "doji"
-
-    if na(curDir)
-        if candleDir != "doji"
-            curDir := candleDir
-            curHigh := h0, curHighT := t0
-            curLow := l0, curLowT := t0
-    else if candleDir == curDir or candleDir == "doji"
-        if h0 > curHigh
-            curHigh := h0, curHighT := t0
-        if l0 < curLow
-            curLow := l0, curLowT := t0
-    else
-        prevDir := curDir, prevHigh := curHigh, prevHighT := curHighT, prevLow := curLow, prevLowT := curLowT
-        curDir := candleDir
-        curHigh := h0, curHighT := t0
-        curLow := l0, curLowT := t0
-
-    if not na(prevDir) and prevDir != curDir
-        if prevDir == "alcista" and curDir == "bajista"
+// Reconocimiento con "replay" de velas M3 salteadas (11/09): dos casos
+// reales (BUY 11/09 09:28 NY y SELL 09/09 08:25 Pre-NY) mostraron que el
+// pivote M3 activo podía quedar en un valor VIEJO varias velas M1 de más de
+// lo esperado -- el SL calculado usaba un Alto/Bajo M3 desactualizado. Se
+// descartó que fuera la guardia anti-duplicados: el atraso persistió
+// incluso desactivándola (prueba hecha con Fabián el 11/09). En vez de
+// asumir que t3[1] siempre trae la vela M3 inmediatamente siguiente a la
+// última procesada, ahora también se revisan t3[3] y t3[2] (velas M3 más
+// viejas) y, si alguna es más nueva que la última procesada, se la corre
+// por el motor PRIMERO, en orden cronológico -- así ninguna vela M3 queda
+// sin procesar sin importar cuántas velas M1 tarde `request.security()` en
+// reflejarla.
+if nuevaVelaM3
+    if not na(t3[3]) and (na(ultimoT0Procesado) or t3[3] > ultimoT0Procesado)
+        [esA3, esB3, nA3, nB3, arI3, brI3] = procesarVelaM3(o3[3], h3[3], l3[3], c3[3], t3[3])
+        ultimoT0Procesado := t3[3]
+        if esA3
             esAltoM3 := true
-            nivelAlto := math.max(prevHigh, curHigh)
-            altoRunInicio := prevHighT
-        if prevDir == "bajista" and curDir == "alcista"
+            nivelAlto := nA3
+            altoRunInicio := arI3
+        if esB3
             esBajoM3 := true
-            nivelBajo := math.min(prevLow, curLow)
-            bajoRunInicio := prevLowT
+            nivelBajo := nB3
+            bajoRunInicio := brI3
+
+    if not na(t3[2]) and (na(ultimoT0Procesado) or t3[2] > ultimoT0Procesado)
+        [esA2, esB2, nA2, nB2, arI2, brI2] = procesarVelaM3(o3[2], h3[2], l3[2], c3[2], t3[2])
+        ultimoT0Procesado := t3[2]
+        if esA2
+            esAltoM3 := true
+            nivelAlto := nA2
+            altoRunInicio := arI2
+        if esB2
+            esBajoM3 := true
+            nivelBajo := nB2
+            bajoRunInicio := brI2
+
+    if not na(t3[1]) and (na(ultimoT0Procesado) or t3[1] > ultimoT0Procesado)
+        [esA1, esB1, nA1, nB1, arI1, brI1] = procesarVelaM3(o3[1], h3[1], l3[1], c3[1], t3[1])
+        ultimoT0Procesado := t3[1]
+        if esA1
+            esAltoM3 := true
+            nivelAlto := nA1
+            altoRunInicio := arI1
+        if esB1
+            esBajoM3 := true
+            nivelBajo := nB1
+            bajoRunInicio := brI1
 
 var line altoLinea = na
 var line bajoLinea = na
