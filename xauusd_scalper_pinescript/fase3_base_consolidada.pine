@@ -68,6 +68,10 @@ nuevaVelaM3 = ta.change(t3) != 0
 // nada el resultado de una secuencia normal (donde cada vela ya se procesa
 // una sola vez).
 var int ultimoT0Procesado = na
+// OJO: comparar contra na con != no funciona como se espera en Pine (na
+// "envenena" la comparación y da false en vez de true) -- por eso el chequeo
+// de abajo usa na(ultimoT0Procesado) explícito para la primerísima vela, en
+// vez de confiar en que t3[1] != na dé true.
 
 var string curDir = na
 var float curHigh = na
@@ -88,7 +92,7 @@ nivelBajo = float(na)
 altoRunInicio = int(na)
 bajoRunInicio = int(na)
 
-if nuevaVelaM3 and t3[1] != ultimoT0Procesado
+if nuevaVelaM3 and (na(ultimoT0Procesado) or t3[1] != ultimoT0Procesado)
     o0 = o3[1]
     h0 = h3[1]
     l0 = l3[1]
