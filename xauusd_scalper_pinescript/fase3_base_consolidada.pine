@@ -34,7 +34,7 @@ mostrarSesiones = input.bool(true, "Sombrear sesiones en el gráfico", group=grp
 // transparencia de 85 a 78 para que el gris más claro (Pre-NY) no se pierda
 // contra el fondo blanco del gráfico.
 colorPreNY = input.color(color.new(#cccccc, 78), "Color sesión Pre-NY (07-09 EST)", group=grpSesiones)
-colorNY    = input.color(color.new(#b3b3b3, 78), "Color sesión NY (09-11 EST)", group=grpSesiones)
+colorNY    = input.color(color.new(#a3a3a3, 78), "Color sesión NY (09-11 EST)", group=grpSesiones)
 colorAsia  = input.color(color.new(#999999, 78), "Color sesión Asia (20-22 EST)", group=grpSesiones)
 
 // Días Pine: 1=Domingo 2=Lunes 3=Martes 4=Miércoles 5=Jueves 6=Viernes 7=Sábado
