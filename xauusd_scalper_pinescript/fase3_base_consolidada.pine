@@ -229,9 +229,16 @@ esCambioEstructuraAlto = false
 esCambioEstructuraBajo = false
 nivelQuebradoAlto = float(na)
 nivelQuebradoBajo = float(na)
+// var (persisten, a diferencia de nivelQuebradoAlto/Bajo de arriba que
+// vuelven a na en la siguiente vela) -- respaldo para el cálculo de SL/TP
+// (Sección 6B) cuando altoM3Activo/bajoM3Activo está en na en el momento de
+// la señal (recién roto, todavía no se formó un pivote nuevo).
+var float ultimoAltoQuebrado = na
+var float ultimoBajoQuebrado = na
 
 if quiebreAlto
     nivelQuebradoAlto := altoM3Activo
+    ultimoAltoQuebrado := altoM3Activo
     esCambioEstructuraAlto := tendencia == "bajista"
     if altoLineaActiva
         line.set_x2(altoLinea, time)
@@ -246,6 +253,7 @@ if quiebreAlto
 
 if quiebreBajo
     nivelQuebradoBajo := bajoM3Activo
+    ultimoBajoQuebrado := bajoM3Activo
     esCambioEstructuraBajo := tendencia == "alcista"
     if bajoLineaActiva
         line.set_x2(bajoLinea, time)
@@ -491,9 +499,9 @@ if tendencia != "indefinida" and not na(extremoQuiebre)
 
 esperandoContinuacion = tendencia != "indefinida" and not mecListo
 
-// -- Señal MEC "en bruto": todavía sin SL/TP, sin
-//    control de "una señal por vela hasta invalidarse" -- eso es el próximo
-//    incremento de la Fase 3. Esto es solo para validar el motor MEC.
+// -- Señal MEC "en bruto": el SL/TP se calcula más abajo (Sección 6B), pero
+//    todavía sin control de "una señal por vela hasta invalidarse" -- eso es
+//    el próximo incremento de la Fase 3 parte 2.
 mecBuyBruto  = mecListo and tendencia == "alcista" and superaNivelAhora and (candidataEnvolventeBuy  or esStartBuy)
 mecSellBruto = mecListo and tendencia == "bajista" and superaNivelAhora and (candidataEnvolventeSell or esStartSell)
 
@@ -506,6 +514,52 @@ mecSellSenal = mecSellBruto and enSesionOperativa
 // bgcolor() no puede llamarse dentro de un `if` en Pine -- la condicionalidad
 // va en la expresión de color, no envolviendo la llamada
 bgcolor(mostrarZonaBusquedaMEC and esperandoContinuacion ? color.new(color.yellow, 85) : na, title="Esperando Continuación MEC (debug)")
+
+// ============================================================================
+// SECCIÓN 6B — CÁLCULO DE SL/TP (Fase 3 parte 2)
+// ============================================================================
+// SL: distancia entre la entrada (cierre de la vela de señal) y el último
+// Alto/Bajo M3 ACTIVO -- resistencia sin romper para un SELL (altoM3Activo),
+// soporte sin romper para un BUY (bajoM3Activo). Si ese nivel no está
+// disponible (caso borde, recién roto y todavía no se formó un pivote
+// nuevo) se usa el último quebrado (ultimoAltoQuebrado/ultimoBajoQuebrado,
+// que sí persisten entre velas) como referencia de respaldo.
+//
+// Si la distancia cruda supera un umbral (UMBRAL_SL_PCT, en % del precio de
+// entrada) se reduce multiplicándola por REDUCCION_SL -- una distancia
+// demasiado grande no es operable para scalping. El umbral va en PORCENTAJE,
+// no en ticks/pips fijos, para que el mismo indicador sirva en cualquier
+// instrumento (oro, índices, forex, cripto) sin tocar código -- a pedido de
+// Fabián, pensando en reusar este motor en otros activos.
+//
+// TP: RR_TP × la distancia FINAL del SL (ya reducida si correspondía), en la
+// dirección favorable.
+//
+// Validado letra por letra (11/09) contra la operación real de Fabián del
+// 23/08 20:24h (Asia, SELL): entrada 4.612,435, Alto M3 4.640,935 ->
+// distancia cruda 28,500 (0,6179% del precio, supera el umbral 0,46%) ->
+// distancia final 28,500×0,6 = 17,100 -> SL calculado 4.629,535 (real:
+// 4.629,515) y TP calculado 4.597,045 (real: 4.597,145) -- diferencia
+// mínima por redondeo de Fabián, fórmula confirmada tal cual.
+grpSLTP = "SL / TP"
+mostrarSLTP = input.bool(true, "Mostrar SL/TP calculados en cada señal (verificación, antes de la ficha final)", group=grpSLTP)
+UMBRAL_SL_PCT = input.float(0.46, "Umbral de distancia SL para reducción (% del precio de entrada)", minval=0, step=0.01, group=grpSLTP)
+REDUCCION_SL = input.float(0.60, "Multiplicador de la distancia SL al superar el umbral (0,60 = reduce 40%)", minval=0.1, maxval=1, step=0.05, group=grpSLTP)
+RR_TP = input.float(0.90, "Relación riesgo:beneficio del TP (TP = RR × distancia SL final)", minval=0.1, step=0.05, group=grpSLTP)
+
+nivelSLBuy  = na(bajoM3Activo) ? ultimoBajoQuebrado : bajoM3Activo
+nivelSLSell = na(altoM3Activo) ? ultimoAltoQuebrado  : altoM3Activo
+
+distanciaCrudaBuy  = not na(nivelSLBuy)  ? close - nivelSLBuy  : na
+distanciaCrudaSell = not na(nivelSLSell) ? nivelSLSell - close : na
+
+distanciaFinalBuy  = not na(distanciaCrudaBuy)  ? (distanciaCrudaBuy  / close * 100 > UMBRAL_SL_PCT ? distanciaCrudaBuy  * REDUCCION_SL : distanciaCrudaBuy)  : na
+distanciaFinalSell = not na(distanciaCrudaSell) ? (distanciaCrudaSell / close * 100 > UMBRAL_SL_PCT ? distanciaCrudaSell * REDUCCION_SL : distanciaCrudaSell) : na
+
+slBuy  = not na(distanciaFinalBuy)  ? close - distanciaFinalBuy         : na
+tpBuy  = not na(distanciaFinalBuy)  ? close + distanciaFinalBuy * RR_TP : na
+slSell = not na(distanciaFinalSell) ? close + distanciaFinalSell         : na
+tpSell = not na(distanciaFinalSell) ? close - distanciaFinalSell * RR_TP : na
 
 // ---------------------------- CARTEL DE SEÑAL (nube gris claro, solo BUY/SELL) ----------------------------
 // Nube minimalista: fondo gris claro, texto blanco en mayúsculas. BUY debajo
@@ -526,9 +580,15 @@ colorCartel = color.new(color.silver, 0)
 
 if mostrarSenalMEC and mecBuySenal and barstate.isconfirmed
     label.new(bar_index, low, "BUY", style=label.style_label_up, color=colorCartel, textcolor=color.white, size=size.normal)
+    if mostrarSLTP and not na(slBuy)
+        label.new(bar_index, slBuy, "SL " + str.tostring(slBuy, "#.###"), style=label.style_label_left, color=color.new(color.red, 20), textcolor=color.white, size=size.tiny)
+        label.new(bar_index, tpBuy, "TP " + str.tostring(tpBuy, "#.###"), style=label.style_label_left, color=color.new(color.teal, 20), textcolor=color.white, size=size.tiny)
 
 if mostrarSenalMEC and mecSellSenal and barstate.isconfirmed
     label.new(bar_index, high, "SELL", style=label.style_label_down, color=colorCartel, textcolor=color.white, size=size.normal)
+    if mostrarSLTP and not na(slSell)
+        label.new(bar_index, slSell, "SL " + str.tostring(slSell, "#.###"), style=label.style_label_left, color=color.new(color.red, 20), textcolor=color.white, size=size.tiny)
+        label.new(bar_index, tpSell, "TP " + str.tostring(tpSell, "#.###"), style=label.style_label_left, color=color.new(color.teal, 20), textcolor=color.white, size=size.tiny)
 
 // ============================================================================
 // SECCIÓN 7 — PANEL DE ESTADO

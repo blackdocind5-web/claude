@@ -169,9 +169,38 @@ en un único indicador.
     operativa en sí (sombreado, señal BUY/SELL), que sigue arrancando a la
     hora real de cada sesión. NY no lleva colchón propio: arranca justo
     donde termina Pre-NY, sin hueco que anticipar.
-- [ ] **Fase 3 (parte 2)**: SL/TP, filtro de sesión sobre la señal final,
-  "una señal por vela hasta invalidarse", señal visual BUY/SELL (globo +
-  ficha de la operación), alertas push.
+- [x] **Fase 3 (parte 2) — cálculo de SL/TP (11/09)**: primera pieza de la
+  parte 2 (orden elegido por Fabián: SL/TP primero, es la base para el resto).
+  - **SL**: distancia entre la entrada (cierre de la vela de señal) y el
+    último Alto/Bajo M3 ACTIVO -- resistencia sin romper para un SELL
+    (`altoM3Activo`), soporte sin romper para un BUY (`bajoM3Activo`); si no
+    hay uno activo (caso borde, recién roto) usa el último quebrado
+    (`ultimoAltoQuebrado`/`ultimoBajoQuebrado`, variables nuevas que sí
+    persisten entre velas, a diferencia de `nivelQuebradoAlto`/`Bajo` que se
+    resetean en la vela siguiente).
+  - Si esa distancia cruda supera un umbral (`UMBRAL_SL_PCT`, default 0,46%
+    **del precio de entrada, no ticks fijos**) se reduce multiplicándola por
+    `REDUCCION_SL` (default 0,60 = reduce un 40%). El umbral va en
+    porcentaje -- a pedido de Fabián -- para que el mismo indicador sirva en
+    cualquier instrumento (oro, índices, forex, cripto) sin tocar código; su
+    plan es reutilizar este motor en S&P 500, Nasdaq, Dow Jones, GBPUSD,
+    EURUSD y Bitcoin.
+  - **TP** = `RR_TP` (default 0,90) × la distancia FINAL del SL (ya reducida
+    si correspondía), en la dirección favorable.
+  - Validado letra por letra contra la operación real de Fabián del 23/08
+    20:24h (Asia, SELL): entrada 4.612,435, Alto M3 4.640,935 -> distancia
+    cruda 28,500 (0,6179% del precio, supera el umbral 0,46%) -> distancia
+    final 28,500×0,6 = 17,100 -> SL calculado 4.629,535 (real: 4.629,515) y
+    TP calculado 4.597,045 (real: 4.597,145) -- diferencia mínima por
+    redondeo de Fabián, fórmula confirmada tal cual.
+  - Por ahora se muestra con etiquetas chicas de verificación
+    (`mostrarSLTP`) junto al cartel BUY/SELL existente, sin tocar ese cartel
+    -- la "ficha de la operación" enriquecida queda para más adelante en
+    esta misma parte 2.
+  - Pendiente en esta parte 2: filtro de sesión sobre la señal final (ya
+    existe vía `enSesionOperativa`, revisar si hace falta algo más), "una
+    señal por vela hasta invalidarse", cartel final enriquecido (ficha de la
+    operación), alertas push.
 - [ ] **Fase 4**: gestión de salida (SL en último alto/bajo M3 con reducción
   del 40% si supera 20.000 pips, TP en RR 1:0,9), Hedge Position.
 - [ ] **Fase 5**: límite diario (1 TP / 1 SL+1 TP / 2 SL) y flexibilización
