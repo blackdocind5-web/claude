@@ -57,22 +57,6 @@ mostrarDebugM3 = input.bool(false, "DEBUG temporal: etiqueta con el valor exacto
 [o3, h3, l3, c3, t3] = request.security(syminfo.tickerid, "3", [open, high, low, close, time], lookahead=barmerge.lookahead_off)
 nuevaVelaM3 = ta.change(t3) != 0
 
-// barstate.isconfirmed (10/09): el reconocimiento de una vela M3 nueva debe
-// ocurrir UNA sola vez por vela M1, en su cierre real -- nunca en un tick
-// intradía mientras la vela M1 todavía se está formando en vivo. Sin este
-// freno, TradingView recalcula request.security() en cada tick y el motor
-// de tramos (curDir/curHigh/prevDir/prevHigh, todas `var`, persisten para
-// siempre) podía leer en un tick transitorio un estado que saltaba un
-// pivote intermedio -- una vez saltado, queda pegado ahí para el resto de
-// la corrida porque las variables nunca se resetean. En el gráfico M3
-// nativo esto no pasa (cada vela se evalúa una sola vez, en su cierre).
-// Caso real que lo destapó: CHoCH alcista 10/09 07:25 (Pre-NY) -- el Alto
-// M3 correcto era 4.384,490 (ancla 07:18, tras el flip alcista→bajista de
-// la vela de 07:21), pero el indicador nunca reconoció ese pivote y saltó
-// directo del nivel anterior (4.385,890, ancla 07:12) a marcarlo como
-// CHoCH -- en vivo se veía correcto en el gráfico M3, no en M1.
-velaM1Confirmada = barstate.isconfirmed
-
 var string curDir = na
 var float curHigh = na
 var int   curHighT = na
@@ -92,7 +76,7 @@ nivelBajo = float(na)
 altoRunInicio = int(na)
 bajoRunInicio = int(na)
 
-if nuevaVelaM3 and velaM1Confirmada
+if nuevaVelaM3
     o0 = o3[1]
     h0 = h3[1]
     l0 = l3[1]
