@@ -331,6 +331,41 @@ en un único indicador.
   `activarAlertas` -- ninguno depende de otro. Pendiente: que Fabián
   configure la alerta en TradingView y confirme que el texto le llega
   completo y a tiempo.
+
+## Multi-activo (14/09)
+
+Fabián empezó a probar el indicador en otros mercados (AUDUSD, EURUSD,
+BTC). El motor de estructura/patrones/MEC es 100% por porcentaje (nunca
+ticks/pips fijos), pensado desde el principio para ser
+instrumento-agnóstico -- pero algunos parámetros (umbrales, horarios de
+sesión) fueron calibrados específicamente con casos reales de oro. Se
+separan los hallazgos en dos categorías: **bug real** (error de lógica que
+también podría afectar a XAUUSD sin que se haya detectado todavía -- se
+corrige en el código, beneficia a todos los activos) vs. **descalibración**
+(el código funciona como se diseñó, pero un valor por defecto no encaja con
+este activo -- se resuelve ajustando el input en ese gráfico puntual, sin
+tocar los defaults ya validados en oro).
+
+- [x] **RESUELTO (14/09) -- `esMartilloIndBuy`/`esMartilloIndSell` no
+  reconocían una segunda forma de vela decisiva, dejándola pasar como
+  "indecisión" válida (BUG REAL, no descalibración)**: caso real BUY AUDUSD
+  10/09 20:43h inválido -- Fabián identificó que la vela de indecisión
+  (20:42h: apertura 0,71605, máximo 0,71614, mínimo 0,71604, cierre 0,71610)
+  cumple los parámetros de lo que él llama "Vela Envolvente Martillo": nivel
+  de apertura (D=BUY) = 10% (<15%), nivel de cierre = 60% (>50%) -- una
+  mecha chica del lado de la apertura pero un cuerpo que ya superó la mitad
+  del rango, ya decisiva, no indecisa. El código solo reconocía la forma
+  CLÁSICA de Martillo (apertura en la banda 40%-50%, cierre >=85%), así que
+  esta forma asimétrica se colaba como indecisión válida y habilitaba un
+  Start inválido. Fix: `esMartilloIndBuy`/`esMartilloIndSell` (Sección 4)
+  ahora reconocen dos formas -- la clásica (sin cambios) O la asimétrica
+  (apertura <15%, cierre >50%-margen). Cálculo 100% por porcentaje: corrige
+  por igual en cualquier instrumento, oro incluido -- no se tocó la Sección
+  3 (clasificador de la vela de ENTRADA/confirmación), que es lógica
+  distinta ya validada con casos de oro. Pendiente: que Fabián confirme que
+  este mismo caso (y casos de oro ya validados) siguen comportándose bien
+  con el cambio.
+
 - [x] **Fase 3 (parte 1) — cierre de la fase (10/09)**: tres ajustes finales
   antes de pasar a la parte 2:
   - Se retiró la herramienta de debug temporal (`mostrarDebugM3` y sus

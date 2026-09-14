@@ -484,7 +484,17 @@ TOLERANCIA = 0.0001  // 0,01%
 nivelOpenIndBuy  = rangoInd > 0 ? (open[1] - low[1]) / rangoInd : na
 nivelCloseIndBuy = rangoInd > 0 ? (close[1] - low[1]) / rangoInd : na
 cuerpoIndBuy = math.abs(nivelCloseIndBuy - nivelOpenIndBuy)
-esMartilloIndBuy = nivelOpenIndBuy >= 0.40 - TOLERANCIA_CUERPO and nivelOpenIndBuy <= 0.50 + TOLERANCIA_CUERPO and nivelCloseIndBuy >= 0.85 - TOLERANCIA_CUERPO
+// esMartilloIndBuy (14/09, ampliado): además de la forma clásica (apertura
+// en la banda 40%-50%, cierre >=85%), también cuenta como Martillo la forma
+// ASIMÉTRICA -- mecha chica del lado de la apertura (<15%) pero el cuerpo ya
+// pasó la mitad del rango (cierre >50%). Sin esto, una vela así se colaba
+// como "indecisión" válida cuando en realidad ya es decisiva. Caso real que
+// lo destapó: BUY AUDUSD 10/09 20:43 -- la vela de indecisión (20:42) abrió
+// en 10% y cerró en 60%, decisiva por este criterio, pero el código la
+// dejaba pasar. Es un chequeo 100% por porcentaje (no depende del
+// instrumento ni de su escala de precio), así que corrige por igual
+// cualquier activo, oro incluido.
+esMartilloIndBuy = (nivelOpenIndBuy >= 0.40 - TOLERANCIA_CUERPO and nivelOpenIndBuy <= 0.50 + TOLERANCIA_CUERPO and nivelCloseIndBuy >= 0.85 - TOLERANCIA_CUERPO) or (nivelOpenIndBuy < 0.15 and nivelCloseIndBuy > 0.50 - TOLERANCIA_CUERPO)
 esIndecisionBuy = cuerpoIndBuy <= 0.50 + TOLERANCIA and not esMartilloIndBuy
 
 wickContraBuy = math.min(nivelOpenIndBuy, nivelCloseIndBuy)
@@ -495,7 +505,8 @@ tipoIndBuy = esIndecisionBuy ? (math.abs(wickContraBuy - wickFavorBuy) <= 0.15 ?
 nivelOpenIndSell  = rangoInd > 0 ? (high[1] - open[1]) / rangoInd : na
 nivelCloseIndSell = rangoInd > 0 ? (high[1] - close[1]) / rangoInd : na
 cuerpoIndSell = math.abs(nivelCloseIndSell - nivelOpenIndSell)
-esMartilloIndSell = nivelOpenIndSell >= 0.40 - TOLERANCIA_CUERPO and nivelOpenIndSell <= 0.50 + TOLERANCIA_CUERPO and nivelCloseIndSell >= 0.85 - TOLERANCIA_CUERPO
+// espejo de esMartilloIndBuy -- ver comentario arriba
+esMartilloIndSell = (nivelOpenIndSell >= 0.40 - TOLERANCIA_CUERPO and nivelOpenIndSell <= 0.50 + TOLERANCIA_CUERPO and nivelCloseIndSell >= 0.85 - TOLERANCIA_CUERPO) or (nivelOpenIndSell < 0.15 and nivelCloseIndSell > 0.50 - TOLERANCIA_CUERPO)
 esIndecisionSell = cuerpoIndSell <= 0.50 + TOLERANCIA and not esMartilloIndSell
 
 wickContraSell = math.min(nivelOpenIndSell, nivelCloseIndSell)
