@@ -75,8 +75,31 @@ extensionBarras  = input.int(10, "Extensión sin toque (barras M1)", minval=1, g
 limitarLineasASesion = input.bool(true, "Dibujar líneas M3 solo durante sesiones + colchón de 15min antes de Pre-NY/Asia (más historial dentro del cupo de 500 líneas)", group=grpEstructura)
 mostrarDebugM3 = input.bool(false, "DEBUG temporal: valor exacto de altoM3Activo/bajoM3Activo bar a bar (Ventana de Datos)", group=grpEstructura)
 
-[o3, h3, l3, c3, t3] = request.security(syminfo.tickerid, "3", [open, high, low, close, time], lookahead=barmerge.lookahead_off)
-nuevaVelaM3 = ta.change(t3) != 0
+// Hasta el 11/09 esto se armaba con request.security(syminfo.tickerid, "3",
+// ...) y se leía t3[1]/t3[2]/t3[3]. Se abandonó por completo: se probó con
+// dos casos reales (BUY 11/09 09:28 NY, SELL 09/09 08:25 Pre-NY) que
+// request.security() podía tardar bastante MÁS de lo que ese lookback de 3
+// velas M3 cubría en reflejar el cierre real de una vela M3 -- un lag
+// impredecible, no una cantidad fija de velas salteadas, así que ningún
+// lookback por más grande que fuera iba a ser una solución robusta.
+//
+// Fix real (11/09): construir la vela M3 A MANO, acumulando OHLC desde las
+// propias velas M1 del gráfico, usando timeframe.change("3") -- función
+// nativa de Pine pensada exactamente para "saber cuándo arrancó un período
+// de un timeframe mayor" a partir del timeframe actual, sin request.security
+// ni repintado. Con esto la vela M3 queda cerrada y procesada en el MISMO
+// instante en que el M1 entra al siguiente bloque de 3 minutos -- cero lag
+// adicional, cero dependencia de cómo TradingView decide exponer un
+// timeframe secundario. También elimina la necesidad de la guardia
+// anti-duplicados/replay (ultimoT0Procesado): acá cada vela M3 se procesa
+// UNA sola vez, exactamente cuando cierra, nunca más ni menos.
+nuevaVelaM3 = timeframe.change("3")
+
+var float m3Open = na
+var float m3High = na
+var float m3Low = na
+var float m3Close = na
+var int   m3OpenTime = na
 
 var string curDir = na
 var float curHigh = na
@@ -90,20 +113,8 @@ var int   prevHighT = na
 var float prevLow = na
 var int   prevLowT = na
 
-// var ultimoT0Procesado: guarda la apertura (t0) de la última vela M3
-// REALMENTE procesada por el motor de tramos -- evita reprocesar la misma
-// vela dos veces (bug del 10/09: un pivote podía quedar reconocido DOS
-// veces) y, desde el 11/09, también permite detectar y recuperar velas M3
-// SALTEADAS (ver procesarVelaM3 y el bloque de reconocimiento más abajo).
-// OJO: comparar contra na con != no funciona como se espera en Pine (na
-// "envenena" la comparación y da false en vez de true) -- por eso siempre
-// se chequea na(ultimoT0Procesado) explícito, nunca t3[1] != na a secas.
-var int ultimoT0Procesado = na
-
-// procesarVelaM3 (11/09, corregido 11/09): corre UNA vela M3 (apertura o0,
-// máximo h0, mínimo l0, cierre c0, hora de apertura t0) por el motor de
-// tramos. Se separó en función para poder "reproducir" más de una vela M3
-// dentro de la misma vela M1 -- ver por qué en el bloque de abajo.
+// procesarVelaM3: corre UNA vela M3 (apertura o0, máximo h0, mínimo l0,
+// cierre c0, hora de apertura t0) por el motor de tramos.
 //
 // OJO -- restricción real de Pine v5 (no lo que yo había asumido antes):
 // una función definida con `=>` NO puede reasignar (:=) variables del
@@ -178,84 +189,47 @@ nivelBajo = float(na)
 altoRunInicio = int(na)
 bajoRunInicio = int(na)
 
-// Reconocimiento con "replay" de velas M3 salteadas (11/09): dos casos
-// reales (BUY 11/09 09:28 NY y SELL 09/09 08:25 Pre-NY) mostraron que el
-// pivote M3 activo podía quedar en un valor VIEJO varias velas M1 de más de
-// lo esperado -- el SL calculado usaba un Alto/Bajo M3 desactualizado. Se
-// descartó que fuera la guardia anti-duplicados: el atraso persistió
-// incluso desactivándola (prueba hecha con Fabián el 11/09). En vez de
-// asumir que t3[1] siempre trae la vela M3 inmediatamente siguiente a la
-// última procesada, ahora también se revisan t3[3] y t3[2] (velas M3 más
-// viejas) y, si alguna es más nueva que la última procesada, se la corre
-// por el motor PRIMERO, en orden cronológico -- así ninguna vela M3 queda
-// sin procesar sin importar cuántas velas M1 tarde `request.security()` en
-// reflejarla.
+// nuevaVelaM3 (timeframe.change) se dispara en la PRIMERA vela M1 del
+// período M3 que recién arranca -- en ese preciso instante, m3Open/High/
+// Low/Close/OpenTime todavía tienen el estado ACUMULADO del período M3
+// anterior (que recién terminó de cerrar en la vela M1 previa), así que acá
+// es el momento exacto de correrlo por el motor de tramos, ANTES de
+// reiniciar el acumulador con los datos de esta vela nueva. `not
+// na(m3OpenTime)` solo evita procesar en el arranque del gráfico, cuando
+// todavía no se acumuló ningún período M3 completo.
+if nuevaVelaM3 and not na(m3OpenTime)
+    [d, hh, hT, ll, lT, pD, pH, pHT, pL, pLT, esA, esB, nA, nB, arI, brI] = procesarVelaM3(m3Open, m3High, m3Low, m3Close, m3OpenTime, curDir, curHigh, curHighT, curLow, curLowT, prevDir, prevHigh, prevHighT, prevLow, prevLowT)
+    curDir := d
+    curHigh := hh
+    curHighT := hT
+    curLow := ll
+    curLowT := lT
+    prevDir := pD
+    prevHigh := pH
+    prevHighT := pHT
+    prevLow := pL
+    prevLowT := pLT
+    if esA
+        esAltoM3 := true
+        nivelAlto := nA
+        altoRunInicio := arI
+    if esB
+        esBajoM3 := true
+        nivelBajo := nB
+        bajoRunInicio := brI
+
+// acumulación del período M3 en curso: si arrancó uno nuevo, se reinicia con
+// los valores de esta vela; si no, se extiende con el máximo/mínimo/cierre
 if nuevaVelaM3
-    if not na(t3[3]) and (na(ultimoT0Procesado) or t3[3] > ultimoT0Procesado)
-        [d3, hh3, hT3, ll3, lT3, pD3, pH3, pHT3, pL3, pLT3, esA3, esB3, nA3, nB3, arI3, brI3] = procesarVelaM3(o3[3], h3[3], l3[3], c3[3], t3[3], curDir, curHigh, curHighT, curLow, curLowT, prevDir, prevHigh, prevHighT, prevLow, prevLowT)
-        curDir := d3
-        curHigh := hh3
-        curHighT := hT3
-        curLow := ll3
-        curLowT := lT3
-        prevDir := pD3
-        prevHigh := pH3
-        prevHighT := pHT3
-        prevLow := pL3
-        prevLowT := pLT3
-        ultimoT0Procesado := t3[3]
-        if esA3
-            esAltoM3 := true
-            nivelAlto := nA3
-            altoRunInicio := arI3
-        if esB3
-            esBajoM3 := true
-            nivelBajo := nB3
-            bajoRunInicio := brI3
-
-    if not na(t3[2]) and (na(ultimoT0Procesado) or t3[2] > ultimoT0Procesado)
-        [d2, hh2, hT2, ll2, lT2, pD2, pH2, pHT2, pL2, pLT2, esA2, esB2, nA2, nB2, arI2, brI2] = procesarVelaM3(o3[2], h3[2], l3[2], c3[2], t3[2], curDir, curHigh, curHighT, curLow, curLowT, prevDir, prevHigh, prevHighT, prevLow, prevLowT)
-        curDir := d2
-        curHigh := hh2
-        curHighT := hT2
-        curLow := ll2
-        curLowT := lT2
-        prevDir := pD2
-        prevHigh := pH2
-        prevHighT := pHT2
-        prevLow := pL2
-        prevLowT := pLT2
-        ultimoT0Procesado := t3[2]
-        if esA2
-            esAltoM3 := true
-            nivelAlto := nA2
-            altoRunInicio := arI2
-        if esB2
-            esBajoM3 := true
-            nivelBajo := nB2
-            bajoRunInicio := brI2
-
-    if not na(t3[1]) and (na(ultimoT0Procesado) or t3[1] > ultimoT0Procesado)
-        [d1, hh1, hT1, ll1, lT1, pD1, pH1, pHT1, pL1, pLT1, esA1, esB1, nA1, nB1, arI1, brI1] = procesarVelaM3(o3[1], h3[1], l3[1], c3[1], t3[1], curDir, curHigh, curHighT, curLow, curLowT, prevDir, prevHigh, prevHighT, prevLow, prevLowT)
-        curDir := d1
-        curHigh := hh1
-        curHighT := hT1
-        curLow := ll1
-        curLowT := lT1
-        prevDir := pD1
-        prevHigh := pH1
-        prevHighT := pHT1
-        prevLow := pL1
-        prevLowT := pLT1
-        ultimoT0Procesado := t3[1]
-        if esA1
-            esAltoM3 := true
-            nivelAlto := nA1
-            altoRunInicio := arI1
-        if esB1
-            esBajoM3 := true
-            nivelBajo := nB1
-            bajoRunInicio := brI1
+    m3Open := open
+    m3High := high
+    m3Low := low
+    m3Close := close
+    m3OpenTime := time
+else
+    m3High := math.max(m3High, high)
+    m3Low := math.min(m3Low, low)
+    m3Close := close
 
 var line altoLinea = na
 var line bajoLinea = na

@@ -173,8 +173,12 @@ en un único indicador.
   `t3[3]`, `t3[2]` y `t3[1]` en orden cronológico en cada `nuevaVelaM3` --
   cualquier vela M3 más nueva que la última procesada (`ultimoT0Procesado`)
   se corre por el motor antes de seguir, así ninguna vela queda salteada
-  sin importar cuántas velas M1 tarde en aparecer. Pendiente: que Fabián
-  confirme sobre los dos casos reales que el SL ya da el valor correcto.
+  sin importar cuántas velas M1 tarde en aparecer.
+  **SUPERADO (11/09, ver entrada más abajo)**: Fabián confirmó con los dos
+  mismos casos reales que el atraso persistía igual -- el lag de
+  `request.security()` era mayor de lo que un lookback de 3 velas M3 podía
+  cubrir. Se reemplazó este enfoque por completo (dejar de usar
+  `request.security()` para esto).
 - [x] **RESUELTO (11/09) -- `procesarVelaM3` no compilaba: "Cannot modify
   global variable 'curDir' in function" (y ~19 errores más iguales)**: al
   pegar el fix anterior en el editor de Pine, TradingView lo rechazó. Causa:
@@ -192,6 +196,37 @@ en un único indicador.
   vela M1 (para que el replay de varias velas M3 salteadas siga funcionando
   igual que antes). Ningún cambio de lógica del motor de tramos -- mismo
   comportamiento, ahora en una forma que sí compila.
+- [x] **RESUELTO (11/09) -- se abandonó `request.security()` para la
+  estructura M3: se arma a mano con `timeframe.change("3")`**: Fabián
+  confirmó con los dos mismos casos reales (BUY 11/09 09:28 NY, SELL 09/09
+  08:25 Pre-NY) que el fix de "replay" (revisar `t3[3]`/`t3[2]`/`t3[1]`)
+  seguía sin alcanzar -- el atraso real fue mayor a los 3 períodos M3 que
+  ese lookback cubría (en el caso BUY, `bajoM3Activo` recién se actualizó al
+  valor correcto 06 velas M1 después de formado el pivote real). Esto
+  descartó cualquier arreglo basado en "mirar más para atrás": el lag de
+  `request.security()` en este timeframe no-estándar no tiene un techo fijo
+  conocido.
+  Causa real, ahora sí de fondo: usar un timeframe secundario vía
+  `request.security()` depende de que TradingView decida CUÁNDO exponer los
+  datos de esa serie -- y esa decisión no es instantánea ni tiene un lag
+  máximo garantizado para timeframes no-estándar como "3".
+  Fix definitivo: se eliminó `request.security()` por completo de la
+  Sección 2. La vela M3 ahora se arma A MANO, acumulando open/high/low/close
+  directamente de las velas M1 del propio gráfico (`m3Open`/`m3High`/
+  `m3Low`/`m3Close`/`m3OpenTime`, todas `var`), y se detecta el cierre de
+  cada período de 3 minutos con `timeframe.change("3")` -- función nativa de
+  Pine para justamente este caso (saber cuándo arrancó un período de un
+  timeframe mayor a partir del timeframe actual, sin repintado). La vela M3
+  queda cerrada y procesada en el MISMO instante en que el M1 entra al
+  siguiente bloque de 3 minutos: cero lag adicional más allá del mínimo
+  inevitable (que cierren las 3 velas M1 que la componen), y cero
+  dependencia de la lógica interna de `request.security()`. También se pudo
+  eliminar la guardia anti-duplicados/replay (`ultimoT0Procesado`): con este
+  método cada vela M3 se procesa exactamente una vez, nunca dos, nunca
+  salteada. `procesarVelaM3` (el motor de tramos en sí) no cambió su lógica,
+  solo de dónde recibe cada vela. Pendiente: que Fabián confirme sobre los
+  dos casos reales que `altoM3Activo`/`bajoM3Activo` ya se actualizan al
+  valor correcto en el momento correcto.
 - [x] **Fase 3 (parte 1) — cierre de la fase (10/09)**: tres ajustes finales
   antes de pasar a la parte 2:
   - Se retiró la herramienta de debug temporal (`mostrarDebugM3` y sus
