@@ -362,9 +362,32 @@ tocar los defaults ya validados en oro).
   (apertura <15%, cierre >50%-margen). Cálculo 100% por porcentaje: corrige
   por igual en cualquier instrumento, oro incluido -- no se tocó la Sección
   3 (clasificador de la vela de ENTRADA/confirmación), que es lógica
-  distinta ya validada con casos de oro. Pendiente: que Fabián confirme que
-  este mismo caso (y casos de oro ya validados) siguen comportándose bien
-  con el cambio.
+  distinta ya validada con casos de oro. **Confirmado por Fabián (14/09)**:
+  "quedó perfecto y nada en el oro se alteró" -- además, un error que había
+  visto por separado en EURUSD se corrigió solo, probablemente por este
+  mismo fix (misma lógica de indecisión/Martillo).
+
+- [x] **RESUELTO (14/09) -- `pullbackStartBuy`/`pullbackStartSell` y
+  `pullbackEnvolventeBuy`/`pullbackEnvolventeSell` excluían una vela de
+  cuerpo CERO (BUG REAL, no descalibración)**: caso real SELL BTCUSD 09/09
+  20:20h -- el indicador NO marcó la señal (patrón Start válido a ojo). La
+  vela de pullback (20:18h) abrió y cerró exactamente en 78,242 (cuerpo
+  cero, doji perfecto). El chequeo `close[2] > open[2]` (estricto) nunca se
+  cumple cuando `close[2] == open[2]` exacto -- una vela sin cuerpo no es "a
+  favor" de ninguna dirección, así que tampoco debería quedar excluida de
+  contar como pullback. TradingView ya la pinta como vela válida (mecha sin
+  cuerpo) aunque no tenga cuerpo. Fix: los 4 chequeos de pullback
+  (`pullbackStartBuy`/`Sell` en Sección 4, `pullbackEnvolventeBuy`/`Sell` en
+  Sección 3) pasan de `</` >` estrictos a `<=`/`>=` -- cambio puramente
+  aditivo (solo agrega el caso borde `open==close`, nunca saca un caso que
+  ya calificaba), así que no puede romper ningún caso de oro ya validado.
+  Pendiente: que Fabián confirme que este mismo caso de BTC ya se reconoce.
+
+- [x] **Cartel sin "(HEDGE)" (14/09)**: a pedido de Fabián, el cartel visual
+  BUY/SELL vuelve a decir siempre lo mismo (solo "BUY" o "SELL"), sea o no
+  Hedge Position -- "simple y minimalista", como el diseño original. El tag
+  "(HEDGE)" queda solo en el texto de la alerta (Sección 6D), que es
+  informativo y no forma parte del cartel.
 
 - [x] **Fase 3 (parte 1) — cierre de la fase (10/09)**: tres ajustes finales
   antes de pasar a la parte 2:

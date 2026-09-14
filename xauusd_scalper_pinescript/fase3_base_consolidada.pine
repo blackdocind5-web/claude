@@ -464,8 +464,14 @@ esDojiSell     = esBajista and not esEstandarSell and not esMartilloSell and niv
 esEnvolventeSell = esEstandarSell or esMartilloSell or esDojiSell
 
 // pullback inmediato (1 vela contraria antes de la vela envolvente misma) -- distinto del pullback del patrón Start
-pullbackEnvolventeBuy  = close[1] < open[1]
-pullbackEnvolventeSell = close[1] > open[1]
+// <= / >= (14/09), no </> estrictos -- una vela de cuerpo CERO (open==close,
+// doji perfecto) no es "a favor" de ninguna dirección, así que tampoco
+// debería quedar excluida de contar como pullback. Con el estricto anterior,
+// una vela con open==close exacto nunca cumplía ni pullbackBuy ni
+// pullbackSell. Cambio puramente aditivo: solo agrega el caso borde
+// open==close, nunca saca un caso que antes ya calificaba.
+pullbackEnvolventeBuy  = close[1] <= open[1]
+pullbackEnvolventeSell = close[1] >= open[1]
 
 candidataEnvolventeBuy  = esEnvolventeBuy  and pullbackEnvolventeBuy
 candidataEnvolventeSell = esEnvolventeSell and pullbackEnvolventeSell
@@ -514,8 +520,14 @@ wickFavorSell  = 1 - math.max(nivelOpenIndSell, nivelCloseIndSell)
 tipoIndSell = esIndecisionSell ? (math.abs(wickContraSell - wickFavorSell) <= 0.15 ? "Doji" : "Pinbar") : na
 
 // pullback del patrón Start: candle[2] contrario a D (distinto de pullbackEnvolventeBuy/Sell, que mira candle[1])
-pullbackStartBuy  = close[2] < open[2]
-pullbackStartSell = close[2] > open[2]
+// <= / >= (14/09) -- mismo motivo que pullbackEnvolventeBuy/Sell más arriba.
+// Caso real que lo destapó: SELL BTC 09/09 20:20h inválido -- la vela de
+// pullback (20:18h) abrió y cerró exactamente en 78.242 (cuerpo cero), y el
+// estricto `close[2] > open[2]` nunca se cumple con una igualdad exacta.
+// TradingView ya la pinta como vela válida (mecha sin cuerpo) aunque no
+// tenga cuerpo -- el código debía reconocerla igual.
+pullbackStartBuy  = close[2] <= open[2]
+pullbackStartSell = close[2] >= open[2]
 
 // invalidación: 3 velas consecutivas del mismo color
 mismoColor3 = (close > open and close[1] > open[1] and close[2] > open[2]) or (close < open and close[1] < open[1] and close[2] < open[2])
@@ -844,7 +856,11 @@ colorCartel = color.new(color.silver, 0)
 // cada uno con su propio interruptor, sin que uno dependa del otro.
 if mecBuySenalFinal and barstate.isconfirmed
     if mostrarSenalMEC
-        label.new(bar_index, low, esHedgeBuy ? "BUY (HEDGE)" : "BUY", style=label.style_label_up, color=colorCartel, textcolor=color.white, size=size.normal)
+        // 14/09: el cartel vuelve a decir SIEMPRE "BUY" a secas, sea o no
+        // Hedge -- Fabián lo pidió simple y minimalista, como el diseño
+        // original. El tag "(HEDGE)" queda solo en el texto de la alerta
+        // (más abajo), que es informativo, no parte del cartel visual.
+        label.new(bar_index, low, "BUY", style=label.style_label_up, color=colorCartel, textcolor=color.white, size=size.normal)
         if mostrarSLTP and not na(slBuy)
             label.new(bar_index, slBuy, "SL " + str.tostring(slBuy, "#.###"), style=label.style_label_left, color=color.new(color.red, 20), textcolor=color.white, size=size.tiny)
             label.new(bar_index, tpBuy, "TP " + str.tostring(tpBuy, "#.###"), style=label.style_label_left, color=color.new(color.teal, 20), textcolor=color.white, size=size.tiny)
@@ -859,7 +875,8 @@ if mecBuySenalFinal and barstate.isconfirmed
 
 if mecSellSenalFinal and barstate.isconfirmed
     if mostrarSenalMEC
-        label.new(bar_index, high, esHedgeSell ? "SELL (HEDGE)" : "SELL", style=label.style_label_down, color=colorCartel, textcolor=color.white, size=size.normal)
+        // ver comentario en el bloque BUY de arriba
+        label.new(bar_index, high, "SELL", style=label.style_label_down, color=colorCartel, textcolor=color.white, size=size.normal)
         if mostrarSLTP and not na(slSell)
             label.new(bar_index, slSell, "SL " + str.tostring(slSell, "#.###"), style=label.style_label_left, color=color.new(color.red, 20), textcolor=color.white, size=size.tiny)
             label.new(bar_index, tpSell, "TP " + str.tostring(tpSell, "#.###"), style=label.style_label_left, color=color.new(color.teal, 20), textcolor=color.white, size=size.tiny)
