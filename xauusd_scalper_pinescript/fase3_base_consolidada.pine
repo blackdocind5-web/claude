@@ -721,6 +721,7 @@ var bool sesionCerrada = false
 var string tradeAbiertoDir = na  // "BUY" | "SELL" | na (sin trade abierto)
 var float tradeAbiertoSL = na
 var float tradeAbiertoTP = na
+var bool tradeAbiertoEsHedge = false  // el trade abierto ahora mismo, ¿fue él mismo abierto por Hedge Position? (ver 3ª señal más abajo)
 
 if inicioSesion
     senalesSesion := 0
@@ -728,6 +729,7 @@ if inicioSesion
     tradeAbiertoDir := na
     tradeAbiertoSL := na
     tradeAbiertoTP := na
+    tradeAbiertoEsHedge := false
 
 // mientras haya un trade abierto, cada vela chequea si tocó su SL o su TP --
 // igual que lo haría una orden real en MT5, sin esperar a que cierre la
@@ -736,21 +738,37 @@ if not na(tradeAbiertoDir)
     alcanzoTP = tradeAbiertoDir == "BUY" ? high >= tradeAbiertoTP : low <= tradeAbiertoTP
     alcanzoSL = tradeAbiertoDir == "BUY" ? low <= tradeAbiertoSL  : high >= tradeAbiertoSL
     if alcanzoTP
-        // escenario a) o b): cualquier TP (1ª o 2ª señal) cierra la sesión
+        // escenario a) o b): cualquier TP (1ª, 2ª o 3ª señal) cierra la sesión
         sesionCerrada := true
         tradeAbiertoDir := na
+        tradeAbiertoEsHedge := false
     else if alcanzoSL
         tradeAbiertoDir := na
-        // escenario c): si el que acaba de llegar al SL ya era la 2ª señal, cierra la sesión
+        tradeAbiertoEsHedge := false
+        // escenario c): si el que acaba de llegar al SL ya era la 2ª señal (o la 3ª, caso Hedge encadenado), cierra la sesión
         if senalesSesion >= 2
             sesionCerrada := true
         // si era la 1ª, la sesión sigue abierta -- habilita la 2ª y última señal
 
 // puede dispararse una señal nueva en esta dirección si: la sesión no está
-// cerrada, no se agotaron las 2 señales, y (no hay trade abierto) o (el
-// trade abierto es en el sentido CONTRARIO -- Hedge, que cierra al primero)
-puedeGenerarBuy  = not sesionCerrada and senalesSesion < 2 and (na(tradeAbiertoDir) or tradeAbiertoDir == "SELL")
-puedeGenerarSell = not sesionCerrada and senalesSesion < 2 and (na(tradeAbiertoDir) or tradeAbiertoDir == "BUY")
+// cerrada, y (no se agotaron las 2 señales normales, y no hay trade abierto
+// o el trade abierto es en el sentido CONTRARIO -- Hedge, que cierra al
+// primero) o (caso aislado: 3ª y ÚLTIMA señal, ver tercerHedgeBuy/Sell)
+//
+// tercerHedgeBuy/Sell (14/09, caso aislado confirmado por Fabián): si las
+// dos señales ya usadas en la sesión fueron DOS HEDGES SEGUIDOS (la 2ª
+// cerró a la 1ª por Hedge, y ahora aparece una 3ª en sentido contrario
+// mientras la 2ª sigue abierta, sin haber llegado ni a SL ni a TP), se
+// habilita esta 3ª y última señal -- pero solo si para ese momento la
+// sesión todavía no llegó a ninguno de los 3 escenarios de cierre
+// (sesionCerrada sigue en false). Nunca hay una 4ª: la excepción exige
+// senalesSesion == 2 exacto (no <=2), así que después de esta 3ª señal
+// (senalesSesion pasa a 3) ninguna de las dos condiciones vuelve a dar true.
+tercerHedgeBuy  = senalesSesion == 2 and not na(tradeAbiertoDir) and tradeAbiertoDir == "SELL" and tradeAbiertoEsHedge
+tercerHedgeSell = senalesSesion == 2 and not na(tradeAbiertoDir) and tradeAbiertoDir == "BUY"  and tradeAbiertoEsHedge
+
+puedeGenerarBuy  = not sesionCerrada and ((senalesSesion < 2 and (na(tradeAbiertoDir) or tradeAbiertoDir == "SELL")) or tercerHedgeBuy)
+puedeGenerarSell = not sesionCerrada and ((senalesSesion < 2 and (na(tradeAbiertoDir) or tradeAbiertoDir == "BUY"))  or tercerHedgeSell)
 
 // señal final: la que ya tenía el MEC (mecBuySenal/mecSellSenal), filtrada
 // por el límite de operativa diaria -- esto YA resuelve, de paso, "una señal
@@ -795,6 +813,7 @@ if mostrarSenalMEC and mecBuySenalFinal and barstate.isconfirmed
     tradeAbiertoDir := "BUY"
     tradeAbiertoSL := slBuy
     tradeAbiertoTP := tpBuy
+    tradeAbiertoEsHedge := esHedgeBuy
 
 if mostrarSenalMEC and mecSellSenalFinal and barstate.isconfirmed
     label.new(bar_index, high, esHedgeSell ? "SELL (HEDGE)" : "SELL", style=label.style_label_down, color=colorCartel, textcolor=color.white, size=size.normal)
@@ -805,6 +824,7 @@ if mostrarSenalMEC and mecSellSenalFinal and barstate.isconfirmed
     tradeAbiertoDir := "SELL"
     tradeAbiertoSL := slSell
     tradeAbiertoTP := tpSell
+    tradeAbiertoEsHedge := esHedgeSell
 
 // ============================================================================
 // SECCIÓN 7 — PANEL DE ESTADO
@@ -814,8 +834,11 @@ if barstate.islast
     table.cell(panel, 0, 0, tendencia == "alcista" ? "Uptrend (BUY)" : tendencia == "bajista" ? "Downtrend (SELL)" : "Undefined", text_color=color.white, bgcolor=tendencia == "alcista" ? color.new(color.green, 40) : tendencia == "bajista" ? color.new(color.red, 40) : color.new(color.gray, 40))
     table.cell(panel, 0, 1, mecListo ? "MEC ready" : esperandoContinuacion ? "Waiting for MEC" : "No Entry", text_color=color.white, bgcolor=mecListo ? color.new(color.teal, 40) : esperandoContinuacion ? color.new(color.orange, 40) : color.new(color.gray, 70))
     // Sección 6C: estado de la operativa diaria de la sesión (se resetea al
-    // arrancar cada sesión) -- señales usadas sobre el máximo de 2, y si hay
-    // un trade abierto ahora mismo (y en qué dirección).
+    // arrancar cada sesión) -- señales usadas (tope normal: 2; 3 solo en el
+    // caso aislado de dos Hedge seguidos, ver tercerHedgeBuy/Sell) y si hay
+    // un trade abierto ahora mismo (en qué dirección, y si es un Hedge).
     if mostrarEstadoOperativo
-        textoEstadoOperativo = sesionCerrada ? "Sesión CERRADA (" + str.tostring(senalesSesion) + "/2)" : not na(tradeAbiertoDir) ? tradeAbiertoDir + " abierto (" + str.tostring(senalesSesion) + "/2)" : "Sin trade (" + str.tostring(senalesSesion) + "/2)"
+        senalesTxt = str.tostring(senalesSesion) + " señal" + (senalesSesion == 1 ? "" : "es")
+        tradeTxt = not na(tradeAbiertoDir) ? tradeAbiertoDir + (tradeAbiertoEsHedge ? " (Hedge)" : "") + " abierto" : "sin trade abierto"
+        textoEstadoOperativo = (sesionCerrada ? "Sesión CERRADA -- " : "") + senalesTxt + ", " + tradeTxt
         table.cell(panel, 0, 2, textoEstadoOperativo, text_color=color.white, bgcolor=sesionCerrada ? color.new(color.gray, 40) : not na(tradeAbiertoDir) ? color.new(color.blue, 40) : color.new(color.gray, 70))

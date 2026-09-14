@@ -289,6 +289,28 @@ en un único indicador.
   Pendiente: que Fabián confirme en vivo (o con casos reales) que el límite
   de 2 señales, el cierre de sesión en los 3 escenarios, y el Hedge Position
   cerrando el trade original funcionan como se describió.
+- [x] **Fase 3 (parte 2) — 3ª señal para el caso aislado de dos Hedge
+  seguidos (14/09)**: Fabián pidió habilitar una 3ª señal (siempre la
+  última) para dos escenarios reales que a veces se dan, con una lectura en
+  común una vez reconstruidos: en ambos, la señal 2 y la señal 3 son DOS
+  HEDGES SEGUIDOS -- la 2ª cierra a la 1ª por Hedge Position, y mientras la
+  2ª sigue abierta (sin tocar ni SL ni TP), la 3ª la cierra también por
+  Hedge. Lo único que cambia entre sus dos escenarios es si la 1ª terminó en
+  pérdida o en ganancia/breakeven al momento de ser hedgeada -- no afecta la
+  regla en sí, la excepción no depende de eso.
+  Implementación: nueva `var bool tradeAbiertoEsHedge` -- registra si el
+  trade abierto ahora mismo fue él mismo abierto por Hedge (se guarda con
+  `esHedgeBuy`/`esHedgeSell` en el mismo momento en que se abre cada trade).
+  `tercerHedgeBuy`/`tercerHedgeSell` habilitan la excepción exactamente
+  cuando `senalesSesion == 2` (nunca más, así nunca hay una 4ª señal) Y el
+  trade abierto es el contrario Y fue él mismo un Hedge Y la sesión todavía
+  no está cerrada (`sesionCerrada` sigue en false -- ninguno de los 3
+  escenarios de cierre se dio todavía). `puedeGenerarBuy`/`puedeGenerarSell`
+  ahora combinan la regla normal (tope de 2) con esta excepción vía `or`.
+  Panel de estado simplificado (ya no fuerza "/2" fijo, engañoso en este
+  caso) -- ahora muestra la cantidad de señales usadas y si el trade abierto
+  es un Hedge. Pendiente: que Fabián confirme con un caso real de este
+  patrón (dos Hedges seguidos) que la 3ª señal aparece y que no hay una 4ª.
 - [x] **Fase 3 (parte 1) — cierre de la fase (10/09)**: tres ajustes finales
   antes de pasar a la parte 2:
   - Se retiró la herramienta de debug temporal (`mostrarDebugM3` y sus
