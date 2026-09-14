@@ -781,6 +781,24 @@ esHedgeSell = mecSellSenal and puedeGenerarSell and not na(tradeAbiertoDir) and 
 mecBuySenalFinal  = mecBuySenal  and puedeGenerarBuy
 mecSellSenalFinal = mecSellSenal and puedeGenerarSell
 
+// ============================================================================
+// SECCIÓN 6D — ALERTAS DE TRADINGVIEW (Fase 3 parte 2)
+// ============================================================================
+// alert() (no alertcondition()): alertcondition() solo admite mensajes
+// estáticos (sin poder meter el precio de entrada/SL/TP REAL calculado en
+// esa señal puntual); alert() sí arma el mensaje con los valores de la vela
+// actual, que es lo que hace falta acá. Para recibirlas: crear UNA alerta
+// sobre este indicador con condición "Any alert() function call" -- dispara
+// tanto para BUY como para SELL, cada una con su propio texto.
+// alert.freq_once_per_bar_close: refuerza lo que ya hace barstate.isconfirmed
+// más abajo (nunca dispara en un tick intermedio, solo al cerrar la vela).
+grpAlertas = "Alertas"
+activarAlertas = input.bool(true, "Activar alertas de TradingView (alert()) en cada señal BUY/SELL", group=grpAlertas)
+
+// nombre de la sesión vigente, para el texto de la alerta -- mismas
+// variables de la Sección 1, sin agregar nada nuevo
+sesionActualTxt = enPreNY ? "Pre-NY" : enNY ? "NY" : enAsia ? "Asia" : "fuera de sesión"
+
 // ---------------------------- CARTEL DE SEÑAL (nube gris claro, solo BUY/SELL) ----------------------------
 // Nube minimalista: fondo gris claro, texto blanco en mayúsculas. BUY debajo
 // de la vela de entrada (apunta hacia arriba), SELL arriba (apunta hacia
@@ -800,26 +818,43 @@ colorCartel = color.new(color.silver, 0)
 
 // mecBuySenal/mecSellSenal -> mecBuySenalFinal/mecSellSenalFinal (Sección
 // 6C): ya filtradas por el límite de operativa diaria (1 trade a la vez,
-// máx. 2 señales por sesión). El texto suma "(HEDGE)" cuando esta señal
-// cierra un trade contrario que seguía abierto. El estado del trade abierto
-// (tradeAbiertoDir/SL/TP, senalesSesion) se actualiza acá mismo, en el
-// mismo instante -- confirmado -- en que la señal realmente se dibuja.
-if mostrarSenalMEC and mecBuySenalFinal and barstate.isconfirmed
-    label.new(bar_index, low, esHedgeBuy ? "BUY (HEDGE)" : "BUY", style=label.style_label_up, color=colorCartel, textcolor=color.white, size=size.normal)
-    if mostrarSLTP and not na(slBuy)
-        label.new(bar_index, slBuy, "SL " + str.tostring(slBuy, "#.###"), style=label.style_label_left, color=color.new(color.red, 20), textcolor=color.white, size=size.tiny)
-        label.new(bar_index, tpBuy, "TP " + str.tostring(tpBuy, "#.###"), style=label.style_label_left, color=color.new(color.teal, 20), textcolor=color.white, size=size.tiny)
+// máx. 2/3 señales por sesión). El texto suma "(HEDGE)" cuando esta señal
+// cierra un trade contrario que seguía abierto.
+//
+// 14/09 -- separado en tres partes independientes, ya NO todo bajo
+// `mostrarSenalMEC`: antes, apagar el cartel visual (`mostrarSenalMEC =
+// false`) también apagaba la actualización del estado de la sesión
+// (senalesSesion/tradeAbiertoDir de la Sección 6C) -- un bug latente, nunca
+// reportado porque Fabián siempre lo deja activado, pero real: la señal en
+// SÍ (mecBuySenalFinal/mecSellSenalFinal) es la que manda, el cartel y la
+// alerta son solo dos formas de EXPONERLA. Ahora el estado de la sesión se
+// actualiza siempre que la señal es real, el cartel se dibuja solo si
+// `mostrarSenalMEC`, y la alerta se dispara solo si `activarAlertas` --
+// cada uno con su propio interruptor, sin que uno dependa del otro.
+if mecBuySenalFinal and barstate.isconfirmed
+    if mostrarSenalMEC
+        label.new(bar_index, low, esHedgeBuy ? "BUY (HEDGE)" : "BUY", style=label.style_label_up, color=colorCartel, textcolor=color.white, size=size.normal)
+        if mostrarSLTP and not na(slBuy)
+            label.new(bar_index, slBuy, "SL " + str.tostring(slBuy, "#.###"), style=label.style_label_left, color=color.new(color.red, 20), textcolor=color.white, size=size.tiny)
+            label.new(bar_index, tpBuy, "TP " + str.tostring(tpBuy, "#.###"), style=label.style_label_left, color=color.new(color.teal, 20), textcolor=color.white, size=size.tiny)
+    if activarAlertas
+        mensajeBuy = "XAUUSD Scalper -- BUY" + (esHedgeBuy ? " (HEDGE)" : "") + " | Sesión: " + sesionActualTxt + " | Entrada: " + str.tostring(close, "#.###") + (not na(slBuy) ? " | SL: " + str.tostring(slBuy, "#.###") + " | TP: " + str.tostring(tpBuy, "#.###") : " | SL/TP no disponible")
+        alert(mensajeBuy, alert.freq_once_per_bar_close)
     senalesSesion := senalesSesion + 1
     tradeAbiertoDir := "BUY"
     tradeAbiertoSL := slBuy
     tradeAbiertoTP := tpBuy
     tradeAbiertoEsHedge := esHedgeBuy
 
-if mostrarSenalMEC and mecSellSenalFinal and barstate.isconfirmed
-    label.new(bar_index, high, esHedgeSell ? "SELL (HEDGE)" : "SELL", style=label.style_label_down, color=colorCartel, textcolor=color.white, size=size.normal)
-    if mostrarSLTP and not na(slSell)
-        label.new(bar_index, slSell, "SL " + str.tostring(slSell, "#.###"), style=label.style_label_left, color=color.new(color.red, 20), textcolor=color.white, size=size.tiny)
-        label.new(bar_index, tpSell, "TP " + str.tostring(tpSell, "#.###"), style=label.style_label_left, color=color.new(color.teal, 20), textcolor=color.white, size=size.tiny)
+if mecSellSenalFinal and barstate.isconfirmed
+    if mostrarSenalMEC
+        label.new(bar_index, high, esHedgeSell ? "SELL (HEDGE)" : "SELL", style=label.style_label_down, color=colorCartel, textcolor=color.white, size=size.normal)
+        if mostrarSLTP and not na(slSell)
+            label.new(bar_index, slSell, "SL " + str.tostring(slSell, "#.###"), style=label.style_label_left, color=color.new(color.red, 20), textcolor=color.white, size=size.tiny)
+            label.new(bar_index, tpSell, "TP " + str.tostring(tpSell, "#.###"), style=label.style_label_left, color=color.new(color.teal, 20), textcolor=color.white, size=size.tiny)
+    if activarAlertas
+        mensajeSell = "XAUUSD Scalper -- SELL" + (esHedgeSell ? " (HEDGE)" : "") + " | Sesión: " + sesionActualTxt + " | Entrada: " + str.tostring(close, "#.###") + (not na(slSell) ? " | SL: " + str.tostring(slSell, "#.###") + " | TP: " + str.tostring(tpSell, "#.###") : " | SL/TP no disponible")
+        alert(mensajeSell, alert.freq_once_per_bar_close)
     senalesSesion := senalesSesion + 1
     tradeAbiertoDir := "SELL"
     tradeAbiertoSL := slSell

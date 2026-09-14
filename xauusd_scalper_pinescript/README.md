@@ -309,8 +309,28 @@ en un único indicador.
   ahora combinan la regla normal (tope de 2) con esta excepción vía `or`.
   Panel de estado simplificado (ya no fuerza "/2" fijo, engañoso en este
   caso) -- ahora muestra la cantidad de señales usadas y si el trade abierto
-  es un Hedge. Pendiente: que Fabián confirme con un caso real de este
-  patrón (dos Hedges seguidos) que la 3ª señal aparece y que no hay una 4ª.
+  es un Hedge. **Confirmado por Fabián (14/09)**: "visualicé el nuevo código
+  en TradingView y está perfecto".
+- [x] **Fase 3 (parte 2) — alertas de TradingView (14/09)**: nueva Sección
+  6D. Se usa `alert()`, no `alertcondition()` -- `alertcondition()` solo
+  admite mensajes estáticos, sin poder meter el precio de entrada/SL/TP REAL
+  de esa señal puntual dentro del texto. Para recibirlas, Fabián crea UNA
+  sola alerta sobre el indicador con condición "Any alert() function call"
+  -- dispara tanto para BUY como para SELL, cada una con su propio texto
+  (ej.: "XAUUSD Scalper -- BUY (HEDGE) | Sesión: NY | Entrada: 4.123,456 |
+  SL: 4.120,000 | TP: 4.125,000"), incluye sesión vigente, si es Hedge, y
+  entrada/SL/TP. Nuevo input `activarAlertas` (default true, grupo
+  "Alertas"). `alert.freq_once_per_bar_close` refuerza lo que ya hace
+  `barstate.isconfirmed` -- nunca dispara en un tick intermedio.
+  De paso, se separó en tres partes independientes lo que hasta ahora corría
+  todo junto bajo `mostrarSenalMEC`: apagar el cartel visual también
+  apagaba la actualización del estado de la sesión (Sección 6C) -- un bug
+  latente nunca reportado (Fabián siempre lo deja activado) pero real. Ahora
+  el estado de la sesión se actualiza siempre que la señal es real, el
+  cartel se dibuja solo si `mostrarSenalMEC`, y la alerta solo si
+  `activarAlertas` -- ninguno depende de otro. Pendiente: que Fabián
+  configure la alerta en TradingView y confirme que el texto le llega
+  completo y a tiempo.
 - [x] **Fase 3 (parte 1) — cierre de la fase (10/09)**: tres ajustes finales
   antes de pasar a la parte 2:
   - Se retiró la herramienta de debug temporal (`mostrarDebugM3` y sus
