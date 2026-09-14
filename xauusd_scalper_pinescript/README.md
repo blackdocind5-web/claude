@@ -252,10 +252,43 @@ en un único indicador.
   anterior): como `altoM3Activo`/`bajoM3Activo` pasan a `na` en la MISMA
   vela en que se confirma el quiebre, el chequeo simple "nivel + margen, y
   que siga sin estar en na" ya se comporta como "solo la primera vez que se
-  cumple", sin repetirse en las velas siguientes. Pendiente: que Fabián
-  confirme sobre este mismo caso (y en vivo) que el nivel ahora se extiende
-  hasta la vela que lo supera de verdad, y que el MEC exige pullback +
-  continuación después de esa vela.
+  cumple", sin repetirse en las velas siguientes. **Confirmado por Fabián
+  (14/09)**: "ya quedó corregido, todo perfecto".
+- [x] **Fase 3 (parte 2) — límite de operativa diaria, un trade a la vez,
+  Hedge Position (14/09)**: nueva Sección 6C. Esto resuelve de paso la pieza
+  pendiente "una señal por vela hasta invalidarse" -- ya no hace falta un
+  mecanismo aparte, queda cubierta por esta regla más general. Reglas
+  confirmadas por Fabián (su propio resumen: "UN SOLO TRADE ABIERTO A LA VEZ,
+  NO SE DEBE TOMAR DOS OPERACIONES EN SIMULTÁNEO/PARALELO"):
+  - Por SESIÓN (Pre-NY, NY, Asia -- cada una con su propio contador, no
+    comparten límite entre sí) hay como máximo 2 señales. La sesión queda
+    cerrada (cero señales más, aunque aparezca un setup válido) apenas se da
+    uno de estos 3 escenarios: a) la 1ª señal llega a su TP, b) la 1ª llega a
+    su SL y la 2ª (última) llega a su TP, c) la 1ª llega a su SL y la 2ª
+    también llega a su SL.
+  - Una 2ª señal en el MISMO sentido que la 1ª solo puede aparecer después de
+    que la 1ª ya llegó a su SL (mientras sigue abierta, nada la invalida).
+  - Una señal en sentido CONTRARIO (Hedge Position) SÍ puede dispararse en
+    paralelo, con el trade original todavía abierto (sin llegar a SL ni TP) --
+    pero en ese mismo instante el trade original se da por cerrado, para
+    sostener la regla de "un solo trade a la vez" (la 2ª reemplaza a la 1ª,
+    nunca coexisten).
+  Implementación: `senalesSesion` (contador 0-2, se resetea al arrancar cada
+  sesión -- flanco ascendente de `enPreNY`/`enNY`/`enAsia`), `sesionCerrada`,
+  y `tradeAbiertoDir`/`SL`/`TP` (estado del trade abierto ahora mismo, si
+  hay). En cada vela, si hay un trade abierto se chequea si `high`/`low`
+  tocó su SL o su TP (sin esperar `barstate.isconfirmed` -- una orden real en
+  MT5 no espera a que cierre la vela M1 para saltar) y se actualiza el
+  estado según corresponda. `puedeGenerarBuy`/`puedeGenerarSell` combinan
+  todo eso para filtrar `mecBuySenal`/`mecSellSenal` en
+  `mecBuySenalFinal`/`mecSellSenalFinal` (lo que realmente dibuja el
+  cartel), y `esHedgeBuy`/`esHedgeSell` agregan "(HEDGE)" al texto cuando
+  corresponde. Panel de estado (Sección 7) ampliado con una fila que muestra
+  señales usadas sobre 2 y si hay trade abierto (y en qué dirección), para
+  verificar en vivo antes de seguir con la ficha final.
+  Pendiente: que Fabián confirme en vivo (o con casos reales) que el límite
+  de 2 señales, el cierre de sesión en los 3 escenarios, y el Hedge Position
+  cerrando el trade original funcionan como se describió.
 - [x] **Fase 3 (parte 1) — cierre de la fase (10/09)**: tres ajustes finales
   antes de pasar a la parte 2:
   - Se retiró la herramienta de debug temporal (`mostrarDebugM3` y sus
