@@ -75,6 +75,17 @@ extensionBarras  = input.int(10, "Extensión sin toque (barras M1)", minval=1, g
 limitarLineasASesion = input.bool(true, "Dibujar líneas M3 solo durante sesiones + colchón de 15min antes de Pre-NY/Asia (más historial dentro del cupo de 500 líneas)", group=grpEstructura)
 mostrarDebugM3 = input.bool(false, "DEBUG temporal: valor exacto de altoM3Activo/bajoM3Activo bar a bar (Ventana de Datos)", group=grpEstructura)
 
+// UMBRAL_QUIEBRE (declarado acá, no en la Sección 6 -- ver por qué en
+// quiebreAlto/quiebreBajo más abajo) -- default 0,005% (mitad del 0,01%
+// original), no 0,01% literal. Fabián mide este volumen con la herramienta
+// "rango de precios" de TradingView, que redondea a 2 decimales -- un
+// volumen real de 0,00742% ya le aparece como "0,01%" en pantalla,
+// indistinguible de un 0,01000% exacto. Bajar el umbral a la mitad cubre
+// todo lo que esa herramienta redondearía hacia "0,01%". Caso real que lo
+// motivó: BUY 02/09 07:12, volumen real 0,00742% (nivel 4.315,905 -> cierre
+// 4.316,225).
+UMBRAL_QUIEBRE = input.float(0.00005, "Umbral mínimo de quiebre/Continuación (rango de precios redondea a 2 decimales)", minval=0, maxval=0.001, step=0.00001, group="Modelo MEC")
+
 // Hasta el 11/09 esto se armaba con request.security(syminfo.tickerid, "3",
 // ...) y se leía t3[1]/t3[2]/t3[3]. Se abandonó por completo: se probó con
 // dos casos reales (BUY 11/09 09:28 NY, SELL 09/09 08:25 Pre-NY) que
@@ -302,8 +313,30 @@ if altoLineaActiva and not na(altoM3Activo)
 if bajoLineaActiva and not na(bajoM3Activo)
     line.set_x2(bajoLinea, int(math.min(time, bajoM3Inicio + maxExtMs)))
 
-quiebreAlto = not na(altoM3Activo) and ta.crossover(close, altoM3Activo)
-quiebreBajo = not na(bajoM3Activo) and ta.crossunder(close, bajoM3Activo)
+// Hasta el 14/09 esto era ta.crossover/ta.crossunder SIN margen -- cualquier
+// toque mínimo por encima/debajo del nivel ya se daba por "quiebre
+// confirmado" (CHoCH/BOS), aunque no superara el mismo umbral
+// (UMBRAL_QUIEBRE) que el motor MEC exige más abajo para validar una
+// entrada puntual. Eso desalineaba las dos cosas: el nivel se daba por roto
+// (la línea dejaba de extenderse, `tendencia` cambiaba) en el primer toque
+// débil, y el MEC de ahí en más trataba ese quiebre como CHoCH ya
+// confirmado -- permitiendo que la vela que en realidad recién confirmaba
+// el quiebre real disparara la señal directo, sin exigirle el pullback +
+// continuación nuevos que le corresponden a un CHoCH recién confirmado.
+// Caso real que lo destapó: START BUY 08/09 09:54 (Pre-NY) inválida -- el
+// Alto M3 en 4.402,92 tuvo un primer toque débil que NO lo superaba con el
+// volumen mínimo exigido, pero el código ya lo daba por roto ahí; el nivel
+// debía seguir extendiéndose a la derecha hasta que se lo superó
+// efectivamente recién a las 09:54, y esa vela debía ser el INICIO de la
+// búsqueda de Continuación, no la señal en sí.
+// Fix: usar el mismo UMBRAL_QUIEBRE acá -- ya no hace falta ta.crossover
+// (semántica de "cruce" entre esta vela y la anterior), porque altoM3Activo/
+// bajoM3Activo pasan a `na` en la MISMA vela en que se confirma el quiebre
+// (más abajo en este bloque), así que "not na(...)" solo puede ser true
+// mientras el nivel sigue sin romperse -- el chequeo de nivel + margen ya
+// se comporta como "primera vez que se cumple", sin necesitar el cruce.
+quiebreAlto = not na(altoM3Activo) and close > altoM3Activo * (1 + UMBRAL_QUIEBRE)
+quiebreBajo = not na(bajoM3Activo) and close < bajoM3Activo * (1 - UMBRAL_QUIEBRE)
 
 // se reutiliza en Fase 3 para saber si el último quiebre fue continuación (BOS) o cambio de estructura (CHoCH)
 var bool ultimoQuiebreFueCambioEstructura = false
@@ -522,17 +555,12 @@ esStartSell = esEnvolventeSell and esIndecisionSell and pullbackStartSell and no
 // tramo) Y `superaNivelAhora` en ESA vela puntual -- una reentrada
 // posterior no hereda gratis la validación original.
 //
-// UMBRAL_QUIEBRE: default 0,005% (mitad del 0,01% original), no 0,01%
-// literal. Fabián mide este volumen con la herramienta "rango de precios"
-// de TradingView, que redondea a 2 decimales -- un volumen real de
-// 0,00742% ya le aparece como "0,01%" en pantalla, indistinguible de un
-// 0,01000% exacto. Bajar el umbral a la mitad cubre todo lo que esa
-// herramienta redondearía hacia "0,01%". Caso real que lo motivó: BUY
-// 02/09 07:12, volumen real 0,00742% (nivel 4.315,905 -> cierre 4.316,225).
+// UMBRAL_QUIEBRE ahora se declara en la Sección 2 (mismo umbral, mismo
+// grupo "Modelo MEC" en el panel de configuración) -- lo necesita
+// quiebreAlto/quiebreBajo, que corre antes que esta sección.
 grpMEC = "Modelo MEC"
 mostrarSenalMEC = input.bool(true, "Mostrar cartel de señal final BUY/SELL", group=grpMEC)
 mostrarZonaBusquedaMEC = input.bool(false, "Sombrear zona de búsqueda de Continuación (debug)", group=grpMEC)
-UMBRAL_QUIEBRE = input.float(0.00005, "Umbral mínimo de quiebre/Continuación (rango de precios redondea a 2 decimales)", minval=0, maxval=0.001, step=0.00001, group=grpMEC)
 
 var bool huboPullbackEnBusqueda = false
 var float extremoQuiebre = na

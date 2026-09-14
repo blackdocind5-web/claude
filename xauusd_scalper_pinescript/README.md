@@ -224,9 +224,38 @@ en un único indicador.
   eliminar la guardia anti-duplicados/replay (`ultimoT0Procesado`): con este
   método cada vela M3 se procesa exactamente una vez, nunca dos, nunca
   salteada. `procesarVelaM3` (el motor de tramos en sí) no cambió su lógica,
-  solo de dónde recibe cada vela. Pendiente: que Fabián confirme sobre los
-  dos casos reales que `altoM3Activo`/`bajoM3Activo` ya se actualizan al
-  valor correcto en el momento correcto.
+  solo de dónde recibe cada vela. **Confirmado por Fabián (14/09)**: con
+  este fix el `DEBUG` de `altoM3Activo`/`bajoM3Activo` ya se actualiza al
+  valor correcto en el momento correcto, sin lag -- los dos casos reales
+  quedan resueltos.
+- [x] **RESUELTO (14/09) -- `quiebreAlto`/`quiebreBajo` (CHoCH/BOS) se
+  confirmaban con cualquier toque mínimo, sin el mismo umbral que exige el
+  MEC para validar una entrada**: encontrado por Fabián revisando las
+  etiquetas de SL/TP -- una START BUY el 08/09 09:54 (Pre-NY) resultó
+  inválida. El Alto M3 en 4.402,92 tuvo un primer toque débil que NO lo
+  superaba con el volumen mínimo exigido (`UMBRAL_QUIEBRE`), pero
+  `quiebreAlto` (que hasta ahora era `ta.crossover(close, altoM3Activo)`,
+  SIN margen) ya lo daba por roto ahí mismo -- cortaba la línea, cambiaba
+  `tendencia` a "alcista" y dejaba el motor MEC creyendo que el CHoCH ya
+  estaba confirmado. De ahí en más, el primer pullback + continuación con
+  margen (que sí exige el MEC en Sección 6) se cumplió ANTES de las 09:54,
+  así que la vela de las 09:54 -- que en realidad era la que recién
+  confirmaba el quiebre real del nivel -- disparó la señal directo, sin
+  exigirle su propio pullback + continuación nuevos (los que le
+  corresponden a un CHoCH recién confirmado). El nivel debía seguir
+  extendiéndose a la derecha (línea sin cortar) hasta esa vela.
+  Fix: `quiebreAlto`/`quiebreBajo` ahora exigen el mismo `UMBRAL_QUIEBRE`
+  que ya usaba el MEC para validar una Continuación puntual (movido de la
+  Sección 6 a la Sección 2, mismo valor y mismo grupo "Modelo MEC" en el
+  panel -- solo cambió DÓNDE se declara en el código, corre antes). Ya no
+  hace falta `ta.crossover` (semántica de cruce entre esta vela y la
+  anterior): como `altoM3Activo`/`bajoM3Activo` pasan a `na` en la MISMA
+  vela en que se confirma el quiebre, el chequeo simple "nivel + margen, y
+  que siga sin estar en na" ya se comporta como "solo la primera vez que se
+  cumple", sin repetirse en las velas siguientes. Pendiente: que Fabián
+  confirme sobre este mismo caso (y en vivo) que el nivel ahora se extiende
+  hasta la vela que lo supera de verdad, y que el MEC exige pullback +
+  continuación después de esa vela.
 - [x] **Fase 3 (parte 1) — cierre de la fase (10/09)**: tres ajustes finales
   antes de pasar a la parte 2:
   - Se retiró la herramienta de debug temporal (`mostrarDebugM3` y sus
