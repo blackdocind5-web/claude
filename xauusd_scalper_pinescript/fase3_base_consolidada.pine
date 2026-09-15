@@ -272,18 +272,41 @@ var string tendencia = "indefinida"  // "alcista" | "bajista" | "indefinida"
 // estructura bajista mucho después, con la vela de las 20:04 clasificada
 // como BOS en vez del verdadero CHoCH.
 //
-// Fix: mientras `tendencia` es "alcista", el lado BAJO es el candidato a
-// CHoCH y queda BLOQUEADO (bajoM3Bloqueado=true) apenas se fija el primer
-// bajo M3 tras el último evento de reseteo -- los bajos M3 que se formen
-// después NO lo reemplazan (se grafican punteados, ver más abajo) hasta que
-// ocurra uno de los dos eventos que lo resuelven: (1) se rompe con volumen
-// válido -- confirma el CHoCH, tendencia pasa a "bajista" -- o (2) se rompe
-// antes un alto M3 A FAVOR de la tendencia alcista vigente (un BOS) --
-// demuestra que el retroceso que generó este candidato fue falso, se
-// descarta y se vuelve a buscar un candidato nuevo desde cero. Simétrico
-// para el lado ALTO cuando `tendencia` es "bajista". Mientras `tendencia` es
-// "indefinida" (arranque del gráfico) ningún lado se bloquea, igual que
-// antes.
+// Fix (versión 15/09 v1, YA SUPERADA -- ver v2 más abajo): mientras
+// `tendencia` es "alcista", el lado BAJO es el candidato a CHoCH y queda
+// BLOQUEADO apenas se fija el primer bajo M3 tras el último reseteo -- se
+// libera ante (1) su propio quiebre válido -- CHoCH -- o (2) un quiebre de
+// un alto M3 a favor de la tendencia vigente -- BOS -- que invalida el
+// candidato. Esta versión (detectar el BOS vía quiebreAlto/quiebreBajo)
+// resultó FRÁGIL en la práctica: un BOS real puede no llegar a tocar
+// siquiera con mecha el alto M3 vigente en ese momento (el precio puede
+// simplemente no volver a acercarse a ese nivel específico antes de formar
+// el siguiente bajo M3), así que el evento de invalidación muchas veces no
+// se disparaba aunque el candidato SÍ debía trasladarse. Caso real que lo
+// destapó: PRE-NY 15/09 en vivo -- el candidato bajo bloqueado en 4.278,725
+// pasó correctamente a 4.281,460 (sí hubo BOS detectado ahí) pero se quedó
+// pegado en 4.281,460 en vez de seguir a 4.282,460 (bajo M3 de las 07:51-
+// 07:54, más reciente y más alto) porque no se detectó ningún quiebreAlto
+// entre medio.
+//
+// Fix v2 (15/09, hack de Fabián): en vez de depender de detectar un evento
+// de quiebre intermedio, comparar DIRECTAMENTE el nivel nuevo contra el
+// candidato bloqueado vigente. Regla: "el nivel de línea continua (CHoCH)
+// siempre debe ser el más cercano al precio actual del mercado" -- mientras
+// `tendencia` es "alcista", un bajo M3 nuevo reemplaza al candidato
+// bloqueado SI Y SOLO SI es más alto que el actual (un higher low real,
+// más favorable/cercano al precio); si es igual o más bajo, NO lo
+// reemplaza -- se grafica punteado nada más. Simétrico para el lado ALTO
+// cuando `tendencia` es "bajista" (reemplaza solo si es más bajo que el
+// actual). Esto también reconcilia limpiamente el caso original del SELL
+// 14/09 20:04: los bajos M3 posteriores a 4.288,230 (4.287,365 y 4.287,360)
+// eran MÁS BAJOS -- por esta regla nunca lo hubieran reemplazado, tal como
+// correspondía. El único evento que sigue liberando el bloqueo por completo
+// (para que el PRIMER bajo M3 de la tendencia siguiente arranque una
+// búsqueda nueva, no herede el último valor) es el CHoCH real -- ver el
+// reseteo condicionado a esCambioEstructuraAlto/Bajo en los bloques
+// quiebreAlto/quiebreBajo más abajo. Mientras `tendencia` es "indefinida"
+// (arranque del gráfico) ningún lado se bloquea, igual que antes.
 var bool altoM3Bloqueado = false
 var bool bajoM3Bloqueado = false
 
@@ -318,6 +341,11 @@ dibujarLineasM3 = not limitarLineasASesion or enSesionOperativa or enColchonPreN
 if esAltoM3
     altoM3Reciente := nivelAlto
     esMismoTramoAlto = not na(altoM3Inicio) and altoM3Inicio == altoRunInicio
+    // candidato bloqueado (tendencia bajista) que este alto M3 nuevo NO
+    // mejora -- no es más bajo que el actual, así que no es más favorable/
+    // cercano al precio (hack de Fabián, ver comentario en la declaración
+    // de altoM3Bloqueado más arriba)
+    altoNuevoNoMejora = tendencia == "bajista" and altoM3Bloqueado and nivelAlto >= altoM3Activo
     if esMismoTramoAlto
         // no es un pivote nuevo -- es el MISMO tramo (altoRunInicio sin
         // cambiar) ampliando su valor -- se actualiza siempre, esté
@@ -327,12 +355,15 @@ if esAltoM3
         if altoLineaActiva
             line.set_y1(altoLinea, nivelAlto)
             line.set_y2(altoLinea, nivelAlto)
-    else if tendencia == "bajista" and altoM3Bloqueado
-        // candidato a CHoCH ya bloqueado (línea continua) -- este alto M3
-        // nuevo NO lo reemplaza, solo se grafica punteado como referencia
+    else if altoNuevoNoMejora
+        // candidato bloqueado y este alto M3 no lo mejora -- se grafica
+        // punteado como referencia, no lo reemplaza
         if dibujarLineasM3
             line.new(x1=altoRunInicio, y1=nivelAlto, x2=time, y2=nivelAlto, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
     else
+        // reemplaza: o no había candidato bloqueado todavía (primer alto M3
+        // tras el reseteo) o sí lo había pero este nuevo alto es más bajo
+        // -- más favorable -- y pasa a ser el candidato
         if altoLineaActiva and not altoRoto
             line.set_x2(altoLinea, int(math.min(time, altoM3Inicio + maxExtMs)))
         altoM3Activo := nivelAlto
@@ -347,17 +378,20 @@ if esAltoM3
 if esBajoM3
     bajoM3Reciente := nivelBajo
     esMismoTramoBajo = not na(bajoM3Inicio) and bajoM3Inicio == bajoRunInicio
+    // ver comentario en el bloque esAltoM3 de arriba -- simétrico: un bajo
+    // M3 nuevo solo mejora al candidato bloqueado si es MÁS ALTO (higher
+    // low real, más cercano al precio)
+    bajoNuevoNoMejora = tendencia == "alcista" and bajoM3Bloqueado and nivelBajo <= bajoM3Activo
     if esMismoTramoBajo
         // ver comentario en el bloque esAltoM3 de arriba
         bajoM3Activo := nivelBajo
         if bajoLineaActiva
             line.set_y1(bajoLinea, nivelBajo)
             line.set_y2(bajoLinea, nivelBajo)
-    else if tendencia == "alcista" and bajoM3Bloqueado
-        // candidato a CHoCH ya bloqueado (línea continua) -- este bajo M3
-        // nuevo NO lo reemplaza, solo se grafica punteado como referencia --
-        // este es exactamente el caso del SELL 14/09 20:04 (ver comentario en
-        // la declaración de bajoM3Bloqueado más arriba)
+    else if bajoNuevoNoMejora
+        // este es exactamente el caso del SELL 14/09 20:04 (4.287,365 y
+        // 4.287,360 eran MÁS BAJOS que 4.288,230 -- no lo mejoraban, nunca
+        // debieron reemplazarlo)
         if dibujarLineasM3
             line.new(x1=bajoRunInicio, y1=nivelBajo, x2=time, y2=nivelBajo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
     else
@@ -460,11 +494,18 @@ if quiebreAlto
     altoLineaActiva := false
     ultimoQuiebreFueCambioEstructura := esCambioEstructuraAlto
     // este quiebre resuelve el candidato del lado alto si estaba bloqueado
-    // (CHoCH) y, sea CHoCH o BOS, invalida cualquier candidato bajo
-    // pendiente -- empieza a buscarse uno nuevo desde cero (ver
-    // altoM3Bloqueado/bajoM3Bloqueado más arriba)
+    // (altoM3Activo acaba de pasar a na, por eso el desbloqueo de ESTE lado
+    // es incondicional -- ya no hay nada bloqueado que mantener). El lado
+    // BAJO en cambio (15/09 v2, hack de Fabián) ya NO se desbloquea acá ante
+    // cualquier quiebreAlto (un BOS ya no invalida el candidato bajo -- eso
+    // ahora lo resuelve la comparación directa en el bloque esBajoM3 de
+    // arriba) -- solo se desbloquea cuando este quiebreAlto es un CHoCH real
+    // (tendencia pasaba de bajista a alcista): recién ahí arranca una
+    // tendencia alcista nueva y hace falta buscar su primer candidato bajo
+    // desde cero.
     altoM3Bloqueado := false
-    bajoM3Bloqueado := false
+    if esCambioEstructuraAlto
+        bajoM3Bloqueado := false
 
 if quiebreBajo
     nivelQuebradoBajo := bajoM3Activo
@@ -482,7 +523,8 @@ if quiebreBajo
     ultimoQuiebreFueCambioEstructura := esCambioEstructuraBajo
     // ver comentario simétrico en el bloque quiebreAlto de arriba
     bajoM3Bloqueado := false
-    altoM3Bloqueado := false
+    if esCambioEstructuraBajo
+        altoM3Bloqueado := false
 
 // DEBUG TEMPORAL (11/09): valor EXACTO de altoM3Activo/bajoM3Activo en CADA
 // vela M1, para leer directo en la Ventana de Datos sin depender de

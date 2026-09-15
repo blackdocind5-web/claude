@@ -516,6 +516,43 @@ tocar los defaults ya validados en oro).
     mecha (`high`/`low`) supere el nivel, sin margen. No toca la Sección 6
     (MEC), que sigue con su propia validación de entrada por `UMBRAL_QUIEBRE`
     tal cual estaba.
+- [x] **Candidato bloqueado v2: comparación directa en vez de detectar el BOS
+  (15/09, hack de Fabián)**: el fix anterior (liberar el candidato bloqueado
+  ante un BOS detectado vía `quiebreAlto`/`quiebreBajo`) resultó frágil en la
+  práctica -- un BOS real puede no llegar a tocar ni con mecha el Alto/Bajo
+  M3 vigente en ese momento (el precio simplemente no vuelve a acercarse a
+  ese nivel específico antes de formar el siguiente pivote), así que el
+  evento de invalidación muchas veces no se disparaba aunque el candidato SÍ
+  debía trasladarse.
+  - Caso real que lo destapó: PRE-NY 15/09 en vivo (mismo día, segunda
+    vuelta) -- el candidato bajo bloqueado pasó correctamente de 4.278,725 a
+    4.281,460 (sí hubo un BOS detectado ahí) pero se quedó pegado en
+    4.281,460 en vez de seguir a 4.282,460 (bajo M3 de las 07:51-07:54, más
+    reciente y más alto) porque no se detectó ningún `quiebreAlto` entre
+    medio.
+  - Fix (hack de Fabián): en vez de depender de detectar un quiebre
+    intermedio, comparar DIRECTAMENTE el nivel del pivote nuevo contra el
+    candidato bloqueado vigente. Regla: "el nivel de línea continua (CHoCH)
+    siempre debe ser el más cercano al precio actual del mercado" -- mientras
+    `tendencia` es "alcista", un Bajo M3 nuevo reemplaza al candidato
+    bloqueado SI Y SOLO SI es más alto que el actual (un higher low real,
+    más favorable/cercano al precio); si es igual o más bajo, no lo
+    reemplaza. Simétrico para el lado alto cuando `tendencia` es "bajista"
+    (reemplaza solo si es más bajo). Esto también reconcilia limpiamente el
+    caso original del SELL 14/09 20:04: los Bajos M3 posteriores a 4.288,230
+    (4.287,365 y 4.287,360) eran MÁS BAJOS -- por esta regla nunca lo hubieran
+    reemplazado, tal como correspondía.
+  - El único evento que sigue liberando el bloqueo por completo (para que el
+    primer pivote de la tendencia siguiente arranque una búsqueda nueva, no
+    herede el último valor) es el CHoCH real -- el reseteo de
+    `bajoM3Bloqueado`/`altoM3Bloqueado` en los bloques `quiebreAlto`/
+    `quiebreBajo` ahora está condicionado a `esCambioEstructuraAlto`/`Bajo`,
+    ya no se dispara ante cualquier BOS.
+  - Confirmado con Fabián que este cambio NO afecta la validación de entrada
+    del MEC (Sección 6): `superaNivelAhora` calcula su propio margen contra
+    `extremoQuiebre`, un mecanismo totalmente independiente de
+    `quiebreAlto`/`quiebreBajo` (Sección 2) -- exige el 0,01%/0,005% completo
+    en cada entrada puntual, sin excepción, tal como estaba.
 - [ ] **Fase 4**: gestión de salida (SL en último alto/bajo M3 con reducción
   del 40% si supera 20.000 pips, TP en RR 1:0,9), Hedge Position.
 - [ ] **Fase 5**: límite diario (1 TP / 1 SL+1 TP / 2 SL) y flexibilización
