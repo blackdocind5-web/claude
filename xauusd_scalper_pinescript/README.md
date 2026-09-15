@@ -476,6 +476,25 @@ tocar los defaults ya validados en oro).
   - No toca la fórmula de `quiebreAlto`/`quiebreBajo` (margen de
     `UMBRAL_QUIEBRE`, validado el 14/09 contra el caso de AUDUSD START BUY
     08/09 09:54) -- ambos fixes son independientes y no se pisan entre sí.
+- [x] **SL/TP vuelve a usar el pivote M3 más reciente, no el candidato
+  bloqueado (15/09)**: efecto colateral del fix anterior, detectado por
+  Fabián al probar el mismo código en vivo. `altoM3Activo`/`bajoM3Activo`
+  cumplían dos roles a la vez: (1) el candidato bloqueado a cambio de
+  estructura (recién corregido) y (2) la referencia de SL/TP en la Sección
+  6B ("el último Alto/Bajo M3 activo"). Al bloquear el candidato para el rol
+  (1), el rol (2) quedó congelado en el mismo nivel viejo sin querer.
+  - Caso real que lo destapó: SELL 14/09 20:24 -- el SL se armó contra el
+    Alto M3 de ~19:00 (4.297,53, el candidato bloqueado, tendencia ya era
+    bajista desde antes) en vez del Alto M3 real más cercano a la entrada
+    (4.289,225, formado ~20:00) -- un SL bastante más lejos del que
+    corresponde.
+  - Fix: dos variables nuevas, `altoM3Reciente`/`bajoM3Reciente`, que
+    siempre seguen al ÚLTIMO pivote M3 formado (esté o no bloqueado el
+    candidato de estructura) -- son las que ahora usa el SL/TP (Sección 6B)
+    en vez de `altoM3Activo`/`bajoM3Activo`. La lógica de estructura/CHoCH
+    (Sección 2) no cambia, sigue usando el candidato bloqueado. Agregadas
+    también al panel DEBUG (`mostrarDebugM3`) para verificar en la Ventana
+    de Datos.
 - [ ] **Fase 4**: gestión de salida (SL en último alto/bajo M3 con reducción
   del 40% si supera 20.000 pips, TP en RR 1:0,9), Hedge Position.
 - [ ] **Fase 5**: límite diario (1 TP / 1 SL+1 TP / 2 SL) y flexibilización

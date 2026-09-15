@@ -287,6 +287,22 @@ var string tendencia = "indefinida"  // "alcista" | "bajista" | "indefinida"
 var bool altoM3Bloqueado = false
 var bool bajoM3Bloqueado = false
 
+// altoM3Reciente/bajoM3Reciente (15/09): altoM3Activo/bajoM3Activo pasaron a
+// ser el candidato BLOQUEADO a cambio de estructura (ver arriba) -- pero el
+// SL/TP (Sección 6B) necesita el pivote M3 MÁS RECIENTE como referencia
+// ("el último Alto/Bajo M3 activo" = la resistencia/soporte sin romper más
+// cercana a la entrada), no el candidato viejo que quedó congelado
+// esperando resolverse. Son dos roles distintos que hasta ahora compartían
+// la misma variable por casualidad. Caso real que lo destapó: SELL 14/09
+// 20:24 -- con el fix del candidato bloqueado, el SL se armó contra el Alto
+// M3 de ~19:00 (4.297,53, el candidato bloqueado, tendencia ya era bajista
+// desde antes) en vez del Alto M3 real más cercano a la entrada (4.289,225,
+// formado ~20:00) -- un SL mucho más lejos del que corresponde. Estas dos
+// variables se actualizan SIEMPRE que se forma un pivote nuevo (esAltoM3/
+// esBajoM3), esté o no bloqueado el candidato de estructura.
+var float altoM3Reciente = na
+var float bajoM3Reciente = na
+
 maxExtMs = extensionBarras * timeframe.in_seconds("1") * 1000
 
 // dibujarLineasM3: el motor interno (altoM3Activo/bajoM3Activo, quiebreAlto/
@@ -300,6 +316,7 @@ maxExtMs = extensionBarras * timeframe.in_seconds("1") * 1000
 dibujarLineasM3 = not limitarLineasASesion or enSesionOperativa or enColchonPreNY or enColchonAsia
 
 if esAltoM3
+    altoM3Reciente := nivelAlto
     esMismoTramoAlto = not na(altoM3Inicio) and altoM3Inicio == altoRunInicio
     if esMismoTramoAlto
         // no es un pivote nuevo -- es el MISMO tramo (altoRunInicio sin
@@ -328,6 +345,7 @@ if esAltoM3
             altoM3Bloqueado := true
 
 if esBajoM3
+    bajoM3Reciente := nivelBajo
     esMismoTramoBajo = not na(bajoM3Inicio) and bajoM3Inicio == bajoRunInicio
     if esMismoTramoBajo
         // ver comentario en el bloque esAltoM3 de arriba
@@ -456,6 +474,12 @@ if quiebreBajo
 // dice que debería haberse actualizado antes de las 09:28.
 plot(mostrarDebugM3 ? altoM3Activo : na, title="DEBUG altoM3Activo", color=color.blue, style=plot.style_circles, linewidth=2)
 plot(mostrarDebugM3 ? bajoM3Activo : na, title="DEBUG bajoM3Activo", color=color.purple, style=plot.style_circles, linewidth=2)
+// DEBUG (15/09): altoM3Reciente/bajoM3Reciente -- el pivote MÁS RECIENTE
+// (usado para SL/TP), distinto de altoM3Activo/bajoM3Activo (el candidato
+// bloqueado a cambio de estructura) mientras hay un candidato pendiente sin
+// resolver -- ver comentario en su declaración (Sección 2).
+plot(mostrarDebugM3 ? altoM3Reciente : na, title="DEBUG altoM3Reciente", color=color.teal, style=plot.style_circles, linewidth=2)
+plot(mostrarDebugM3 ? bajoM3Reciente : na, title="DEBUG bajoM3Reciente", color=color.orange, style=plot.style_circles, linewidth=2)
 
 // ============================================================================
 // SECCIÓN 3 — CLASIFICADOR DE VELA ENVOLVENTE EN M1 (Fase 2a)
@@ -756,8 +780,11 @@ UMBRAL_SL_PCT = input.float(0.46, "Umbral de distancia SL para reducción (% del
 REDUCCION_SL = input.float(0.60, "Multiplicador de la distancia SL al superar el umbral (0,60 = reduce 40%)", minval=0.1, maxval=1, step=0.05, group=grpSLTP)
 RR_TP = input.float(0.90, "Relación riesgo:beneficio del TP (TP = RR × distancia SL final)", minval=0.1, step=0.05, group=grpSLTP)
 
-nivelSLBuy  = na(bajoM3Activo) ? ultimoBajoQuebrado : bajoM3Activo
-nivelSLSell = na(altoM3Activo) ? ultimoAltoQuebrado  : altoM3Activo
+// altoM3Reciente/bajoM3Reciente (15/09), no altoM3Activo/bajoM3Activo -- ver
+// comentario en su declaración (Sección 2). El SL quiere el pivote más
+// cercano a la entrada, no el candidato bloqueado a cambio de estructura.
+nivelSLBuy  = na(bajoM3Reciente) ? ultimoBajoQuebrado : bajoM3Reciente
+nivelSLSell = na(altoM3Reciente) ? ultimoAltoQuebrado  : altoM3Reciente
 
 distanciaCrudaBuy  = not na(nivelSLBuy)  ? close - nivelSLBuy  : na
 distanciaCrudaSell = not na(nivelSLSell) ? nivelSLSell - close : na
