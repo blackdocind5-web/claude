@@ -1,0 +1,717 @@
+//@version=5
+strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=10000, currency=currency.USD, default_qty_type=strategy.fixed, default_qty_value=1, commission_type=strategy.commission.percent, commission_value=0, slippage=0, calc_on_every_tick=false, process_orders_on_close=false, pyramiding=3, max_lines_count=500, max_labels_count=500)
+
+// ============================================================================
+// FASE 4 — VERSIÓN STRATEGY PARA BACKTESTING (15/09)
+// ============================================================================
+// Archivo NUEVO, separado del indicador (fase3_base_consolidada.pine) --
+// Pine no permite que un mismo script sea indicator() y strategy() a la vez.
+// Las Secciones 1 a 6B (sesiones, estructura M3, envolvente/Start, MEC,
+// SL/TP) son una copia LITERAL de las mismas secciones del indicador ya
+// validado -- ni una coma cambiada, para no arriesgar lo que ya se probó
+// contra operaciones reales. Lo único nuevo es la Sección 6C (acá se
+// reemplaza el "cartel + bookkeeping simulado" por strategy.entry()/
+// strategy.exit() reales) y la Sección 7 (tabla de resultados).
+//
+// Posicionamiento: riesgo fijo en % del equity por operación (confirmado
+// por Fabián el 15/09) -- ver RIESGO_PCT más abajo. qty se calcula en cada
+// entrada como (equity × riesgo%) / distancia al SL, no como cantidad fija.
+//
+// Costos: arranca en cero (commission_value=0, slippage=0) a pedido de
+// Fabián, para ver primero el potencial "puro" de la estrategia. Para
+// correr con costos reales NO hace falta tocar el código -- se ajustan
+// directamente en TradingView: ícono de engranaje en la pestaña "Strategy
+// Tester" → "Propiedades" → Comisión/Slippage/Capital inicial.
+//
+// El caso más complejo de este archivo es el trade que se ARRASTRA de una
+// sesión a la siguiente (regla de Fabián, 15/09): si al terminar una
+// sesión sigue abierto un trade y la estructura (`tendencia`) está A FAVOR
+// de su dirección, se deja correr hasta SL, TP o un CHoCH real en contra;
+// si la estructura está EN CONTRA, se cierra ya. Mientras un trade sigue
+// así "de arrastre", la sesión siguiente opera como si no existiera --
+// cuenta sus propias señales desde cero y puede abrir su propio trade en
+// paralelo, incluso en sentido contrario.
+//
+// Restricción técnica real de Pine que esto obliga a resolver: el motor de
+// estrategias mantiene una ÚNICA posición neta por símbolo -- no hay forma
+// nativa de sostener un BUY y un SELL abiertos al mismo tiempo en el mismo
+// script (a diferencia de una cuenta de hedging en MT5). La solución: cada
+// sesión (Pre-NY/NY/Asia) opera bajo su PROPIO id de entrada
+// ("PreNY"/"NY"/"Asia"), con pyramiding=3 para permitir que dos (o las tres)
+// sesiones tengan una posición abierta EN EL MISMO SENTIDO a la vez (BUY+BUY
+// o SELL+SELL) -- confirmado por Fabián (15/09): la excepción de "dos
+// trades abiertos a la vez" es solo para ESE caso. Si la sesión nueva genera
+// una señal en sentido CONTRARIO al trade arrastrado de la sesión anterior,
+// no es una excepción nueva -- es lisa y llanamente un Hedge Position entre
+// sesiones, la misma regla que ya usa el indicador dentro de una sesión:
+// cierra primero al que estaba abierto (el arrastrado) y recién después abre
+// el nuevo. Ver el bloque "Hedge Position entre sesiones" más abajo.
+//
+// Validación pendiente: correr esto primero en ORO (mismo período que ya
+// validamos con el indicador en vivo) y comparar que las entradas/salidas
+// coincidan con lo que el indicador ya mostró, antes de confiar en los
+// resultados de otros activos.
+// ============================================================================
+
+// ============================================================================
+// SECCIÓN 1 — SESIONES OPERATIVAS (Fase 1) -- copia literal del indicador
+// ============================================================================
+grpSesiones = "Sesiones operativas"
+mostrarSesiones = input.bool(true, "Sombrear sesiones en el gráfico", group=grpSesiones)
+colorPreNY = input.color(color.new(#cccccc, 78), "Color sesión Pre-NY (07-09 EST)", group=grpSesiones)
+colorNY    = input.color(color.new(#a3a3a3, 78), "Color sesión NY (09-11 EST)", group=grpSesiones)
+colorAsia  = input.color(color.new(#999999, 78), "Color sesión Asia (20-22 EST)", group=grpSesiones)
+
+// Días Pine: 1=Domingo 2=Lunes 3=Martes 4=Miércoles 5=Jueves 6=Viernes 7=Sábado
+// Pre-NY y NY: Lunes a Viernes (2=Lunes ... 6=Viernes) | Asia: Domingo a
+// Jueves (1=Domingo ... 5=Jueves)
+sesionPreNYStr = "0700-0900:23456"
+sesionNYStr    = "0900-1100:23456"
+sesionAsiaStr  = "2000-2200:12345"
+
+colchonPreNYStr = "0645-0700:23456"
+colchonAsiaStr  = "1945-2000:12345"
+
+enPreNY = not na(time(timeframe.period, sesionPreNYStr, "America/New_York"))
+enNY    = not na(time(timeframe.period, sesionNYStr, "America/New_York"))
+enAsia  = not na(time(timeframe.period, sesionAsiaStr, "America/New_York"))
+enColchonPreNY = not na(time(timeframe.period, colchonPreNYStr, "America/New_York"))
+enColchonAsia  = not na(time(timeframe.period, colchonAsiaStr, "America/New_York"))
+enSesionOperativa = enPreNY or enNY or enAsia
+
+bgcolor(mostrarSesiones and enPreNY ? colorPreNY : na, title="Sesión Pre-NY")
+bgcolor(mostrarSesiones and enNY    ? colorNY    : na, title="Sesión NY")
+bgcolor(mostrarSesiones and enAsia  ? colorAsia  : na, title="Sesión Asia")
+
+// ============================================================================
+// SECCIÓN 2 — ESTRUCTURA DE MERCADO M3 (Fase 1) -- copia literal del indicador
+// ============================================================================
+grpEstructura = "Estructura M3"
+colorPunteada    = input.color(color.new(#787b86, 0), "Línea punteada (continuación)", group=grpEstructura)
+colorContinua    = input.color(color.new(color.black, 0), "Línea continua (cambio de estructura)", group=grpEstructura)
+extensionBarras  = input.int(10, "Extensión sin toque (barras M1)", minval=1, group=grpEstructura)
+limitarLineasASesion = input.bool(true, "Dibujar líneas M3 solo durante sesiones + colchón de 15min antes de Pre-NY/Asia (más historial dentro del cupo de 500 líneas)", group=grpEstructura)
+mostrarDebugM3 = input.bool(false, "DEBUG temporal: valor exacto de altoM3Activo/bajoM3Activo bar a bar (Ventana de Datos)", group=grpEstructura)
+
+UMBRAL_QUIEBRE = input.float(0.00005, "Umbral mínimo de quiebre/Continuación (rango de precios redondea a 2 decimales)", minval=0, maxval=0.001, step=0.00001, group="Modelo MEC")
+
+nuevaVelaM3 = timeframe.change("3")
+
+var float m3Open = na
+var float m3High = na
+var float m3Low = na
+var float m3Close = na
+var int   m3OpenTime = na
+
+var string curDir = na
+var float curHigh = na
+var int   curHighT = na
+var float curLow = na
+var int   curLowT = na
+
+var string prevDir = na
+var float prevHigh = na
+var int   prevHighT = na
+var float prevLow = na
+var int   prevLowT = na
+
+procesarVelaM3(o0, h0, l0, c0, t0, dirIn, highIn, highTIn, lowIn, lowTIn, prevDirIn, prevHighIn, prevHighTIn, prevLowIn, prevLowTIn) =>
+    candleDir = c0 > o0 ? "alcista" : c0 < o0 ? "bajista" : "doji"
+    esAltoLocal = false
+    esBajoLocal = false
+    nivelAltoLocal = float(na)
+    nivelBajoLocal = float(na)
+    altoRunInicioLocal = int(na)
+    bajoRunInicioLocal = int(na)
+
+    dirOut = dirIn
+    highOut = highIn
+    highTOut = highTIn
+    lowOut = lowIn
+    lowTOut = lowTIn
+    prevDirOut = prevDirIn
+    prevHighOut = prevHighIn
+    prevHighTOut = prevHighTIn
+    prevLowOut = prevLowIn
+    prevLowTOut = prevLowTIn
+
+    if na(dirIn)
+        if candleDir != "doji"
+            dirOut := candleDir
+            highOut := h0
+            highTOut := t0
+            lowOut := l0
+            lowTOut := t0
+    else if candleDir == dirIn or candleDir == "doji"
+        if h0 > highIn
+            highOut := h0
+            highTOut := t0
+        if l0 < lowIn
+            lowOut := l0
+            lowTOut := t0
+    else
+        prevDirOut := dirIn
+        prevHighOut := highIn
+        prevHighTOut := highTIn
+        prevLowOut := lowIn
+        prevLowTOut := lowTIn
+        dirOut := candleDir
+        highOut := h0
+        highTOut := t0
+        lowOut := l0
+        lowTOut := t0
+
+    if not na(prevDirOut) and prevDirOut != dirOut
+        if prevDirOut == "alcista" and dirOut == "bajista"
+            esAltoLocal := true
+            nivelAltoLocal := math.max(prevHighOut, highOut)
+            altoRunInicioLocal := prevHighTOut
+        if prevDirOut == "bajista" and dirOut == "alcista"
+            esBajoLocal := true
+            nivelBajoLocal := math.min(prevLowOut, lowOut)
+            bajoRunInicioLocal := prevLowTOut
+
+    [dirOut, highOut, highTOut, lowOut, lowTOut, prevDirOut, prevHighOut, prevHighTOut, prevLowOut, prevLowTOut, esAltoLocal, esBajoLocal, nivelAltoLocal, nivelBajoLocal, altoRunInicioLocal, bajoRunInicioLocal]
+
+esAltoM3 = false
+esBajoM3 = false
+nivelAlto = float(na)
+nivelBajo = float(na)
+altoRunInicio = int(na)
+bajoRunInicio = int(na)
+
+if nuevaVelaM3 and not na(m3OpenTime)
+    [d, hh, hT, ll, lT, pD, pH, pHT, pL, pLT, esA, esB, nA, nB, arI, brI] = procesarVelaM3(m3Open, m3High, m3Low, m3Close, m3OpenTime, curDir, curHigh, curHighT, curLow, curLowT, prevDir, prevHigh, prevHighT, prevLow, prevLowT)
+    curDir := d
+    curHigh := hh
+    curHighT := hT
+    curLow := ll
+    curLowT := lT
+    prevDir := pD
+    prevHigh := pH
+    prevHighT := pHT
+    prevLow := pL
+    prevLowT := pLT
+    if esA
+        esAltoM3 := true
+        nivelAlto := nA
+        altoRunInicio := arI
+    if esB
+        esBajoM3 := true
+        nivelBajo := nB
+        bajoRunInicio := brI
+
+if nuevaVelaM3
+    m3Open := open
+    m3High := high
+    m3Low := low
+    m3Close := close
+    m3OpenTime := time
+else
+    m3High := math.max(m3High, high)
+    m3Low := math.min(m3Low, low)
+    m3Close := close
+
+var line altoLinea = na
+var line bajoLinea = na
+var float altoM3Activo = na
+var float bajoM3Activo = na
+var int altoM3Inicio = na
+var int bajoM3Inicio = na
+var bool altoRoto = false
+var bool bajoRoto = false
+var bool altoLineaActiva = false
+var bool bajoLineaActiva = false
+var string tendencia = "indefinida"  // "alcista" | "bajista" | "indefinida"
+
+var bool altoM3Bloqueado = false
+var bool bajoM3Bloqueado = false
+
+var float altoM3Reciente = na
+var float bajoM3Reciente = na
+
+maxExtMs = extensionBarras * timeframe.in_seconds("1") * 1000
+
+dibujarLineasM3 = not limitarLineasASesion or enSesionOperativa or enColchonPreNY or enColchonAsia
+
+if esAltoM3
+    altoM3Reciente := nivelAlto
+    esMismoTramoAlto = not na(altoM3Inicio) and altoM3Inicio == altoRunInicio
+    altoNuevoNoMejora = tendencia == "bajista" and altoM3Bloqueado and nivelAlto >= altoM3Activo
+    if esMismoTramoAlto
+        altoM3Activo := nivelAlto
+        if altoLineaActiva
+            line.set_y1(altoLinea, nivelAlto)
+            line.set_y2(altoLinea, nivelAlto)
+    else if altoNuevoNoMejora
+        if dibujarLineasM3
+            line.new(x1=altoRunInicio, y1=nivelAlto, x2=time, y2=nivelAlto, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+    else
+        if altoLineaActiva and not altoRoto
+            line.set_x2(altoLinea, int(math.min(time, altoM3Inicio + maxExtMs)))
+        altoM3Activo := nivelAlto
+        altoM3Inicio := altoRunInicio
+        altoRoto := false
+        altoLineaActiva := dibujarLineasM3
+        if altoLineaActiva
+            altoLinea := line.new(x1=altoRunInicio, y1=nivelAlto, x2=time, y2=nivelAlto, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+        if tendencia == "bajista"
+            altoM3Bloqueado := true
+
+if esBajoM3
+    bajoM3Reciente := nivelBajo
+    esMismoTramoBajo = not na(bajoM3Inicio) and bajoM3Inicio == bajoRunInicio
+    bajoNuevoNoMejora = tendencia == "alcista" and bajoM3Bloqueado and nivelBajo <= bajoM3Activo
+    if esMismoTramoBajo
+        bajoM3Activo := nivelBajo
+        if bajoLineaActiva
+            line.set_y1(bajoLinea, nivelBajo)
+            line.set_y2(bajoLinea, nivelBajo)
+    else if bajoNuevoNoMejora
+        if dibujarLineasM3
+            line.new(x1=bajoRunInicio, y1=nivelBajo, x2=time, y2=nivelBajo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+    else
+        if bajoLineaActiva and not bajoRoto
+            line.set_x2(bajoLinea, int(math.min(time, bajoM3Inicio + maxExtMs)))
+        bajoM3Activo := nivelBajo
+        bajoM3Inicio := bajoRunInicio
+        bajoRoto := false
+        bajoLineaActiva := dibujarLineasM3
+        if bajoLineaActiva
+            bajoLinea := line.new(x1=bajoRunInicio, y1=nivelBajo, x2=time, y2=nivelBajo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+        if tendencia == "alcista"
+            bajoM3Bloqueado := true
+
+if dibujarLineasM3 and not altoLineaActiva and not na(altoM3Activo)
+    altoLineaActiva := true
+    altoLinea := line.new(x1=altoM3Inicio, y1=altoM3Activo, x2=time, y2=altoM3Activo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+if dibujarLineasM3 and not bajoLineaActiva and not na(bajoM3Activo)
+    bajoLineaActiva := true
+    bajoLinea := line.new(x1=bajoM3Inicio, y1=bajoM3Activo, x2=time, y2=bajoM3Activo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+
+if altoLineaActiva and not na(altoM3Activo)
+    line.set_x2(altoLinea, int(math.min(time, altoM3Inicio + maxExtMs)))
+if bajoLineaActiva and not na(bajoM3Activo)
+    line.set_x2(bajoLinea, int(math.min(time, bajoM3Inicio + maxExtMs)))
+
+quiebreAlto = not na(altoM3Activo) and (tendencia == "bajista" ? close > altoM3Activo * (1 + UMBRAL_QUIEBRE) : high > altoM3Activo)
+quiebreBajo = not na(bajoM3Activo) and (tendencia == "alcista" ? close < bajoM3Activo * (1 - UMBRAL_QUIEBRE) : low < bajoM3Activo)
+
+var bool ultimoQuiebreFueCambioEstructura = false
+
+esCambioEstructuraAlto = false
+esCambioEstructuraBajo = false
+nivelQuebradoAlto = float(na)
+nivelQuebradoBajo = float(na)
+var float ultimoAltoQuebrado = na
+var float ultimoBajoQuebrado = na
+
+if quiebreAlto
+    nivelQuebradoAlto := altoM3Activo
+    ultimoAltoQuebrado := altoM3Activo
+    esCambioEstructuraAlto := tendencia == "bajista"
+    if altoLineaActiva
+        line.set_x2(altoLinea, time)
+        line.set_style(altoLinea, esCambioEstructuraAlto ? line.style_solid : line.style_dotted)
+        line.set_color(altoLinea, esCambioEstructuraAlto ? colorContinua : colorPunteada)
+        line.set_width(altoLinea, esCambioEstructuraAlto ? 2 : 1)
+    tendencia := "alcista"
+    altoM3Activo := na
+    altoRoto := true
+    altoLineaActiva := false
+    ultimoQuiebreFueCambioEstructura := esCambioEstructuraAlto
+    altoM3Bloqueado := false
+    if esCambioEstructuraAlto
+        bajoM3Bloqueado := false
+
+if quiebreBajo
+    nivelQuebradoBajo := bajoM3Activo
+    ultimoBajoQuebrado := bajoM3Activo
+    esCambioEstructuraBajo := tendencia == "alcista"
+    if bajoLineaActiva
+        line.set_x2(bajoLinea, time)
+        line.set_style(bajoLinea, esCambioEstructuraBajo ? line.style_solid : line.style_dotted)
+        line.set_color(bajoLinea, esCambioEstructuraBajo ? colorContinua : colorPunteada)
+        line.set_width(bajoLinea, esCambioEstructuraBajo ? 2 : 1)
+    tendencia := "bajista"
+    bajoM3Activo := na
+    bajoRoto := true
+    bajoLineaActiva := false
+    ultimoQuiebreFueCambioEstructura := esCambioEstructuraBajo
+    bajoM3Bloqueado := false
+    if esCambioEstructuraBajo
+        altoM3Bloqueado := false
+
+plot(mostrarDebugM3 ? altoM3Activo : na, title="DEBUG altoM3Activo", color=color.blue, style=plot.style_circles, linewidth=2)
+plot(mostrarDebugM3 ? bajoM3Activo : na, title="DEBUG bajoM3Activo", color=color.purple, style=plot.style_circles, linewidth=2)
+plot(mostrarDebugM3 ? altoM3Reciente : na, title="DEBUG altoM3Reciente", color=color.teal, style=plot.style_circles, linewidth=2)
+plot(mostrarDebugM3 ? bajoM3Reciente : na, title="DEBUG bajoM3Reciente", color=color.orange, style=plot.style_circles, linewidth=2)
+
+// ============================================================================
+// SECCIÓN 3 — CLASIFICADOR DE VELA ENVOLVENTE EN M1 (Fase 2a) -- copia literal
+// ============================================================================
+grpEnvolvente = "Patrón envolvente / Start"
+TOLERANCIA_CUERPO = input.float(0.01, "Margen sobre 85%/90% de cuerpo (grilla de Gann a mano)", minval=0, maxval=0.05, step=0.005, group=grpEnvolvente)
+
+rango = high - low
+esAlcista = close > open
+esBajista = close < open
+
+nivelOpenBuy  = rango > 0 ? (open - low) / rango : na
+nivelCloseBuy = rango > 0 ? (close - low) / rango : na
+cuerpoPctBuy  = nivelCloseBuy - nivelOpenBuy
+
+esEstandarBuy = esAlcista and cuerpoPctBuy >= 0.85 - TOLERANCIA_CUERPO
+esMartilloBuy = esAlcista and not esEstandarBuy and nivelOpenBuy >= 0.40 - TOLERANCIA_CUERPO and nivelOpenBuy <= 0.50 + TOLERANCIA_CUERPO and nivelCloseBuy >= 0.85 - TOLERANCIA_CUERPO
+esDojiBuy     = esAlcista and not esEstandarBuy and not esMartilloBuy and nivelOpenBuy < 0.40 - TOLERANCIA_CUERPO and ((nivelOpenBuy >= 0.15 and nivelCloseBuy >= 0.90 - TOLERANCIA_CUERPO) or (nivelOpenBuy < 0.15 and nivelCloseBuy >= 0.85 - TOLERANCIA_CUERPO))
+esEnvolventeBuy = esEstandarBuy or esMartilloBuy or esDojiBuy
+
+nivelOpenSell  = rango > 0 ? (high - open) / rango : na
+nivelCloseSell = rango > 0 ? (high - close) / rango : na
+cuerpoPctSell  = nivelCloseSell - nivelOpenSell
+
+esEstandarSell = esBajista and cuerpoPctSell >= 0.85 - TOLERANCIA_CUERPO
+esMartilloSell = esBajista and not esEstandarSell and nivelOpenSell >= 0.40 - TOLERANCIA_CUERPO and nivelOpenSell <= 0.50 + TOLERANCIA_CUERPO and nivelCloseSell >= 0.85 - TOLERANCIA_CUERPO
+esDojiSell     = esBajista and not esEstandarSell and not esMartilloSell and nivelOpenSell < 0.40 - TOLERANCIA_CUERPO and ((nivelOpenSell >= 0.15 and nivelCloseSell >= 0.90 - TOLERANCIA_CUERPO) or (nivelOpenSell < 0.15 and nivelCloseSell >= 0.85 - TOLERANCIA_CUERPO))
+esEnvolventeSell = esEstandarSell or esMartilloSell or esDojiSell
+
+pullbackEnvolventeBuy  = close[1] <= open[1]
+pullbackEnvolventeSell = close[1] >= open[1]
+
+candidataEnvolventeBuy  = esEnvolventeBuy  and pullbackEnvolventeBuy
+candidataEnvolventeSell = esEnvolventeSell and pullbackEnvolventeSell
+
+tipoEnvBuy  = esEstandarBuy  ? "Estándar" : esMartilloBuy  ? "Martillo" : esDojiBuy  ? "Doji" : na
+tipoEnvSell = esEstandarSell ? "Estándar" : esMartilloSell ? "Martillo" : esDojiSell ? "Doji" : na
+
+// ============================================================================
+// SECCIÓN 4 — PATRÓN START (Fase 2b) -- copia literal del indicador
+// ============================================================================
+rangoInd = high[1] - low[1]
+TOLERANCIA = 0.0001  // 0,01%
+
+nivelOpenIndBuy  = rangoInd > 0 ? (open[1] - low[1]) / rangoInd : na
+nivelCloseIndBuy = rangoInd > 0 ? (close[1] - low[1]) / rangoInd : na
+cuerpoIndBuy = math.abs(nivelCloseIndBuy - nivelOpenIndBuy)
+esMartilloIndBuy = (nivelOpenIndBuy >= 0.40 - TOLERANCIA_CUERPO and nivelOpenIndBuy <= 0.50 + TOLERANCIA_CUERPO and nivelCloseIndBuy >= 0.85 - TOLERANCIA_CUERPO) or (nivelOpenIndBuy < 0.15 and nivelCloseIndBuy > 0.50 - TOLERANCIA_CUERPO)
+esIndecisionBuy = cuerpoIndBuy <= 0.50 + TOLERANCIA and not esMartilloIndBuy
+
+wickContraBuy = math.min(nivelOpenIndBuy, nivelCloseIndBuy)
+wickFavorBuy  = 1 - math.max(nivelOpenIndBuy, nivelCloseIndBuy)
+tipoIndBuy = esIndecisionBuy ? (math.abs(wickContraBuy - wickFavorBuy) <= 0.15 ? "Doji" : "Pinbar") : na
+
+nivelOpenIndSell  = rangoInd > 0 ? (high[1] - open[1]) / rangoInd : na
+nivelCloseIndSell = rangoInd > 0 ? (high[1] - close[1]) / rangoInd : na
+cuerpoIndSell = math.abs(nivelCloseIndSell - nivelOpenIndSell)
+esMartilloIndSell = (nivelOpenIndSell >= 0.40 - TOLERANCIA_CUERPO and nivelOpenIndSell <= 0.50 + TOLERANCIA_CUERPO and nivelCloseIndSell >= 0.85 - TOLERANCIA_CUERPO) or (nivelOpenIndSell < 0.15 and nivelCloseIndSell > 0.50 - TOLERANCIA_CUERPO)
+esIndecisionSell = cuerpoIndSell <= 0.50 + TOLERANCIA and not esMartilloIndSell
+
+wickContraSell = math.min(nivelOpenIndSell, nivelCloseIndSell)
+wickFavorSell  = 1 - math.max(nivelOpenIndSell, nivelCloseIndSell)
+tipoIndSell = esIndecisionSell ? (math.abs(wickContraSell - wickFavorSell) <= 0.15 ? "Doji" : "Pinbar") : na
+
+pullbackStartBuy  = close[2] <= open[2]
+pullbackStartSell = close[2] >= open[2]
+
+mismoColor3 = (close > open and close[1] > open[1] and close[2] > open[2]) or (close < open and close[1] < open[1] and close[2] < open[2])
+
+esStartBuy  = esEnvolventeBuy  and esIndecisionBuy  and pullbackStartBuy  and not mismoColor3
+esStartSell = esEnvolventeSell and esIndecisionSell and pullbackStartSell and not mismoColor3
+
+// ============================================================================
+// SECCIÓN 6 — MODELO MEC (Fase 3) -- copia literal del indicador
+// ============================================================================
+grpMEC = "Modelo MEC"
+mostrarZonaBusquedaMEC = input.bool(false, "Sombrear zona de búsqueda de Continuación (debug)", group=grpMEC)
+
+var bool huboPullbackEnBusqueda = false
+var float extremoQuiebre = na
+var bool mecListo = false
+
+if quiebreAlto and (esCambioEstructuraAlto or na(extremoQuiebre))
+    huboPullbackEnBusqueda := false
+    extremoQuiebre := math.max(math.max(high, high[1]), math.max(high[2], high[3]))
+    mecListo := false
+
+if quiebreBajo and (esCambioEstructuraBajo or na(extremoQuiebre))
+    huboPullbackEnBusqueda := false
+    extremoQuiebre := math.min(math.min(low, low[1]), math.min(low[2], low[3]))
+    mecListo := false
+
+esVelaAFavor = false
+esVelaEnContra = false
+superaNivelAhora = false
+
+if tendencia != "indefinida" and not na(extremoQuiebre)
+    esVelaAFavor := tendencia == "alcista" ? close > open : close < open
+    esVelaEnContra := tendencia == "alcista" ? close < open : close > open
+
+    umbral = tendencia == "alcista" ? extremoQuiebre * (1 + UMBRAL_QUIEBRE) : extremoQuiebre * (1 - UMBRAL_QUIEBRE)
+    superaNivelAhora := tendencia == "alcista" ? close > umbral : close < umbral
+
+    if esVelaEnContra
+        huboPullbackEnBusqueda := true
+
+    if huboPullbackEnBusqueda and esVelaAFavor and superaNivelAhora
+        mecListo := true
+
+    extremoQuiebre := tendencia == "alcista" ? math.max(extremoQuiebre, high) : math.min(extremoQuiebre, low)
+
+esperandoContinuacion = tendencia != "indefinida" and not mecListo
+
+mecBuyBruto  = mecListo and tendencia == "alcista" and superaNivelAhora and (candidataEnvolventeBuy  or esStartBuy)
+mecSellBruto = mecListo and tendencia == "bajista" and superaNivelAhora and (candidataEnvolventeSell or esStartSell)
+
+bgcolor(mostrarZonaBusquedaMEC and esperandoContinuacion ? color.new(color.yellow, 85) : na, title="Esperando Continuación MEC (debug)")
+
+// ============================================================================
+// SECCIÓN 6B — CÁLCULO DE SL/TP (Fase 3 parte 2) -- copia literal del indicador
+// ============================================================================
+grpSLTP = "SL / TP"
+UMBRAL_SL_PCT = input.float(0.46, "Umbral de distancia SL para reducción (% del precio de entrada)", minval=0, step=0.01, group=grpSLTP)
+REDUCCION_SL = input.float(0.60, "Multiplicador de la distancia SL al superar el umbral (0,60 = reduce 40%)", minval=0.1, maxval=1, step=0.05, group=grpSLTP)
+RR_TP = input.float(0.90, "Relación riesgo:beneficio del TP (TP = RR × distancia SL final)", minval=0.1, step=0.05, group=grpSLTP)
+
+nivelSLBuy  = na(bajoM3Reciente) ? ultimoBajoQuebrado : bajoM3Reciente
+nivelSLSell = na(altoM3Reciente) ? ultimoAltoQuebrado  : altoM3Reciente
+
+distanciaCrudaBuy  = not na(nivelSLBuy)  ? close - nivelSLBuy  : na
+distanciaCrudaSell = not na(nivelSLSell) ? nivelSLSell - close : na
+
+distanciaFinalBuy  = not na(distanciaCrudaBuy)  ? (distanciaCrudaBuy  / close * 100 > UMBRAL_SL_PCT ? distanciaCrudaBuy  * REDUCCION_SL : distanciaCrudaBuy)  : na
+distanciaFinalSell = not na(distanciaCrudaSell) ? (distanciaCrudaSell / close * 100 > UMBRAL_SL_PCT ? distanciaCrudaSell * REDUCCION_SL : distanciaCrudaSell) : na
+
+slBuy  = not na(distanciaFinalBuy)  ? close - distanciaFinalBuy         : na
+tpBuy  = not na(distanciaFinalBuy)  ? close + distanciaFinalBuy * RR_TP : na
+slSell = not na(distanciaFinalSell) ? close + distanciaFinalSell         : na
+tpSell = not na(distanciaFinalSell) ? close - distanciaFinalSell * RR_TP : na
+
+// ============================================================================
+// SECCIÓN 6C — EJECUCIÓN REAL (BACKTEST) + LÍMITE DIARIO + ARRASTRE ENTRE
+// SESIONES (Fase 4, 15/09)
+// ============================================================================
+// procesarSesionTrade: misma idea que procesarVelaM3 (Sección 2) -- función
+// PURA que recibe el estado actual de UNA sesión (Pre-NY, NY o Asia, cada
+// una se llama con sus propias variables) y devuelve el estado nuevo. Nunca
+// toca `strategy.*` directamente -- eso lo hace el caller (scope global, más
+// abajo) con lo que la función devuelve.
+//
+// Reglas que implementa, en orden:
+//   1) Reset de señales/cierre de sesión al arrancar CADA sesión (propio,
+//      igual que en el indicador) -- pero OJO: si había un trade abierto de
+//      la sesión ANTERIOR (arrastre), NO se toca acá -- sigue vivo hasta que
+//      se resuelva, en paralelo, sin afectar el contador nuevo.
+//   2) Monitoreo de SL/TP: corre SIEMPRE (no solo mientras la sesión está
+//      activa) para poder seguir vigilando un trade arrastrado fuera de su
+//      horario. El cierre real por SL/TP ya lo resuelve el bracket nativo
+//      (strategy.exit) solo -- acá solo se actualiza el estado interno
+//      (contador, sesión cerrada) para el límite diario.
+//   3) Fin de sesión con trade todavía abierto: si la estructura
+//      (`tendencia`) favorece su dirección, se deja correr (arrastre); si
+//      no, se cierra ya (`cerrarBroker`).
+//   4) Arrastre en curso (fuera del horario de esta sesión, todavía
+//      abierto): se cierra si la estructura cambia en contra de verdad
+//      (CHoCH real) -- nunca por un simple BOS.
+//   5) Señal nueva: igual que el indicador -- límite de 2 señales (3 en el
+//      caso aislado de Hedge encadenado), Hedge Position cierra la
+//      contraria.
+procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tpBuyIn, slSellIn, tpSellIn, tendenciaActual, esCambioEstrAlto, esCambioEstrBajo, senalesIn, cerradaIn, dirIn, slIn, tpIn, hedgeFlagIn) =>
+    senalesOut = senalesIn
+    cerradaOut = cerradaIn
+    dirOut = dirIn
+    slOut = slIn
+    tpOut = tpIn
+    hedgeFlagOut = hedgeFlagIn
+    abrirBuy = false
+    abrirSell = false
+    cerrarBroker = false
+    motivoCierre = ""
+
+    if inicioEstaSesion
+        senalesOut := 0
+        cerradaOut := false
+
+    // 2) monitoreo de SL/TP -- siempre, para seguir vigilando un arrastre
+    if not na(dirOut)
+        alcanzoTP = dirOut == "BUY" ? high >= tpOut : low <= tpOut
+        alcanzoSL = dirOut == "BUY" ? low <= slOut  : high >= slOut
+        if alcanzoTP
+            cerradaOut := true
+            dirOut := na
+            hedgeFlagOut := false
+        else if alcanzoSL
+            dirOut := na
+            hedgeFlagOut := false
+            if senalesOut >= 2
+                cerradaOut := true
+
+    // 3) fin de sesión con trade abierto -- arrastre o cierre según estructura
+    finEstaSesion = enEstaSesion[1] and not enEstaSesion
+    if finEstaSesion and not na(dirOut)
+        estructuraAFavor = (dirOut == "BUY" and tendenciaActual == "alcista") or (dirOut == "SELL" and tendenciaActual == "bajista")
+        if not estructuraAFavor
+            cerrarBroker := true
+            motivoCierre := "Cierre fin de sesión (estructura en contra)"
+            dirOut := na
+
+    // 4) arrastre en curso -- se cierra solo ante un CHoCH real en contra
+    if not enEstaSesion and not na(dirOut)
+        chochEnContra = (dirOut == "BUY" and esCambioEstrBajo) or (dirOut == "SELL" and esCambioEstrAlto)
+        if chochEnContra
+            cerrarBroker := true
+            motivoCierre := "CHoCH en contra (arrastre)"
+            dirOut := na
+
+    // 5) señal nueva -- límite diario + Hedge Position, igual que el indicador
+    tercerHedgeBuyLocal  = senalesOut == 2 and not na(dirOut) and dirOut == "SELL" and hedgeFlagOut
+    tercerHedgeSellLocal = senalesOut == 2 and not na(dirOut) and dirOut == "BUY"  and hedgeFlagOut
+    puedeBuy  = not cerradaOut and ((senalesOut < 2 and (na(dirOut) or dirOut == "SELL")) or tercerHedgeBuyLocal)
+    puedeSell = not cerradaOut and ((senalesOut < 2 and (na(dirOut) or dirOut == "BUY"))  or tercerHedgeSellLocal)
+
+    if enEstaSesion and mecBuy and puedeBuy
+        esHedgeEsta = not na(dirOut) and dirOut == "SELL"
+        senalesOut := senalesOut + 1
+        dirOut := "BUY"
+        slOut := slBuyIn
+        tpOut := tpBuyIn
+        hedgeFlagOut := esHedgeEsta
+        abrirBuy := true
+
+    if enEstaSesion and mecSell and puedeSell
+        esHedgeEsta = not na(dirOut) and dirOut == "BUY"
+        senalesOut := senalesOut + 1
+        dirOut := "SELL"
+        slOut := slSellIn
+        tpOut := tpSellIn
+        hedgeFlagOut := esHedgeEsta
+        abrirSell := true
+
+    [senalesOut, cerradaOut, dirOut, slOut, tpOut, hedgeFlagOut, abrirBuy, abrirSell, cerrarBroker, motivoCierre]
+
+grpBacktest = "Backtest"
+RIESGO_PCT = input.float(1.0, "Riesgo por operación (% del equity)", minval=0.01, maxval=100, step=0.1, group=grpBacktest)
+
+inicioPreNY = enPreNY and not enPreNY[1]
+inicioNY    = enNY and not enNY[1]
+inicioAsia  = enAsia and not enAsia[1]
+
+// qty por riesgo fijo: (equity × riesgo%) / distancia al SL -- se recalcula
+// en cada entrada con el equity y la distancia vigentes en ese momento
+qtyBuy  = not na(distanciaFinalBuy)  and distanciaFinalBuy  > 0 ? (strategy.equity * RIESGO_PCT / 100) / distanciaFinalBuy  : na
+qtySell = not na(distanciaFinalSell) and distanciaFinalSell > 0 ? (strategy.equity * RIESGO_PCT / 100) / distanciaFinalSell : na
+
+mecBuyGate  = mecBuyBruto  and barstate.isconfirmed
+mecSellGate = mecSellBruto and barstate.isconfirmed
+
+// -- estado por sesión (mismas 6 variables que el indicador, una copia por
+// sesión -- Pre-NY, NY y Asia no comparten límite ni trade entre sí) --
+var int senalesPreNY = 0
+var bool cerradaPreNY = false
+var string dirPreNY = na
+var float slPreNY = na
+var float tpPreNY = na
+var bool hedgePreNY = false
+
+var int senalesNY = 0
+var bool cerradaNY = false
+var string dirNY = na
+var float slNY = na
+var float tpNY = na
+var bool hedgeNY = false
+
+var int senalesAsia = 0
+var bool cerradaAsia = false
+var string dirAsia = na
+var float slAsia = na
+var float tpAsia = na
+var bool hedgeAsia = false
+
+[senalesPreNYOut, cerradaPreNYOut, dirPreNYOut, slPreNYOut, tpPreNYOut, hedgePreNYOut, abrirBuyPreNY, abrirSellPreNY, cerrarBrokerPreNY, motivoPreNY] = procesarSesionTrade(enPreNY, inicioPreNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesPreNY, cerradaPreNY, dirPreNY, slPreNY, tpPreNY, hedgePreNY)
+senalesPreNY := senalesPreNYOut
+cerradaPreNY := cerradaPreNYOut
+dirPreNY := dirPreNYOut
+slPreNY := slPreNYOut
+tpPreNY := tpPreNYOut
+hedgePreNY := hedgePreNYOut
+
+[senalesNYOut, cerradaNYOut, dirNYOut, slNYOut, tpNYOut, hedgeNYOut, abrirBuyNY, abrirSellNY, cerrarBrokerNY, motivoNY] = procesarSesionTrade(enNY, inicioNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesNY, cerradaNY, dirNY, slNY, tpNY, hedgeNY)
+senalesNY := senalesNYOut
+cerradaNY := cerradaNYOut
+dirNY := dirNYOut
+slNY := slNYOut
+tpNY := tpNYOut
+hedgeNY := hedgeNYOut
+
+[senalesAsiaOut, cerradaAsiaOut, dirAsiaOut, slAsiaOut, tpAsiaOut, hedgeAsiaOut, abrirBuyAsia, abrirSellAsia, cerrarBrokerAsia, motivoAsia] = procesarSesionTrade(enAsia, inicioAsia, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesAsia, cerradaAsia, dirAsia, slAsia, tpAsia, hedgeAsia)
+senalesAsia := senalesAsiaOut
+cerradaAsia := cerradaAsiaOut
+dirAsia := dirAsiaOut
+slAsia := slAsiaOut
+tpAsia := tpAsiaOut
+hedgeAsia := hedgeAsiaOut
+
+// -- cierres reales en el broker emulado --
+if cerrarBrokerPreNY
+    strategy.close("PreNY", comment=motivoPreNY)
+if cerrarBrokerNY
+    strategy.close("NY", comment=motivoNY)
+if cerrarBrokerAsia
+    strategy.close("Asia", comment=motivoAsia)
+
+// Hedge Position ENTRE sesiones (confirmado por Fabián, 15/09): la
+// excepción de "dos trades a la vez" es solo para el MISMO sentido
+// (BUY+BUY o SELL+SELL). Si una sesión genera una señal en sentido
+// CONTRARIO al de un trade arrastrado de otra sesión todavía abierto, es un
+// Hedge Position -- se cierra primero el arrastrado y recién después se
+// abre el nuevo (misma regla que ya usa el indicador dentro de una sesión,
+// acá aplicada entre sesiones distintas). Además, técnicamente, es lo que
+// mantiene a Pine dentro de una única posición neta por símbolo (ver
+// comentario al inicio del archivo) -- nunca llega a intentar sostener un
+// BUY y un SELL a la vez de verdad.
+if (abrirBuyPreNY and dirNY == "SELL") or (abrirSellPreNY and dirNY == "BUY")
+    strategy.close("NY", comment="Hedge Position (cierre entre sesiones)")
+if (abrirBuyNY and dirPreNY == "SELL") or (abrirSellNY and dirPreNY == "BUY")
+    strategy.close("PreNY", comment="Hedge Position (cierre entre sesiones)")
+if (abrirBuyAsia and (dirPreNY == "SELL" or dirNY == "SELL")) or (abrirSellAsia and (dirPreNY == "BUY" or dirNY == "BUY"))
+    strategy.close("PreNY", comment="Hedge Position (cierre entre sesiones)")
+    strategy.close("NY", comment="Hedge Position (cierre entre sesiones)")
+
+// -- entradas reales, una por sesión, con su propio id --
+if abrirBuyPreNY and not na(qtyBuy)
+    strategy.entry("PreNY", strategy.long, qty=qtyBuy, comment="BUY PreNY")
+    strategy.exit("Salida PreNY", from_entry="PreNY", stop=slBuy, limit=tpBuy)
+if abrirSellPreNY and not na(qtySell)
+    strategy.entry("PreNY", strategy.short, qty=qtySell, comment="SELL PreNY")
+    strategy.exit("Salida PreNY", from_entry="PreNY", stop=slSell, limit=tpSell)
+
+if abrirBuyNY and not na(qtyBuy)
+    strategy.entry("NY", strategy.long, qty=qtyBuy, comment="BUY NY")
+    strategy.exit("Salida NY", from_entry="NY", stop=slBuy, limit=tpBuy)
+if abrirSellNY and not na(qtySell)
+    strategy.entry("NY", strategy.short, qty=qtySell, comment="SELL NY")
+    strategy.exit("Salida NY", from_entry="NY", stop=slSell, limit=tpSell)
+
+if abrirBuyAsia and not na(qtyBuy)
+    strategy.entry("Asia", strategy.long, qty=qtyBuy, comment="BUY Asia")
+    strategy.exit("Salida Asia", from_entry="Asia", stop=slBuy, limit=tpBuy)
+if abrirSellAsia and not na(qtySell)
+    strategy.entry("Asia", strategy.short, qty=qtySell, comment="SELL Asia")
+    strategy.exit("Salida Asia", from_entry="Asia", stop=slSell, limit=tpSell)
+
+// ============================================================================
+// SECCIÓN 7 — PANEL DE ESTADO Y MÉTRICAS
+// ============================================================================
+var table panel = table.new(position.top_right, 1, 6, border_width=1)
+if barstate.islast
+    table.cell(panel, 0, 0, tendencia == "alcista" ? "Uptrend (BUY)" : tendencia == "bajista" ? "Downtrend (SELL)" : "Undefined", text_color=color.white, bgcolor=tendencia == "alcista" ? color.new(color.green, 40) : tendencia == "bajista" ? color.new(color.red, 40) : color.new(color.gray, 40))
+    table.cell(panel, 0, 1, "Pre-NY: " + (na(dirPreNY) ? "sin trade" : dirPreNY + (not enPreNY ? " (arrastre)" : "")), text_color=color.white, bgcolor=color.new(color.blue, 60))
+    table.cell(panel, 0, 2, "NY: " + (na(dirNY) ? "sin trade" : dirNY + (not enNY ? " (arrastre)" : "")), text_color=color.white, bgcolor=color.new(color.blue, 60))
+    table.cell(panel, 0, 3, "Asia: " + (na(dirAsia) ? "sin trade" : dirAsia + (not enAsia ? " (arrastre)" : "")), text_color=color.white, bgcolor=color.new(color.blue, 60))
+    // Métricas nativas de TradingView (misma fuente que la pestaña "Strategy
+    // Tester") -- ganancia neta, cantidad de trades cerrados, % de aciertos y
+    // profit factor, para tenerlos a la vista sin cambiar de pestaña.
+    netProfitPct = strategy.initial_capital != 0 ? strategy.netprofit / strategy.initial_capital * 100 : 0
+    winRate = strategy.closedtrades > 0 ? strategy.wintrades / strategy.closedtrades * 100 : 0
+    pf = strategy.grosslosses != 0 ? strategy.grossprofit / math.abs(strategy.grosslosses) : na
+    table.cell(panel, 0, 4, "Neto: " + str.tostring(netProfitPct, "#.##") + "% | Trades: " + str.tostring(strategy.closedtrades), text_color=color.white, bgcolor=color.new(color.gray, 40))
+    table.cell(panel, 0, 5, "Win rate: " + str.tostring(winRate, "#.#") + "% | PF: " + (na(pf) ? "n/a" : str.tostring(pf, "#.##")), text_color=color.white, bgcolor=color.new(color.gray, 40))

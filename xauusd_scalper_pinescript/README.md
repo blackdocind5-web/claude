@@ -553,13 +553,60 @@ tocar los defaults ya validados en oro).
     `extremoQuiebre`, un mecanismo totalmente independiente de
     `quiebreAlto`/`quiebreBajo` (Sección 2) -- exige el 0,01%/0,005% completo
     en cada entrada puntual, sin excepción, tal como estaba.
-- [ ] **Fase 4**: gestión de salida (SL en último alto/bajo M3 con reducción
-  del 40% si supera 20.000 pips, TP en RR 1:0,9), Hedge Position.
-- [ ] **Fase 5**: límite diario (1 TP / 1 SL+1 TP / 2 SL) y flexibilización
-  del 85% atada al PnL semanal simulado — ambos por simulación interna del
-  indicador, ya que Pine Script no tiene acceso a la cuenta real de MT5.
+- [x] **Fase 4 (concepto original)**: gestión de salida (SL en último
+  alto/bajo M3 con reducción, TP en RR configurable), Hedge Position -- ya
+  implementado dentro de la Fase 3 parte 2 (Sección 6B/6C del indicador),
+  adelantado respecto al plan original.
+- [x] **Fase 5 (concepto original)**: límite diario (2 señales por sesión,
+  3 en el caso aislado de Hedge encadenado) -- también adelantado dentro de
+  la Fase 3 parte 2 (Sección 6C). La flexibilización del 85% atada al PnL
+  semanal simulado sigue pendiente.
 - [ ] **Fase 6**: filtro de noticias — solo recordatorio visual (Pine Script
   no puede leer Forex Factory en vivo), sin bloqueo automático de señales.
+- [x] **Fase 4 (backtesting) — `fase4_strategy_backtest.pine` (15/09)**:
+  versión `strategy()` del indicador para poder correr el backtest nativo
+  de TradingView (pestaña "Strategy Tester") en cualquier instrumento
+  (arrancando por oro, luego EURUSD, GBPUSD, Nasdaq, S&P 500, BTC, AUDUSD),
+  no solo mirar señales en vivo.
+  - Archivo NUEVO y separado del indicador -- Pine no permite que un mismo
+    script sea `indicator()` y `strategy()` a la vez. Las Secciones 1 a 6B
+    (sesiones, estructura M3, envolvente/Start, MEC, SL/TP) son una copia
+    literal de las mismas secciones del indicador ya validado, sin tocar
+    una coma. Lo nuevo es la Sección 6C (ejecución real con
+    `strategy.entry()`/`strategy.exit()` en vez del cartel/bookkeeping
+    simulado) y la Sección 7 (tabla de métricas en el gráfico).
+  - **Tamaño de posición**: riesgo fijo en % del equity por operación
+    (`RIESGO_PCT`, confirmado por Fabián) -- `qty = (equity × riesgo%) /
+    distancia al SL`, recalculado en cada entrada.
+  - **Costos**: arranca en cero (comisión y slippage en 0, a pedido de
+    Fabián, para ver primero el potencial "puro") -- se ajustan sin tocar
+    código desde Propiedades de la estrategia en TradingView.
+  - **Regla del trade que se arrastra entre sesiones** (confirmada por
+    Fabián, 15/09): si al terminar una sesión un trade sigue abierto y la
+    estructura (`tendencia`) favorece su dirección, se deja correr hasta
+    SL, TP o un CHoCH real en contra; si la estructura está en contra, se
+    cierra ya. Mientras corre así "de arrastre", la sesión siguiente opera
+    como si no existiera -- cuenta sus propias señales desde cero y puede
+    abrir su propio trade en paralelo, **en el mismo sentido** (BUY+BUY o
+    SELL+SELL). Si la sesión nueva genera señal en sentido **contrario** al
+    trade arrastrado, es un Hedge Position entre sesiones (cierra primero
+    el arrastrado, recién después abre el nuevo) -- confirmado por Fabián.
+  - **Restricción técnica resuelta**: el motor de estrategias de Pine
+    mantiene una única posición neta por símbolo -- no hay forma nativa de
+    sostener un BUY y un SELL abiertos a la vez (a diferencia de una cuenta
+    de hedging en MT5). Solución: cada sesión opera bajo su propio id de
+    entrada ("PreNY"/"NY"/"Asia") con `pyramiding=3`, permitiendo múltiples
+    posiciones abiertas EN EL MISMO SENTIDO; el Hedge Position entre
+    sesiones (arriba) es lo que evita que el motor llegue a necesitar
+    sostener sentidos opuestos de verdad.
+  - `procesarSesionTrade()`: función pura (mismo patrón que
+    `procesarVelaM3()` de la Sección 2) que corre el límite diario/Hedge/
+    arrastre de UNA sesión -- se llama 3 veces (Pre-NY, NY, Asia), cada una
+    con su propio estado, nunca comparten contador ni trade entre sí.
+  - Pendiente de validar: correr primero en oro (mismo período ya validado
+    en vivo con el indicador) y confirmar que las entradas/salidas
+    coinciden con lo que el indicador mostró, antes de confiar en los
+    resultados de otros activos.
 
 ## Decisiones de diseño (confirmadas con Fabián)
 
