@@ -441,6 +441,41 @@ tocar los defaults ya validados en oro).
     existe vía `enSesionOperativa`, revisar si hace falta algo más), "una
     señal por vela hasta invalidarse", cartel final enriquecido (ficha de la
     operación), alertas push.
+- [x] **Candidato a cambio de estructura "bloqueado" (línea continua fija)
+  (15/09)**: bug real en la Sección 2 (estructura M3), presente desde
+  siempre, no relacionado con el margen de `UMBRAL_QUIEBRE` agregado el
+  14/09. Hasta ahora, `altoM3Activo`/`bajoM3Activo` se reemplazaban por
+  CUALQUIER pivote nuevo del mismo tipo (`esAltoM3`/`esBajoM3`) apenas se
+  formaba, sin chequear si el nivel anterior ya se había roto. El nivel del
+  lado OPUESTO a la `tendencia` vigente (el candidato a CHoCH, "línea
+  continua" en la jerga de Fabián) tiene que ser UNO SOLO y quedar fijo
+  hasta que se resuelva -- confirmado por Fabián.
+  - Caso real que lo destapó: SELL 14/09 20:04 (Asia) que no disparó pese a
+    ser una envolvente evidente en vivo. La estructura ya era bajista desde
+    mucho antes de las 19:54 (confirmado por Fabián contra un gráfico M3
+    más amplio, y contra una versión anterior del indicador que sí
+    reconocía el CHoCH correcto). El verdadero cambio de estructura era el
+    Bajo M3 de las 19:36-19:42 (nivel 4.288,230, formado tras el quiebre
+    alcista del Alto M3 de 19:21-19:24 en la vela M1 de 19:31) -- pero el
+    panel DEBUG mostró que `bajoM3Activo` ya había cambiado a 4.287,365 para
+    las 19:51, antes de que 4.288,230 tuviera oportunidad de romperse. La
+    vela M1 de las 19:53 (cierre 4.287,820) sí rompía 4.288,230 con margen
+    de sobra (nivel con `UMBRAL_QUIEBRE` ≈4.288.015,6) -- confirmando que el
+    margen NO era el problema, el código simplemente ya no vigilaba el
+    nivel correcto.
+  - Fix: dos flags nuevos, `altoM3Bloqueado`/`bajoM3Bloqueado`. Mientras
+    `tendencia` es "alcista", el lado bajo es el candidato a CHoCH y queda
+    bloqueado apenas se fija el primer Bajo M3 tras el último reseteo -- los
+    Bajos M3 que se formen después se grafican punteados (informativos) pero
+    NO reemplazan al candidato activo. El bloqueo se libera solo ante los
+    dos eventos que señaló Fabián: (1) el candidato se rompe con volumen
+    válido -- confirma el CHoCH, o (2) se rompe antes un Alto M3 a favor de
+    la tendencia alcista vigente (un BOS) -- demuestra que el retroceso que
+    generó el candidato fue falso, se descarta y se vuelve a buscar uno
+    nuevo. Simétrico para el lado alto cuando `tendencia` es "bajista".
+  - No toca la fórmula de `quiebreAlto`/`quiebreBajo` (margen de
+    `UMBRAL_QUIEBRE`, validado el 14/09 contra el caso de AUDUSD START BUY
+    08/09 09:54) -- ambos fixes son independientes y no se pisan entre sí.
 - [ ] **Fase 4**: gestión de salida (SL en último alto/bajo M3 con reducción
   del 40% si supera 20.000 pips, TP en RR 1:0,9), Hedge Position.
 - [ ] **Fase 5**: límite diario (1 TP / 1 SL+1 TP / 2 SL) y flexibilización

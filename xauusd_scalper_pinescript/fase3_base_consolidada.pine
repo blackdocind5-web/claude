@@ -254,6 +254,39 @@ var bool altoLineaActiva = false  // hay una línea DIBUJADA para el altoM3Activ
 var bool bajoLineaActiva = false
 var string tendencia = "indefinida"  // "alcista" | "bajista" | "indefinida"
 
+// altoM3Bloqueado/bajoM3Bloqueado (15/09): el candidato a CAMBIO DE
+// ESTRUCTURA (el nivel del lado OPUESTO a `tendencia`, el que si se rompe
+// genera un CHoCH) es UNO SOLO y no se mueve -- confirmado por Fabián. Hasta
+// el 14/09 el código no distinguía esto: CUALQUIER pivote nuevo del mismo
+// tipo (esAltoM3/esBajoM3) reemplazaba a altoM3Activo/bajoM3Activo sin
+// chequear si el anterior ya se había roto, aunque ese anterior siguiera
+// vigente y sin quebrar. Caso real que lo destapó: SELL 14/09 20:04 (Asia)
+// que no disparó -- el bajo M3 real de las 19:36-19:42 (4.288,230, el
+// candidato correcto a CHoCH bajista, confirmado por Fabián contra el M3 del
+// gráfico y contra una versión anterior del indicador que SÍ lo reconocía)
+// fue silenciosamente reemplazado por un bajo M3 posterior (4.287,365/
+// 4.287,360, visto en el panel DEBUG) antes de que 4.288,230 tuviera
+// oportunidad de romperse -- cuando el precio efectivamente lo rompió a las
+// 19:53 (cierre 4.287,820, supera tanto el nivel crudo como el margen de
+// UMBRAL_QUIEBRE), el código ya no lo estaba vigilando, y recién detectó
+// estructura bajista mucho después, con la vela de las 20:04 clasificada
+// como BOS en vez del verdadero CHoCH.
+//
+// Fix: mientras `tendencia` es "alcista", el lado BAJO es el candidato a
+// CHoCH y queda BLOQUEADO (bajoM3Bloqueado=true) apenas se fija el primer
+// bajo M3 tras el último evento de reseteo -- los bajos M3 que se formen
+// después NO lo reemplazan (se grafican punteados, ver más abajo) hasta que
+// ocurra uno de los dos eventos que lo resuelven: (1) se rompe con volumen
+// válido -- confirma el CHoCH, tendencia pasa a "bajista" -- o (2) se rompe
+// antes un alto M3 A FAVOR de la tendencia alcista vigente (un BOS) --
+// demuestra que el retroceso que generó este candidato fue falso, se
+// descarta y se vuelve a buscar un candidato nuevo desde cero. Simétrico
+// para el lado ALTO cuando `tendencia` es "bajista". Mientras `tendencia` es
+// "indefinida" (arranque del gráfico) ningún lado se bloquea, igual que
+// antes.
+var bool altoM3Bloqueado = false
+var bool bajoM3Bloqueado = false
+
 maxExtMs = extensionBarras * timeframe.in_seconds("1") * 1000
 
 // dibujarLineasM3: el motor interno (altoM3Activo/bajoM3Activo, quiebreAlto/
@@ -267,11 +300,21 @@ maxExtMs = extensionBarras * timeframe.in_seconds("1") * 1000
 dibujarLineasM3 = not limitarLineasASesion or enSesionOperativa or enColchonPreNY or enColchonAsia
 
 if esAltoM3
-    if not na(altoM3Inicio) and altoM3Inicio == altoRunInicio
+    esMismoTramoAlto = not na(altoM3Inicio) and altoM3Inicio == altoRunInicio
+    if esMismoTramoAlto
+        // no es un pivote nuevo -- es el MISMO tramo (altoRunInicio sin
+        // cambiar) ampliando su valor -- se actualiza siempre, esté
+        // bloqueado o no, porque sigue siendo el mismo punto, no uno que lo
+        // reemplace
         altoM3Activo := nivelAlto
         if altoLineaActiva
             line.set_y1(altoLinea, nivelAlto)
             line.set_y2(altoLinea, nivelAlto)
+    else if tendencia == "bajista" and altoM3Bloqueado
+        // candidato a CHoCH ya bloqueado (línea continua) -- este alto M3
+        // nuevo NO lo reemplaza, solo se grafica punteado como referencia
+        if dibujarLineasM3
+            line.new(x1=altoRunInicio, y1=nivelAlto, x2=time, y2=nivelAlto, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
     else
         if altoLineaActiva and not altoRoto
             line.set_x2(altoLinea, int(math.min(time, altoM3Inicio + maxExtMs)))
@@ -281,13 +324,24 @@ if esAltoM3
         altoLineaActiva := dibujarLineasM3
         if altoLineaActiva
             altoLinea := line.new(x1=altoRunInicio, y1=nivelAlto, x2=time, y2=nivelAlto, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+        if tendencia == "bajista"
+            altoM3Bloqueado := true
 
 if esBajoM3
-    if not na(bajoM3Inicio) and bajoM3Inicio == bajoRunInicio
+    esMismoTramoBajo = not na(bajoM3Inicio) and bajoM3Inicio == bajoRunInicio
+    if esMismoTramoBajo
+        // ver comentario en el bloque esAltoM3 de arriba
         bajoM3Activo := nivelBajo
         if bajoLineaActiva
             line.set_y1(bajoLinea, nivelBajo)
             line.set_y2(bajoLinea, nivelBajo)
+    else if tendencia == "alcista" and bajoM3Bloqueado
+        // candidato a CHoCH ya bloqueado (línea continua) -- este bajo M3
+        // nuevo NO lo reemplaza, solo se grafica punteado como referencia --
+        // este es exactamente el caso del SELL 14/09 20:04 (ver comentario en
+        // la declaración de bajoM3Bloqueado más arriba)
+        if dibujarLineasM3
+            line.new(x1=bajoRunInicio, y1=nivelBajo, x2=time, y2=nivelBajo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
     else
         if bajoLineaActiva and not bajoRoto
             line.set_x2(bajoLinea, int(math.min(time, bajoM3Inicio + maxExtMs)))
@@ -297,6 +351,8 @@ if esBajoM3
         bajoLineaActiva := dibujarLineasM3
         if bajoLineaActiva
             bajoLinea := line.new(x1=bajoRunInicio, y1=nivelBajo, x2=time, y2=nivelBajo, xloc=xloc.bar_time, color=colorPunteada, style=line.style_dotted, width=1)
+        if tendencia == "alcista"
+            bajoM3Bloqueado := true
 
 // si el nivel ya estaba activo desde antes de entrar en sesión (o justo se
 // prendió el interruptor), recién ahora lo dibuja -- arranca la línea en su
@@ -367,6 +423,12 @@ if quiebreAlto
     altoRoto := true
     altoLineaActiva := false
     ultimoQuiebreFueCambioEstructura := esCambioEstructuraAlto
+    // este quiebre resuelve el candidato del lado alto si estaba bloqueado
+    // (CHoCH) y, sea CHoCH o BOS, invalida cualquier candidato bajo
+    // pendiente -- empieza a buscarse uno nuevo desde cero (ver
+    // altoM3Bloqueado/bajoM3Bloqueado más arriba)
+    altoM3Bloqueado := false
+    bajoM3Bloqueado := false
 
 if quiebreBajo
     nivelQuebradoBajo := bajoM3Activo
@@ -382,6 +444,9 @@ if quiebreBajo
     bajoRoto := true
     bajoLineaActiva := false
     ultimoQuiebreFueCambioEstructura := esCambioEstructuraBajo
+    // ver comentario simétrico en el bloque quiebreAlto de arriba
+    bajoM3Bloqueado := false
+    altoM3Bloqueado := false
 
 // DEBUG TEMPORAL (11/09): valor EXACTO de altoM3Activo/bajoM3Activo en CADA
 // vela M1, para leer directo en la Ventana de Datos sin depender de
