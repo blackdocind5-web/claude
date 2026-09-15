@@ -712,6 +712,6 @@ if barstate.islast
     // profit factor, para tenerlos a la vista sin cambiar de pestaña.
     netProfitPct = strategy.initial_capital != 0 ? strategy.netprofit / strategy.initial_capital * 100 : 0
     winRate = strategy.closedtrades > 0 ? strategy.wintrades / strategy.closedtrades * 100 : 0
-    pf = strategy.grosslosses != 0 ? strategy.grossprofit / math.abs(strategy.grosslosses) : na
+    pf = strategy.grossloss != 0 ? strategy.grossprofit / math.abs(strategy.grossloss) : na
     table.cell(panel, 0, 4, "Neto: " + str.tostring(netProfitPct, "#.##") + "% | Trades: " + str.tostring(strategy.closedtrades), text_color=color.white, bgcolor=color.new(color.gray, 40))
     table.cell(panel, 0, 5, "Win rate: " + str.tostring(winRate, "#.#") + "% | PF: " + (na(pf) ? "n/a" : str.tostring(pf, "#.##")), text_color=color.white, bgcolor=color.new(color.gray, 40))
