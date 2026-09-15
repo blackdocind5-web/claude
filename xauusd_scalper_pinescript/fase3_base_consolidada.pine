@@ -409,8 +409,26 @@ if bajoLineaActiva and not na(bajoM3Activo)
 // (más abajo en este bloque), así que "not na(...)" solo puede ser true
 // mientras el nivel sigue sin romperse -- el chequeo de nivel + margen ya
 // se comporta como "primera vez que se cumple", sin necesitar el cruce.
-quiebreAlto = not na(altoM3Activo) and close > altoM3Activo * (1 + UMBRAL_QUIEBRE)
-quiebreBajo = not na(bajoM3Activo) and close < bajoM3Activo * (1 - UMBRAL_QUIEBRE)
+//
+// PERO (15/09): ese margen SOLO corresponde cuando el quiebre implicaría un
+// CHoCH (`tendencia` es la opuesta al lado que se está evaluando) -- un
+// cambio de tendencia necesita esa confirmación fuerte para no dispararse
+// con un toque débil, tal como probó el caso de AUDUSD arriba. Un BOS
+// (`tendencia` YA es ese mismo lado, simple continuación) es un estándar
+// mucho más bajo: alcanza con que el precio supere el nivel, aunque sea
+// solo con mecha o con un cuerpo menor al margen -- no hace falta volumen
+// mínimo para confirmar que la tendencia vigente sigue viva. Antes de este
+// fix, un BOS débil (mecha o cuerpo chico) no se reconocía -- esto también
+// dejaba sin resolver el candidato bloqueado del lado opuesto (ver
+// altoM3Bloqueado/bajoM3Bloqueado más arriba), porque el evento (2) que lo
+// invalida ES justamente este BOS. Caso real que lo destapó: PRE-NY 15/09
+// en vivo -- el candidato bajo bloqueado en 4.278,725 (07:06) debió haber
+// sido reemplazado por el bajo M3 más reciente (4.282,460, 07:54) apenas se
+// confirmó un BOS alcista entre esas dos velas, pero el toque real fue más
+// débil que el margen y el código no lo reconoció -- la línea continua
+// quedó pegada al candidato viejo hasta su quiebre real, mucho más tarde.
+quiebreAlto = not na(altoM3Activo) and (tendencia == "bajista" ? close > altoM3Activo * (1 + UMBRAL_QUIEBRE) : high > altoM3Activo)
+quiebreBajo = not na(bajoM3Activo) and (tendencia == "alcista" ? close < bajoM3Activo * (1 - UMBRAL_QUIEBRE) : low < bajoM3Activo)
 
 // se reutiliza en Fase 3 para saber si el último quiebre fue continuación (BOS) o cambio de estructura (CHoCH)
 var bool ultimoQuiebreFueCambioEstructura = false

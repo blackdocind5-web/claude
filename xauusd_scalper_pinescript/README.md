@@ -495,6 +495,27 @@ tocar los defaults ya validados en oro).
     (Sección 2) no cambia, sigue usando el candidato bloqueado. Agregadas
     también al panel DEBUG (`mostrarDebugM3`) para verificar en la Ventana
     de Datos.
+- [x] **El margen de UMBRAL_QUIEBRE solo aplica al CHoCH, no al BOS (15/09)**:
+  matiz que faltaba en el fix del candidato bloqueado. Un CHoCH (cambio de
+  tendencia) necesita la confirmación fuerte del margen -- fue justamente el
+  caso de AUDUSD que motivó agregarlo el 14/09. Pero un BOS (la tendencia
+  vigente simplemente continúa) es un estándar mucho más bajo: alcanza con
+  que el precio supere el nivel, aunque sea solo con mecha o con un cuerpo
+  menor al margen -- confirmado por Fabián.
+  - Caso real que lo destapó: PRE-NY 15/09 en vivo -- el candidato bajo
+    bloqueado en 4.278,725 (bajo M3 de las 07:06) debió haber sido
+    reemplazado por el bajo M3 más reciente (4.282,460, formado a las 07:54)
+    apenas se confirmó un BOS alcista entre esas dos velas (un alto M3
+    superado, aunque sea débil) -- pero el toque real fue más débil que el
+    margen exigido y el código no lo reconoció, así que el candidato bloqueado
+    quedó pegado al nivel viejo hasta su quiebre real, mucho más tarde.
+  - Fix: `quiebreAlto`/`quiebreBajo` ahora distinguen el caso -- exigen el
+    margen de `UMBRAL_QUIEBRE` SOLO cuando el quiebre implicaría un CHoCH
+    (`tendencia` es la opuesta al lado evaluado); si `tendencia` ya es ese
+    mismo lado (BOS) o está "indefinida" (arranque), alcanza con que la
+    mecha (`high`/`low`) supere el nivel, sin margen. No toca la Sección 6
+    (MEC), que sigue con su propia validación de entrada por `UMBRAL_QUIEBRE`
+    tal cual estaba.
 - [ ] **Fase 4**: gestión de salida (SL en último alto/bajo M3 con reducción
   del 40% si supera 20.000 pips, TP en RR 1:0,9), Hedge Position.
 - [ ] **Fase 5**: límite diario (1 TP / 1 SL+1 TP / 2 SL) y flexibilización
