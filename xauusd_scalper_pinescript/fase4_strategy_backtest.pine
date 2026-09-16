@@ -1,5 +1,5 @@
 //@version=5
-strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=10000, currency=currency.USD, default_qty_type=strategy.fixed, default_qty_value=1, commission_type=strategy.commission.percent, commission_value=0, slippage=0, calc_on_every_tick=false, process_orders_on_close=false, pyramiding=3, max_lines_count=500, max_labels_count=500)
+strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=10000, currency=currency.USD, default_qty_type=strategy.fixed, default_qty_value=1, commission_type=strategy.commission.percent, commission_value=0, slippage=0, calc_on_every_tick=false, process_orders_on_close=false, pyramiding=4, max_lines_count=500, max_labels_count=500)
 
 // ============================================================================
 // FASE 4 — VERSIÓN STRATEGY PARA BACKTESTING (15/09)
@@ -36,10 +36,10 @@ strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=1
 // estrategias mantiene una ÚNICA posición neta por símbolo -- no hay forma
 // nativa de sostener un BUY y un SELL abiertos al mismo tiempo en el mismo
 // script (a diferencia de una cuenta de hedging en MT5). La solución: cada
-// sesión (Pre-NY/NY/Asia) opera bajo su PROPIO id de entrada
-// ("PreNY"/"NY"/"Asia"), con pyramiding=3 para permitir que dos (o las tres)
-// sesiones tengan una posición abierta EN EL MISMO SENTIDO a la vez (BUY+BUY
-// o SELL+SELL) -- confirmado por Fabián (15/09): la excepción de "dos
+// sesión (Pre-NY/NY/Asia/Wall Street) opera bajo su PROPIO id de entrada
+// ("PreNY"/"NY"/"Asia"/"WallStreet"), con pyramiding=4 para permitir que
+// dos (o más) sesiones tengan una posición abierta EN EL MISMO SENTIDO a la
+// vez (BUY+BUY o SELL+SELL) -- confirmado por Fabián (15/09): la excepción de "dos
 // trades abiertos a la vez" es solo para ESE caso. Si la sesión nueva genera
 // una señal en sentido CONTRARIO al trade arrastrado de la sesión anterior,
 // no es una excepción nueva -- es lisa y llanamente un Hedge Position entre
@@ -51,6 +51,23 @@ strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=1
 // validamos con el indicador en vivo) y comparar que las entradas/salidas
 // coincidan con lo que el indicador ya mostró, antes de confiar en los
 // resultados de otros activos.
+//
+// Filtros de experimentación (agregado 16/09, a pedido de Fabián): en el
+// grupo de inputs "Backtest" hay toggles independientes para (a) permitir
+// o no que cada sesión (Pre-NY, NY, Asia, Wall Street) abra operaciones
+// NUEVAS, y (b) permitir o no operar en cada día de la semana (Lunes a
+// Viernes -- Domingo queda siempre habilitado, es parte de la sesión Asia).
+// Importante: estos toggles SOLO afectan si se abren entradas nuevas -- la
+// estructura M3, el MEC y el monitoreo de SL/TP de un trade ya abierto (o
+// arrastrado) siguen corriendo siempre, sin importar los toggles.
+//
+// Sesión "Wall Street" (09:30-11:00 EST, agregada 16/09 para backtestear
+// índices: Nasdaq, S&P 500, Dow Jones): a diferencia de Pre-NY/NY/Asia, que
+// son mutuamente excluyentes, esta se SUPERPONE con la sesión NY (09:00-
+// 11:00 EST). Si se habilitan NY y Wall Street al mismo tiempo, ambas
+// reaccionan a las mismas señales durante el solapamiento (09:30-11:00),
+// duplicando entradas/riesgo en esa franja. Para backtestear índices, dejar
+// Wall Street habilitada y NY deshabilitada.
 // ============================================================================
 
 // ============================================================================
@@ -61,6 +78,7 @@ mostrarSesiones = input.bool(true, "Sombrear sesiones en el gráfico", group=grp
 colorPreNY = input.color(color.new(#cccccc, 78), "Color sesión Pre-NY (07-09 EST)", group=grpSesiones)
 colorNY    = input.color(color.new(#a3a3a3, 78), "Color sesión NY (09-11 EST)", group=grpSesiones)
 colorAsia  = input.color(color.new(#999999, 78), "Color sesión Asia (20-22 EST)", group=grpSesiones)
+colorWallStreet = input.color(color.new(#d9b38c, 78), "Color sesión Wall Street (09:30-11:00 EST, para índices)", group=grpSesiones)
 
 // Días Pine: 1=Domingo 2=Lunes 3=Martes 4=Miércoles 5=Jueves 6=Viernes 7=Sábado
 // Pre-NY y NY: Lunes a Viernes (2=Lunes ... 6=Viernes) | Asia: Domingo a
@@ -68,6 +86,10 @@ colorAsia  = input.color(color.new(#999999, 78), "Color sesión Asia (20-22 EST)
 sesionPreNYStr = "0700-0900:23456"
 sesionNYStr    = "0900-1100:23456"
 sesionAsiaStr  = "2000-2200:12345"
+// Wall Street (agregada 16/09, para backtestear índices: Nasdaq, S&P 500,
+// Dow Jones) -- se SUPERPONE con NY (09:00-11:00 EST), ver nota al inicio
+// del archivo sobre no habilitar ambas a la vez.
+sesionWallStreetStr = "0930-1100:23456"
 
 colchonPreNYStr = "0645-0700:23456"
 colchonAsiaStr  = "1945-2000:12345"
@@ -75,13 +97,15 @@ colchonAsiaStr  = "1945-2000:12345"
 enPreNY = not na(time(timeframe.period, sesionPreNYStr, "America/New_York"))
 enNY    = not na(time(timeframe.period, sesionNYStr, "America/New_York"))
 enAsia  = not na(time(timeframe.period, sesionAsiaStr, "America/New_York"))
+enWallStreet = not na(time(timeframe.period, sesionWallStreetStr, "America/New_York"))
 enColchonPreNY = not na(time(timeframe.period, colchonPreNYStr, "America/New_York"))
 enColchonAsia  = not na(time(timeframe.period, colchonAsiaStr, "America/New_York"))
-enSesionOperativa = enPreNY or enNY or enAsia
+enSesionOperativa = enPreNY or enNY or enAsia or enWallStreet
 
 bgcolor(mostrarSesiones and enPreNY ? colorPreNY : na, title="Sesión Pre-NY")
 bgcolor(mostrarSesiones and enNY    ? colorNY    : na, title="Sesión NY")
 bgcolor(mostrarSesiones and enAsia  ? colorAsia  : na, title="Sesión Asia")
+bgcolor(mostrarSesiones and enWallStreet ? colorWallStreet : na, title="Sesión Wall Street")
 
 // ============================================================================
 // SECCIÓN 2 — ESTRUCTURA DE MERCADO M3 (Fase 1) -- copia literal del indicador
@@ -488,11 +512,12 @@ tpSell = not na(distanciaFinalSell) ? close - distanciaFinalSell * RR_TP : na
 
 // ============================================================================
 // SECCIÓN 6C — EJECUCIÓN REAL (BACKTEST) + LÍMITE DIARIO + ARRASTRE ENTRE
-// SESIONES (Fase 4, 15/09)
+// SESIONES (Fase 4, 15/09 -- Wall Street y filtros de sesión/día agregados 16/09)
 // ============================================================================
 // procesarSesionTrade: misma idea que procesarVelaM3 (Sección 2) -- función
-// PURA que recibe el estado actual de UNA sesión (Pre-NY, NY o Asia, cada
-// una se llama con sus propias variables) y devuelve el estado nuevo. Nunca
+// PURA que recibe el estado actual de UNA sesión (Pre-NY, NY, Asia o Wall
+// Street, cada una se llama con sus propias variables) y devuelve el estado
+// nuevo. Nunca
 // toca `strategy.*` directamente -- eso lo hace el caller (scope global, más
 // abajo) con lo que la función devuelve.
 //
@@ -514,8 +539,11 @@ tpSell = not na(distanciaFinalSell) ? close - distanciaFinalSell * RR_TP : na
 //      (CHoCH real) -- nunca por un simple BOS.
 //   5) Señal nueva: igual que el indicador -- límite de 2 señales (3 en el
 //      caso aislado de Hedge encadenado), Hedge Position cierra la
-//      contraria.
-procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tpBuyIn, slSellIn, tpSellIn, tendenciaActual, esCambioEstrAlto, esCambioEstrBajo, senalesIn, cerradaIn, dirIn, slIn, tpIn, hedgeFlagIn) =>
+//      contraria. Acá además se filtra por `habilitadaEjecucion` (toggle de
+//      sesión, 16/09) -- si está apagado, esta sesión sigue vigilando SL/TP
+//      y arrastre de un trade ya abierto (reglas 2-4), pero no abre
+//      operaciones nuevas.
+procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tpBuyIn, slSellIn, tpSellIn, tendenciaActual, esCambioEstrAlto, esCambioEstrBajo, senalesIn, cerradaIn, dirIn, slIn, tpIn, hedgeFlagIn, habilitadaEjecucion) =>
     senalesOut = senalesIn
     cerradaOut = cerradaIn
     dirOut = dirIn
@@ -568,7 +596,7 @@ procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tp
     puedeBuy  = not cerradaOut and ((senalesOut < 2 and (na(dirOut) or dirOut == "SELL")) or tercerHedgeBuyLocal)
     puedeSell = not cerradaOut and ((senalesOut < 2 and (na(dirOut) or dirOut == "BUY"))  or tercerHedgeSellLocal)
 
-    if enEstaSesion and mecBuy and puedeBuy
+    if enEstaSesion and habilitadaEjecucion and mecBuy and puedeBuy
         esHedgeEsta = not na(dirOut) and dirOut == "SELL"
         senalesOut := senalesOut + 1
         dirOut := "BUY"
@@ -577,7 +605,7 @@ procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tp
         hedgeFlagOut := esHedgeEsta
         abrirBuy := true
 
-    if enEstaSesion and mecSell and puedeSell
+    if enEstaSesion and habilitadaEjecucion and mecSell and puedeSell
         esHedgeEsta = not na(dirOut) and dirOut == "BUY"
         senalesOut := senalesOut + 1
         dirOut := "SELL"
@@ -591,20 +619,42 @@ procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tp
 grpBacktest = "Backtest"
 RIESGO_PCT = input.float(1.0, "Riesgo por operación (% del equity)", minval=0.01, maxval=100, step=0.1, group=grpBacktest)
 
+// -- filtros de experimentación (16/09, a pedido de Fabián): solo afectan si
+// se abren operaciones NUEVAS -- estructura, MEC y SL/TP de un trade ya
+// abierto (o arrastrado) siguen corriendo siempre, sin importar estos toggles --
+grpFiltros = "Backtest — Filtros de sesión y día"
+habilitarPreNY = input.bool(true, "Habilitar ejecución en Pre-NY", group=grpFiltros)
+habilitarNY = input.bool(true, "Habilitar ejecución en NY", group=grpFiltros)
+habilitarAsia = input.bool(true, "Habilitar ejecución en Asia", group=grpFiltros)
+habilitarWallStreet = input.bool(false, "Habilitar ejecución en Wall Street (para índices: Nasdaq, S&P 500, Dow Jones -- ver nota sobre solapamiento con NY)", group=grpFiltros)
+
+habilitarLunes = input.bool(true, "Habilitar Lunes", group=grpFiltros)
+habilitarMartes = input.bool(true, "Habilitar Martes", group=grpFiltros)
+habilitarMiercoles = input.bool(true, "Habilitar Miércoles", group=grpFiltros)
+habilitarJueves = input.bool(true, "Habilitar Jueves", group=grpFiltros)
+habilitarViernes = input.bool(true, "Habilitar Viernes", group=grpFiltros)
+
+// Domingo queda siempre habilitado (Fabián no lo mencionó -- es parte de la
+// sesión Asia, que arranca los domingos por la noche EST)
+diaSemanaNY = dayofweek(time, "America/New_York")
+diaHabilitado = diaSemanaNY == dayofweek.sunday or (diaSemanaNY == dayofweek.monday and habilitarLunes) or (diaSemanaNY == dayofweek.tuesday and habilitarMartes) or (diaSemanaNY == dayofweek.wednesday and habilitarMiercoles) or (diaSemanaNY == dayofweek.thursday and habilitarJueves) or (diaSemanaNY == dayofweek.friday and habilitarViernes)
+
 inicioPreNY = enPreNY and not enPreNY[1]
 inicioNY    = enNY and not enNY[1]
 inicioAsia  = enAsia and not enAsia[1]
+inicioWallStreet = enWallStreet and not enWallStreet[1]
 
 // qty por riesgo fijo: (equity × riesgo%) / distancia al SL -- se recalcula
 // en cada entrada con el equity y la distancia vigentes en ese momento
 qtyBuy  = not na(distanciaFinalBuy)  and distanciaFinalBuy  > 0 ? (strategy.equity * RIESGO_PCT / 100) / distanciaFinalBuy  : na
 qtySell = not na(distanciaFinalSell) and distanciaFinalSell > 0 ? (strategy.equity * RIESGO_PCT / 100) / distanciaFinalSell : na
 
-mecBuyGate  = mecBuyBruto  and barstate.isconfirmed
-mecSellGate = mecSellBruto and barstate.isconfirmed
+mecBuyGate  = mecBuyBruto  and barstate.isconfirmed and diaHabilitado
+mecSellGate = mecSellBruto and barstate.isconfirmed and diaHabilitado
 
 // -- estado por sesión (mismas 6 variables que el indicador, una copia por
-// sesión -- Pre-NY, NY y Asia no comparten límite ni trade entre sí) --
+// sesión -- Pre-NY, NY, Asia y Wall Street no comparten límite ni trade
+// entre sí) --
 var int senalesPreNY = 0
 var bool cerradaPreNY = false
 var string dirPreNY = na
@@ -626,7 +676,14 @@ var float slAsia = na
 var float tpAsia = na
 var bool hedgeAsia = false
 
-[senalesPreNYOut, cerradaPreNYOut, dirPreNYOut, slPreNYOut, tpPreNYOut, hedgePreNYOut, abrirBuyPreNY, abrirSellPreNY, cerrarBrokerPreNY, motivoPreNY] = procesarSesionTrade(enPreNY, inicioPreNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesPreNY, cerradaPreNY, dirPreNY, slPreNY, tpPreNY, hedgePreNY)
+var int senalesWallStreet = 0
+var bool cerradaWallStreet = false
+var string dirWallStreet = na
+var float slWallStreet = na
+var float tpWallStreet = na
+var bool hedgeWallStreet = false
+
+[senalesPreNYOut, cerradaPreNYOut, dirPreNYOut, slPreNYOut, tpPreNYOut, hedgePreNYOut, abrirBuyPreNY, abrirSellPreNY, cerrarBrokerPreNY, motivoPreNY] = procesarSesionTrade(enPreNY, inicioPreNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesPreNY, cerradaPreNY, dirPreNY, slPreNY, tpPreNY, hedgePreNY, habilitarPreNY)
 senalesPreNY := senalesPreNYOut
 cerradaPreNY := cerradaPreNYOut
 dirPreNY := dirPreNYOut
@@ -634,7 +691,7 @@ slPreNY := slPreNYOut
 tpPreNY := tpPreNYOut
 hedgePreNY := hedgePreNYOut
 
-[senalesNYOut, cerradaNYOut, dirNYOut, slNYOut, tpNYOut, hedgeNYOut, abrirBuyNY, abrirSellNY, cerrarBrokerNY, motivoNY] = procesarSesionTrade(enNY, inicioNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesNY, cerradaNY, dirNY, slNY, tpNY, hedgeNY)
+[senalesNYOut, cerradaNYOut, dirNYOut, slNYOut, tpNYOut, hedgeNYOut, abrirBuyNY, abrirSellNY, cerrarBrokerNY, motivoNY] = procesarSesionTrade(enNY, inicioNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesNY, cerradaNY, dirNY, slNY, tpNY, hedgeNY, habilitarNY)
 senalesNY := senalesNYOut
 cerradaNY := cerradaNYOut
 dirNY := dirNYOut
@@ -642,13 +699,21 @@ slNY := slNYOut
 tpNY := tpNYOut
 hedgeNY := hedgeNYOut
 
-[senalesAsiaOut, cerradaAsiaOut, dirAsiaOut, slAsiaOut, tpAsiaOut, hedgeAsiaOut, abrirBuyAsia, abrirSellAsia, cerrarBrokerAsia, motivoAsia] = procesarSesionTrade(enAsia, inicioAsia, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesAsia, cerradaAsia, dirAsia, slAsia, tpAsia, hedgeAsia)
+[senalesAsiaOut, cerradaAsiaOut, dirAsiaOut, slAsiaOut, tpAsiaOut, hedgeAsiaOut, abrirBuyAsia, abrirSellAsia, cerrarBrokerAsia, motivoAsia] = procesarSesionTrade(enAsia, inicioAsia, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesAsia, cerradaAsia, dirAsia, slAsia, tpAsia, hedgeAsia, habilitarAsia)
 senalesAsia := senalesAsiaOut
 cerradaAsia := cerradaAsiaOut
 dirAsia := dirAsiaOut
 slAsia := slAsiaOut
 tpAsia := tpAsiaOut
 hedgeAsia := hedgeAsiaOut
+
+[senalesWallStreetOut, cerradaWallStreetOut, dirWallStreetOut, slWallStreetOut, tpWallStreetOut, hedgeWallStreetOut, abrirBuyWallStreet, abrirSellWallStreet, cerrarBrokerWallStreet, motivoWallStreet] = procesarSesionTrade(enWallStreet, inicioWallStreet, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesWallStreet, cerradaWallStreet, dirWallStreet, slWallStreet, tpWallStreet, hedgeWallStreet, habilitarWallStreet)
+senalesWallStreet := senalesWallStreetOut
+cerradaWallStreet := cerradaWallStreetOut
+dirWallStreet := dirWallStreetOut
+slWallStreet := slWallStreetOut
+tpWallStreet := tpWallStreetOut
+hedgeWallStreet := hedgeWallStreetOut
 
 // -- cierres reales en el broker emulado --
 if cerrarBrokerPreNY
@@ -657,6 +722,8 @@ if cerrarBrokerNY
     strategy.close("NY", comment=motivoNY)
 if cerrarBrokerAsia
     strategy.close("Asia", comment=motivoAsia)
+if cerrarBrokerWallStreet
+    strategy.close("WallStreet", comment=motivoWallStreet)
 
 // Hedge Position ENTRE sesiones (confirmado por Fabián, 15/09): la
 // excepción de "dos trades a la vez" es solo para el MISMO sentido
@@ -668,13 +735,24 @@ if cerrarBrokerAsia
 // mantiene a Pine dentro de una única posición neta por símbolo (ver
 // comentario al inicio del archivo) -- nunca llega a intentar sostener un
 // BUY y un SELL a la vez de verdad.
-if (abrirBuyPreNY and dirNY == "SELL") or (abrirSellPreNY and dirNY == "BUY")
-    strategy.close("NY", comment="Hedge Position (cierre entre sesiones)")
-if (abrirBuyNY and dirPreNY == "SELL") or (abrirSellNY and dirPreNY == "BUY")
+//
+// Generalizado a 4 sesiones (16/09, al agregar Wall Street): una condición
+// por sesión OBJETIVO (la que se podría cerrar), evaluando si CUALQUIERA de
+// las otras 3 acaba de abrir en sentido contrario -- en vez de escribir a
+// mano cada combinación de pares (que crecería mucho al sumar sesiones).
+cierrePreNYPorHedge = (dirPreNY == "SELL" and (abrirBuyNY or abrirBuyAsia or abrirBuyWallStreet)) or (dirPreNY == "BUY" and (abrirSellNY or abrirSellAsia or abrirSellWallStreet))
+cierreNYPorHedge = (dirNY == "SELL" and (abrirBuyPreNY or abrirBuyAsia or abrirBuyWallStreet)) or (dirNY == "BUY" and (abrirSellPreNY or abrirSellAsia or abrirSellWallStreet))
+cierreAsiaPorHedge = (dirAsia == "SELL" and (abrirBuyPreNY or abrirBuyNY or abrirBuyWallStreet)) or (dirAsia == "BUY" and (abrirSellPreNY or abrirSellNY or abrirSellWallStreet))
+cierreWallStreetPorHedge = (dirWallStreet == "SELL" and (abrirBuyPreNY or abrirBuyNY or abrirBuyAsia)) or (dirWallStreet == "BUY" and (abrirSellPreNY or abrirSellNY or abrirSellAsia))
+
+if cierrePreNYPorHedge
     strategy.close("PreNY", comment="Hedge Position (cierre entre sesiones)")
-if (abrirBuyAsia and (dirPreNY == "SELL" or dirNY == "SELL")) or (abrirSellAsia and (dirPreNY == "BUY" or dirNY == "BUY"))
-    strategy.close("PreNY", comment="Hedge Position (cierre entre sesiones)")
+if cierreNYPorHedge
     strategy.close("NY", comment="Hedge Position (cierre entre sesiones)")
+if cierreAsiaPorHedge
+    strategy.close("Asia", comment="Hedge Position (cierre entre sesiones)")
+if cierreWallStreetPorHedge
+    strategy.close("WallStreet", comment="Hedge Position (cierre entre sesiones)")
 
 // -- entradas reales, una por sesión, con su propio id --
 if abrirBuyPreNY and not na(qtyBuy)
@@ -698,20 +776,28 @@ if abrirSellAsia and not na(qtySell)
     strategy.entry("Asia", strategy.short, qty=qtySell, comment="SELL Asia")
     strategy.exit("Salida Asia", from_entry="Asia", stop=slSell, limit=tpSell)
 
+if abrirBuyWallStreet and not na(qtyBuy)
+    strategy.entry("WallStreet", strategy.long, qty=qtyBuy, comment="BUY WallStreet")
+    strategy.exit("Salida WallStreet", from_entry="WallStreet", stop=slBuy, limit=tpBuy)
+if abrirSellWallStreet and not na(qtySell)
+    strategy.entry("WallStreet", strategy.short, qty=qtySell, comment="SELL WallStreet")
+    strategy.exit("Salida WallStreet", from_entry="WallStreet", stop=slSell, limit=tpSell)
+
 // ============================================================================
 // SECCIÓN 7 — PANEL DE ESTADO Y MÉTRICAS
 // ============================================================================
-var table panel = table.new(position.top_right, 1, 6, border_width=1)
+var table panel = table.new(position.top_right, 1, 7, border_width=1)
 if barstate.islast
     table.cell(panel, 0, 0, tendencia == "alcista" ? "Uptrend (BUY)" : tendencia == "bajista" ? "Downtrend (SELL)" : "Undefined", text_color=color.white, bgcolor=tendencia == "alcista" ? color.new(color.green, 40) : tendencia == "bajista" ? color.new(color.red, 40) : color.new(color.gray, 40))
     table.cell(panel, 0, 1, "Pre-NY: " + (na(dirPreNY) ? "sin trade" : dirPreNY + (not enPreNY ? " (arrastre)" : "")), text_color=color.white, bgcolor=color.new(color.blue, 60))
     table.cell(panel, 0, 2, "NY: " + (na(dirNY) ? "sin trade" : dirNY + (not enNY ? " (arrastre)" : "")), text_color=color.white, bgcolor=color.new(color.blue, 60))
     table.cell(panel, 0, 3, "Asia: " + (na(dirAsia) ? "sin trade" : dirAsia + (not enAsia ? " (arrastre)" : "")), text_color=color.white, bgcolor=color.new(color.blue, 60))
+    table.cell(panel, 0, 4, "Wall Street: " + (na(dirWallStreet) ? "sin trade" : dirWallStreet + (not enWallStreet ? " (arrastre)" : "")), text_color=color.white, bgcolor=color.new(color.blue, 60))
     // Métricas nativas de TradingView (misma fuente que la pestaña "Strategy
     // Tester") -- ganancia neta, cantidad de trades cerrados, % de aciertos y
     // profit factor, para tenerlos a la vista sin cambiar de pestaña.
     netProfitPct = strategy.initial_capital != 0 ? strategy.netprofit / strategy.initial_capital * 100 : 0
     winRate = strategy.closedtrades > 0 ? strategy.wintrades / strategy.closedtrades * 100 : 0
     pf = strategy.grossloss != 0 ? strategy.grossprofit / math.abs(strategy.grossloss) : na
-    table.cell(panel, 0, 4, "Neto: " + str.tostring(netProfitPct, "#.##") + "% | Trades: " + str.tostring(strategy.closedtrades), text_color=color.white, bgcolor=color.new(color.gray, 40))
-    table.cell(panel, 0, 5, "Win rate: " + str.tostring(winRate, "#.#") + "% | PF: " + (na(pf) ? "n/a" : str.tostring(pf, "#.##")), text_color=color.white, bgcolor=color.new(color.gray, 40))
+    table.cell(panel, 0, 5, "Neto: " + str.tostring(netProfitPct, "#.##") + "% | Trades: " + str.tostring(strategy.closedtrades), text_color=color.white, bgcolor=color.new(color.gray, 40))
+    table.cell(panel, 0, 6, "Win rate: " + str.tostring(winRate, "#.#") + "% | PF: " + (na(pf) ? "n/a" : str.tostring(pf, "#.##")), text_color=color.white, bgcolor=color.new(color.gray, 40))

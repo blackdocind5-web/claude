@@ -595,18 +595,53 @@ tocar los defaults ya validados en oro).
     mantiene una única posición neta por símbolo -- no hay forma nativa de
     sostener un BUY y un SELL abiertos a la vez (a diferencia de una cuenta
     de hedging en MT5). Solución: cada sesión opera bajo su propio id de
-    entrada ("PreNY"/"NY"/"Asia") con `pyramiding=3`, permitiendo múltiples
-    posiciones abiertas EN EL MISMO SENTIDO; el Hedge Position entre
-    sesiones (arriba) es lo que evita que el motor llegue a necesitar
+    entrada ("PreNY"/"NY"/"Asia"/"WallStreet") con `pyramiding=4`, permitiendo
+    múltiples posiciones abiertas EN EL MISMO SENTIDO; el Hedge Position
+    entre sesiones (arriba) es lo que evita que el motor llegue a necesitar
     sostener sentidos opuestos de verdad.
   - `procesarSesionTrade()`: función pura (mismo patrón que
     `procesarVelaM3()` de la Sección 2) que corre el límite diario/Hedge/
-    arrastre de UNA sesión -- se llama 3 veces (Pre-NY, NY, Asia), cada una
-    con su propio estado, nunca comparten contador ni trade entre sí.
+    arrastre de UNA sesión -- se llama 4 veces (Pre-NY, NY, Asia, Wall
+    Street), cada una con su propio estado, nunca comparten contador ni
+    trade entre sí.
   - Pendiente de validar: correr primero en oro (mismo período ya validado
     en vivo con el indicador) y confirmar que las entradas/salidas
     coinciden con lo que el indicador mostró, antes de confiar en los
     resultados de otros activos.
+- [x] **Fase 4 (backtesting) — filtros de sesión/día + sesión Wall Street
+  (16/09)**: a pedido de Fabián, para poder experimentar con distintas
+  combinaciones de franja horaria/sesión/día por activo al backtestear.
+  - **Sesión nueva "Wall Street"** (09:30-11:00 EST): pensada para
+    backtestear índices (Nasdaq, S&P 500, Dow Jones). A diferencia de
+    Pre-NY/NY/Asia (mutuamente excluyentes), esta se SUPERPONE con la
+    sesión NY (09:00-11:00 EST) -- si se habilitan las dos a la vez,
+    ambas reaccionan a las mismas señales durante el solapamiento
+    (09:30-11:00), duplicando entradas/riesgo en esa franja. Para
+    índices: Wall Street habilitada, NY deshabilitada.
+  - **Toggle on/off por sesión** (`habilitarPreNY`/`habilitarNY`/
+    `habilitarAsia`/`habilitarWallStreet`, grupo de inputs "Backtest —
+    Filtros de sesión y día"): solo afecta si esa sesión puede abrir
+    operaciones NUEVAS -- `procesarSesionTrade()` recibe un nuevo
+    parámetro `habilitadaEjecucion` que se usa únicamente en la regla 5
+    (señal nueva); el monitoreo de SL/TP y el arrastre de un trade ya
+    abierto (reglas 2-4) siguen corriendo siempre, incluso con la sesión
+    deshabilitada, para no romper un arrastre en curso.
+  - **Toggle on/off por día de la semana** (Lunes a Viernes,
+    `diaHabilitado`, usando `dayofweek(time, "America/New_York")`) --
+    Domingo queda siempre habilitado (Fabián no lo mencionó y es parte de
+    la sesión Asia, que arranca los domingos a la noche EST). Se aplica
+    como filtro adicional en `mecBuyGate`/`mecSellGate`, junto a
+    `barstate.isconfirmed`.
+  - **Hedge Position entre sesiones generalizado a 4 sesiones**: la lógica
+    pasó de 3 condiciones manuales por par de sesiones a 4 condiciones (una
+    por sesión objetivo), cada una evaluando si CUALQUIERA de las otras 3
+    acaba de abrir en sentido contrario -- evita que el número de
+    condiciones escale por combinación de pares al sumar sesiones.
+  - Panel de estado (Sección 7): fila nueva para Wall Street, tabla de 6 a
+    7 filas.
+  - `pyramiding` sube de 3 a 4 en la declaración `strategy()` para permitir
+    que las 4 sesiones tengan una posición abierta en el mismo sentido a
+    la vez.
 
 ## Decisiones de diseño (confirmadas con Fabián)
 
