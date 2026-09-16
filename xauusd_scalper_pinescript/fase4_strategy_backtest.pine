@@ -55,8 +55,9 @@ strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=1
 // Filtros de experimentación (agregado 16/09, a pedido de Fabián): en el
 // grupo de inputs "Backtest" hay toggles independientes para (a) permitir
 // o no que cada sesión (Pre-NY, NY, Asia, Wall Street) abra operaciones
-// NUEVAS, y (b) permitir o no operar en cada día de la semana (Lunes a
-// Viernes -- Domingo queda siempre habilitado, es parte de la sesión Asia).
+// NUEVAS, y (b) permitir o no operar en cada día de la semana, Domingo a
+// Viernes (agregado el toggle de Domingo el mismo 16/09, a pedido de
+// Fabián -- no queda habilitado por defecto sin poder desactivarlo).
 // Importante: estos toggles SOLO afectan si se abren entradas nuevas -- la
 // estructura M3, el MEC y el monitoreo de SL/TP de un trade ya abierto (o
 // arrastrado) siguen corriendo siempre, sin importar los toggles.
@@ -628,16 +629,15 @@ habilitarNY = input.bool(true, "Habilitar ejecución en NY", group=grpFiltros)
 habilitarAsia = input.bool(true, "Habilitar ejecución en Asia", group=grpFiltros)
 habilitarWallStreet = input.bool(false, "Habilitar ejecución en Wall Street (para índices: Nasdaq, S&P 500, Dow Jones -- ver nota sobre solapamiento con NY)", group=grpFiltros)
 
+habilitarDomingo = input.bool(true, "Habilitar Domingo", group=grpFiltros)
 habilitarLunes = input.bool(true, "Habilitar Lunes", group=grpFiltros)
 habilitarMartes = input.bool(true, "Habilitar Martes", group=grpFiltros)
 habilitarMiercoles = input.bool(true, "Habilitar Miércoles", group=grpFiltros)
 habilitarJueves = input.bool(true, "Habilitar Jueves", group=grpFiltros)
 habilitarViernes = input.bool(true, "Habilitar Viernes", group=grpFiltros)
 
-// Domingo queda siempre habilitado (Fabián no lo mencionó -- es parte de la
-// sesión Asia, que arranca los domingos por la noche EST)
 diaSemanaNY = dayofweek(time, "America/New_York")
-diaHabilitado = diaSemanaNY == dayofweek.sunday or (diaSemanaNY == dayofweek.monday and habilitarLunes) or (diaSemanaNY == dayofweek.tuesday and habilitarMartes) or (diaSemanaNY == dayofweek.wednesday and habilitarMiercoles) or (diaSemanaNY == dayofweek.thursday and habilitarJueves) or (diaSemanaNY == dayofweek.friday and habilitarViernes)
+diaHabilitado = (diaSemanaNY == dayofweek.sunday and habilitarDomingo) or (diaSemanaNY == dayofweek.monday and habilitarLunes) or (diaSemanaNY == dayofweek.tuesday and habilitarMartes) or (diaSemanaNY == dayofweek.wednesday and habilitarMiercoles) or (diaSemanaNY == dayofweek.thursday and habilitarJueves) or (diaSemanaNY == dayofweek.friday and habilitarViernes)
 
 inicioPreNY = enPreNY and not enPreNY[1]
 inicioNY    = enNY and not enNY[1]

@@ -626,12 +626,13 @@ tocar los defaults ya validados en oro).
     (señal nueva); el monitoreo de SL/TP y el arrastre de un trade ya
     abierto (reglas 2-4) siguen corriendo siempre, incluso con la sesión
     deshabilitada, para no romper un arrastre en curso.
-  - **Toggle on/off por día de la semana** (Lunes a Viernes,
+  - **Toggle on/off por día de la semana** (Domingo a Viernes,
     `diaHabilitado`, usando `dayofweek(time, "America/New_York")`) --
-    Domingo queda siempre habilitado (Fabián no lo mencionó y es parte de
-    la sesión Asia, que arranca los domingos a la noche EST). Se aplica
-    como filtro adicional en `mecBuyGate`/`mecSellGate`, junto a
-    `barstate.isconfirmed`.
+    inicialmente Domingo quedó sin toggle (siempre habilitado), pero
+    Fabián pidió agregarlo también como día desactivable el mismo 16/09,
+    así que quedaron los 6 días (Domingo a Viernes) con su propio
+    `habilitarX`, ninguno forzado. Se aplica como filtro adicional en
+    `mecBuyGate`/`mecSellGate`, junto a `barstate.isconfirmed`.
   - **Hedge Position entre sesiones generalizado a 4 sesiones**: la lógica
     pasó de 3 condiciones manuales por par de sesiones a 4 condiciones (una
     por sesión objetivo), cada una evaluando si CUALQUIERA de las otras 3
