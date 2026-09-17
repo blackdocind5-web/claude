@@ -543,8 +543,24 @@ tpSell = not na(distanciaFinalSell) ? close - distanciaFinalSell * RR_TP : na
 //      contraria. Acá además se filtra por `habilitadaEjecucion` (toggle de
 //      sesión, 16/09) -- si está apagado, esta sesión sigue vigilando SL/TP
 //      y arrastre de un trade ya abierto (reglas 2-4), pero no abre
-//      operaciones nuevas.
-procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tpBuyIn, slSellIn, tpSellIn, tendenciaActual, esCambioEstrAlto, esCambioEstrBajo, senalesIn, cerradaIn, dirIn, slIn, tpIn, hedgeFlagIn, habilitadaEjecucion) =>
+//      operaciones nuevas. También se filtra por `qtyBuyDisponible`/
+//      `qtySellDisponible` (fix 17/09, ver bug reportado por Fabián): si en
+//      esa barra `qty` da `na` (distancia al SL inválida en ese instante),
+//      el broker NO va a poder abrir la orden real -- así que el estado
+//      interno TAMPOCO debe avanzar (ni contar la señal, ni fijar
+//      dirOut/slOut/tpOut, ni poner abrirBuy/abrirSell en true). Antes este
+//      chequeo de qty vivía SOLO afuera, en el bloque que llama a
+//      strategy.entry() -- eso permitía que el estado interno "creyera" que
+//      había un trade abierto cuando en realidad el broker nunca lo abrió
+//      (señal fantasma). La regla 2 (SL/TP) seguía vigilando ese trade
+//      fantasma con su propio SL/TP y lo "cerraba" internamente sin avisar
+//      al broker, mientras el trade REAL (de una señal distinta, ya abierta
+//      o abierta después) quedaba sin nadie vigilándolo correctamente hasta
+//      que otro evento no relacionado (fin de sesión, CHoCH, nueva señal) lo
+//      cerraba tarde y a un precio distinto del TP real -- exactamente el
+//      patrón reportado en GBPUSD y AUDUSD (cierre mucho después del TP,
+//      con resultado peor o directamente opuesto al esperado).
+procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tpBuyIn, slSellIn, tpSellIn, tendenciaActual, esCambioEstrAlto, esCambioEstrBajo, senalesIn, cerradaIn, dirIn, slIn, tpIn, hedgeFlagIn, habilitadaEjecucion, qtyBuyDisponible, qtySellDisponible) =>
     senalesOut = senalesIn
     cerradaOut = cerradaIn
     dirOut = dirIn
@@ -597,7 +613,7 @@ procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tp
     puedeBuy  = not cerradaOut and ((senalesOut < 2 and (na(dirOut) or dirOut == "SELL")) or tercerHedgeBuyLocal)
     puedeSell = not cerradaOut and ((senalesOut < 2 and (na(dirOut) or dirOut == "BUY"))  or tercerHedgeSellLocal)
 
-    if enEstaSesion and habilitadaEjecucion and mecBuy and puedeBuy
+    if enEstaSesion and habilitadaEjecucion and qtyBuyDisponible and mecBuy and puedeBuy
         esHedgeEsta = not na(dirOut) and dirOut == "SELL"
         senalesOut := senalesOut + 1
         dirOut := "BUY"
@@ -606,7 +622,7 @@ procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tp
         hedgeFlagOut := esHedgeEsta
         abrirBuy := true
 
-    if enEstaSesion and habilitadaEjecucion and mecSell and puedeSell
+    if enEstaSesion and habilitadaEjecucion and qtySellDisponible and mecSell and puedeSell
         esHedgeEsta = not na(dirOut) and dirOut == "BUY"
         senalesOut := senalesOut + 1
         dirOut := "SELL"
@@ -648,6 +664,18 @@ inicioWallStreet = enWallStreet and not enWallStreet[1]
 // en cada entrada con el equity y la distancia vigentes en ese momento
 qtyBuy  = not na(distanciaFinalBuy)  and distanciaFinalBuy  > 0 ? (strategy.equity * RIESGO_PCT / 100) / distanciaFinalBuy  : na
 qtySell = not na(distanciaFinalSell) and distanciaFinalSell > 0 ? (strategy.equity * RIESGO_PCT / 100) / distanciaFinalSell : na
+qtyBuyDisponible  = not na(qtyBuy)
+qtySellDisponible = not na(qtySell)
+
+// DEBUG temporal (17/09, agregado para diagnosticar el bug de señal
+// fantasma reportado por Fabián): valor exacto de qtyBuy/qtySell bar a bar
+// -- si en la barra de una señal esto da "na" (círculo ausente en vez de un
+// número), significa que la distancia al SL era inválida en ese instante y
+// por eso el broker no pudo abrir la orden real, aunque el MEC (Secciones
+// 1-6B, idéntico al indicador) sí haya reconocido la señal.
+mostrarDebugQty = input.bool(false, "DEBUG temporal: qtyBuy/qtySell bar a bar (Ventana de Datos)", group=grpBacktest)
+plot(mostrarDebugQty ? qtyBuy : na, title="DEBUG qtyBuy", color=color.blue, style=plot.style_circles, linewidth=2)
+plot(mostrarDebugQty ? qtySell : na, title="DEBUG qtySell", color=color.purple, style=plot.style_circles, linewidth=2)
 
 mecBuyGate  = mecBuyBruto  and barstate.isconfirmed and diaHabilitado
 mecSellGate = mecSellBruto and barstate.isconfirmed and diaHabilitado
@@ -683,7 +711,7 @@ var float slWallStreet = na
 var float tpWallStreet = na
 var bool hedgeWallStreet = false
 
-[senalesPreNYOut, cerradaPreNYOut, dirPreNYOut, slPreNYOut, tpPreNYOut, hedgePreNYOut, abrirBuyPreNY, abrirSellPreNY, cerrarBrokerPreNY, motivoPreNY] = procesarSesionTrade(enPreNY, inicioPreNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesPreNY, cerradaPreNY, dirPreNY, slPreNY, tpPreNY, hedgePreNY, habilitarPreNY)
+[senalesPreNYOut, cerradaPreNYOut, dirPreNYOut, slPreNYOut, tpPreNYOut, hedgePreNYOut, abrirBuyPreNY, abrirSellPreNY, cerrarBrokerPreNY, motivoPreNY] = procesarSesionTrade(enPreNY, inicioPreNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesPreNY, cerradaPreNY, dirPreNY, slPreNY, tpPreNY, hedgePreNY, habilitarPreNY, qtyBuyDisponible, qtySellDisponible)
 senalesPreNY := senalesPreNYOut
 cerradaPreNY := cerradaPreNYOut
 dirPreNY := dirPreNYOut
@@ -691,7 +719,7 @@ slPreNY := slPreNYOut
 tpPreNY := tpPreNYOut
 hedgePreNY := hedgePreNYOut
 
-[senalesNYOut, cerradaNYOut, dirNYOut, slNYOut, tpNYOut, hedgeNYOut, abrirBuyNY, abrirSellNY, cerrarBrokerNY, motivoNY] = procesarSesionTrade(enNY, inicioNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesNY, cerradaNY, dirNY, slNY, tpNY, hedgeNY, habilitarNY)
+[senalesNYOut, cerradaNYOut, dirNYOut, slNYOut, tpNYOut, hedgeNYOut, abrirBuyNY, abrirSellNY, cerrarBrokerNY, motivoNY] = procesarSesionTrade(enNY, inicioNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesNY, cerradaNY, dirNY, slNY, tpNY, hedgeNY, habilitarNY, qtyBuyDisponible, qtySellDisponible)
 senalesNY := senalesNYOut
 cerradaNY := cerradaNYOut
 dirNY := dirNYOut
@@ -699,7 +727,7 @@ slNY := slNYOut
 tpNY := tpNYOut
 hedgeNY := hedgeNYOut
 
-[senalesAsiaOut, cerradaAsiaOut, dirAsiaOut, slAsiaOut, tpAsiaOut, hedgeAsiaOut, abrirBuyAsia, abrirSellAsia, cerrarBrokerAsia, motivoAsia] = procesarSesionTrade(enAsia, inicioAsia, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesAsia, cerradaAsia, dirAsia, slAsia, tpAsia, hedgeAsia, habilitarAsia)
+[senalesAsiaOut, cerradaAsiaOut, dirAsiaOut, slAsiaOut, tpAsiaOut, hedgeAsiaOut, abrirBuyAsia, abrirSellAsia, cerrarBrokerAsia, motivoAsia] = procesarSesionTrade(enAsia, inicioAsia, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesAsia, cerradaAsia, dirAsia, slAsia, tpAsia, hedgeAsia, habilitarAsia, qtyBuyDisponible, qtySellDisponible)
 senalesAsia := senalesAsiaOut
 cerradaAsia := cerradaAsiaOut
 dirAsia := dirAsiaOut
@@ -707,7 +735,7 @@ slAsia := slAsiaOut
 tpAsia := tpAsiaOut
 hedgeAsia := hedgeAsiaOut
 
-[senalesWallStreetOut, cerradaWallStreetOut, dirWallStreetOut, slWallStreetOut, tpWallStreetOut, hedgeWallStreetOut, abrirBuyWallStreet, abrirSellWallStreet, cerrarBrokerWallStreet, motivoWallStreet] = procesarSesionTrade(enWallStreet, inicioWallStreet, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesWallStreet, cerradaWallStreet, dirWallStreet, slWallStreet, tpWallStreet, hedgeWallStreet, habilitarWallStreet)
+[senalesWallStreetOut, cerradaWallStreetOut, dirWallStreetOut, slWallStreetOut, tpWallStreetOut, hedgeWallStreetOut, abrirBuyWallStreet, abrirSellWallStreet, cerrarBrokerWallStreet, motivoWallStreet] = procesarSesionTrade(enWallStreet, inicioWallStreet, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesWallStreet, cerradaWallStreet, dirWallStreet, slWallStreet, tpWallStreet, hedgeWallStreet, habilitarWallStreet, qtyBuyDisponible, qtySellDisponible)
 senalesWallStreet := senalesWallStreetOut
 cerradaWallStreet := cerradaWallStreetOut
 dirWallStreet := dirWallStreetOut

@@ -643,6 +643,34 @@ tocar los defaults ya validados en oro).
   - `pyramiding` sube de 3 a 4 en la declaración `strategy()` para permitir
     que las 4 sesiones tengan una posición abierta en el mismo sentido a
     la vez.
+- [x] **Fase 4 (backtesting) — fix señal fantasma / cierre tardío (17/09)**:
+  Fabián reportó dos síntomas al probar en EURUSD, GBPUSD y AUDUSD: (1) una
+  señal SELL que el MEC reconocía (Sección 1-6B, copia literal del
+  indicador) nunca se abrió como trade real, y (2) trades que debían cerrar
+  por TP en un momento puntual siguieron corriendo mucho más tiempo,
+  cerrando después con un resultado peor (o directamente opuesto) al
+  esperado. Ambos síntomas resultaron ser la MISMA causa: el chequeo
+  `not na(qtyBuy)`/`not na(qtySell)` (necesario porque `qty` puede dar `na`
+  si la distancia al SL es inválida en ese instante puntual) vivía SOLO en
+  el bloque externo que llama a `strategy.entry()`, fuera de
+  `procesarSesionTrade()` -- así que si `qty` daba `na`, el broker no abría
+  ninguna orden real, pero el ESTADO INTERNO de la función (`dirOut`,
+  `senalesOut`, etc.) avanzaba igual, como si el trade sí se hubiera
+  abierto ("señal fantasma"). La regla 2 (monitoreo de SL/TP, que corre
+  siempre) vigilaba ese trade fantasma con su propio SL/TP y lo "cerraba"
+  puramente en el estado interno sin avisarle nunca al broker (asume que el
+  cierre real ya lo resuelve el bracket nativo `strategy.exit()`) -- mientras
+  el trade REAL, de una señal distinta, quedaba sin nadie vigilándolo
+  correctamente hasta que un evento no relacionado (fin de sesión, CHoCH,
+  nueva señal) lo cerraba tarde y a un precio distinto del TP real. Fix:
+  `procesarSesionTrade()` ahora recibe `qtyBuyDisponible`/
+  `qtySellDisponible` como parámetros y los exige (junto con
+  `habilitadaEjecucion`) para contar una señal nueva -- si `qty` da `na` en
+  esa barra, el estado interno NO avanza, igual que el broker no abre nada.
+  Se agregó también un toggle de DEBUG (`mostrarDebugQty`) que plotea
+  `qtyBuy`/`qtySell` bar a bar, para poder verificar a futuro con datos
+  concretos (Ventana de Datos) si `qty` dio `na` en el momento exacto de
+  una señal reportada como faltante o mal cerrada.
 
 ## Decisiones de diseño (confirmadas con Fabián)
 
