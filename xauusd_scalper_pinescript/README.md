@@ -649,7 +649,7 @@ tocar los defaults ya validados en oro).
   indicador) nunca se abrió como trade real, y (2) trades que debían cerrar
   por TP en un momento puntual siguieron corriendo mucho más tiempo,
   cerrando después con un resultado peor (o directamente opuesto) al
-  esperado. Ambos síntomas resultaron ser la MISMA causa: el chequeo
+  esperado. Primera hipótesis (parcialmente correcta): el chequeo
   `not na(qtyBuy)`/`not na(qtySell)` (necesario porque `qty` puede dar `na`
   si la distancia al SL es inválida en ese instante puntual) vivía SOLO en
   el bloque externo que llama a `strategy.entry()`, fuera de
@@ -658,19 +658,33 @@ tocar los defaults ya validados en oro).
   `senalesOut`, etc.) avanzaba igual, como si el trade sí se hubiera
   abierto ("señal fantasma"). La regla 2 (monitoreo de SL/TP, que corre
   siempre) vigilaba ese trade fantasma con su propio SL/TP y lo "cerraba"
-  puramente en el estado interno sin avisarle nunca al broker (asume que el
-  cierre real ya lo resuelve el bracket nativo `strategy.exit()`) -- mientras
-  el trade REAL, de una señal distinta, quedaba sin nadie vigilándolo
-  correctamente hasta que un evento no relacionado (fin de sesión, CHoCH,
-  nueva señal) lo cerraba tarde y a un precio distinto del TP real. Fix:
+  puramente en el estado interno sin avisarle nunca al broker. Fix:
   `procesarSesionTrade()` ahora recibe `qtyBuyDisponible`/
   `qtySellDisponible` como parámetros y los exige (junto con
-  `habilitadaEjecucion`) para contar una señal nueva -- si `qty` da `na` en
-  esa barra, el estado interno NO avanza, igual que el broker no abre nada.
-  Se agregó también un toggle de DEBUG (`mostrarDebugQty`) que plotea
-  `qtyBuy`/`qtySell` bar a bar, para poder verificar a futuro con datos
-  concretos (Ventana de Datos) si `qty` dio `na` en el momento exacto de
-  una señal reportada como faltante o mal cerrada.
+  `habilitadaEjecucion`) para contar una señal nueva. Se agregó también un
+  toggle de DEBUG (`mostrarDebugQty`) que plotea `qtyBuy`/`qtySell` bar a
+  bar. Este fix resolvió el síntoma (1) (EURUSD, confirmado por Fabián),
+  pero el síntoma (2) persistió en GBPUSD y AUDUSD -- ver el siguiente
+  cambio para la causa real de ese caso.
+- [x] **Fase 4 (backtesting) — fix Hedge dentro de una misma sesión (17/09)**:
+  causa real del síntoma (2) que sobrevivió al fix anterior. El Hedge
+  ENTRE sesiones distintas (ej. Pre-NY abre BUY mientras NY tenía una SELL
+  arrastrada) siempre cerró la posición vieja con un `strategy.close()`
+  EXPLÍCITO antes de abrir la nueva -- y eso funcionaba bien. Pero el Hedge
+  DENTRO de la misma sesión (ej. SELL 07:04 -> BUY 08:05 de Fabián en
+  GBPUSD) nunca llamaba a `strategy.close()`: solo mandaba un
+  `strategy.entry()` en sentido contrario, confiando en que el motor de
+  Pine revirtiera la posición sola. Eso cerraba el trade viejo a tiempo
+  (por eso Fabián lo veía bien), pero el bracket de salida
+  (`strategy.exit`) del trade NUEVO, reusando el mismo nombre de orden
+  sobre una posición recién revertida en el mismo tick, no quedaba
+  enganchado de forma confiable -- corría sin vigilancia real hasta que un
+  evento ajeno (fin de sesión, CHoCH) lo cerraba tarde y mal, exactamente
+  el patrón reportado en GBPUSD/AUDUSD. Fix: antes de CADA entrada nueva
+  (en las 4 sesiones, BUY y SELL) se llama a `strategy.close(idSesion)`
+  explícito -- inofensivo cuando no hay nada abierto, así que se hace
+  siempre, haya o no Hedge de por medio. Ahora el dentro-de-sesión se
+  comporta exactamente igual que el entre-sesiones.
 
 ## Decisiones de diseño (confirmadas con Fabián)
 

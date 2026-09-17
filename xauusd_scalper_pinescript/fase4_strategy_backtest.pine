@@ -47,6 +47,16 @@ strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=1
 // cierra primero al que estaba abierto (el arrastrado) y recién después abre
 // el nuevo. Ver el bloque "Hedge Position entre sesiones" más abajo.
 //
+// Hedge DENTRO de la misma sesión (fix 17/09, bug reportado por Fabián en
+// GBPUSD/AUDUSD): el cierre del trade viejo antes de abrir el nuevo en
+// sentido contrario se hace SIEMPRE con un strategy.close() explícito,
+// tanto entre sesiones como dentro de una misma sesión -- antes, dentro de
+// una sesión, se confiaba en que el motor de Pine revirtiera la posición
+// solo al mandar la entrada opuesta, y eso dejaba al bracket de salida
+// (strategy.exit) de la entrada nueva sin engancharse de forma confiable,
+// corriendo sin vigilancia real hasta que otro evento ajeno lo cerraba
+// tarde y mal. Ver el bloque "entradas reales" más abajo.
+//
 // Validación pendiente: correr esto primero en ORO (mismo período que ya
 // validamos con el indicador en vivo) y comparar que las entradas/salidas
 // coincidan con lo que el indicador ya mostró, antes de confiar en los
@@ -783,31 +793,55 @@ if cierreWallStreetPorHedge
     strategy.close("WallStreet", comment="Hedge Position (cierre entre sesiones)")
 
 // -- entradas reales, una por sesión, con su propio id --
+// Fix 17/09 (bug reportado por Fabián en GBPUSD/AUDUSD): antes de CADA
+// entrada nueva se cierra explícitamente el id de esa sesión con
+// strategy.close(), en vez de confiar en que Pine revierta la posición
+// solo cuando la nueva entrada va en sentido contrario a la que ya estaba
+// abierta (Hedge DENTRO de la misma sesión). Es exactamente lo mismo que
+// ya se hacía para el Hedge ENTRE sesiones (bloque de arriba) -- ahí SÍ
+// funcionaba porque cerraba explícito antes de abrir. Dentro de la misma
+// sesión, en cambio, se abría la entrada opuesta sin cerrar primero:
+// el trade viejo se cerraba a tiempo (reversión implícita del motor), pero
+// el bracket de salida (strategy.exit) de la entrada NUEVA, reusando el
+// mismo nombre de orden ("Salida X") sobre una posición recién revertida
+// en el mismo tick, no quedaba enganchado de forma confiable al trade
+// nuevo -- quedaba sin vigilancia real hasta que otro evento ajeno (fin de
+// sesión, CHoCH) lo cerraba tarde y con resultado equivocado. Llamar a
+// strategy.close() acá es inofensivo cuando no hay nada abierto (no hace
+// nada), así que se hace siempre, haya o no Hedge de por medio.
 if abrirBuyPreNY and not na(qtyBuy)
+    strategy.close("PreNY", comment="Reset antes de nueva entrada")
     strategy.entry("PreNY", strategy.long, qty=qtyBuy, comment="BUY PreNY")
     strategy.exit("Salida PreNY", from_entry="PreNY", stop=slBuy, limit=tpBuy)
 if abrirSellPreNY and not na(qtySell)
+    strategy.close("PreNY", comment="Reset antes de nueva entrada")
     strategy.entry("PreNY", strategy.short, qty=qtySell, comment="SELL PreNY")
     strategy.exit("Salida PreNY", from_entry="PreNY", stop=slSell, limit=tpSell)
 
 if abrirBuyNY and not na(qtyBuy)
+    strategy.close("NY", comment="Reset antes de nueva entrada")
     strategy.entry("NY", strategy.long, qty=qtyBuy, comment="BUY NY")
     strategy.exit("Salida NY", from_entry="NY", stop=slBuy, limit=tpBuy)
 if abrirSellNY and not na(qtySell)
+    strategy.close("NY", comment="Reset antes de nueva entrada")
     strategy.entry("NY", strategy.short, qty=qtySell, comment="SELL NY")
     strategy.exit("Salida NY", from_entry="NY", stop=slSell, limit=tpSell)
 
 if abrirBuyAsia and not na(qtyBuy)
+    strategy.close("Asia", comment="Reset antes de nueva entrada")
     strategy.entry("Asia", strategy.long, qty=qtyBuy, comment="BUY Asia")
     strategy.exit("Salida Asia", from_entry="Asia", stop=slBuy, limit=tpBuy)
 if abrirSellAsia and not na(qtySell)
+    strategy.close("Asia", comment="Reset antes de nueva entrada")
     strategy.entry("Asia", strategy.short, qty=qtySell, comment="SELL Asia")
     strategy.exit("Salida Asia", from_entry="Asia", stop=slSell, limit=tpSell)
 
 if abrirBuyWallStreet and not na(qtyBuy)
+    strategy.close("WallStreet", comment="Reset antes de nueva entrada")
     strategy.entry("WallStreet", strategy.long, qty=qtyBuy, comment="BUY WallStreet")
     strategy.exit("Salida WallStreet", from_entry="WallStreet", stop=slBuy, limit=tpBuy)
 if abrirSellWallStreet and not na(qtySell)
+    strategy.close("WallStreet", comment="Reset antes de nueva entrada")
     strategy.entry("WallStreet", strategy.short, qty=qtySell, comment="SELL WallStreet")
     strategy.exit("Salida WallStreet", from_entry="WallStreet", stop=slSell, limit=tpSell)
 
