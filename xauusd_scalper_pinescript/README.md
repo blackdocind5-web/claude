@@ -684,7 +684,41 @@ tocar los defaults ya validados en oro).
   (en las 4 sesiones, BUY y SELL) se llama a `strategy.close(idSesion)`
   explícito -- inofensivo cuando no hay nada abierto, así que se hace
   siempre, haya o no Hedge de por medio. Ahora el dentro-de-sesión se
-  comporta exactamente igual que el entre-sesiones.
+  comporta exactamente igual que el entre-sesiones. **Resultado real**:
+  mejora parcial -- el cierre del PRIMER trade del Hedge ahora se ve
+  explícito en la Lista de operaciones ("Reset antes de nueva entrada"),
+  pero el SEGUNDO trade (el que reemplaza al primero) seguía cerrando tarde
+  y mal -- la hipótesis de la reversión implícita no era la causa completa.
+  Ver el siguiente cambio para la causa real, encontrada recién con
+  evidencia directa del motivo de cierre.
+- [x] **Fase 4 (backtesting) — causa real y fix definitivo del cierre
+  tardío (18/09)**: Fabián reportó que el fix anterior no resolvió el
+  síntoma en GBPUSD/AUDUSD, y compartió el motivo REAL de cierre que
+  muestra la Lista de operaciones de TradingView para el trade
+  problemático de cada par: en AUDUSD decía **"Cierre fin de sesión
+  (estructura en contra)"** (regla 3) y en GBPUSD decía **"SELL NY"** (la
+  entrada de la sesión NY, vía Hedge entre sesiones). En NINGUNO de los dos
+  casos el motivo era el id del bracket nativo ("Salida PreNY"/"Salida
+  NY") -- prueba directa de que el bracket nativo (`strategy.exit()` con
+  `stop`/`limit`) **nunca llegó a disparar el cierre**, ni una sola vez, en
+  ninguno de los casos reportados. Causa real: con 4 ids de sesión
+  compartiendo la ÚNICA posición neta que Pine mantiene por símbolo (ver
+  comentario al inicio del archivo), el bracket nativo no distingue de
+  forma confiable a qué entrada pertenece cada vez que hay Hedge o arrastre
+  de por medio -- terminaba sin disparar nunca, y el trade quedaba corriendo
+  hasta que otro mecanismo (fin de sesión, CHoCH, Hedge) lo cerraba, mucho
+  más tarde y con el resultado que tocara en ese momento en vez del TP/SL
+  real. Fix definitivo: se deja de usar `strategy.exit()` con `stop`/`limit`
+  por completo. La regla 2 de `procesarSesionTrade()` (monitoreo de SL/TP,
+  que ya corre bar a bar) ahora CIERRA de verdad con `cerrarBroker` +
+  `motivoCierre` ("TP alcanzado"/"SL alcanzado"), reutilizando el mismo
+  bloque de `strategy.close()` que ya usan (con éxito, confirmado por
+  Fabián) fin de sesión, CHoCH y Hedge -- una única forma de cerrar en vez
+  de dos mecanismos en paralelo que podían desincronizarse. Costo aceptado:
+  el cierre ahora llena en la apertura de la barra siguiente (orden de
+  mercado) en vez de exactamente al precio de TP/SL -- un pequeño
+  deslizamiento de precio, mínimo comparado con el error de horas y
+  resultado invertido que tenía antes.
 
 ## Decisiones de diseño (confirmadas con Fabián)
 
