@@ -714,11 +714,33 @@ tocar los defaults ya validados en oro).
   `motivoCierre` ("TP alcanzado"/"SL alcanzado"), reutilizando el mismo
   bloque de `strategy.close()` que ya usan (con éxito, confirmado por
   Fabián) fin de sesión, CHoCH y Hedge -- una única forma de cerrar en vez
-  de dos mecanismos en paralelo que podían desincronizarse. Costo aceptado:
-  el cierre ahora llena en la apertura de la barra siguiente (orden de
-  mercado) en vez de exactamente al precio de TP/SL -- un pequeño
-  deslizamiento de precio, mínimo comparado con el error de horas y
-  resultado invertido que tenía antes.
+  de dos mecanismos en paralelo que podían desincronizarse. **Este cambio se
+  revirtió el mismo día** -- ver el siguiente punto.
+- [x] **Fase 4 (backtesting) — fix definitivo (bueno) del cierre tardío,
+  con id único por entrada (18/09)**: Fabián probó el cambio anterior y
+  detectó a tiempo un problema mucho más grave que el original: cerrar
+  siempre con `strategy.close()` (orden de mercado) resolvía el TIMING pero
+  rompía el PRECIO de **todas** las operaciones, no solo las de Hedge --
+  con `process_orders_on_close=false`, una orden de mercado llena en la
+  apertura de la vela SIGUIENTE, no al precio exacto de TP/SL. Fabián lo
+  confirmó corriendo el mismo período (26/01/2026-18/09/2026) con y sin el
+  cambio: las métricas de la Strategy Tester quedaron completamente
+  invertidas (de +32,99% con factor de ganancias 1,48 a +1,25% con factor
+  de ganancias 1,02). La causa real del cierre tardío no era "el bracket
+  nativo es poco confiable en general" -- era que **todas las sesiones
+  reusaban el mismo id de entrada** ("PreNY", "NY", etc.) para cada
+  operación nueva, y cerrar + volver a abrir bajo ese mismo nombre (el caso
+  de Hedge) dejaba el bracket de la entrada nueva sin engancharse de forma
+  confiable. Fix definitivo: cada entrada real recibe un id ÚNICO e
+  IRREPETIBLE por operación (`"PreNY_1"`, `"PreNY_2"`, `"PreNY_3"`... vía
+  `contadorPreNY`/`idActualPreNY`, y sus equivalentes de NY/Asia/
+  WallStreet) -- nunca se reabre bajo un id ya usado, así que el bracket
+  nativo (`strategy.exit()` con `stop`/`limit`) nunca tiene ambigüedad
+  sobre a qué entrada pertenece, ni siquiera en un Hedge. El bracket nativo
+  vuelve a ser el mecanismo de cierre real (precio exacto, intrabar) -- la
+  regla 2 de `procesarSesionTrade()` sigue disparando `cerrarBroker` +
+  `motivoCierre` pero ahora como RED DE SEGURIDAD (normalmente un no-op,
+  ya que el bracket cierra primero), no como mecanismo principal.
 
 ## Decisiones de diseño (confirmadas con Fabián)
 
