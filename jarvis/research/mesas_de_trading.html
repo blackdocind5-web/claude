@@ -1,0 +1,425 @@
+<title>Anatomía de una Mesa de Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#f4f6f5;
+  --surface:#ffffff;
+  --ink:#16222b;
+  --ink-2:#44525c;
+  --ink-3:#6b7a84;
+  --rule:#d5dcdf;
+  --accent:#0d6b73;
+  --accent-soft:#e1efef;
+  --bid:#1d7a46;
+  --ask:#b23a2e;
+  --amber:#9a6a00;
+  --amber-soft:#f6ecd4;
+  --code-bg:#edf1f2;
+  --display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --ground:#0f171c;
+    --surface:#162128;
+    --ink:#e4ebee;
+    --ink-2:#b3c0c7;
+    --ink-3:#86959d;
+    --rule:#2b3a43;
+    --accent:#4fb8bf;
+    --accent-soft:#16363a;
+    --bid:#4cc27d;
+    --ask:#ef7a6c;
+    --amber:#e2b04a;
+    --amber-soft:#33291a;
+    --code-bg:#1c2a32;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#0f171c;
+  --surface:#162128;
+  --ink:#e4ebee;
+  --ink-2:#b3c0c7;
+  --ink-3:#86959d;
+  --rule:#2b3a43;
+  --accent:#4fb8bf;
+  --accent-soft:#16363a;
+  --bid:#4cc27d;
+  --ask:#ef7a6c;
+  --amber:#e2b04a;
+  --amber-soft:#33291a;
+  --code-bg:#1c2a32;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6;padding:0 20px;}
+.wrap{max-width:980px;margin:0 auto;padding-block:40px 80px}
+.prose{max-width:68ch}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(2.1rem,5vw,3.2rem);font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.75rem;font-weight:600;margin-bottom:.4rem}
+h3{font-size:1.15rem;font-weight:600}
+p{margin:.6rem 0}
+a{color:var(--accent);text-underline-offset:2px}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+.eyebrow{font-family:var(--mono);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.lede{font-size:1.15rem;color:var(--ink-2);max-width:62ch;margin-top:1rem}
+.meta{display:flex;flex-wrap:wrap;gap:6px 20px;margin-top:1.2rem;font-family:var(--mono);font-size:.8rem;color:var(--ink-3)}
+header.top{border-bottom:1px solid var(--rule);padding-bottom:28px}
+
+/* ticker strip */
+.tape{display:flex;flex-wrap:wrap;gap:0;margin-top:28px;border:1px solid var(--rule);background:var(--surface);border-radius:4px;overflow:hidden}
+.tape div{flex:1 1 180px;padding:14px 16px;border-right:1px solid var(--rule)}
+.tape div:last-child{border-right:0}
+.tape b{display:block;font-family:var(--mono);font-size:1.35rem;font-weight:500;font-variant-numeric:tabular-nums;color:var(--ink)}
+.tape span{font-size:.82rem;color:var(--ink-2);line-height:1.35;display:block;margin-top:2px}
+
+nav.toc{margin-top:28px;display:flex;flex-wrap:wrap;gap:8px}
+nav.toc a{font-family:var(--mono);font-size:.78rem;text-decoration:none;color:var(--ink-2);border:1px solid var(--rule);padding:4px 10px;border-radius:999px;background:var(--surface)}
+nav.toc a:hover{border-color:var(--accent);color:var(--accent)}
+
+section{padding-top:56px}
+section > .eyebrow{display:block;margin-bottom:6px}
+
+.keypoints{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:18px}
+.kp{background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:16px 18px}
+.kp h3{font-size:1rem;margin-bottom:4px}
+.kp p{margin:0;font-size:.93rem;color:var(--ink-2)}
+
+/* firm models */
+.models{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:20px}
+.model{background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:18px 20px;display:flex;flex-direction:column;gap:8px}
+.model .tag{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.model .firms{font-size:.85rem;color:var(--ink-3);font-family:var(--mono)}
+.model p{font-size:.93rem;margin:0;color:var(--ink-2)}
+.model ul{margin:4px 0 0;padding-left:18px;font-size:.9rem;color:var(--ink-2)}
+.model li{margin:2px 0}
+
+/* office layers */
+.layers{margin-top:20px;border:1px solid var(--rule);border-radius:4px;overflow:hidden;background:var(--surface)}
+.layer{display:grid;grid-template-columns:170px 1fr;border-bottom:1px solid var(--rule)}
+.layer:last-child{border-bottom:0}
+.layer .lh{padding:16px;font-family:var(--display);font-weight:600;font-size:1.05rem;background:var(--accent-soft);color:var(--ink)}
+.layer .lh small{display:block;font-family:var(--mono);font-weight:400;font-size:.72rem;color:var(--ink-3);letter-spacing:.04em;margin-top:2px}
+.layer .lb{padding:14px 16px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start}
+.chip{font-size:.85rem;border:1px solid var(--rule);border-radius:3px;padding:3px 9px;background:var(--ground);color:var(--ink)}
+@media (max-width:560px){.layer{grid-template-columns:1fr}}
+
+/* tables */
+.tbl{overflow-x:auto;margin-top:18px;border:1px solid var(--rule);border-radius:4px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:.9rem}
+th,td{text-align:left;vertical-align:top;padding:10px 14px;border-bottom:1px solid var(--rule)}
+th{font-family:var(--mono);font-size:.72rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);background:var(--ground)}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600;white-space:nowrap}
+td.muted{color:var(--ink-2)}
+
+/* spectrum */
+.spectrum{margin-top:22px}
+.bar{height:10px;border-radius:5px;background:linear-gradient(90deg,var(--amber) 0%,var(--accent) 100%);opacity:.85}
+.ends{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.75rem;color:var(--ink-3);margin-top:6px}
+.spec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:16px}
+.spec{border-top:3px solid var(--rule);padding-top:10px}
+.spec.s1{border-color:var(--amber)}
+.spec.s4{border-color:var(--accent)}
+.spec h3{font-size:.98rem}
+.spec p{font-size:.88rem;color:var(--ink-2);margin:.3rem 0 0}
+
+/* day timeline */
+.day{margin-top:18px;display:grid;gap:0;border-left:2px solid var(--rule);padding-left:0}
+.slot{display:grid;grid-template-columns:92px 1fr;gap:14px;padding:10px 0 10px 16px;position:relative}
+.slot::before{content:"";position:absolute;left:-6px;top:17px;width:10px;height:10px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.slot time{font-family:var(--mono);font-size:.85rem;color:var(--accent);font-variant-numeric:tabular-nums;padding-top:1px}
+.slot p{margin:0;font-size:.93rem;color:var(--ink-2)}
+.slot b{color:var(--ink);font-weight:600}
+
+.callout{margin-top:22px;background:var(--amber-soft);border-radius:4px;padding:16px 18px;font-size:.95rem}
+.callout b{color:var(--ink)}
+.callout .eyebrow{color:var(--amber);display:block;margin-bottom:4px}
+
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;margin-top:10px}
+
+/* action list */
+.actions{margin-top:18px;display:grid;gap:12px}
+.act{display:grid;grid-template-columns:34px 1fr;gap:12px;background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:14px 16px}
+.act .n{font-family:var(--mono);font-weight:500;color:var(--accent);font-size:1.05rem}
+.act h3{font-size:1rem}
+.act p{margin:.25rem 0 0;font-size:.92rem;color:var(--ink-2)}
+
+code,.mono{font-family:var(--mono);font-size:.88em;background:var(--code-bg);padding:1px 5px;border-radius:3px}
+.sources{font-size:.88rem;color:var(--ink-2);padding-left:18px}
+.sources li{margin:4px 0}
+.sources .d{font-family:var(--mono);font-size:.78rem;color:var(--ink-3)}
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--rule);font-size:.82rem;color:var(--ink-3)}
+.up{color:var(--bid);font-weight:600}
+.down{color:var(--ask);font-weight:600}
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <span class="eyebrow">Investigación · Sector Finanzas · Para Fabián y el equipo</span>
+  <h1 style="margin-top:10px">Anatomía de una mesa de trading institucional</h1>
+  <p class="lede">Cómo se organizan las áreas de trading de BlackRock, J.P. Morgan, Charles Schwab, Goldman Sachs y los grandes fondos: qué gente tienen, qué hace cada uno, qué herramientas usan y cuánto es algoritmo versus criterio humano. Al final, qué podemos copiar nosotros con un equipo chico.</p>
+  <div class="meta"><span>23/09/2026</span><span>Lectura: ~15 min</span><span>Fuentes al pie</span></div>
+
+  <div class="tape" aria-label="Datos clave">
+    <div><b>60–75%</b><span>del volumen de acciones en EE.UU. lo ejecutan algoritmos</span></div>
+    <div><b>600 → 2</b><span>traders de acciones "a mano" en Goldman Sachs NY (2000 vs. 2017)</span></div>
+    <div><b>US$2.000M</b><span>ingresos 2025 del negocio tecnológico de BlackRock (Aladdin), +24%</span></div>
+    <div><b>0</b><span>trading por cuenta propia en Schwab: rutea órdenes de clientes</span></div>
+  </div>
+
+  <nav class="toc" aria-label="Contenido">
+    <a href="#resumen">Resumen</a>
+    <a href="#modelos">Tipos de firma</a>
+    <a href="#estructura">Estructura</a>
+    <a href="#roles">Roles</a>
+    <a href="#analisis">Fundamental vs técnico vs cuant</a>
+    <a href="#dia">Un día de trader</a>
+    <a href="#herramientas">Herramientas</a>
+    <a href="#algo">Algorítmico vs discrecional</a>
+    <a href="#riesgo">Riesgo</a>
+    <a href="#aplicar">Qué aplicamos nosotros</a>
+    <a href="#fuentes">Fuentes</a>
+  </nav>
+</header>
+
+<section id="resumen">
+  <span class="eyebrow">Resumen ejecutivo</span>
+  <h2>Lo que hay que saber en cinco ideas</h2>
+  <div class="keypoints">
+    <div class="kp"><h3>"Trading" significa cosas distintas según la firma</h3><p>En un banco (J.P. Morgan) el trader hace de <em>market maker</em> y gana con el flujo de clientes. En un gestor (BlackRock) el trader <em>ejecuta</em> lo que decide el portfolio manager al menor costo. En un broker (Schwab) solo rutea órdenes. En un hedge fund, el que decide y opera suele ser el mismo PM.</p></div>
+    <div class="kp"><h3>Separan quién decide de quién ejecuta</h3><p>En las instituciones grandes la idea (análisis), la decisión (PM), la ejecución (trader) y el control (riesgo/compliance) son personas y equipos distintos. Esto es lo más copiable.</p></div>
+    <div class="kp"><h3>El análisis técnico es una herramienta, no un departamento</h3><p>La decisión de <em>qué</em> comprar la manda el análisis fundamental o cuantitativo. El técnico se usa sobre todo para el <em>cuándo</em> (timing, niveles, stops), y pesa más en FX, commodities y macro.</p></div>
+    <div class="kp"><h3>La ejecución es mayormente algorítmica</h3><p>Hoy un trader institucional "maneja algoritmos": elige VWAP, TWAP, participación, dark pools, y supervisa. El trader "de grito" casi desapareció en acciones; sobrevive en bloques grandes, bonos ilíquidos y derivados a medida.</p></div>
+    <div class="kp"><h3>Nadie opera solo sin límites</h3><p>Incluso el PM estrella de un fondo multi-manager opera con límites de pérdida duros (si pierde ~5% le recortan capital; ~7,5% lo cierran). El riesgo es independiente y tiene poder de veto.</p></div>
+  </div>
+</section>
+
+<section id="modelos">
+  <span class="eyebrow">1 · Modelos de negocio</span>
+  <h2>Cuatro tipos de firma, cuatro tipos de trader</h2>
+  <div class="prose"><p>Antes de mirar organigramas hay que entender cómo gana plata cada firma, porque eso define qué hace su mesa de trading.</p></div>
+  <div class="models">
+    <article class="model">
+      <span class="tag">Sell-side · banco de inversión</span>
+      <h3>Divisiones "Markets" / Sales &amp; Trading</h3>
+      <span class="firms">J.P. Morgan · Goldman Sachs · Morgan Stanley · Citi</span>
+      <p>Hacen de contraparte de los clientes institucionales: cotizan precio de compra y venta (market making) y ganan el spread y la gestión del inventario. Divididas en <b>FICC</b> (renta fija, monedas, commodities) y <b>Equities</b> (acciones y derivados).</p>
+      <ul>
+        <li>Desde la Regla Volcker (2014–2015) casi no pueden hacer trading propietario puro.</li>
+        <li>J.P. Morgan creó en ene-2026 un grupo cuantitativo nuevo para competir con market makers no bancarios (Citadel Securities, Jane Street).</li>
+      </ul>
+    </article>
+    <article class="model">
+      <span class="tag">Buy-side · gestor de activos</span>
+      <h3>Mesa de trading centralizada</h3>
+      <span class="firms">BlackRock · Vanguard · Fidelity · Schwab Asset Mgmt.</span>
+      <p>El portfolio manager decide qué comprar; la mesa de trading (en BlackRock, <i>Global Trading</i>) ejecuta para todos los fondos. El trader se mide por <b>costo de ejecución</b>, no por ganancia.</p>
+      <ul>
+        <li>Todo corre sobre un OMS/EMS: en BlackRock, <b>Aladdin</b> (órdenes, riesgo, compliance y cartera en una sola plataforma).</li>
+        <li>Métrica clave: <i>implementation shortfall</i> y TCA (análisis de costos de transacción).</li>
+      </ul>
+    </article>
+    <article class="model">
+      <span class="tag">Broker / wealth management</span>
+      <h3>Mesa de agencia y ruteo</h3>
+      <span class="firms">Charles Schwab · Fidelity Brokerage · Interactive Brokers</span>
+      <p>Schwab declara que no es proveedor de liquidez en acciones y no opera por cuenta propia. Rutea las órdenes de clientes a market makers y bolsas buscando <b>mejor ejecución</b>.</p>
+      <ul>
+        <li>Tiene mesas de agencia y un <b>Block Desk</b> para órdenes grandes o complejas.</li>
+        <li>Para asesores ofrece conectividad FIX y soporte de mesa.</li>
+      </ul>
+    </article>
+    <article class="model">
+      <span class="tag">Hedge funds / prop / market makers</span>
+      <h3>Capital propio, riesgo propio</h3>
+      <span class="firms">Citadel · Millennium · Renaissance · Two Sigma · Jane Street · Bridgewater</span>
+      <p>Acá el trader sí busca ganancia directa. Tres sabores: <b>multi-manager</b> (cientos de "pods" independientes con límites estrictos), <b>cuantitativos</b> (modelos estadísticos, poca intervención humana) y <b>macro discrecional</b> (un PM con tesis sobre tasas, monedas, países).</p>
+      <ul>
+        <li>Market makers electrónicos (Citadel Securities, Jane Street, Virtu) son básicamente empresas de tecnología.</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+<section id="estructura">
+  <span class="eyebrow">2 · Estructura</span>
+  <h2>Front, middle y back office</h2>
+  <div class="prose"><p>Todas las firmas grandes se ordenan en tres capas. La regla de oro: el que genera ganancias (front) nunca controla su propio riesgo ni su propia liquidación. Eso lo hacen middle y back office, que reportan por fuera de la línea de negocio.</p></div>
+  <div class="layers">
+    <div class="layer"><div class="lh">Front office<small>genera ingresos / toma decisiones</small></div>
+      <div class="lb"><span class="chip">Portfolio managers</span><span class="chip">Traders</span><span class="chip">Sales / sales traders</span><span class="chip">Structurers</span><span class="chip">Research (fundamental y macro)</span><span class="chip">Quant researchers / strats</span></div></div>
+    <div class="layer"><div class="lh">Middle office<small>controla y mide</small></div>
+      <div class="lb"><span class="chip">Gestión de riesgo (mercado, crédito, liquidez)</span><span class="chip">Product control / P&amp;L</span><span class="chip">Compliance</span><span class="chip">Valuación</span><span class="chip">Performance &amp; TCA</span></div></div>
+    <div class="layer"><div class="lh">Back office<small>liquida y registra</small></div>
+      <div class="lb"><span class="chip">Operaciones / settlement</span><span class="chip">Custodia</span><span class="chip">Conciliaciones</span><span class="chip">Contabilidad</span><span class="chip">Reporte regulatorio</span></div></div>
+    <div class="layer"><div class="lh">Tecnología<small>transversal, cada vez más central</small></div>
+      <div class="lb"><span class="chip">Ingenieros de trading (baja latencia)</span><span class="chip">Data engineering</span><span class="chip">Plataformas OMS/EMS</span><span class="chip">IA / LLMs internos</span></div></div>
+  </div>
+
+  <div class="prose" style="margin-top:22px">
+    <h3>Cómo se corta la mesa por dentro</h3>
+    <p>Dentro del front office las mesas se dividen por <b>clase de activo</b> (acciones, bonos de gobierno, crédito corporativo, FX, commodities, derivados), luego por <b>región</b> (Américas, EMEA, Asia) y a veces por <b>sector</b> (tech, salud, energía). En J.P. Morgan, por ejemplo, conviven mesas de flujo, de derivados, de electrónico por producto y equipos cuantitativos transversales (QIS, quant research, market structure).</p>
+    <p>La otra división importante es <b>high-touch</b> (un trader humano trabaja la orden, llama, negocia un bloque) versus <b>low-touch</b> (la orden entra por FIX y la ejecuta un algoritmo con supervisión).</p>
+  </div>
+</section>
+
+<section id="roles">
+  <span class="eyebrow">3 · Gente</span>
+  <h2>Qué especialistas tienen y qué hace cada uno</h2>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Rol</th><th>Qué hace</th><th>Perfil típico</th><th>Se lo mide por</th></tr></thead>
+      <tbody>
+        <tr><td>Portfolio manager</td><td class="muted">Decide qué comprar/vender y cuánto. Dueño de la tesis y del resultado.</td><td class="muted">Finanzas/economía, CFA, 10+ años</td><td class="muted">Retorno ajustado por riesgo vs. benchmark</td></tr>
+        <tr><td>Trader de ejecución (buy-side)</td><td class="muted">Ejecuta las órdenes del PM minimizando impacto: elige algoritmo, broker, momento, dark pools.</td><td class="muted">Microestructura de mercado, muy operativo</td><td class="muted">Costo vs. precio de llegada / VWAP</td></tr>
+        <tr><td>Market maker / flow trader (sell-side)</td><td class="muted">Cotiza precios a clientes, maneja el inventario y lo cubre.</td><td class="muted">Rápido con números, probabilidad</td><td class="muted">P&amp;L del libro, spread capturado</td></tr>
+        <tr><td>Sales / sales trader</td><td class="muted">Relación con clientes institucionales; lleva ideas y flujo a la mesa.</td><td class="muted">Comercial + conocimiento de mercado</td><td class="muted">Volumen y comisiones del cliente</td></tr>
+        <tr><td>Analista fundamental (research)</td><td class="muted">Cubre 10–20 empresas de un sector: modelos de valuación, earnings, recomendaciones y price targets.</td><td class="muted">Contador/economista, CFA</td><td class="muted">Precisión de recomendaciones, rankings</td></tr>
+        <tr><td>Estratega / economista macro</td><td class="muted">Visión de tasas, inflación, monedas, asignación entre activos.</td><td class="muted">Economía, a veces PhD</td><td class="muted">Calidad de llamadas macro</td></tr>
+        <tr><td>Estratega técnico</td><td class="muted">Niveles, tendencias, momentum y posicionamiento. Suele ser 1–3 personas dentro de research, no una mesa.</td><td class="muted">CMT (Chartered Market Technician)</td><td class="muted">Utilidad para timing de clientes</td></tr>
+        <tr><td>Quant researcher</td><td class="muted">Busca señales en datos (precios, fundamentals, datos alternativos) y diseña estrategias sistemáticas.</td><td class="muted">PhD matemática/física/estadística</td><td class="muted">Sharpe de las señales en producción</td></tr>
+        <tr><td>Quant developer / strat</td><td class="muted">Lleva modelos a producción, construye algoritmos de ejecución y pricing.</td><td class="muted">Ingeniería, C++/Python</td><td class="muted">Robustez, latencia</td></tr>
+        <tr><td>Risk manager</td><td class="muted">Mide VaR, estrés, exposiciones; fija y hace cumplir límites. Puede forzar a cerrar posiciones.</td><td class="muted">FRM, cuantitativo</td><td class="muted">Que no haya sorpresas</td></tr>
+        <tr><td>Compliance</td><td class="muted">Controles pre y post trade, listas restringidas, abuso de mercado.</td><td class="muted">Legal/regulatorio</td><td class="muted">Cero incumplimientos</td></tr>
+        <tr><td>Operaciones</td><td class="muted">Confirma, liquida y concilia cada operación.</td><td class="muted">Operativo, procesos</td><td class="muted">Errores y fallas de liquidación</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="analisis">
+  <span class="eyebrow">4 · Métodos de análisis</span>
+  <h2>Fundamental, técnico y cuantitativo: quién manda</h2>
+  <div class="two">
+    <div class="prose">
+      <p><b>Fundamental</b> es el método dominante en gestores tradicionales y research de bancos. Responde <em>qué</em> comprar: valuación (PE, EV/EBITDA, flujo descontado), calidad del negocio, balance, management. Horizonte: meses a años.</p>
+      <p><b>Técnico</b> casi nunca decide solo. En instituciones se usa para el <em>cuándo</em> y el <em>dónde</em>: puntos de entrada, soportes y resistencias para escalonar órdenes, niveles de stop, lectura de momentum y posicionamiento. Donde más pesa es en FX, commodities, futuros y macro de corto plazo.</p>
+    </div>
+    <div class="prose">
+      <p><b>Cuantitativo</b> es lo que más creció: factores (value, momentum, calidad, baja volatilidad), arbitraje estadístico, modelos de machine learning. Muchas señales "técnicas" (momentum, reversión a la media) viven hoy dentro de modelos cuant, testeadas con estadística en lugar de leídas a ojo.</p>
+      <p><b>"Quantamental"</b>: la tendencia actual combina ambos. El analista fundamental usa filtros y datos cuant; el modelo cuant incorpora datos fundamentales. J.P. Morgan incluso comercializa un sistema así (JPMaQS).</p>
+    </div>
+  </div>
+  <div class="callout"><span class="eyebrow">La jerarquía que usan en la práctica</span><b>Fundamental/cuant decide QUÉ · Técnico ayuda con CUÁNDO · Riesgo decide CUÁNTO.</b> Ningún institucional serio compra algo solo porque "cruzó la media de 200" si el caso de inversión no está.</div>
+</section>
+
+<section id="dia">
+  <span class="eyebrow">5 · Rutina</span>
+  <h2>Un día típico de un trader institucional (Nueva York)</h2>
+  <div class="day">
+    <div class="slot"><time>06:00</time><p><b>Pre-mercado.</b> Lee lo que pasó en Asia y Europa, noticias, earnings de la noche, futuros, calendario macro (CPI, NFP, Fed).</p></div>
+    <div class="slot"><time>07:00</time><p><b>Morning meeting.</b> Research presenta cambios de recomendación, economistas el dato del día, la mesa repasa posiciones y órdenes pendientes. Dura 20–30 minutos.</p></div>
+    <div class="slot"><time>08:30</time><p><b>Datos macro.</b> Si hay dato, se vigila la reacción; muchas mesas no ejecutan en esos minutos.</p></div>
+    <div class="slot"><time>09:30</time><p><b>Apertura.</b> Máxima volatilidad y volumen. El buy-side reparte órdenes en algoritmos; el sell-side cotiza a clientes y cubre inventario.</p></div>
+    <div class="slot"><time>10–15 h</time><p><b>Ejecución y monitoreo.</b> Ajusta algoritmos según liquidez, busca contrapartes para bloques, responde a noticias, habla con PMs y brokers.</p></div>
+    <div class="slot"><time>15:50</time><p><b>Cierre.</b> Mucho volumen se concentra en la subasta de cierre (fondos indexados que replican precios de cierre).</p></div>
+    <div class="slot"><time>16–18 h</time><p><b>Post-cierre.</b> P&amp;L del día, conciliación con middle office, reporte de costos de ejecución (TCA), bitácora de errores y plan para mañana.</p></div>
+  </div>
+</section>
+
+<section id="herramientas">
+  <span class="eyebrow">6 · Tecnología</span>
+  <h2>Qué herramientas usan</h2>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Categoría</th><th>Herramientas</th><th>Para qué</th></tr></thead>
+      <tbody>
+        <tr><td>Terminal de datos</td><td class="muted">Bloomberg Terminal (≈US$30.000/año por puesto), LSEG Workspace (ex-Refinitiv/Eikon), FactSet, S&amp;P Capital IQ</td><td class="muted">Precios, noticias, fundamentals, chat entre traders (IB Chat de Bloomberg)</td></tr>
+        <tr><td>OMS (gestión de órdenes)</td><td class="muted">BlackRock Aladdin, Charles River (State Street), Bloomberg AIM, SS&amp;C Eze</td><td class="muted">Registrar órdenes del PM, controles de compliance, asignación entre fondos</td></tr>
+        <tr><td>EMS (ejecución)</td><td class="muted">Bloomberg EMSX, FlexTrade, Virtu Triton, TS Imagine</td><td class="muted">Mandar órdenes a brokers y algoritmos, ver ejecución en vivo</td></tr>
+        <tr><td>Protocolo</td><td class="muted">FIX (Financial Information eXchange)</td><td class="muted">Estándar para enviar órdenes entre firmas y bolsas</td></tr>
+        <tr><td>Algoritmos de broker</td><td class="muted">VWAP, TWAP, POV (% de volumen), Implementation Shortfall, liquidity seeking, dark pools</td><td class="muted">Partir una orden grande en miles de chicas sin mover el precio</td></tr>
+        <tr><td>Renta fija electrónica</td><td class="muted">Tradeweb, MarketAxess, Bloomberg RFQ</td><td class="muted">Pedir cotización a varios dealers a la vez</td></tr>
+        <tr><td>Desarrollo cuant</td><td class="muted">Python (pandas, NumPy), kdb+/q, C++, Java, Excel/VBA (todavía muy vivo)</td><td class="muted">Investigación, backtesting, pricing, sistemas de baja latencia</td></tr>
+        <tr><td>IA generativa</td><td class="muted">Asistentes internos basados en LLMs en J.P. Morgan, Goldman Sachs y Morgan Stanley</td><td class="muted">Resumir research, earnings calls, redactar, buscar en documentación interna</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="algo">
+  <span class="eyebrow">7 · Algorítmico vs discrecional</span>
+  <h2>¿Algoritmos o una persona decidiendo?</h2>
+  <div class="prose"><p>No es una dicotomía sino un espectro. La mayoría de las firmas grandes combinan todo, según el activo y la estrategia.</p></div>
+  <div class="spectrum">
+    <div class="bar" role="img" aria-label="Espectro de discrecional a totalmente automatizado"></div>
+    <div class="ends"><span>100% humano</span><span>100% máquina</span></div>
+    <div class="spec-grid">
+      <div class="spec s1"><h3>Discrecional puro</h3><p>Un PM o trader decide con su criterio. Macro global, crédito ilíquido, eventos especiales, bloques negociados por teléfono.</p></div>
+      <div class="spec"><h3>Decisión humana + ejecución algorítmica</h3><p>El modelo dominante en gestores como BlackRock: el PM decide, el trader elige y supervisa algoritmos.</p></div>
+      <div class="spec"><h3>Sistemático con supervisión</h3><p>Fondos cuant (Two Sigma, AQR): el modelo decide y ejecuta; los humanos investigan, aprueban cambios y apagan si algo falla.</p></div>
+      <div class="spec s4"><h3>Alta frecuencia (HFT)</h3><p>Market making electrónico en microsegundos (Citadel Securities, Jane Street, Virtu). No hay humano en el loop de cada operación.</p></div>
+    </div>
+  </div>
+  <div class="two" style="margin-top:22px">
+    <div class="prose">
+      <h3>Lo que muestran los datos</h3>
+      <p>Entre el 60% y el 75% del volumen de acciones en EE.UU. es algorítmico, y el HFT solo explica aproximadamente la mitad. En 2000 Goldman Sachs tenía 600 traders de acciones en su mesa de Nueva York; en 2017 quedaban 2, apoyados por unos 200 ingenieros.</p>
+    </div>
+    <div class="prose">
+      <h3>¿Existe el trader que maneja todo solo?</h3>
+      <p>Sí, pero con estructura detrás. En un fondo multi-manager (Millennium, Citadel), cada PM maneja su "pod" con autonomía total sobre las ideas, pero con capital asignado, límites de pérdida automáticos, un risk manager encima y compliance revisando cada orden. La libertad es sobre las ideas, nunca sobre el riesgo.</p>
+    </div>
+  </div>
+</section>
+
+<section id="riesgo">
+  <span class="eyebrow">8 · Control de riesgo</span>
+  <h2>Cómo evitan que un trader hunda la firma</h2>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Control</th><th>Cómo funciona</th></tr></thead>
+      <tbody>
+        <tr><td>Límite de pérdida (drawdown)</td><td class="muted">Referencia citada en multi-managers: a <span class="down">-5%</span> se recorta el capital a la mitad; a <span class="down">-7,5%</span> se cierra el pod.</td></tr>
+        <tr><td>VaR y stress tests</td><td class="muted">Pérdida máxima esperada con 95–99% de confianza; escenarios tipo 2008 o COVID.</td></tr>
+        <tr><td>Límites de posición y concentración</td><td class="muted">Máximo por empresa, sector, país; máximo de apalancamiento bruto y neto.</td></tr>
+        <tr><td>Controles pre-trade</td><td class="muted">El sistema bloquea automáticamente órdenes que violan límites, listas restringidas o precios fuera de rango ("fat finger").</td></tr>
+        <tr><td>Segregación de funciones</td><td class="muted">El trader no puede registrar, valuar ni liquidar sus propias operaciones.</td></tr>
+        <tr><td>Kill switch</td><td class="muted">Apagado inmediato de algoritmos ante comportamiento anómalo (lección de Knight Capital, 2012: US$440M perdidos en 45 minutos).</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="aplicar">
+  <span class="eyebrow">9 · Aplicación</span>
+  <h2>Qué podemos copiar nosotros con un equipo chico</h2>
+  <div class="prose"><p>No necesitamos 200 ingenieros. Sí necesitamos la disciplina de proceso que tienen. Propuesta concreta para arrancar con Fabián:</p></div>
+  <div class="actions">
+    <div class="act"><span class="n">1</span><div><h3>Separar decisión, ejecución y control, aunque sean pocas personas</h3><p>Fabián ejecuta y gestiona el trading; las ideas se validan en un comité breve (aunque sean 2–3 personas); alguien distinto revisa el riesgo semanalmente. Si una persona hace todo, al menos que las reglas estén escritas antes de operar.</p></div></div>
+    <div class="act"><span class="n">2</span><div><h3>Reglas de riesgo escritas</h3><p>Riesgo máximo por operación (ej. 1% del capital), pérdida máxima diaria/mensual que obliga a parar, tamaño máximo por posición y por sector. Estilo pod: si el drawdown llega a X, se reduce el tamaño a la mitad.</p></div></div>
+    <div class="act"><span class="n">3</span><div><h3>Jerarquía de análisis clara</h3><p>Fundamental (o tesis macro) para elegir qué operar; técnico para entrada, stops y objetivos; tamaño definido por riesgo. Cada operación con su tesis escrita en una línea.</p></div></div>
+    <div class="act"><span class="n">4</span><div><h3>Rutina de mesa</h3><p>Morning meeting de 15 minutos (calendario macro, noticias de posiciones, plan del día) y cierre con P&amp;L y bitácora. Jarvis ya puede generar el briefing de mercado y el reporte de portfolio automáticamente.</p></div></div>
+    <div class="act"><span class="n">5</span><div><h3>Bitácora y métricas</h3><p>Registrar cada operación: tesis, entrada, salida, resultado, error cometido. Medir mensualmente tasa de acierto, ganancia media vs. pérdida media, drawdown máximo y Sharpe.</p></div></div>
+    <div class="act"><span class="n">6</span><div><h3>Stack tecnológico accesible</h3><p>Broker con API (Interactive Brokers, Schwab), TradingView o similar para técnico, Python + este repositorio (Jarvis) para datos, noticias y reportes. Automatizar primero lo repetitivo (alertas, reportes), no las decisiones.</p></div></div>
+    <div class="act"><span class="n">7</span><div><h3>Algorítmico, de a poco</h3><p>Empezar por ejecución (órdenes límite escalonadas, alertas) y backtesting de reglas simples antes de dejar que un sistema opere solo. Todo algoritmo con kill switch y límites.</p></div></div>
+  </div>
+</section>
+
+<section id="fuentes">
+  <span class="eyebrow">Fuentes</span>
+  <h2>Referencias</h2>
+  <ul class="sources">
+    <li><a href="https://www.sec.gov/Archives/edgar/data/2012383/000119312526071966/blk-20251231.htm">BlackRock — Form 10-K FY2025 (SEC EDGAR)</a> <span class="d">[2026]</span> — Aladdin como plataforma central; ingresos tecnológicos de US$2.000M, +24%.</li>
+    <li><a href="https://www.blackrock.com/aladdin/benefits/traders">Aladdin by BlackRock — Trading Functionality and Workflow</a> <span class="d">[fecha no disponible]</span></li>
+    <li><a href="https://www.coindesk.com/business/2025/10/06/crypto-trading-tech-firm-talos-integrates-with-blackrock-s-aladdin-platform">CoinDesk — Talos se integra con Aladdin</a> <span class="d">[06/10/2025]</span></li>
+    <li><a href="https://www.bloomberg.com/news/articles/2026-01-15/jpmorgan-forms-new-quant-group-to-fend-off-market-maker-rivals">Bloomberg — JPMorgan forma un nuevo grupo cuant para competir con market makers</a> <span class="d">[15/01/2026]</span></li>
+    <li><a href="https://www.jpmorgan.com/markets/market-structure">J.P. Morgan — Market Structure</a> y <a href="https://www.jpmorgan.com/markets/jpmaqs">JPMaQS (sistema quantamental)</a> <span class="d">[fecha no disponible]</span></li>
+    <li><a href="https://www.schwab.com/execution-quality/order-routing-process">Charles Schwab — Proceso de ruteo de órdenes</a> <span class="d">[fecha no disponible]</span></li>
+    <li><a href="https://content.schwab.com/web/retail/public/about-schwab/Schwab-2022-order-routing-whitepaper.pdf">Schwab — Whitepaper: U.S. Equity Market Structure, Order Routing</a> <span class="d">[2022]</span></li>
+    <li><a href="https://papertradingjournal.com/2026/03/12/algorithmic-trading-statistics/">Paper Trading Journal — Algorithmic Trading Statistics 2026</a> <span class="d">[12/03/2026]</span></li>
+    <li><a href="https://en.wikipedia.org/wiki/High-frequency_trading">Wikipedia — High-frequency trading</a> <span class="d">[consultado 23/09/2026]</span></li>
+    <li><a href="https://www.technologyreview.com/2017/02/07/154141/as-goldman-embraces-automation-even-the-masters-of-the-universe-are-threatened/">MIT Technology Review — Goldman Sachs y la automatización (600 → 2 traders)</a> <span class="d">[07/02/2017]</span></li>
+  </ul>
+  <p style="font-size:.85rem;color:var(--ink-3)">Nota: los umbrales de drawdown de fondos multi-manager, el costo del Bloomberg Terminal y el caso Knight Capital provienen de reportes de prensa ampliamente citados; son referencias aproximadas, no cifras oficiales de cada firma.</p>
+</section>
+
+<footer>Preparado por Jarvis · Asistente Financiero IA · 23/09/2026. Material educativo; no constituye recomendación de inversión.</footer>
+</div>
