@@ -1,0 +1,146 @@
+﻿Fecha;Estado;Exclusión;Notion dir;Notion entrada;Notion salida;Notion resultado;Notion R;TV #;TV dir;TV entrada;TV salida;TV motivo salida;TV PyG USD;TV R aprox;TV resultado
+26/01/2026;En ambos;;SELL;08:02;09:00;BE;;1;SELL;08:03;09:11;CHoCH en contra (arrastre);-1,83;-0,18;~BE
+27/01/2026;En ambos — resultado distinto;;BUY;07:32;07:49;BE;;2;BUY;07:33;08:35;Salida PreNY_2;-9,83;-0,98;SL
+28/01/2026;En ambos —  + desfase de hora;;BUY;07:21;07:54;TP;1;3;BUY;07:40;07:59;Salida PreNY_3;8,81;+0,88;TP
+03/02/2026;En ambos;;BUY;08:25;08:46;TP;1;4;BUY;08:26;08:46;Salida PreNY_4;8,92;+0,89;TP
+04/02/2026;Solo TradingView;;;;;;;5;SELL;08:10;08:22;Salida PreNY_5;-9,94;-0,99;SL
+04/02/2026;Solo TradingView;;;;;;;6;BUY;08:26;08:44;Salida PreNY_6;-9,86;-0,99;SL
+05/02/2026;Solo TradingView;;;;;;;7;SELL;07:20;07:27;Salida PreNY_7;-9,82;-0,98;SL
+05/02/2026;Solo TradingView;;;;;;;8;BUY;08:19;08:24;Salida PreNY_8;8,67;+0,87;TP
+09/02/2026;Solo Notion;;SELL;08:29;09:00;BE;;;;;;;;;
+10/02/2026;Solo TradingView;;;;;;;9;BUY;08:18;08:33;Salida PreNY_9;8,76;+0,88;TP
+11/02/2026;Solo Notion;NFP;SELL;07:09;07:20;TP;1;;;;;;;;
+12/02/2026;Solo TradingView;;;;;;;10;BUY;08:38;09:01;Cierre fin de sesión (estructura en contra);-0,39;-0,04;~BE
+17/02/2026;En ambos — resultado distinto;;BUY;07:05;07:40;BE;;11;BUY;07:06;08:04;Reset antes de nueva entrada;-6,05;-0,60;SL
+17/02/2026;Solo TradingView;;;;;;;12;SELL;08:04;08:12;Salida PreNY_12;9,04;+0,90;TP
+18/02/2026;Solo TradingView;;;;;;;13;BUY;07:13;07:30;Reset antes de nueva entrada;-2,68;-0,27;SL
+18/02/2026;Solo TradingView;;;;;;;14;SELL;07:30;07:42;Salida PreNY_14;-9,85;-0,98;SL
+19/02/2026;Solo TradingView;;;;;;;15;BUY;08:37;09:02;CHoCH en contra (arrastre);-0,53;-0,05;~BE
+23/02/2026;En ambos;;SELL;08:08;08:26;TP;1;16;SELL;08:09;08:25;Salida PreNY_16;8,72;+0,87;TP
+24/02/2026;Solo TradingView;;;;;;;17;SELL;07:17;07:18;Salida PreNY_17;8,87;+0,89;TP
+25/02/2026;En ambos;;BUY;07:26;07:35;SL;-1;18;BUY;07:23;07:35;Salida PreNY_18;-9,98;-1,00;SL
+26/02/2026;En ambos;;SELL;07:01;07:09;SL;-0,30;19;SELL;07:02;07:17;Salida PreNY_19;-9,82;-0,98;SL
+26/02/2026;Solo TradingView;;;;;;;20;BUY;07:18;07:41;Salida PreNY_20;8,76;+0,88;TP
+03/03/2026;En ambos;;BUY;07:14;07:30;TP;1;21;BUY;07:15;07:56;Salida PreNY_21;8,74;+0,87;TP
+04/03/2026;Solo TradingView;;;;;;;22;SELL;09:00;09:32;CHoCH en contra (arrastre);-7,99;-0,80;SL
+05/03/2026;Solo TradingView;;;;;;;23;BUY;07:14;08:00;Salida PreNY_23;-9,89;-0,99;SL
+05/03/2026;En ambos;;SELL;08:09;08:17;TP;1;24;SELL;08:10;08:17;Salida PreNY_24;8,68;+0,87;TP
+10/03/2026;En ambos;;BUY;07:00;07:05;TP;1;25;BUY;07:01;07:05;Salida PreNY_25;8,87;+0,89;TP
+12/03/2026;Solo Notion;;SELL;08:04;08:07;TP;1;;;;;;;;
+16/03/2026;Solo TradingView;;;;;;;26;SELL;07:47;07:52;Salida PreNY_26;8,98;+0,90;TP
+17/03/2026;Solo Notion;;SELL;07:34;07:45;SL;-1;;;;;;;;
+17/03/2026;En ambos;;SELL;07:56;08:01;TP;1;27;SELL;07:57;08:01;Salida PreNY_27;9,02;+0,90;TP
+18/03/2026;Solo TradingView;;;;;;;28;SELL;08:02;08:10;Salida PreNY_28;9,11;+0,91;TP
+18/03/2026;Solo Notion;;SELL;08:26;08:37;TP;1;;;;;;;;
+19/03/2026;Solo TradingView;;;;;;;29;SELL;07:47;08:01;Salida PreNY_29;9,13;+0,91;TP
+23/03/2026;En ambos;;BUY;07:10;07:11;TP;1;30;BUY;07:11;09:20;CHoCH en contra (arrastre);-1,31;-0,13;~BE
+24/03/2026;Solo TradingView;;;;;;;31;BUY;07:01;07:01;Salida PreNY_31;-10,06;-1,01;SL
+25/03/2026;En ambos;;BUY;07:04;07:22;TP;1;32;BUY;07:05;07:22;Salida PreNY_32;9,07;+0,91;TP
+26/03/2026;En ambos;;SELL;07:46;07:50;TP;1;33;SELL;07:47;07:50;Salida PreNY_33;9,29;+0,93;TP
+30/03/2026;Solo TradingView;;;;;;;34;SELL;08:49;09:00;Salida PreNY_34;-10,22;-1,02;SL
+31/03/2026;Solo TradingView;;;;;;;35;SELL;08:47;09:01;Cierre fin de sesión (estructura en contra);0,08;+0,01;~BE
+01/04/2026;En ambos;;BUY;07:17;07:38;TP;1;36;BUY;07:18;07:38;Salida PreNY_36;9,40;+0,94;TP
+02/04/2026;Solo TradingView;;;;;;;37;BUY;08:22;08:58;Salida PreNY_37;-10,35;-1,03;SL
+06/04/2026;Solo TradingView;Feriado UK;;;;;;38;SELL;08:21;09:25;CHoCH en contra (arrastre);-2,25;-0,23;~BE
+07/04/2026;En ambos;;BUY;07:41;08:24;TP;1;39;BUY;07:42;08:24;Salida PreNY_39;9,23;+0,92;TP
+08/04/2026;Solo TradingView;;;;;;;40;BUY;07:26;07:35;Salida PreNY_40;-10,28;-1,03;SL
+08/04/2026;Solo TradingView;;;;;;;41;BUY;07:58;08:20;Salida PreNY_41;-9,99;-1,00;SL
+09/04/2026;En ambos;;SELL;08:09;09:00;BE;;42;SELL;08:10;09:01;Cierre fin de sesión (estructura en contra);2,04;+0,20;~BE
+13/04/2026;En ambos;;SELL;07:40;08:50;SL;-1;43;SELL;07:41;08:50;Salida PreNY_43;-10,11;-1,01;SL
+14/04/2026;En ambos;;BUY;07:08;07:28;TP;1;44;BUY;07:09;07:28;Salida PreNY_44;9,13;+0,91;TP
+16/04/2026;En ambos;;BUY;07:56;08:07;SL;-1;45;BUY;07:57;08:09;Salida PreNY_45;-10,08;-1,01;SL
+20/04/2026;En ambos;;BUY;07:44;07:48;TP;1;46;BUY;07:45;07:48;Salida PreNY_46;9,04;+0,90;TP
+21/04/2026;Solo TradingView;;;;;;;47;SELL;08:19;08:30;Salida PreNY_47;9,12;+0,91;TP
+22/04/2026;Solo TradingView;;;;;;;48;BUY;08:29;08:36;Salida PreNY_48;-10,18;-1,02;SL
+22/04/2026;Solo Notion;;SELL;08:48;09:18;TP;1;;;;;;;;
+23/04/2026;En ambos;;BUY;07:03;07:46;TP;1;49;BUY;07:04;07:46;Salida PreNY_49;9,12;+0,91;TP
+28/04/2026;Solo TradingView;;;;;;;50;SELL;07:49;08:20;Salida PreNY_50;-10,11;-1,01;SL
+30/04/2026;Solo TradingView;;;;;;;51;BUY;08:57;09:27;CHoCH en contra (arrastre);-2,05;-0,20;~BE
+04/05/2026;Solo TradingView;Feriado UK;;;;;;52;BUY;08:53;09:00;Salida PreNY_52;-10,11;-1,01;SL
+07/05/2026;Solo TradingView;;;;;;;53;BUY;08:17;08:22;Salida PreNY_53;-10,13;-1,01;SL
+12/05/2026;Solo TradingView;CPI;;;;;;54;BUY;07:46;08:24;Salida PreNY_54;-9,90;-0,99;SL
+13/05/2026;En ambos;;BUY;07:14;07:45;TP;1;55;BUY;07:15;07:56;Reset antes de nueva entrada;-0,24;-0,02;~BE
+13/05/2026;Solo TradingView;;;;;;;56;SELL;07:56;08:15;Salida PreNY_56;8,81;+0,88;TP
+14/05/2026;Solo TradingView;;;;;;;57;SELL;07:26;07:41;Salida PreNY_57;-9,93;-0,99;SL
+14/05/2026;Solo TradingView;;;;;;;58;BUY;07:55;07:59;Salida PreNY_58;-9,77;-0,98;SL
+18/05/2026;En ambos;;BUY;07:41;08:20;SL;-1;59;BUY;07:42;08:20;Salida PreNY_59;-9,62;-0,96;SL
+18/05/2026;Solo Notion;;SELL;08:41;08:42;TP;1;;;;;;;;
+18/05/2026;Solo TradingView;;;;;;;60;BUY;08:42;09:11;CHoCH en contra (arrastre);-1,03;-0,10;~BE
+21/05/2026;Solo TradingView;;;;;;;61;BUY;08:07;08:15;Salida PreNY_61;-9,58;-0,96;SL
+21/05/2026;En ambos;;SELL;08:20;09:15;TP;1;62;SELL;08:21;09:15;Salida PreNY_62;8,55;+0,86;TP
+25/05/2026;Solo TradingView;Feriado US+UK;;;;;;63;SELL;07:54;08:01;Salida PreNY_63;8,66;+0,87;TP
+26/05/2026;En ambos;;SELL;07:42;08:46;SL;-0,8;64;SELL;07:43;08:47;Reset antes de nueva entrada;-4,86;-0,49;SL
+26/05/2026;En ambos;;BUY;08:46;09:02;TP;1;65;BUY;08:47;09:12;CHoCH en contra (arrastre);2,86;+0,29;TP
+27/05/2026;En ambos;;SELL;07:54;08:18;SL;-1;66;SELL;07:55;08:18;Salida PreNY_66;-9,66;-0,97;SL
+28/05/2026;Solo TradingView;;;;;;;67;BUY;08:06;08:21;Salida PreNY_67;-9,49;-0,95;SL
+02/06/2026;Solo TradingView;;;;;;;68;SELL;07:48;08:21;Salida PreNY_68;-9,44;-0,94;SL
+02/06/2026;En ambos;;SELL;08:49;09:00;TP;1;69;SELL;08:50;08:59;Salida PreNY_69;8,52;+0,85;TP
+03/06/2026;En ambos — resultado distinto;;BUY;07:02;07:08;TP;1;70;BUY;07:03;08:16;Salida PreNY_70;-9,44;-0,94;SL
+04/06/2026;En ambos;;BUY;07:25;07:27;TP;1;71;BUY;07:24;07:26;Salida PreNY_71;8,47;+0,85;TP
+08/06/2026;En ambos;;BUY;07:14;07:20;TP;1;72;BUY;07:15;07:20;Salida PreNY_72;8,43;+0,84;TP
+09/06/2026;En ambos —  + desfase de hora;;BUY;08:38;08:53;SL;-0,50;73;BUY;08:47;08:53;Salida PreNY_73;-9,56;-0,96;SL
+11/06/2026;Solo TradingView;;;;;;;74;SELL;08:23;08:44;Salida PreNY_74;-9,45;-0,94;SL
+15/06/2026;En ambos;;BUY;08:50;09:02;SL;-1;75;BUY;08:51;09:02;Salida PreNY_75;-9,40;-0,94;SL
+16/06/2026;En ambos;;SELL;07:07;07:36;TP;1;76;SELL;07:08;07:36;Salida PreNY_76;8,33;+0,83;TP
+17/06/2026;En ambos;;SELL;07:34;07:56;TP;1;77;SELL;07:35;07:56;Salida PreNY_77;8,38;+0,84;TP
+18/06/2026;En ambos — resultado distinto + desfase de hora;;SELL;08:33;09:00;BE;;78;SELL;08:40;09:06;CHoCH en contra (arrastre);-3,81;-0,38;SL
+22/06/2026;Solo Notion;;SELL;07:25;07:38;TP;1;;;;;;;;
+23/06/2026;Solo TradingView;;;;;;;79;SELL;08:14;09:25;CHoCH en contra (arrastre);-1,61;-0,16;~BE
+24/06/2026;En ambos;;SELL;08:49;08:59;TP;1;80;SELL;08:50;08:59;Salida PreNY_80;8,27;+0,83;TP
+25/06/2026;Solo TradingView;;;;;;;81;BUY;07:46;08:30;Salida PreNY_81;8,45;+0,84;TP
+30/06/2026;En ambos;;SELL;08:20;08:23;TP;1;82;SELL;08:21;08:23;Salida PreNY_82;8,56;+0,86;TP
+01/07/2026;En ambos;;BUY;07:21;08:50;BE;;83;BUY;07:22;08:12;Reset antes de nueva entrada;-1,84;-0,18;~BE
+01/07/2026;Solo TradingView;;;;;;;84;SELL;08:12;09:18;CHoCH en contra (arrastre);-6,50;-0,65;SL
+02/07/2026;Solo TradingView;NFP;;;;;;85;SELL;07:07;07:43;Salida PreNY_85;-9,42;-0,94;SL
+06/07/2026;Solo TradingView;;;;;;;86;SELL;08:21;08:21;Salida PreNY_86;8,62;+0,86;TP
+07/07/2026;Solo TradingView;;;;;;;87;BUY;07:25;07:59;Salida PreNY_87;8,55;+0,86;TP
+08/07/2026;Solo TradingView;;;;;;;88;BUY;08:18;08:47;Salida PreNY_88;8,60;+0,86;TP
+09/07/2026;Solo TradingView;;;;;;;89;SELL;08:59;09:05;Salida PreNY_89;-9,54;-0,95;SL
+13/07/2026;En ambos;;BUY;08:43;08:59;TP;1;90;BUY;08:44;09:00;Salida PreNY_90;8,66;+0,87;TP
+14/07/2026;Solo TradingView;CPI;;;;;;91;BUY;07:36;08:03;Salida PreNY_91;8,65;+0,86;TP
+15/07/2026;Solo TradingView;;;;;;;92;BUY;07:12;07:41;Salida PreNY_92;8,73;+0,87;TP
+15/07/2026;Solo Notion;;BUY;08:32;08:58;TP;1;;;;;;;;
+16/07/2026;En ambos;;SELL;07:13;07:25;TP;1;93;SELL;07:14;07:25;Salida PreNY_93;8,83;+0,88;TP
+21/07/2026;Solo TradingView;;;;;;;94;SELL;07:01;07:07;Salida PreNY_94;8,93;+0,89;TP
+21/07/2026;Solo Notion;;BUY;08:23;08:35;SL;-1;;;;;;;;
+22/07/2026;Solo Notion;;BUY;07:09;07:17;TP;1;;;;;;;;
+22/07/2026;Solo TradingView;;;;;;;95;BUY;08:28;08:30;Salida PreNY_95;9,05;+0,91;TP
+23/07/2026;Solo TradingView;;;;;;;96;SELL;07:10;07:23;Salida PreNY_96;9,05;+0,91;TP
+27/07/2026;Solo TradingView;;;;;;;97;SELL;07:27;07:43;Salida PreNY_97;9,19;+0,92;TP
+28/07/2026;Solo TradingView;;;;;;;98;BUY;08:24;08:34;Salida PreNY_98;-10,27;-1,03;SL
+29/07/2026;Solo TradingView;;;;;;;99;BUY;07:29;08:16;Salida PreNY_99;-10,10;-1,01;SL
+29/07/2026;En ambos;;SELL;08:16;08:21;TP;1;100;SELL;08:17;08:22;Salida PreNY_100;9,03;+0,90;TP
+03/08/2026;En ambos;;BUY;07:47;07:51;TP;1;101;BUY;07:48;07:51;Salida PreNY_101;9,11;+0,91;TP
+04/08/2026;En ambos;;BUY;07:25;07:32;TP;1;102;BUY;07:26;07:32;Salida PreNY_102;9,24;+0,92;TP
+05/08/2026;En ambos;;BUY;07:02;07:16;TP;1;103;BUY;07:03;07:12;Salida PreNY_103;9,35;+0,93;TP
+06/08/2026;En ambos;;SELL;07:45;08:31;SL;-1;104;SELL;07:46;08:31;Salida PreNY_104;-10,40;-1,04;SL
+06/08/2026;Solo TradingView;;;;;;;105;BUY;08:36;08:49;Salida PreNY_105;-10,21;-1,02;SL
+06/08/2026;Solo Notion;;SELL;08:54;09:08;TP;1;;;;;;;;
+10/08/2026;En ambos;;SELL;08:13;08:26;TP;1;106;SELL;08:14;08:26;Salida PreNY_106;9,21;+0,92;TP
+11/08/2026;En ambos;;BUY;07:01;09:10;TP;1;107;BUY;07:02;09:10;Salida PreNY_107;9,24;+0,92;TP
+13/08/2026;En ambos;;SELL;07:33;08:08;SL;-0,62;108;SELL;07:34;08:09;Reset antes de nueva entrada;-6,40;-0,64;SL
+13/08/2026;En ambos;;BUY;08:08;08:16;SL;-1;109;BUY;08:09;08:16;Salida PreNY_109;-10,37;-1,04;SL
+17/08/2026;En ambos;;SELL;08:44;09:32;SL;-0,86;110;SELL;08:45;09:01;Cierre fin de sesión (estructura en contra);-8,19;-0,82;SL
+19/08/2026;En ambos;;BUY;08:11;08:33;TP;1;111;BUY;08:12;08:33;Salida PreNY_111;9,26;+0,93;TP
+20/08/2026;En ambos;;SELL;07:13;07:41;TP;1;112;SELL;07:14;07:41;Salida PreNY_112;9,27;+0,93;TP
+25/08/2026;En ambos;;BUY;07:18;08:03;SL;-0,9;113;BUY;07:19;08:03;Reset antes de nueva entrada;-9,31;-0,93;SL
+25/08/2026;En ambos;;SELL;08:03;08:40;TP;1;114;SELL;08:03;08:40;Salida PreNY_114;9,28;+0,93;TP
+26/08/2026;En ambos;;BUY;08:00;08:30;SL;-1;115;BUY;08:01;08:30;Salida PreNY_115;-10,27;-1,03;SL
+27/08/2026;En ambos — resultado distinto + desfase de hora;;BUY;07:20;07:31;TP;1;116;BUY;07:25;08:15;Reset antes de nueva entrada;-6,96;-0,70;SL
+27/08/2026;Solo TradingView;;;;;;;117;SELL;08:15;08:46;Salida PreNY_117;9,21;+0,92;TP
+01/09/2026;En ambos;;SELL;08:00;08:35;TP;1;118;SELL;08:01;08:35;Salida PreNY_118;9,21;+0,92;TP
+02/09/2026;En ambos;;BUY;07:12;07:14;TP;1;119;BUY;07:13;07:14;Salida PreNY_119;9,33;+0,93;TP
+03/09/2026;En ambos;;BUY;07:40;08:06;TP;1;120;BUY;07:41;08:06;Salida PreNY_120;9,36;+0,94;TP
+07/09/2026;Solo TradingView;Feriado US;;;;;;121;BUY;08:30;09:02;Salida PreNY_121;9,63;+0,96;TP
+08/09/2026;En ambos;;BUY;08:29;09:00;TP;1;122;BUY;08:30;09:00;Salida PreNY_122;9,65;+0,97;TP
+09/09/2026;En ambos;;SELL;08:25;08:56;SL;-1;123;SELL;08:26;08:57;Salida PreNY_123;-10,76;-1,08;SL
+10/09/2026;Solo TradingView;;;;;;;124;SELL;08:17;08:31;Salida PreNY_124;9,61;+0,96;TP
+14/09/2026;En ambos;;SELL;07:55;08:09;SL;-1;125;SELL;07:56;08:09;Salida PreNY_125;-10,65;-1,06;SL
+14/09/2026;En ambos;;SELL;08:35;08:53;TP;1;126;SELL;08:36;08:53;Salida PreNY_126;9,55;+0,96;TP
+15/09/2026;En ambos;;BUY;08:53;09:07;SL;-0,5;127;BUY;08:54;09:08;CHoCH en contra (arrastre);-5,85;-0,58;SL
+16/09/2026;En ambos;;SELL;07:55;08:20;TP;1;128;SELL;07:56;08:20;Salida PreNY_128;9,63;+0,96;TP
+17/09/2026;En ambos;;BUY;07:01;07:10;TP;1;129;BUY;07:01;07:10;Salida PreNY_129;9,70;+0,97;TP
+21/09/2026;En ambos;;BUY;07:17;07:36;TP;1;130;BUY;07:18;07:38;Salida PreNY_130;9,83;+0,98;TP
+22/09/2026;En ambos;;BUY;07:55;08:19;TP;1;131;BUY;07:56;08:19;Salida PreNY_131;9,85;+0,98;TP
+23/09/2026;En ambos;;BUY;08:10;08:32;SL;-1;132;BUY;08:11;08:32;Salida PreNY_132;-11,05;-1,10;SL
+23/09/2026;En ambos;;SELL;08:35;09:00;TP;0;133;SELL;08:36;09:01;Cierre fin de sesión (estructura en contra);-0,10;-0,01;~BE
