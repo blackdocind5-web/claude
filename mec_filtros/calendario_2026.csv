@@ -1,49 +1,60 @@
-fecha;regla;ventana_permitida_NY;divisa;evento;estado;fuente
+fecha;regla;ventana_NY;divisa;evento;estado;fuente
 01/01/2026;SIN_OPERAR;;EUR;Feriado bancario Francia e Italia (Año Nuevo);confirmado;Captura FF FR/IT
 06/01/2026;SIN_OPERAR;;EUR;Feriado bancario Italia (Epifanía);confirmado;Captura FF IT
+07/01/2026;BLOQUEO_NOTICIA;08:05-08:18;USD;ADP Non-Farm Employment Change (dato 08:15);confirmado;Captura FF ADP
 09/01/2026;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP
 13/01/2026;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD
 19/01/2026;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Martin Luther King Jr.);confirmado;Captura FF US
 21/01/2026;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP
-05/02/2026;SOLO_0700_0800;07:00-08:00;EUR;BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference;confirmado;Captura FF BCE
+04/02/2026;BLOQUEO_NOTICIA;08:05-08:18;USD;ADP Non-Farm Employment Change (dato 08:15);confirmado;Captura FF ADP
+05/02/2026;SOLO_ENTRADA;07:00-08:00;EUR;BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference;confirmado;Captura FF BCE
 11/02/2026;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP
 13/02/2026;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD
 16/02/2026;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Presidents' Day);confirmado;Captura FF US
 18/02/2026;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP
+04/03/2026;BLOQUEO_NOTICIA;08:05-08:18;USD;ADP Non-Farm Employment Change (dato 08:15);confirmado;Captura FF ADP
 06/03/2026;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP
 11/03/2026;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD
-19/03/2026;SOLO_0700_0800;07:00-08:00;EUR;BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference;confirmado;Captura FF BCE
+19/03/2026;SOLO_ENTRADA;07:00-08:00;EUR;BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference;confirmado;Captura FF BCE
 25/03/2026;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP
+01/04/2026;BLOQUEO_NOTICIA;08:05-08:18;USD;ADP Non-Farm Employment Change (dato 08:15);confirmado;Captura FF ADP
 03/04/2026;SIN_OPERAR;;USD/GBP/EUR;NFP + Feriado bancario Reino Unido y Alemania (Viernes Santo);confirmado;Capturas FF NFP/UK/DE
 06/04/2026;SIN_OPERAR;;GBP/EUR;Feriado bancario Reino Unido, Alemania, Francia e Italia (Lunes de Pascua);confirmado;Capturas FF UK/DE/FR/IT
 10/04/2026;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD
+21/04/2026;SIN_OPERAR;;USD;Discurso de Trump (presidente de EE. UU.) dentro de Pre NY;confirmado;Informado por Fabián
 22/04/2026;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP
-30/04/2026;SOLO_0700_0800;07:00-08:00;EUR;BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference;confirmado;Captura FF BCE
+30/04/2026;SOLO_ENTRADA;07:00-08:00;EUR;BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference;confirmado;Captura FF BCE
 01/05/2026;SIN_OPERAR;;EUR;Feriado bancario Alemania, Francia e Italia (Día del Trabajo);confirmado;Capturas FF DE/FR/IT
 04/05/2026;SIN_OPERAR;;GBP;Feriado bancario Reino Unido (May Day);confirmado;Captura FF UK
+06/05/2026;BLOQUEO_NOTICIA;08:05-08:18;USD;ADP Non-Farm Employment Change (dato 08:15);confirmado;Captura FF ADP
 08/05/2026;SIN_OPERAR;;USD/EUR;NFP + Feriado bancario Francia (Día de la Victoria);confirmado;Capturas FF NFP/FR
 12/05/2026;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD
 14/05/2026;SIN_OPERAR;;EUR;Feriado bancario Alemania y Francia (Ascensión);confirmado;Capturas FF DE/FR
 20/05/2026;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP
 25/05/2026;SIN_OPERAR;;USD/GBP/EUR;Feriado bancario EE. UU. (Memorial Day), Reino Unido (Spring Bank Holiday), Alemania y Francia (Lunes de Pentecostés);confirmado;Capturas FF US/UK/DE/FR
 02/06/2026;SIN_OPERAR;;EUR;Feriado bancario Italia (Día de la República);confirmado;Captura FF IT
+03/06/2026;BLOQUEO_NOTICIA;08:05-08:18;USD;ADP Non-Farm Employment Change (dato 08:15);confirmado;Captura FF ADP
 05/06/2026;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP
 10/06/2026;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD
-11/06/2026;SOLO_0700_0800;07:00-08:00;EUR;BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference;confirmado;Captura FF BCE
+11/06/2026;SOLO_ENTRADA;07:00-08:00;EUR;BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference;confirmado;Captura FF BCE
 17/06/2026;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP
 19/06/2026;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Juneteenth);confirmado;Captura FF US
 29/06/2026;SIN_OPERAR;;EUR;Feriado bancario parcial Italia (San Pedro y San Pablo, solo algunos bancos);confirmado;Captura FF IT
+01/07/2026;BLOQUEO_NOTICIA;08:05-08:18;USD;ADP Non-Farm Employment Change (dato 08:15);confirmado;Captura FF ADP
+01/07/2026;SIN_OPERAR;;USD;Discurso de Warsh (presidente de la Fed) dentro de Pre NY;confirmado;Informado por Fabián
 02/07/2026;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP
 03/07/2026;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Día de la Independencia, observado);confirmado;Captura FF US
 14/07/2026;SIN_OPERAR;;USD/EUR;CPI USD + Feriado bancario Francia (Día Nacional);confirmado;Capturas FF CPI USD/FR
 22/07/2026;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP
-23/07/2026;SOLO_0700_0800;07:00-08:00;EUR;BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference;confirmado;Captura FF BCE
+23/07/2026;SOLO_ENTRADA;07:00-08:00;EUR;BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference;confirmado;Captura FF BCE
+05/08/2026;BLOQUEO_NOTICIA;08:05-08:18;USD;ADP Non-Farm Employment Change (dato 08:15);confirmado;Captura FF ADP
 07/08/2026;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP
 12/08/2026;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD
 19/08/2026;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP
 31/08/2026;SIN_OPERAR;;GBP;Feriado bancario Reino Unido (Summer Bank Holiday);confirmado;Captura FF UK
+02/09/2026;BLOQUEO_NOTICIA;08:05-08:18;USD;ADP Non-Farm Employment Change (dato 08:15);confirmado;Captura FF ADP
 04/09/2026;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP
 07/09/2026;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Labor Day);confirmado;Captura FF US
-10/09/2026;SOLO_0700_0800;07:00-08:00;EUR;BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference;confirmado;Captura FF BCE
+10/09/2026;SOLO_ENTRADA;07:00-08:00;EUR;BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference;confirmado;Captura FF BCE
 11/09/2026;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD
 16/09/2026;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP
