@@ -764,30 +764,7 @@ tocar los defaults ya validados en oro).
   solamente el cálculo de SL/TP -- es la causa raíz común, no un parche
   puntual. Implementado primero en `fase4_strategy_backtest.pine` a pedido
   de Fabián, para validar este caso (y probablemente los otros 2) antes de
-  replicarlo en el indicador (`fase3_base_consolidada.pine`). Confirmado por
-  Fabián tras verificar uno por uno todos los casos que había detectado:
-  "IMPECABLE... se corrigió en este y todos los demás casos".
-
-- [x] **Fase 4 (backtesting) — SL contra el alto/bajo M3 "en vivo" de la
-  vela en curso (28/09)**: Fabián reportó una SELL del EURUSD del 25/09 a
-  las 07:36 con el mismo síntoma (SL en un nivel viejo) pero con una causa
-  DISTINTA a la del fix anterior. En este caso el patrón envolvente de la
-  propia vela M1 de entrada generó un punto más alto (1,14092 superado) que
-  el alto M3 vigente en ese momento, dos minutos ANTES de que la vela M3 que
-  contenía ese movimiento cerrara y confirmara formalmente el nuevo alto M3
-  (1,14104). El fix anterior (`finalVelaM3`) ya soluciona el atraso al
-  confirmar una vela M3 YA CERRADA -- acá el problema es otro: una vela M3
-  que todavía está en curso (sin cerrar) pero cuyo rango ya superó, en vivo,
-  el pivote M3 confirmado vigente. El SL tiene que respetar ese extremo en
-  vivo, no solo el último confirmado. Fix: en la Sección 6B,
-  `nivelSLBuy`/`nivelSLSell` ahora toman el más amplio entre el nivel M3
-  confirmado (`bajoM3Reciente`/`altoM3Reciente`) y `m3Low`/`m3High` -- el
-  acumulador en vivo de la vela M3 en curso que ya existía en la Sección 2
-  (se actualiza vela a vela, incluida la vela de entrada), así que no hizo
-  falta tocar la Sección 2 ni el timing de pivotes/quiebre/CHoCH, que ya
-  había quedado resuelto con el fix anterior. Implementado primero en
-  `fase4_strategy_backtest.pine`, pendiente de validación por Fabián antes
-  de replicarlo en el indicador.
+  replicarlo en el indicador (`fase3_base_consolidada.pine`).
 
 ## Decisiones de diseño (confirmadas con Fabián)
 

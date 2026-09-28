@@ -88,22 +88,6 @@ strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=1
 // MEC) -- confirmado con Fabián que es el comportamiento esperado, no solo
 // el cálculo de SL/TP.
 //
-// SL contra el alto/bajo M3 "en vivo" de la vela en curso (fix 28/09 #2,
-// bug reportado por Fabián -- SELL EURUSD 25/09 07:36): distinto del fix
-// anterior (ese corregía el ATRASO de una vela M1 al confirmar una vela M3
-// YA CERRADA). Acá el problema es otro: la propia vela M1 de entrada podía
-// superar el alto/bajo M3 ya confirmado DURANTE la formación de la vela M3
-// en curso, todavía sin cerrar -- ej. un wick de la vela de entrada que ya
-// llega más alto que el alto M3 vigente, dos minutos antes de que esa
-// misma vela M3 cierre y confirme ese nuevo alto. El SL (Sección 6B) tiene
-// que respetar ese extremo "en vivo", no solo el último confirmado. Fix:
-// `nivelSLBuy`/`nivelSLSell` ahora toman el más amplio entre el nivel M3
-// confirmado (`bajoM3Reciente`/`altoM3Reciente`) y `m3Low`/`m3High` (el
-// acumulador en vivo de la vela M3 en curso, ya existente en la Sección 2,
-// que incluye la vela de entrada). Alcance acotado a la Sección 6B -- no
-// toca la Sección 2 ni el timing de pivotes/quiebre/CHoCH, que ya quedó
-// resuelto con el fix anterior.
-//
 // Validación pendiente: correr esto primero en ORO (mismo período que ya
 // validamos con el indicador en vivo) y comparar que las entradas/salidas
 // coincidan con lo que el indicador ya mostró, antes de confiar en los
@@ -578,23 +562,8 @@ UMBRAL_SL_PCT = input.float(0.46, "Umbral de distancia SL para reducción (% del
 REDUCCION_SL = input.float(0.60, "Multiplicador de la distancia SL al superar el umbral (0,60 = reduce 40%)", minval=0.1, maxval=1, step=0.05, group=grpSLTP)
 RR_TP = input.float(0.90, "Relación riesgo:beneficio del TP (TP = RR × distancia SL final)", minval=0.1, step=0.05, group=grpSLTP)
 
-nivelSLBuyConfirmado  = na(bajoM3Reciente) ? ultimoBajoQuebrado : bajoM3Reciente
-nivelSLSellConfirmado = na(altoM3Reciente) ? ultimoAltoQuebrado  : altoM3Reciente
-
-// fix 28/09 #2, bug reportado por Fabián (SELL EURUSD 25/09 07:36): el SL se
-// calculaba solo contra el alto/bajo M3 ya CONFIRMADO (una vela M3 cerrada y
-// procesada), ignorando que la propia vela M1 de entrada podía haber
-// superado ese nivel DURANTE la formación de la vela M3 en curso, todavía
-// sin cerrar -- en ese caso el SL tiene que respetar ese nuevo extremo "en
-// vivo" (el que minutos después, al cerrar esa vela M3, termina
-// confirmándose como el próximo alto/bajo M3), igual que lo haría Fabián
-// mirando la vela M1 en tiempo real. m3High/m3Low (Sección 2) ya acumulan
-// en vivo, vela a vela, el alto/bajo de la vela M3 en curso (incluida la
-// vela de entrada), así que alcanza con tomar el más amplio entre el nivel
-// confirmado y esa acumulación en vivo -- no hace falta esperar a que
-// finalVelaM3 confirme el nuevo pivote para respetarlo en el SL.
-nivelSLBuy  = not na(nivelSLBuyConfirmado)  and not na(m3Low)  ? math.min(nivelSLBuyConfirmado,  m3Low)  : nivelSLBuyConfirmado
-nivelSLSell = not na(nivelSLSellConfirmado) and not na(m3High) ? math.max(nivelSLSellConfirmado, m3High) : nivelSLSellConfirmado
+nivelSLBuy  = na(bajoM3Reciente) ? ultimoBajoQuebrado : bajoM3Reciente
+nivelSLSell = na(altoM3Reciente) ? ultimoAltoQuebrado  : altoM3Reciente
 
 distanciaCrudaBuy  = not na(nivelSLBuy)  ? close - nivelSLBuy  : na
 distanciaCrudaSell = not na(nivelSLSell) ? nivelSLSell - close : na
