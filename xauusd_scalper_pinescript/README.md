@@ -786,6 +786,34 @@ tocar los defaults ya validados en oro).
   los valores de DEBUG relevantes bar a bar) antes de intentar un fix de
   nuevo.
 
+- [x] **Fase 4 (backtesting) — corte Pre-NY/NY movido a 09:01 (28/09)**: a
+  pedido de Fabián, para que la vela M1 que ABRE a las 09:00 (y cierra a
+  las 09:01) se ejecute como parte de Pre-NY en vez de NY. Causa: en Pine
+  el fin de un string de sesión `"HHMM-HHMM"` es EXCLUSIVO -- con
+  `"0700-0900"` esa vela puntual ya quedaba del lado de NY. Fix: se corrió
+  el corte un minuto -- `sesionPreNYStr = "0700-0901:23456"`,
+  `sesionNYStr = "0901-1100:23456"` (Sección 1). Cambio de configuración
+  puro, sin tocar lógica -- `finEstaSesion`/`inicioEstaSesion` (Sección 6C)
+  se ajustan solos al nuevo límite. Implementado primero en
+  `fase4_strategy_backtest.pine`, pendiente de replicar en el indicador una
+  vez validado.
+
+- [x] **Fase 4 (backtesting) — margen de tolerancia al TP (28/09)**:
+  Fabián reportó trades donde, con la herramienta "Posición larga/corta" de
+  TradingView, el precio parecía haber tocado el TP (0,9R) pero el bracket
+  nativo no lo tomaba así -- faltaba una diferencia casi nula para el toque
+  exacto (el cálculo del código es más preciso que esa herramienta manual).
+  Fix: `TOLERANCIA_TP_PCT` (Sección 6B, input nuevo, default 0,5% --
+  mismo mecanismo que `TOLERANCIA_CUERPO` en la Sección 3) acerca el TP
+  efectivo (`tpBuy`/`tpSell`, usados tanto por el bracket nativo como por
+  la red de seguridad interna) a la entrada en esa fracción % de la
+  distancia total -- el TP se llena cuando el precio está a esa tolerancia
+  (o menos) de tocar el TP "teórico" completo, en vez de exigir el toque
+  exacto. No afecta el cálculo del SL ni el tamaño de posición (`qtyBuy`/
+  `qtySell`), que siguen usando la distancia al SL sin tocar. Implementado
+  primero en `fase4_strategy_backtest.pine`, pendiente de replicar en el
+  indicador una vez validado.
+
 ## Decisiones de diseño (confirmadas con Fabián)
 
 - **Estética minimalista, solo la señal final**: los triángulos/etiquetas de
