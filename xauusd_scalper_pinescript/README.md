@@ -741,6 +741,30 @@ tocar los defaults ya validados en oro).
   regla 2 de `procesarSesionTrade()` sigue disparando `cerrarBroker` +
   `motivoCierre` pero ahora como RED DE SEGURIDAD (normalmente un no-op,
   ya que el bracket cierra primero), no como mecanismo principal.
+- [x] **Fase 4 (backtesting) — confirmación de la vela M3 sin atraso
+  (28/09)**: Fabián reportó, tras un backtesting profundo, un BUY del
+  18/05 a las 08:42 cuyo SL quedó puesto en un bajo M3 viejo (4.549,800)
+  en vez del bajo M3 que la propia vela de entrada terminaba de confirmar
+  (4.558,500) -- y anticipó que la misma causa probablemente explicaba
+  otras 2 fallas que había detectado (a resolver a continuación, una vez
+  validado este primer caso). Causa: la Sección 2 (estructura M3, copia
+  literal en indicador y estrategia) solo se "enteraba" de que una vela M3
+  había cerrado al llegar la PRIMERA vela M1 de la vela M3 SIGUIENTE
+  (`timeframe.change("3")`, mirando hacia atrás) -- un atraso de una vela
+  M1 completa entre el cierre real de la vela M3 y el momento en que el
+  código confirmaba su alto/bajo. Si una señal caía justo en esa vela M1
+  "de transición", el código todavía usaba el pivote VIEJO para el SL.
+  Fix: `finalVelaM3` detecta -- usando `time_close` de la resolución "3"
+  vía `request.security()`, el mecanismo estándar y seguro en Pine para
+  esto, sin repintado -- si la vela M1 actual es la ÚLTIMA de su propia
+  vela M3, y procesa esa vela M3 en ese mismo instante en vez de esperar a
+  la siguiente. Confirmado explícitamente con Fabián (antes de implementar)
+  que el fix debía adelantar TODA la estructura M3 dependiente (pivotes,
+  quiebre, CHoCH y el momento en que se habilita una señal MEC), no
+  solamente el cálculo de SL/TP -- es la causa raíz común, no un parche
+  puntual. Implementado primero en `fase4_strategy_backtest.pine` a pedido
+  de Fabián, para validar este caso (y probablemente los otros 2) antes de
+  replicarlo en el indicador (`fase3_base_consolidada.pine`).
 
 ## Decisiones de diseño (confirmadas con Fabián)
 
