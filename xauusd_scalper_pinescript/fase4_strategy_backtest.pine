@@ -104,24 +104,6 @@ strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=1
 // puntual +, idealmente, los valores de DEBUG relevantes bar a bar) antes
 // de volver a intentar un fix.
 //
-// Corte Pre-NY/NY movido a 09:01 (28/09, a pedido de Fabián): en Pine el
-// fin de un string de sesión "HHMM-HHMM" es EXCLUSIVO, así que con
-// "0700-0900" la vela que ABRE a las 09:00 (cierra a las 09:01) quedaba
-// del lado de NY. Fabián quiere que esa vela puntual la ejecute Pre-NY --
-// se corrió el corte un minuto (Pre-NY "0700-0901", NY "0901-1100"). Ver
-// Sección 1.
-//
-// Margen de tolerancia al TP (28/09, a pedido de Fabián): reportó trades
-// donde, con la herramienta "Posición larga/corta" de TradingView, el
-// precio parecía haber tocado el TP (0,9R) pero el bracket nativo no lo
-// tomaba así -- faltaba una diferencia casi nula (el cálculo del código es
-// más preciso que esa herramienta manual). Fix: `TOLERANCIA_TP_PCT`
-// (Sección 6B, mismo mecanismo que `TOLERANCIA_CUERPO` en la Sección 3)
-// acerca el TP efectivo a la entrada en esa fracción % de la distancia
-// total, así que el bracket llena cuando el precio está a esa tolerancia
-// (o menos) de tocar el TP "teórico" completo, en vez de exigir el toque
-// exacto.
-//
 // Validación pendiente: correr esto primero en ORO (mismo período que ya
 // validamos con el indicador en vivo) y comparar que las entradas/salidas
 // coincidan con lo que el indicador ya mostró, antes de confiar en los
@@ -159,15 +141,8 @@ colorWallStreet = input.color(color.new(#d9b38c, 78), "Color sesión Wall Street
 // Días Pine: 1=Domingo 2=Lunes 3=Martes 4=Miércoles 5=Jueves 6=Viernes 7=Sábado
 // Pre-NY y NY: Lunes a Viernes (2=Lunes ... 6=Viernes) | Asia: Domingo a
 // Jueves (1=Domingo ... 5=Jueves)
-// Corte Pre-NY/NY en 09:01, no 09:00 (fix 28/09, a pedido de Fabián): en
-// Pine el fin de sesión de un string "HHMM-HHMM" es EXCLUSIVO -- con
-// "0700-0900" la vela que ABRE a las 09:00 (y cierra a las 09:01) ya
-// quedaba del lado de NY, no de Pre-NY. Fabián quiere que esa vela
-// puntual se ejecute como parte de Pre-NY, así que el corte se corre un
-// minuto: Pre-NY llega hasta "0901" (incluye la vela que abre a las
-// 09:00) y NY arranca en "0901" (primera vela que abre a las 09:01).
-sesionPreNYStr = "0700-0901:23456"
-sesionNYStr    = "0901-1100:23456"
+sesionPreNYStr = "0700-0900:23456"
+sesionNYStr    = "0900-1100:23456"
 sesionAsiaStr  = "2000-2200:12345"
 // Wall Street (agregada 16/09, para backtestear índices: Nasdaq, S&P 500,
 // Dow Jones) -- se SUPERPONE con NY (09:00-11:00 EST), ver nota al inicio
@@ -602,18 +577,6 @@ grpSLTP = "SL / TP"
 UMBRAL_SL_PCT = input.float(0.46, "Umbral de distancia SL para reducción (% del precio de entrada)", minval=0, step=0.01, group=grpSLTP)
 REDUCCION_SL = input.float(0.60, "Multiplicador de la distancia SL al superar el umbral (0,60 = reduce 40%)", minval=0.1, maxval=1, step=0.05, group=grpSLTP)
 RR_TP = input.float(0.90, "Relación riesgo:beneficio del TP (TP = RR × distancia SL final)", minval=0.1, step=0.05, group=grpSLTP)
-// Margen de tolerancia al TP (fix 28/09, a pedido de Fabián): reportó
-// trades donde, mirando la herramienta "Posición larga/corta" de
-// TradingView, el precio parecía haber alcanzado el TP (0,9R), pero el
-// bracket nativo (strategy.exit) no lo tomaba así -- faltaba una
-// diferencia casi nula para tocar el nivel exacto (más preciso que la
-// herramienta manual de TradingView, que redondea visualmente). Mismo
-// mecanismo que TOLERANCIA_CUERPO en la Sección 3 (un margen que se resta
-// del umbral exigido): acá se aplica sobre la DISTANCIA al TP, no sobre
-// el nivel en sí -- el TP efectivo (el que usa el bracket real) queda un
-// poco más cerca de la entrada, así que se llena cuando el precio está a
-// TOLERANCIA_TP_PCT% (o menos) de tocar el TP "teórico" completo.
-TOLERANCIA_TP_PCT = input.float(0.5, "Margen de tolerancia al TP (%, TP se acerca esta fracción de la distancia total)", minval=0, maxval=5, step=0.1, group=grpSLTP)
 
 nivelSLBuy  = na(bajoM3Reciente) ? ultimoBajoQuebrado : bajoM3Reciente
 nivelSLSell = na(altoM3Reciente) ? ultimoAltoQuebrado  : altoM3Reciente
@@ -625,9 +588,9 @@ distanciaFinalBuy  = not na(distanciaCrudaBuy)  ? (distanciaCrudaBuy  / close * 
 distanciaFinalSell = not na(distanciaCrudaSell) ? (distanciaCrudaSell / close * 100 > UMBRAL_SL_PCT ? distanciaCrudaSell * REDUCCION_SL : distanciaCrudaSell) : na
 
 slBuy  = not na(distanciaFinalBuy)  ? close - distanciaFinalBuy         : na
-tpBuy  = not na(distanciaFinalBuy)  ? close + distanciaFinalBuy * RR_TP * (1 - TOLERANCIA_TP_PCT / 100) : na
+tpBuy  = not na(distanciaFinalBuy)  ? close + distanciaFinalBuy * RR_TP : na
 slSell = not na(distanciaFinalSell) ? close + distanciaFinalSell         : na
-tpSell = not na(distanciaFinalSell) ? close - distanciaFinalSell * RR_TP * (1 - TOLERANCIA_TP_PCT / 100) : na
+tpSell = not na(distanciaFinalSell) ? close - distanciaFinalSell * RR_TP : na
 
 // ============================================================================
 // SECCIÓN 6C — EJECUCIÓN REAL (BACKTEST) + LÍMITE DIARIO + ARRASTRE ENTRE
