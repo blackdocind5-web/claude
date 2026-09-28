@@ -764,7 +764,27 @@ tocar los defaults ya validados en oro).
   solamente el cálculo de SL/TP -- es la causa raíz común, no un parche
   puntual. Implementado primero en `fase4_strategy_backtest.pine` a pedido
   de Fabián, para validar este caso (y probablemente los otros 2) antes de
-  replicarlo en el indicador (`fase3_base_consolidada.pine`).
+  replicarlo en el indicador (`fase3_base_consolidada.pine`). Confirmado por
+  Fabián tras verificar uno por uno todos los casos que había detectado:
+  "IMPECABLE... se corrigió en este y todos los demás casos".
+
+- [ ] **Fase 4 (backtesting) — SL contra el alto/bajo M3 "en vivo" de la
+  vela en curso — INTENTADO Y REVERTIDO (28/09)**: Fabián reportó una SELL
+  del EURUSD del 25/09 a las 07:36 (caso aislado, poco frecuente) con SL en
+  un alto M3 confirmado viejo (1,14092) en vez del que la propia vela M1 de
+  entrada ya había superado en vivo (1,14104), dos minutos antes de que esa
+  misma vela M3 cerrara y lo confirmara formalmente. Se implementó un fix
+  en la Sección 6B (`nivelSLBuy`/`nivelSLSell` tomando el más amplio entre
+  el nivel M3 confirmado y `m3Low`/`m3High`, el acumulador en vivo de la
+  vela M3 en curso). Fabián reportó que esto hacía que las entradas
+  dejaran de reconocerse por completo (ni siquiera se abrían) -- no se
+  pudo reproducir/diagnosticar la causa exacta sin poder correr el script
+  en TradingView. Por indicación explícita de Fabián se revirtió (commit
+  de revert) en vez de seguir parcheando a ciegas sobre código que ya
+  funciona bien. **Bug original sigue sin resolver** -- para retomarlo
+  hace falta evidencia fresca (screenshots del caso puntual + idealmente
+  los valores de DEBUG relevantes bar a bar) antes de intentar un fix de
+  nuevo.
 
 ## Decisiones de diseño (confirmadas con Fabián)
 

@@ -88,6 +88,22 @@ strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=1
 // MEC) -- confirmado con Fabián que es el comportamiento esperado, no solo
 // el cálculo de SL/TP.
 //
+// SL contra el alto/bajo M3 "en vivo" de la vela en curso -- INTENTADO Y
+// REVERTIDO (28/09): a raíz de un caso aislado (SELL EURUSD 25/09 07:36,
+// SL en un alto M3 confirmado viejo en vez del que la propia vela de
+// entrada ya había superado en vivo, todavía sin cerrar esa vela M3), se
+// probó que `nivelSLBuy`/`nivelSLSell` tomaran el más amplio entre el
+// nivel M3 confirmado y `m3Low`/`m3High` (el acumulador en vivo de la
+// vela M3 en curso). Fabián reportó que esto hacía que las entradas
+// dejaran de reconocerse por completo (ni siquiera se abrían) -- no se
+// pudo reproducir/diagnosticar la causa exacta sin poder correr el script
+// en TradingView, así que se revirtió por indicación explícita de Fabián
+// en vez de seguir parcheando a ciegas sobre código que ya funciona bien.
+// El bug original (caso aislado, poco frecuente) sigue sin resolver --
+// para retomarlo hace falta evidencia fresca (screenshots del caso
+// puntual +, idealmente, los valores de DEBUG relevantes bar a bar) antes
+// de volver a intentar un fix.
+//
 // Validación pendiente: correr esto primero en ORO (mismo período que ya
 // validamos con el indicador en vivo) y comparar que las entradas/salidas
 // coincidan con lo que el indicador ya mostró, antes de confiar en los
