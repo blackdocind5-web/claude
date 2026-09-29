@@ -99,6 +99,24 @@ strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=1
 // indicador sigue usando (`timeframe.change("3")`, con el atraso de 1
 // vela M1 original) mientras se valida una implementación corregida.
 //
+// Confirmación de la vela M3 sin atraso -- SEGUNDO INTENTO, Opción A
+// (29/09): en vez de volver a `request.security` (que exigiría confiar de
+// nuevo en una sutileza de `lookahead` que ya nos falló una vez),
+// `finalVelaM3` ahora se calcula con aritmética LOCAL, sin pedir nada a
+// otro timeframe: `m3OpenTime` ya es el momento REAL en que Pine detectó
+// que empezó la vela M3 en curso (el mismo dato que ya alimenta
+// m3Open/m3High/m3Low/m3Close desde el día uno) -- sumarle 3 minutos fijos
+// da el cierre teórico de esa misma vela M3, y compararlo contra el cierre
+// de la vela M1 actual da exactamente la última vela M1 de esa vela M3. Ver
+// el comentario largo junto a `finalVelaM3` (Sección 2) para el detalle de
+// por qué hace falta `m3OpenTimeEfectivo` (para no arrastrar el open de la
+// vela M3 ANTERIOR justo en la vela de transición). Se agregó además un
+// plot de DEBUG (`mostrarDebugM3`) que marca cada vez que `finalVelaM3` da
+// true, para validar de un vistazo -- ANTES de revisar los casos puntuales
+// de SL -- que la cadencia es exactamente 1 cada 3 velas M1, nunca más
+// seguido (la lección de la vez anterior). Validación pendiente por
+// Fabián.
+//
 // SL contra el alto/bajo M3 "en vivo" de la vela en curso -- INTENTADO Y
 // REVERTIDO (28/09): a raíz de un caso aislado (SELL EURUSD 25/09 07:36,
 // SL en un alto M3 confirmado viejo en vez del que la propia vela de
@@ -196,6 +214,30 @@ var float m3Low = na
 var float m3Close = na
 var int   m3OpenTime = na
 
+// finalVelaM3 (fix 29/09, Opción A -- aritmética local, SIN request.security):
+// ¿esta vela M1 es la ÚLTIMA de su propia vela M3? Antes, el código solo se
+// "enteraba" de que una vela M3 había cerrado al llegar la PRIMERA vela M1
+// de la vela M3 SIGUIENTE (`nuevaVelaM3`, mirando hacia atrás) -- un atraso
+// de una vela M1 completa entre el cierre real de la vela M3 y el momento
+// en que el código confirma su alto/bajo. Se había probado primero (28/09,
+// revertido) un `finalVelaM3` basado en `request.security(..., time_close,
+// lookahead=barmerge.lookahead_off)`, pero Fabián detectó que rompía la
+// estructura M3 completa (marcaba altos/bajos a granularidad de M1) -- muy
+// probablemente porque `lookahead_off` deja esa serie atrasada un período
+// completo. Esta versión evita el problema de raíz: no usa
+// `request.security` en absoluto. `m3OpenTime` ya es el momento REAL en
+// que Pine detectó que empezó la vela M3 en curso (el mismo dato que ya
+// alimenta m3Open/m3High/m3Low/m3Close más abajo) -- `m3OpenTimeEfectivo`
+// toma ese valor, o `time` si esta vela M1 es la primera de una vela M3
+// nueva (para no arrastrar el open de la vela M3 ANTERIOR en esa vela de
+// transición). Sumarle 3 minutos fijos da el cierre teórico de esa misma
+// vela M3, sin reinventar ninguna alineación de grilla -- y compararlo
+// contra el cierre de ESTA vela M1 (`time` + 1 minuto) da exactamente la
+// vela M1 que es la última de su vela M3.
+m3OpenTimeEfectivo = nuevaVelaM3 ? time : m3OpenTime
+m3ExpectedCloseTime = m3OpenTimeEfectivo + timeframe.in_seconds("3") * 1000
+finalVelaM3 = (time + timeframe.in_seconds("1") * 1000) >= m3ExpectedCloseTime
+
 var string curDir = na
 var float curHigh = na
 var int   curHighT = na
@@ -273,7 +315,24 @@ nivelBajo = float(na)
 altoRunInicio = int(na)
 bajoRunInicio = int(na)
 
-if nuevaVelaM3 and not na(m3OpenTime)
+// -- actualizar el acumulador de la vela M3 en curso PRIMERO -- si esta
+// vela M1 es la última de su vela M3 (finalVelaM3), acá abajo ya queda
+// incluida en m3High/m3Low/m3Close antes de procesar más abajo.
+if nuevaVelaM3
+    m3Open := open
+    m3High := high
+    m3Low := low
+    m3Close := close
+    m3OpenTime := time
+else
+    m3High := math.max(m3High, high)
+    m3Low := math.min(m3Low, low)
+    m3Close := close
+
+// -- procesar la vela M3 en cuanto CIERRA de verdad (finalVelaM3), no una
+// vela M1 más tarde (nuevaVelaM3) -- ver comentario largo junto a
+// finalVelaM3 más arriba.
+if finalVelaM3 and not na(m3OpenTime)
     [d, hh, hT, ll, lT, pD, pH, pHT, pL, pLT, esA, esB, nA, nB, arI, brI] = procesarVelaM3(m3Open, m3High, m3Low, m3Close, m3OpenTime, curDir, curHigh, curHighT, curLow, curLowT, prevDir, prevHigh, prevHighT, prevLow, prevLowT)
     curDir := d
     curHigh := hh
@@ -293,17 +352,6 @@ if nuevaVelaM3 and not na(m3OpenTime)
         esBajoM3 := true
         nivelBajo := nB
         bajoRunInicio := brI
-
-if nuevaVelaM3
-    m3Open := open
-    m3High := high
-    m3Low := low
-    m3Close := close
-    m3OpenTime := time
-else
-    m3High := math.max(m3High, high)
-    m3Low := math.min(m3Low, low)
-    m3Close := close
 
 var line altoLinea = na
 var line bajoLinea = na
@@ -439,6 +487,11 @@ plot(mostrarDebugM3 ? altoM3Activo : na, title="DEBUG altoM3Activo", color=color
 plot(mostrarDebugM3 ? bajoM3Activo : na, title="DEBUG bajoM3Activo", color=color.purple, style=plot.style_circles, linewidth=2)
 plot(mostrarDebugM3 ? altoM3Reciente : na, title="DEBUG altoM3Reciente", color=color.teal, style=plot.style_circles, linewidth=2)
 plot(mostrarDebugM3 ? bajoM3Reciente : na, title="DEBUG bajoM3Reciente", color=color.orange, style=plot.style_circles, linewidth=2)
+// DEBUG temporal (29/09, para validar finalVelaM3 antes de confiar en él de
+// nuevo): un círculo abajo del gráfico cada vez que finalVelaM3 da true --
+// alejando el gráfico, la cadencia esperada es EXACTAMENTE 1 círculo cada 3
+// velas M1 (alineado con el cierre real de cada vela M3), nunca más seguido.
+plot(mostrarDebugM3 and finalVelaM3 ? 1 : na, title="DEBUG finalVelaM3 (cadencia esperada: 1 cada 3 velas M1)", color=color.red, style=plot.style_circles, linewidth=2)
 
 // ============================================================================
 // SECCIÓN 3 — CLASIFICADOR DE VELA ENVOLVENTE EN M1 (Fase 2a) -- copia literal
