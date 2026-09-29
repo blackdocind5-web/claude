@@ -488,10 +488,16 @@ plot(mostrarDebugM3 ? bajoM3Activo : na, title="DEBUG bajoM3Activo", color=color
 plot(mostrarDebugM3 ? altoM3Reciente : na, title="DEBUG altoM3Reciente", color=color.teal, style=plot.style_circles, linewidth=2)
 plot(mostrarDebugM3 ? bajoM3Reciente : na, title="DEBUG bajoM3Reciente", color=color.orange, style=plot.style_circles, linewidth=2)
 // DEBUG temporal (29/09, para validar finalVelaM3 antes de confiar en él de
-// nuevo): un círculo abajo del gráfico cada vez que finalVelaM3 da true --
-// alejando el gráfico, la cadencia esperada es EXACTAMENTE 1 círculo cada 3
-// velas M1 (alineado con el cierre real de cada vela M3), nunca más seguido.
-plot(mostrarDebugM3 and finalVelaM3 ? 1 : na, title="DEBUG finalVelaM3 (cadencia esperada: 1 cada 3 velas M1)", color=color.red, style=plot.style_circles, linewidth=2)
+// nuevo): un triángulo rojo ABAJO de cada vela M1 en la que finalVelaM3 da
+// true. A diferencia de los 4 plots de arriba (que grafican un NIVEL de
+// precio y por eso se ven como líneas), este es un marcador puntual por
+// vela -- usa plotshape con location=location.belowbar para que Pine lo
+// ubique solo justo debajo de cada vela concreta, sin tocar la escala de
+// precio del gráfico (a diferencia de graficar un número fijo como "1",
+// que aplasta el gráfico entero contra ese valor). Con las velas M1 bien
+// visibles (zoom normal, NO alejado), la cadencia esperada es un triángulo
+// cada 3 velas, nunca en dos velas seguidas ni salteando más de 3.
+plotshape(mostrarDebugM3 and finalVelaM3, title="DEBUG finalVelaM3 (triángulo cada 3 velas M1)", style=shape.triangleup, location=location.belowbar, color=color.red, size=size.tiny)
 
 // ============================================================================
 // SECCIÓN 3 — CLASIFICADOR DE VELA ENVOLVENTE EN M1 (Fase 2a) -- copia literal
