@@ -823,6 +823,25 @@ tocar los defaults ya validados en oro).
   los valores de DEBUG relevantes bar a bar) antes de intentar un fix de
   nuevo.
 
+- [ ] **Fase 4 (backtesting) — corte Pre-NY/NY a las 09:01 y margen de
+  tolerancia al TP — REINTENTADOS (29/09)**: estos dos ajustes se habían
+  implementado el 28/09 y se revirtieron junto con `finalVelaM3` cuando
+  apareció el bug de marcado incorrecto de la estructura M3 (no se podía
+  descartar en el momento que tuvieran algo que ver). Con la causa real ya
+  identificada y corregida -- era enteramente de `finalVelaM3`, ninguno de
+  estos dos cambios toca la Sección 2 -- se reintentan sin modificaciones:
+  - Corte Pre-NY/NY (Sección 1): `sesionPreNYStr = "0700-0901:23456"`,
+    `sesionNYStr = "0901-1100:23456"` -- la vela M1 que abre a las 09:00
+    (cierra a las 09:01) pasa a ejecutarse como parte de Pre-NY en vez de
+    NY.
+  - Margen de tolerancia al TP (Sección 6B): `TOLERANCIA_TP_PCT` (default
+    0,5%) acerca el TP efectivo a la entrada esa fracción % de la
+    distancia total, para que el bracket llene cuando el precio está a esa
+    tolerancia de tocar el TP teórico completo, en vez de exigir el toque
+    exacto.
+  Implementado en `fase4_strategy_backtest.pine`. **Validación pendiente
+  por Fabián.**
+
 ## Decisiones de diseño (confirmadas con Fabián)
 
 - **Estética minimalista, solo la señal final**: los triángulos/etiquetas de
