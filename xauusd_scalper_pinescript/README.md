@@ -741,32 +741,40 @@ tocar los defaults ya validados en oro).
   regla 2 de `procesarSesionTrade()` sigue disparando `cerrarBroker` +
   `motivoCierre` pero ahora como RED DE SEGURIDAD (normalmente un no-op,
   ya que el bracket cierra primero), no como mecanismo principal.
-- [x] **Fase 4 (backtesting) — confirmación de la vela M3 sin atraso
-  (28/09)**: Fabián reportó, tras un backtesting profundo, un BUY del
-  18/05 a las 08:42 cuyo SL quedó puesto en un bajo M3 viejo (4.549,800)
-  en vez del bajo M3 que la propia vela de entrada terminaba de confirmar
-  (4.558,500) -- y anticipó que la misma causa probablemente explicaba
-  otras 2 fallas que había detectado (a resolver a continuación, una vez
-  validado este primer caso). Causa: la Sección 2 (estructura M3, copia
-  literal en indicador y estrategia) solo se "enteraba" de que una vela M3
-  había cerrado al llegar la PRIMERA vela M1 de la vela M3 SIGUIENTE
-  (`timeframe.change("3")`, mirando hacia atrás) -- un atraso de una vela
-  M1 completa entre el cierre real de la vela M3 y el momento en que el
-  código confirmaba su alto/bajo. Si una señal caía justo en esa vela M1
-  "de transición", el código todavía usaba el pivote VIEJO para el SL.
-  Fix: `finalVelaM3` detecta -- usando `time_close` de la resolución "3"
-  vía `request.security()`, el mecanismo estándar y seguro en Pine para
-  esto, sin repintado -- si la vela M1 actual es la ÚLTIMA de su propia
-  vela M3, y procesa esa vela M3 en ese mismo instante en vez de esperar a
-  la siguiente. Confirmado explícitamente con Fabián (antes de implementar)
-  que el fix debía adelantar TODA la estructura M3 dependiente (pivotes,
-  quiebre, CHoCH y el momento en que se habilita una señal MEC), no
-  solamente el cálculo de SL/TP -- es la causa raíz común, no un parche
-  puntual. Implementado primero en `fase4_strategy_backtest.pine` a pedido
-  de Fabián, para validar este caso (y probablemente los otros 2) antes de
-  replicarlo en el indicador (`fase3_base_consolidada.pine`). Confirmado por
-  Fabián tras verificar uno por uno todos los casos que había detectado:
-  "IMPECABLE... se corrigió en este y todos los demás casos".
+- [ ] **Fase 4 (backtesting) — confirmación de la vela M3 sin atraso —
+  INTENTADO Y REVERTIDO (28/09)**: Fabián reportó, tras un backtesting
+  profundo, un BUY del 18/05 a las 08:42 cuyo SL quedó puesto en un bajo M3
+  viejo (4.549,800) en vez del bajo M3 que la propia vela de entrada
+  terminaba de confirmar (4.558,500). Causa: la Sección 2 (estructura M3,
+  copia literal en indicador y estrategia) solo se "enteraba" de que una
+  vela M3 había cerrado al llegar la PRIMERA vela M1 de la vela M3
+  SIGUIENTE (`timeframe.change("3")`, mirando hacia atrás) -- un atraso de
+  una vela M1 completa entre el cierre real de la vela M3 y el momento en
+  que el código confirmaba su alto/bajo. Fix probado: `finalVelaM3`
+  detectaba -- usando `time_close` de la resolución "3" vía
+  `request.security(..., lookahead=barmerge.lookahead_off)` -- si la vela
+  M1 actual era la ÚLTIMA de su propia vela M3, y procesaba esa vela M3 en
+  ese mismo instante en vez de esperar a la siguiente. Fabián confirmó
+  inicialmente ("IMPECABLE") que resolvía todos los casos puntuales de SL
+  viejo que había detectado. **Pero luego**, revisando el backtest de forma
+  más amplia, encontró que la estructura M3 completa (líneas de
+  altos/bajos) empezó a marcarse a granularidad casi de M1, en lugares
+  incorrectos -- confirmado comparando lado a lado con el indicador (que
+  NO tiene este fix y sigue marcando bien). Sospecha técnica (sin confirmar
+  corriendo el script): con `lookahead_off`, pedir `time_close` de una
+  resolución mayor desde una menor puede quedar "atrasado" al cierre de la
+  vela anterior durante TODA la formación de la vela actual -- para una
+  serie de TIEMPO (no de precio) como esta, el patrón documentado de Pine
+  usa `lookahead_on` en su lugar (seguro/no repinta, porque el horario de
+  cierre de una vela es un dato fijo, no derivado de precio futuro). Se
+  revirtió por indicación de Fabián para volver al mecanismo que el
+  indicador sigue usando (`timeframe.change("3")`, con el atraso de 1 vela
+  M1 original) mientras se valida una implementación corregida con
+  `lookahead_on`. **El bug original (SL en bajo/alto M3 viejo) sigue sin
+  resolver** -- queda pendiente reintentar el fix con `lookahead_on` y
+  validarlo con cuidado (tanto el caso puntual del SL como que la
+  estructura M3 general se siga viendo igual que en el indicador) antes de
+  darlo por bueno.
 
 - [ ] **Fase 4 (backtesting) — SL contra el alto/bajo M3 "en vivo" de la
   vela en curso — INTENTADO Y REVERTIDO (28/09)**: Fabián reportó una SELL

@@ -72,21 +72,32 @@ strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=1
 // intrabar) sin esa ambigüedad. Ver `contadorPreNY`/`idActualPreNY` (y
 // equivalentes de NY/Asia/WallStreet) en la Sección 6C.
 //
-// Confirmación de la vela M3 sin atraso (fix 28/09, bug reportado por
-// Fabián -- SL puesto en el bajo/alto M3 viejo en vez del que la propia
-// vela de entrada terminaba de confirmar): antes, el código solo se
-// "enteraba" de que una vela M3 había cerrado al llegar la primera vela M1
-// de la vela M3 SIGUIENTE (`timeframe.change("3")`, mirando hacia atrás) --
-// un atraso de una vela M1 completa entre el cierre real de la vela M3 y
-// el momento en que el código confirmaba su alto/bajo. Fix: `finalVelaM3`
-// (Sección 2) detecta, usando `time_close` de la resolución "3" vía
-// `request.security()` -- el mecanismo estándar y seguro en Pine, sin
-// repintado -- si la vela M1 actual es la ÚLTIMA de su propia vela M3, y
-// procesa esa vela M3 en ese mismo instante en vez de esperar a la
-// siguiente. Esto adelanta en una vela M1 TODA la estructura M3 (pivotes,
-// quiebre, CHoCH y por lo tanto el momento en que se habilita una señal
-// MEC) -- confirmado con Fabián que es el comportamiento esperado, no solo
-// el cálculo de SL/TP.
+// Confirmación de la vela M3 sin atraso -- INTENTADO Y REVERTIDO (28/09,
+// bug reportado por Fabián -- SL puesto en el bajo/alto M3 viejo en vez
+// del que la propia vela de entrada terminaba de confirmar): antes, el
+// código solo se "enteraba" de que una vela M3 había cerrado al llegar la
+// primera vela M1 de la vela M3 SIGUIENTE (`timeframe.change("3")`,
+// mirando hacia atrás) -- un atraso de una vela M1 completa entre el
+// cierre real de la vela M3 y el momento en que el código confirmaba su
+// alto/bajo. Se probó `finalVelaM3` (usando `time_close` de la resolución
+// "3" vía `request.security()` con `lookahead=barmerge.lookahead_off`)
+// para detectar si la vela M1 actual es la ÚLTIMA de su propia vela M3 y
+// procesar esa vela M3 en ese mismo instante. Fabián confirmó inicialmente
+// que resolvía los casos puntuales reportados, pero luego, al revisar el
+// backtest de forma más amplia, encontró que la estructura M3 completa
+// (Sección 2) empezó a marcar altos/bajos a granularidad casi de M1, en
+// lugares incorrectos -- comparando lado a lado con el indicador (que NO
+// tiene este fix y sí marca bien), se confirmó que la causa era este
+// cambio. Sospecha técnica (sin confirmar corriendo el script): con
+// `lookahead_off`, `time_close` de una resolución mayor pedido desde una
+// menor puede quedar "atrasado" al cierre de la vela anterior durante toda
+// la formación de la vela actual -- el patrón documentado de Pine para
+// series de TIEMPO (no de precio) en este caso específico usa
+// `lookahead_on` en su lugar, que es seguro (no repinta) porque el horario
+// de cierre de una vela es un dato fijo, no derivado de precio futuro.
+// Revertido por indicación de Fabián para volver al mecanismo que el
+// indicador sigue usando (`timeframe.change("3")`, con el atraso de 1
+// vela M1 original) mientras se valida una implementación corregida.
 //
 // SL contra el alto/bajo M3 "en vivo" de la vela en curso -- INTENTADO Y
 // REVERTIDO (28/09): a raíz de un caso aislado (SELL EURUSD 25/09 07:36,
@@ -179,24 +190,6 @@ UMBRAL_QUIEBRE = input.float(0.00005, "Umbral mínimo de quiebre/Continuación (
 
 nuevaVelaM3 = timeframe.change("3")
 
-// finalVelaM3 (fix 28/09, bug reportado por Fabián -- SL puesto en el bajo
-// M3 viejo en vez del que la propia vela de entrada terminaba de confirmar):
-// ¿esta vela M1 es la ÚLTIMA de su vela M3? Antes, el código solo se
-// "enteraba" de que una vela M3 había cerrado al llegar la PRIMERA vela M1
-// de la vela M3 SIGUIENTE (`nuevaVelaM3`, mirando hacia atrás) -- un atraso
-// de una vela M1 completa entre el cierre real de la vela M3 y el momento
-// en que el código confirma su alto/bajo. Si una señal de entrada caía
-// justo en esa vela M1 "de transición", el código todavía usaba el
-// alto/bajo M3 VIEJO para el SL, cuando la estructura real (la que se ve a
-// simple vista en el gráfico M3) ya tenía un pivote nuevo confirmado.
-// `time_close` de la resolución "3" es el mecanismo estándar y seguro en
-// Pine para esto (sin repintado): Pine ya calcula internamente cuándo
-// cierra cada vela M3 real del símbolo, con la alineación correcta -- acá
-// no hace falta reinventar esa alineación a mano, solo comparar contra el
-// cierre de ESTA vela M1.
-m3TimeClose = request.security(syminfo.tickerid, "3", time_close, lookahead=barmerge.lookahead_off)
-finalVelaM3 = m3TimeClose <= time + timeframe.in_seconds("1") * 1000
-
 var float m3Open = na
 var float m3High = na
 var float m3Low = na
@@ -273,20 +266,6 @@ procesarVelaM3(o0, h0, l0, c0, t0, dirIn, highIn, highTIn, lowIn, lowTIn, prevDi
 
     [dirOut, highOut, highTOut, lowOut, lowTOut, prevDirOut, prevHighOut, prevHighTOut, prevLowOut, prevLowTOut, esAltoLocal, esBajoLocal, nivelAltoLocal, nivelBajoLocal, altoRunInicioLocal, bajoRunInicioLocal]
 
-// -- actualizar el acumulador de la vela M3 en curso PRIMERO -- si esta
-// vela M1 es la última de su vela M3 (finalVelaM3), acá abajo ya queda
-// incluida en m3High/m3Low/m3Close antes de procesar más abajo.
-if nuevaVelaM3
-    m3Open := open
-    m3High := high
-    m3Low := low
-    m3Close := close
-    m3OpenTime := time
-else
-    m3High := math.max(m3High, high)
-    m3Low := math.min(m3Low, low)
-    m3Close := close
-
 esAltoM3 = false
 esBajoM3 = false
 nivelAlto = float(na)
@@ -294,10 +273,7 @@ nivelBajo = float(na)
 altoRunInicio = int(na)
 bajoRunInicio = int(na)
 
-// -- procesar la vela M3 en cuanto CIERRA de verdad (finalVelaM3), no una
-// vela M1 más tarde (nuevaVelaM3) -- ver comentario largo junto a
-// finalVelaM3 más arriba.
-if finalVelaM3 and not na(m3OpenTime)
+if nuevaVelaM3 and not na(m3OpenTime)
     [d, hh, hT, ll, lT, pD, pH, pHT, pL, pLT, esA, esB, nA, nB, arI, brI] = procesarVelaM3(m3Open, m3High, m3Low, m3Close, m3OpenTime, curDir, curHigh, curHighT, curLow, curLowT, prevDir, prevHigh, prevHighT, prevLow, prevLowT)
     curDir := d
     curHigh := hh
@@ -317,6 +293,17 @@ if finalVelaM3 and not na(m3OpenTime)
         esBajoM3 := true
         nivelBajo := nB
         bajoRunInicio := brI
+
+if nuevaVelaM3
+    m3Open := open
+    m3High := high
+    m3Low := low
+    m3Close := close
+    m3OpenTime := time
+else
+    m3High := math.max(m3High, high)
+    m3Low := math.min(m3Low, low)
+    m3Close := close
 
 var line altoLinea = na
 var line bajoLinea = na
