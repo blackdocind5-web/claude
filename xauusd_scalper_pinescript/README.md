@@ -776,27 +776,34 @@ tocar los defaults ya validados en oro).
   estructura M3 general se siga viendo igual que en el indicador) antes de
   darlo por bueno.
 
-- [ ] **Fase 4 (backtesting) — confirmación de la vela M3 sin atraso —
-  SEGUNDO INTENTO, Opción A (29/09)**: en vez de reintentar con
+- [x] **Fase 4 (backtesting) — confirmación de la vela M3 sin atraso —
+  SEGUNDO INTENTO, Opción A, CONFIRMADO (29/09)**: en vez de reintentar con
   `request.security`/`lookahead_on` (que seguiría dependiendo de una
   sutileza de Pine que ya nos falló una vez), Fabián pidió probar una
-  alternativa sin ese riesgo: `finalVelaM3` se calcula ahora con
-  ARITMÉTICA LOCAL, sin pedir nada a otro timeframe. `m3OpenTime` ya es el
-  momento REAL en que Pine detecta que empezó la vela M3 en curso (el
-  mismo dato que ya alimenta `m3Open`/`m3High`/`m3Low`/`m3Close` desde el
-  día uno) -- `m3OpenTimeEfectivo` toma ese valor, o `time` si la vela M1
-  actual es la primera de una vela M3 nueva (para no arrastrar el open de
-  la vela M3 ANTERIOR justo en la vela de transición). Sumarle 3 minutos
-  fijos da el cierre teórico de esa misma vela M3, y compararlo contra el
-  cierre de la vela M1 actual da exactamente la última vela M1 de esa vela
-  M3 -- cero dependencia de `request.security` ni de `lookahead`. Se
-  agregó también un plot de DEBUG (`mostrarDebugM3`) que marca cada vez
-  que `finalVelaM3` da `true`, para validar ANTES que nada (alejando el
-  gráfico) que la cadencia es exactamente 1 cada 3 velas M1 -- invirtiendo
-  el orden de validación de la vez anterior (esa vez se validaron primero
-  los casos puntuales de SL y la estructura general se revisó recién
-  después, por casualidad). Implementado primero en
-  `fase4_strategy_backtest.pine`. **Validación pendiente por Fabián.**
+  alternativa sin ese riesgo: `finalVelaM3` se calcula con ARITMÉTICA
+  LOCAL, sin pedir nada a otro timeframe. `m3OpenTime` ya es el momento
+  REAL en que Pine detecta que empezó la vela M3 en curso (el mismo dato
+  que ya alimenta `m3Open`/`m3High`/`m3Low`/`m3Close` desde el día uno) --
+  `m3OpenTimeEfectivo` toma ese valor, o `time` si la vela M1 actual es la
+  primera de una vela M3 nueva (para no arrastrar el open de la vela M3
+  ANTERIOR justo en la vela de transición). Sumarle 3 minutos fijos da el
+  cierre teórico de esa misma vela M3, y compararlo contra el cierre de la
+  vela M1 actual da exactamente la última vela M1 de esa vela M3 -- cero
+  dependencia de `request.security` ni de `lookahead`. Se agregó también
+  un marcador de DEBUG (`mostrarDebugM3` -- primero como `plot` de un
+  valor fijo, ilegible porque aplastaba la escala de precio del gráfico
+  entero contra ese valor; corregido a `plotshape` con
+  `location=location.belowbar`, que ubica un triángulo justo debajo de
+  cada vela sin tocar la escala) que marca cada vez que `finalVelaM3` da
+  `true`, para validar ANTES que nada la cadencia -- invirtiendo el orden
+  de validación de la vez anterior (esa vez se validaron primero los
+  casos puntuales de SL y la estructura general se revisó recién después,
+  por casualidad). Fabián confirmó AMBOS pasos: (1) el triángulo aparece
+  en exactamente 1 de cada 3 velas M1 consecutivas, y (2) el BUY 18/05
+  08:42 y los otros 2 casos con la misma causa ya tienen el SL puesto en
+  el nivel correcto. Implementado y validado en
+  `fase4_strategy_backtest.pine`. Pendiente: replicar en el indicador
+  (`fase3_base_consolidada.pine`) cuando Fabián lo pida.
 
 - [ ] **Fase 4 (backtesting) — SL contra el alto/bajo M3 "en vivo" de la
   vela en curso — INTENTADO Y REVERTIDO (28/09)**: Fabián reportó una SELL

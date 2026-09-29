@@ -99,10 +99,10 @@ strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=1
 // indicador sigue usando (`timeframe.change("3")`, con el atraso de 1
 // vela M1 original) mientras se valida una implementación corregida.
 //
-// Confirmación de la vela M3 sin atraso -- SEGUNDO INTENTO, Opción A
-// (29/09): en vez de volver a `request.security` (que exigiría confiar de
-// nuevo en una sutileza de `lookahead` que ya nos falló una vez),
-// `finalVelaM3` ahora se calcula con aritmética LOCAL, sin pedir nada a
+// Confirmación de la vela M3 sin atraso -- SEGUNDO INTENTO, Opción A,
+// CONFIRMADO (29/09): en vez de volver a `request.security` (que exigiría
+// confiar de nuevo en una sutileza de `lookahead` que ya nos falló una
+// vez), `finalVelaM3` se calcula con aritmética LOCAL, sin pedir nada a
 // otro timeframe: `m3OpenTime` ya es el momento REAL en que Pine detectó
 // que empezó la vela M3 en curso (el mismo dato que ya alimenta
 // m3Open/m3High/m3Low/m3Close desde el día uno) -- sumarle 3 minutos fijos
@@ -110,12 +110,14 @@ strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=1
 // de la vela M1 actual da exactamente la última vela M1 de esa vela M3. Ver
 // el comentario largo junto a `finalVelaM3` (Sección 2) para el detalle de
 // por qué hace falta `m3OpenTimeEfectivo` (para no arrastrar el open de la
-// vela M3 ANTERIOR justo en la vela de transición). Se agregó además un
-// plot de DEBUG (`mostrarDebugM3`) que marca cada vez que `finalVelaM3` da
-// true, para validar de un vistazo -- ANTES de revisar los casos puntuales
-// de SL -- que la cadencia es exactamente 1 cada 3 velas M1, nunca más
-// seguido (la lección de la vez anterior). Validación pendiente por
-// Fabián.
+// vela M3 ANTERIOR justo en la vela de transición). El marcador de DEBUG
+// (`mostrarDebugM3`) que señala cada `finalVelaM3` true confirmó, con zoom
+// normal sobre las velas M1, la cadencia esperada de 1 cada 3 velas --
+// Fabián lo validó ANTES de revisar los casos puntuales de SL (la lección
+// de la vez anterior). Con eso confirmado, Fabián verificó el BUY 18/05
+// 08:42 y los otros 2 casos con la misma causa: el SL ya queda puesto en
+// el nivel correcto en los 3. Pendiente: replicar en el indicador
+// (fase3_base_consolidada.pine) cuando Fabián lo pida.
 //
 // SL contra el alto/bajo M3 "en vivo" de la vela en curso -- INTENTADO Y
 // REVERTIDO (28/09): a raíz de un caso aislado (SELL EURUSD 25/09 07:36,
