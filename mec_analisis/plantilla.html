@@ -43,8 +43,9 @@ section{display:grid;gap:14px}
 .kpi .s{font-size:12px;color:var(--fg2)}
 .kpi.hero .v{font-size:30px}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;min-width:0;display:grid;gap:10px;align-content:start}
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
-.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.panel>*{min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:14px}
 .chart{position:relative;width:100%}
 .chart svg{display:block;width:100%;height:auto;overflow:visible}
 .ax{font:11px var(--f-mono);fill:var(--fg3)}
@@ -129,7 +130,7 @@ details summary:focus-visible,button:focus-visible{outline:2px solid var(--gold)
   <div class="sec-head"><h2 id="s-tp">Patrones temporales</h2><p>% sobre el capital inicial de 1.000 USD</p></div>
   <div class="grid2">
     <div class="panel"><h3>Por día de la semana (entrada)</h3><div class="chart" id="c-days"></div><div class="tbl"><table id="t-days"></table></div></div>
-    <div class="panel"><h3>Por hora de entrada (NY)</h3><div class="chart" id="c-hours"></div><div class="tbl"><table id="t-hours"></table></div><p class="note" id="h-note"></p></div>
+    <div class="panel"><h3>Por hora de entrada (NY)</h3><div class="chart" id="c-hours"></div><div class="tbl"><table id="t-hours"></table></div><div id="h9"></div></div>
   </div>
 </section>
 
@@ -155,6 +156,22 @@ details summary:focus-visible,button:focus-visible{outline:2px solid var(--gold)
 
 <section aria-labelledby="s-ex">
   <div class="sec-head"><h2 id="s-ex">Operaciones excluidas por el calendario</h2><p id="ex-sub"></p></div>
+  <div class="panel">
+    <h3>Resultado por tipo de evento</h3>
+    <p class="note">Una operación puede contar en dos eventos si coinciden el mismo día (por ejemplo, NFP y feriado en Francia el 08/05). R de cada operación: PyG / 0,9% del capital en ese momento del backtest completo.</p>
+    <div class="chart" id="c-excl"></div>
+    <div class="tbl"><table id="t-cats"></table></div>
+  </div>
+  <div class="panel">
+    <h3>Qué haría con cada evento</h3>
+    <p class="note"><b>Antes de leer la tabla:</b> cada evento tiene entre 1 y 8 operaciones. Con esa muestra, una sola operación mueve el resultado ±1R, así que ningún número de acá prueba nada por sí solo. La recomendación combina el dato con la razón de mercado. Habilitar un evento solo porque ganó en este backtest sería ajustar las reglas a la muestra (sobreoptimización).</p>
+    <div class="tbl"><table id="t-reco"></table></div>
+  </div>
+  <div class="panel">
+    <h3>Impacto estimado si se aplican las recomendaciones</h3>
+    <div class="tbl"><table id="t-esc"></table></div>
+    <p class="note">Antes de cambiar el calendario, validá estos dos cambios con datos que no se usaron para decidirlos: el mismo backtest sobre 2025 (Premium permite backtest profundo) o registrándolos aparte en vivo durante los próximos meses.</p>
+  </div>
   <div class="panel"><details><summary id="ex-sum"></summary><div class="tbl" style="margin-top:10px"><table id="t-excl"></table></div></details></div>
 </section>
 
@@ -164,7 +181,7 @@ details summary:focus-visible,button:focus-visible{outline:2px solid var(--gold)
     <li>Fuente: lista de operaciones exportada del Strategy Tester de TradingView, horario de Nueva York.</li>
     <li>Filtro: calendario de restricciones 2026 (feriados bancarios, NFP, CPI USD/GBP, discursos en Pre NY → día completo; BCE → solo entradas 07:00–07:59; ADP → sin aperturas 08:05–08:18).</li>
     <li>La curva de capital suma el PyG en USD de las operaciones válidas sobre 1.000 USD. Los tamaños vienen del backtest original, que compone con todas las operaciones, así que el PyG en USD de las válidas es el mismo que en TradingView.</li>
-    <li>R = PyG / (0,9% del capital antes de la operación). Operación ganadora = PyG &gt; 0.</li>
+    <li>R = PyG / (0,9% del capital antes de la operación). Operación ganadora = PyG &gt; 0. R promedio semanal = R total / semanas del período (lunes a viernes, semana ISO).</li>
     <li>Sharpe y Sortino: retornos diarios en días hábiles (días sin operación = 0%), anualizados con √252, tasa libre de riesgo 0. Calmar = rendimiento anualizado / caída máxima.</li>
     <li>Duración en barras de 1 minuto.</li>
   </ul></div>
@@ -197,15 +214,15 @@ const K = [
  ['Factor de ganancias', fmt(D.pf), `Ganado ${fmt(D.gw)} / Perdido ${fmt(D.gl)} USD`, true],
  ['Caída máxima', `<span class="neg">−${fmt(D.mdd_pct)}%</span>`, `−${fmt(D.mdd_usd)} USD · ${D.mdd_peak} → ${D.mdd_trough}`, true],
  ['Recuperación de la caída máx.', D.mdd_rec_days+' días', `Desde el valle; ${D.mdd_total_days} días de pico a nuevo máximo (${D.mdd_rec})`],
- ['R total', `<span class="${cls(D.R_tot)}">${sg(D.R_tot)}R</span>`, `Promedio ${sg(D.R_avg,2)}R por operación`],
+ ['R total', `<span class="${cls(D.R_tot)}">${sg(D.R_tot)}R</span>`, `${D.n} operaciones en ${D.weeks_cal} semanas`],
+ ['R promedio por operación', `<span class="${cls(D.R_avg)}">${sg(D.R_avg,2)}R</span>`, `Expectativa ${sg(D.exp_usd)} USD por operación`],
+ ['R promedio por semana', `<span class="${cls(D.R_week)}">${sg(D.R_week)}R</span>`, `Mediana ${sg(D.R_week_med)}R · mejor ${sg(D.R_week_best)}R · peor ${sg(D.R_week_worst)}R`],
  ['R promedio ganadora / perdedora', `${sg(D.R_w)}R / ${sg(D.R_l)}R`, `Payoff ${fmt(D.payoff)} · win rate de equilibrio ${fmt(100/(1+D.payoff),1)}%`],
- ['Expectativa', `<span class="${cls(D.exp_usd)}">${sg(D.exp_usd)} USD</span>`, `Por operación`],
  ['Operaciones por semana', fmt(D.trades_week), `${D.n} operaciones en ${D.weeks_cal} semanas`],
  ['Semanas positivas', fmt(wkPct,1)+'%', `${D.wk_pos} positivas · ${D.wk_neg} negativas`],
  ['Racha ganadora más larga', D.streak_w+' operaciones', ''],
  ['Racha perdedora más larga', D.streak_l+' operaciones', ''],
- ['Mayor ganancia / pérdida', `<span class="pos">${sg(D.max_win)}</span> / <span class="neg">${sg(D.max_loss)}</span>`, 'USD por operación'],
- ['Duración media', fmt(D.dur_avg,0)+' min', `Mediana ${fmt(D.dur_med,0)} min`],
+ ['Duración media', fmt(D.dur_avg,0)+' min', `Mediana ${fmt(D.dur_med,0)} min · mayor ganancia ${sg(D.max_win)} / pérdida ${sg(D.max_loss)} USD`],
  ['Sharpe (anualizado)', fmt(D.sharpe), `Sortino ${fmt(D.sortino)}`],
  ['Calmar · Factor de recuperación', `${fmt(D.calmar)} · ${fmt(D.recovery_factor)}`, `Rendimiento anualizado ${sg(D.cagr,1)}%`],
 ];
@@ -292,6 +309,8 @@ function renderCharts(){
     tip:d=>`${d.dia}<br><span class="${cls(d.pnl)}">${sg(d.pnl)} USD (${sg(d.pct)}%)</span><br>Win rate ${fmt(d.wr,1)}% · ${d.n} operaciones · ${sg(d.R)}R`});
   drawBars('#c-hours',D.hours,{aria:'PyG por hora',H:200,val:h=>h.pct,tickFmt:v=>fmt(v,0)+'%',label:h=>sg(h.pct,1)+'%',xlab:h=>h.franja,
     tip:h=>`Entradas ${h.franja}<br><span class="${cls(h.pnl)}">${sg(h.pnl)} USD (${sg(h.pct)}%)</span><br>Win rate ${fmt(h.wr,1)}% · ${h.n} operaciones · ${sg(h.R)}R`});
+  drawBars('#c-excl',D.excl_cats,{aria:'R por evento excluido',H:220,val:c=>c.R,tickFmt:v=>fmt(v,0)+'R',label:c=>sg(c.R,1),xlab:c=>c.cat.replace('Feriado ','Fer. ').replace(' solo Europa continental',' Europa').replace(': entrada después de 08:00','').replace(': entrada 08:05–08:18','').replace('Discurso Trump / Warsh','Discursos').replace(' Reino Unido',' R. Unido'),
+    tip:c=>`${c.cat}<br><span class="${cls(c.R)}">${sg(c.R)}R · ${sg(c.pnl)} USD</span><br>${c.n} operaciones · win rate ${fmt(c.wr,1)}%`});
   drawBars('#c-hist',D.hist,{aria:'Distribución de R',H:210,ml:34,val:h=>h[1],tickFmt:v=>fmt(v,0),label:h=>h[1],xlab:h=>sg(h[0],2).replace(',00',''),
     color:h=>h[0]>0?css('--gain'):h[0]<0?css('--loss'):css('--fg3'),
     tip:h=>`Resultado ≈ ${sg(h[0])}R<br>${h[1]} operaciones`});
@@ -311,9 +330,12 @@ const bh=bestIdx(D.hours,h=>h.pct);
 $('#t-hours').innerHTML='<tr><th>Entrada</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">PyG USD</th><th class="n">%</th><th class="n">R</th></tr>'+
   D.hours.map((h,i)=>`<tr${i===bh?' class="best"':''}><td>${h.franja}</td><td class="n">${h.n}</td><td class="n">${fmt(h.wr,1)}%</td><td class="n ${cls(h.pnl)}">${sg(h.pnl)}</td><td class="n ${cls(h.pct)}">${sg(h.pct)}%</td><td class="n ${cls(h.R)}">${sg(h.R)}</td></tr>`).join('');
 const h9=D.hours.find(h=>h.franja.startsWith('09'));
-if(h9) $('#h-note').textContent=`${h9.n} operaciones entraron a las 09:00–09:01, en el cierre de la sesión Pre NY. Conviene revisar si el código debería permitirlas.`;
+if(h9){const T9=D.trades.filter(t=>t.h>='09:00');
+ $('#h9').innerHTML=`<h3 style="margin-top:6px">Entradas de 09:00 a 09:01 <span class="tag y" style="margin-left:6px">EN PRUEBA</span></h3>
+ <p class="note">Válidas por criterio del sistema; se sigue su resultado por separado para decidir si conviene mantenerlas. Hasta ahora: ${h9.n} operaciones, win rate ${fmt(h9.wr,1)}%, ${sg(h9.R)}R. Con esta muestra el resultado es neutro: todavía no alcanza para decidir.</p>
+ <div class="tbl"><table><tr><th>#</th><th>Fecha</th><th>Entrada</th><th>Dir.</th><th class="n">PyG USD</th><th class="n">R</th></tr>${T9.map(t=>`<tr><td class="n">${t.n}</td><td>${t.d}</td><td class="mono">${t.h}</td><td>${t.dir}</td><td class="n ${cls(t.pnl)}">${sg(t.pnl)}</td><td class="n ${cls(t.R)}">${sg(t.R)}</td></tr>`).join('')}</table></div>`;}
 const bw_=D.best_week, ww=D.worst_week;
-$('#wk-sub').textContent=`Mejor semana: ${bw_.sem} (${sg(bw_.pnl)} USD, ${bw_.n}/${bw_.n} ganadoras) · Peor: ${ww.sem} (${sg(ww.pnl)} USD)`;
+$('#wk-sub').textContent=`R promedio semanal ${sg(D.R_week)}R · Mejor semana: ${bw_.sem} (${sg(bw_.pnl)} USD, ${bw_.n}/${bw_.n} ganadoras) · Peor: ${ww.sem} (${sg(ww.pnl)} USD)`;
 const EXN={'TP':'Take Profit','SL':'Stop Loss','Reset antes de nueva entrada':'Reset antes de nueva entrada','CHoCH en contra (arrastre)':'CHoCH en contra (arrastre)','Cierre fin de sesión (estructura en contra)':'Cierre fin de sesión'};
 $('#t-exits').innerHTML='<tr><th>Salida</th><th class="n">Ops.</th><th class="n">PyG USD</th></tr>'+
   Object.entries(D.exits).sort((a,b)=>b[1][0]-a[1][0]).map(([k,v])=>`<tr><td>${EXN[k]||k}</td><td class="n">${v[0]}</td><td class="n ${cls(v[1])}">${sg(v[1])}</td></tr>`).join('');
@@ -332,8 +354,26 @@ $('#t-dur').innerHTML=`<tr><th></th><th class="n">Minutos</th></tr><tr><td>Prome
 /* ---------- Excluidas ---------- */
 $('#ex-sub').textContent=`${D.n_excl} operaciones fuera del sistema · resultado neto ${sg(D.excl_pnl)} USD · win rate ${fmt(D.excl_wr,1)}%`;
 $('#ex-sum').textContent=`Ver las ${D.n_excl} operaciones excluidas y su motivo`;
-$('#t-excl').innerHTML='<tr><th>#</th><th>Fecha</th><th>Entrada</th><th>Dir.</th><th class="n">PyG USD</th><th>Motivo</th></tr>'+
-  D.excl.map(x=>`<tr><td class="n">${x.n}</td><td>${x.f}</td><td class="mono">${x.h}</td><td>${x.dir}</td><td class="n ${cls(x.pnl)}">${sg(x.pnl)}</td><td>${x.m}</td></tr>`).join('');
+$('#t-excl').innerHTML='<tr><th>#</th><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Dir.</th><th class="n">PyG USD</th><th class="n">R</th><th>Evento</th></tr>'+
+  D.excl.map(x=>`<tr><td class="n">${x.n}</td><td>${x.f}</td><td class="mono">${x.h}</td><td class="mono">${x.hs}</td><td>${x.dir}</td><td class="n ${cls(x.pnl)}">${sg(x.pnl)}</td><td class="n ${cls(x.R)}">${sg(x.R)}</td><td>${x.cats.join(' + ')}</td></tr>`).join('');
+$('#t-cats').innerHTML='<tr><th>Evento</th><th class="n">Ops.</th><th class="n">Días</th><th class="n">Win rate</th><th class="n">PyG USD</th><th class="n">R</th></tr>'+
+  D.excl_cats.map(c=>`<tr><td>${c.cat}</td><td class="n">${c.n}</td><td class="n">${c.dias}</td><td class="n">${fmt(c.wr,1)}%</td><td class="n ${cls(c.pnl)}">${sg(c.pnl)}</td><td class="n ${cls(c.R)}">${sg(c.R)}</td></tr>`).join('');
+const REC={
+ 'CPI (GBP)':['g','HABILITAR','Se publica a las 02:00 NY, cinco horas antes de la sesión: cuando abrís, el dato ya fue absorbido. Es el cambio con mejor fundamento y el dato lo acompaña (8 operaciones, 5 ganadoras).'],
+ 'CPI (USD)':['y','HABILITAR CON VENTANA','Sale a las 08:30 NY, dentro de la sesión. Las 5 operaciones entraron entre 07:04 y 07:46 y cerraron antes de las 08:30, así que no tocaron el dato. Propuesta: misma regla que el BCE, solo entradas 07:00–07:59. Riesgo: una operación lenta puede seguir abierta a las 08:30.'],
+ 'Feriado EE. UU.':['y','OBSERVAR','Ganó 4 de 4, pero el backtest supone spreads y ejecución normales. En feriados de EE. UU. el mercado de futuros del oro abre con horario reducido y poca liquidez; en real el resultado puede ser peor. Registrarlo aparte antes de habilitarlo.'],
+ 'BCE: entrada después de 08:00':['n','MANTENER REGLA','Resultado neutro (+0,63R en 4). La decisión del BCE sale a las 08:15 NY; la ventana 07:00–07:59 ya deja operar la parte limpia del día.'],
+ 'Discurso Trump / Warsh':['n','MANTENER','Neutro (+0,04R en 3) y es el riesgo menos predecible: el mercado reacciona a frases sueltas, sin hora de dato fija.'],
+ 'Feriado Reino Unido':['r','MANTENER','Negativo (−0,35R en 3). Con Londres cerrado, la sesión Pre NY pierde a su principal fuente de liquidez.'],
+ 'Feriado solo Europa continental':['r','MANTENER','Levemente negativo (−0,46R en 8, win rate 50%). No hay evidencia para habilitarlo; revisar cuando haya más muestra.'],
+ 'ADP: entrada 08:05–08:18':['r','MANTENER','Una sola operación y fue SL. La regla es barata: solo bloquea 14 minutos.'],
+ 'NFP (USD)':['r','MANTENER','El peor evento: −1,72R en 6 operaciones, win rate 33%. Además, a las 08:30 hay saltos de precio y spreads que el backtest no simula.'],
+};
+$('#t-reco').innerHTML='<tr><th>Evento</th><th>Recomendación</th><th>Por qué</th></tr>'+
+  D.excl_cats.map(c=>{const r=REC[c.cat]||['n','—',''];return `<tr><td style="white-space:nowrap">${c.cat}<div class="note">${c.n} ops · ${sg(c.R)}R</div></td><td><span class="tag ${r[0]==='n'?'y':r[0]}" ${r[0]==='n'?'style="background:transparent;border:1px solid var(--line);color:var(--fg2)"':''}>${r[1]}</span></td><td style="min-width:260px;color:var(--fg2)">${r[2]}</td></tr>`}).join('');
+$('#t-esc').innerHTML='<tr><th>Escenario</th><th class="n">Ops.</th><th class="n">R total</th><th class="n">PyG USD</th></tr>'+
+  D.escenarios.map((e,i)=>`<tr${i===0?'':''}><td>${e.nombre}</td><td class="n">${e.n}</td><td class="n ${cls(e.R)}">${sg(e.R)}</td><td class="n ${cls(e.pnl)}">${sg(e.pnl)}</td></tr>`).join('')+
+  `<tr><td colspan="4" class="note">CPI (USD) con ventana suma 4 operaciones (#${D.esc_cpiu.ops.join(', #')}; ${D.esc_cpiu.w} ganadoras, ${sg(D.esc_cpiu.R)}R). La #120 del 14/07 sigue fuera porque ese día también es feriado en Francia.</td></tr>`;
 
 /* ---------- Lectura ---------- */
 const h7=D.hours[0], h8=D.hours[1]; const tue=D.days[1], mon=D.days[0];
@@ -344,7 +384,7 @@ const F=[
  ['g','DÍAS',`<b>Martes y lunes explican casi todo el resultado.</b> Martes ${sg(tue.R)}R (win rate ${fmt(tue.wr,1)}%) y lunes ${sg(mon.R)}R (${fmt(mon.wr,1)}%). Miércoles, jueves y viernes terminan cerca de cero, con win rate del 50%.`],
  ['r','GESTIÓN',`<b>Las salidas por gestión restan.</b> Reset, CHoCH en contra y cierre de fin de sesión suman ${mgmt[0]} operaciones y ${sg(mgmt[1])} USD. Vale la pena revisar si alguna de esas salidas debería dejar correr la operación hasta su SL o TP.`],
  ['y','RIESGO',`<b>Caída máxima controlada, recuperación lenta.</b> −${fmt(D.mdd_pct)}% entre ${D.mdd_peak} y ${D.mdd_trough}, y ${D.mdd_total_days} días hasta un nuevo máximo. Abril y mayo fueron los meses negativos que la formaron. Factor de recuperación ${fmt(D.recovery_factor)}.`],
- ['y','CALENDARIO',`<b>El filtro sacó ${D.n_excl} operaciones con resultado neto ${sg(D.excl_pnl)} USD.</b> En este período el backtest completo daba más PyG que el filtrado, así que el filtro no se justifica por el resultado sino por tus reglas de operativa.`],
+ ['y','CALENDARIO',`<b>El filtro sacó ${D.n_excl} operaciones con resultado neto ${sg(D.excl_pnl)} USD.</b> La ganancia viene de feriados de EE. UU., CPI (USD) y CPI (GBP); el NFP es el evento que más resta. Hay dos cambios con buen fundamento: habilitar CPI (GBP) y operar CPI (USD) solo de 07:00 a 07:59. Juntos sumarían ${sg(D.escenarios[2].R-D.escenarios[0].R)}R. Detalle en “Operaciones excluidas”.`],
 ];
 $('#findings').innerHTML=F.map(([c,t,h])=>`<li><span class="tag ${c}">${t}</span><p>${h}</p></li>`).join('');
 
