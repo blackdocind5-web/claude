@@ -34,11 +34,12 @@ def ventana(r):
     return dt.time.fromisoformat(ini), dt.time.fromisoformat(fin)
 
 
-def motivo_exclusion(entrada, salida, cal):
+def motivo_exclusion(entrada, cal):
     """Reglas (hora de NY):
     SIN_OPERAR       -> se descarta toda operación con entrada ese día.
     SOLO_ENTRADA     -> la entrada debe estar en [inicio, fin); la salida no importa.
-    BLOQUEO_NOTICIA  -> ni la entrada ni la salida pueden caer en [inicio, fin] (ambos extremos incluidos).
+    BLOQUEO_NOTICIA  -> la entrada no puede caer en [inicio, fin] (ambos extremos incluidos);
+                        la salida automática por SL/TP dentro del bloqueo sí es válida.
     """
     reglas = cal.get(entrada.date(), [])
     for r in reglas:
@@ -48,11 +49,8 @@ def motivo_exclusion(entrada, salida, cal):
         ini, fin = ventana(r)
         if r["regla"] == "SOLO_ENTRADA" and not (ini <= entrada.time() < fin):
             return f'Entrada fuera de la ventana {r["ventana_NY"]}: {r["evento"]}'
-        if r["regla"] == "BLOQUEO_NOTICIA":
-            if ini <= entrada.time() <= fin:
-                return f'Entrada dentro del bloqueo {r["ventana_NY"]}: {r["evento"]}'
-            if salida.date() == entrada.date() and ini <= salida.time() <= fin:
-                return f'Salida dentro del bloqueo {r["ventana_NY"]}: {r["evento"]}'
+        if r["regla"] == "BLOQUEO_NOTICIA" and ini <= entrada.time() <= fin:
+            return f'Entrada dentro del bloqueo {r["ventana_NY"]}: {r["evento"]}'
     return None
 
 
@@ -80,7 +78,7 @@ def main():
         ent = next(f for f in fs if f["Tipo"].startswith("Entrada"))
         sal = next(f for f in fs if f["Tipo"].startswith("Salida"))
         hora = lambda f: dt.datetime.strptime(f["Fecha y hora"], "%Y-%m-%d %H:%M")
-        m = motivo_exclusion(hora(ent), hora(sal), cal)
+        m = motivo_exclusion(hora(ent), cal)
         for f in fs:
             (exc.writerow([m] + list(f.values())) if m else val.writerow(list(f.values())))
         if m:
