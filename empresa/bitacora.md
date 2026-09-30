@@ -22,3 +22,9 @@ Registro de todo lo que se decide y se conversa. Se actualiza en cada sesión. F
 - Nombre de la empresa, cirujanos o clínicas que se atienden, procedimientos a promocionar.
 - Export de Ads Manager (últimos 7 días, vista Anuncios).
 - Confirmar qué departamentos faltan o sobran.
+
+### Ajustes de la tarde (30/09/2026)
+- Organigrama rediseñado: el usuario (CEO) arriba, Jarvis Central como asistente de dirección, barras que bajan a tres áreas y cajas apiladas por departamento. Paleta sobria en azul acero y grises.
+- El usuario quiere ir construyendo los departamentos de a poco.
+- Pregunta abierta resuelta: los "mini-Jarvis" son roles definidos en archivos, no bots que corren solos. Ver explicación en la sesión.
+- Copia abrible del organigrama: `empresa/organigrama.html`.
