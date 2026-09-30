@@ -21,7 +21,7 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 03/04/2026;SIN_OPERAR;;USD/GBP/EUR;NFP + Feriado bancario Reino Unido y Alemania (Viernes Santo);confirmado;Capturas FF NFP/UK/DE
 06/04/2026;SIN_OPERAR;;GBP/EUR;Feriado bancario Reino Unido, Alemania, Francia e Italia (Lunes de Pascua);confirmado;Capturas FF UK/DE/FR/IT
 10/04/2026;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD
-21/04/2026;SIN_OPERAR;;USD;Discurso de Trump (presidente de EE. UU.) dentro de Pre NY;confirmado;Informado por Fabián
+21/04/2026;SIN_OPERAR;;USD;Discurso/entrevista de Trump (presidente de EE. UU.) a las 08:30 NY;confirmado;Hora de FF informada por Fabián
 22/04/2026;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP
 30/04/2026;SOLO_ENTRADA;07:00-08:00;EUR;BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference;confirmado;Captura FF BCE
 01/05/2026;SIN_OPERAR;;EUR;Feriado bancario Alemania, Francia e Italia (Día del Trabajo);confirmado;Capturas FF DE/FR/IT
@@ -41,7 +41,7 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 19/06/2026;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Juneteenth);confirmado;Captura FF US
 29/06/2026;SIN_OPERAR;;EUR;Feriado bancario parcial Italia (San Pedro y San Pablo, solo algunos bancos);confirmado;Captura FF IT
 01/07/2026;BLOQUEO_NOTICIA;08:05-08:18;USD;ADP Non-Farm Employment Change (dato 08:15);confirmado;Captura FF ADP
-01/07/2026;SIN_OPERAR;;USD;Discurso de Warsh (presidente de la Fed) dentro de Pre NY;confirmado;Informado por Fabián
+01/07/2026;SIN_OPERAR;;USD;Discurso de Warsh (presidente de la Fed) a las 09:00 NY;confirmado;Hora de FF informada por Fabián
 02/07/2026;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP
 03/07/2026;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Día de la Independencia, observado);confirmado;Captura FF US
 14/07/2026;SIN_OPERAR;;USD/EUR;CPI USD + Feriado bancario Francia (Día Nacional);confirmado;Capturas FF CPI USD/FR

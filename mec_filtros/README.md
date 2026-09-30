@@ -77,7 +77,7 @@ una fila por evento; un día puede tener varias). El script lee todos los `calen
 | 03/04/2026 | Vie | ⛔ No operar | USD/GBP/EUR | NFP + Feriado bancario Reino Unido y Alemania (Viernes Santo) |
 | 06/04/2026 | Lun | ⛔ No operar | GBP/EUR | Feriado bancario Reino Unido, Alemania, Francia e Italia (Lunes de Pascua) |
 | 10/04/2026 | Vie | ⛔ No operar | USD | CPI m/m (USD) |
-| 21/04/2026 | Mar | ⛔ No operar | USD | Discurso de Trump (presidente de EE. UU.) dentro de Pre NY |
+| 21/04/2026 | Mar | ⛔ No operar | USD | Discurso/entrevista de Trump (presidente de EE. UU.) a las 08:30 NY |
 | 22/04/2026 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
 | 30/04/2026 | Jue | ⚠️ Solo entradas 07:00–08:00 | EUR | BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference |
 
@@ -112,7 +112,7 @@ una fila por evento; un día puede tener varias). El script lee todos los `calen
 | Fecha | Día | Regla | Divisa | Evento |
 |---|---|---|---|---|
 | 01/07/2026 | Mié | ⏸️ Sin abrir 08:05–08:18 | USD | ADP Non-Farm Employment Change (dato 08:15) |
-| 01/07/2026 | Mié | ⛔ No operar | USD | Discurso de Warsh (presidente de la Fed) dentro de Pre NY |
+| 01/07/2026 | Mié | ⛔ No operar | USD | Discurso de Warsh (presidente de la Fed) a las 09:00 NY |
 | 02/07/2026 | Jue | ⛔ No operar | USD | NFP - Non-Farm Payrolls (USD) |
 | 03/07/2026 | Vie | ⛔ No operar | USD | Feriado bancario EE. UU. (Día de la Independencia, observado) |
 | 14/07/2026 | Mar | ⛔ No operar | USD/EUR | CPI USD + Feriado bancario Francia (Día Nacional) |
