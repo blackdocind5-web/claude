@@ -174,6 +174,24 @@ strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=1
 // es idéntico al actual; desactivando uno, se aísla el otro para comparar
 // métricas en la Strategy Tester.
 //
+// Vela de indecisión y vela de retroceso, dos ajustes de criterio (30/09, a
+// pedido de Fabián -- caso GBPUSD BUY 29/09 08:04): (a) `esIndecisionBuy`/
+// `Sell` (Sección 4, patrón Start) exigían cuerpo "<= 50% + tolerancia" --
+// un cuerpo de exactamente 50% (caso reportado, medido con la cuadrícula de
+// Gann) todavía contaba como indecisión válida. Ahora exige cuerpo
+// estrictamente MENOR al 50% (`< 0.50 - TOLERANCIA`). (b) `pullbackEnvolventeBuy`/
+// `Sell` (Sección 3) y `pullbackStartBuy`/`Sell` (Sección 4) contaban una
+// vela cruz/doji (open == close, sin cuerpo) SIEMPRE como retroceso válido
+// (comparaciones "<="/">=") -- Fabián decidió que ya no es lógico, porque
+// una vela sin cuerpo no se revalorizó ni se depreció, así que no es un
+// retroceso real. Ahora exige un cierre estrictamente del lado correcto de
+// la apertura (comparaciones "<"/">"), y una vela cruz queda ignorada (ni
+// cuenta como retroceso ni rompe la búsqueda). Este segundo cambio NO
+// afecta el trazado de altos/bajos M3 (Sección 2) -- esa lógica marca sus
+// propios dojis sobre la vela AGREGADA M3 (`candleDir == "doji"` dentro de
+// `procesarVelaM3`), un mecanismo completamente separado del de
+// Envolvente/Start, que usa velas M1 crudas.
+//
 // Sesión "Wall Street" (09:30-11:00 EST, agregada 16/09 para backtestear
 // índices: Nasdaq, S&P 500, Dow Jones): a diferencia de Pre-NY/NY/Asia, que
 // son mutuamente excluyentes, esta se SUPERPONE con la sesión NY (09:00-
@@ -563,8 +581,17 @@ esMartilloSell = esBajista and not esEstandarSell and nivelOpenSell >= 0.40 - TO
 esDojiSell     = esBajista and not esEstandarSell and not esMartilloSell and nivelOpenSell < 0.40 - TOLERANCIA_CUERPO and ((nivelOpenSell >= 0.15 and nivelCloseSell >= 0.90 - TOLERANCIA_CUERPO) or (nivelOpenSell < 0.15 and nivelCloseSell >= 0.85 - TOLERANCIA_CUERPO))
 esEnvolventeSell = esEstandarSell or esMartilloSell or esDojiSell
 
-pullbackEnvolventeBuy  = close[1] <= open[1]
-pullbackEnvolventeSell = close[1] >= open[1]
+// Vela de retroceso (fix 30/09, a pedido de Fabián): antes una vela sin
+// cuerpo (cruz/doji, open == close) contaba como retroceso ("<="/">="),
+// pero no lo es de verdad -- si lo fuera, el cierre tendría que quedar
+// estrictamente del lado correcto de la apertura (para BUY, cierre por
+// debajo de la apertura; para SELL, cierre por encima). Ahora una vela cruz
+// se ignora (no cuenta como retroceso) en vez de contarse siempre como tal.
+// Esto NO afecta el trazado de altos/bajos M3 (Sección 2) -- esa lógica usa
+// su propia detección de doji sobre la vela AGREGADA M3 (`candleDir ==
+// "doji"` dentro de `procesarVelaM3`), completamente separada de esta.
+pullbackEnvolventeBuy  = close[1] < open[1]
+pullbackEnvolventeSell = close[1] > open[1]
 
 candidataEnvolventeBuy  = esEnvolventeBuy  and pullbackEnvolventeBuy
 candidataEnvolventeSell = esEnvolventeSell and pullbackEnvolventeSell
@@ -582,7 +609,15 @@ nivelOpenIndBuy  = rangoInd > 0 ? (open[1] - low[1]) / rangoInd : na
 nivelCloseIndBuy = rangoInd > 0 ? (close[1] - low[1]) / rangoInd : na
 cuerpoIndBuy = math.abs(nivelCloseIndBuy - nivelOpenIndBuy)
 esMartilloIndBuy = (nivelOpenIndBuy >= 0.40 - TOLERANCIA_CUERPO and nivelOpenIndBuy <= 0.50 + TOLERANCIA_CUERPO and nivelCloseIndBuy >= 0.85 - TOLERANCIA_CUERPO) or (nivelOpenIndBuy < 0.15 and nivelCloseIndBuy > 0.50 - TOLERANCIA_CUERPO)
-esIndecisionBuy = cuerpoIndBuy <= 0.50 + TOLERANCIA and not esMartilloIndBuy
+// Vela de indecisión (fix 30/09, a pedido de Fabián -- caso GBPUSD BUY
+// 29/09 08:04, cuerpo medido en 50% exacto con la cuadrícula de Gann y el
+// código lo tomó como indecisión válida): antes el umbral era "<= 50% +
+// tolerancia", así que un cuerpo de exactamente 50% (o algo más) todavía
+// contaba como indecisión. Ahora el cuerpo debe ser MENOR al 50% -- un
+// cuerpo igual o mayor al 50% ya no es una vela de indecisión válida. La
+// tolerancia se mantiene (como margen de precisión de punto flotante, no
+// como concesión hacia arriba) restándose del umbral en vez de sumarse.
+esIndecisionBuy = cuerpoIndBuy < 0.50 - TOLERANCIA and not esMartilloIndBuy
 
 wickContraBuy = math.min(nivelOpenIndBuy, nivelCloseIndBuy)
 wickFavorBuy  = 1 - math.max(nivelOpenIndBuy, nivelCloseIndBuy)
@@ -592,14 +627,17 @@ nivelOpenIndSell  = rangoInd > 0 ? (high[1] - open[1]) / rangoInd : na
 nivelCloseIndSell = rangoInd > 0 ? (high[1] - close[1]) / rangoInd : na
 cuerpoIndSell = math.abs(nivelCloseIndSell - nivelOpenIndSell)
 esMartilloIndSell = (nivelOpenIndSell >= 0.40 - TOLERANCIA_CUERPO and nivelOpenIndSell <= 0.50 + TOLERANCIA_CUERPO and nivelCloseIndSell >= 0.85 - TOLERANCIA_CUERPO) or (nivelOpenIndSell < 0.15 and nivelCloseIndSell > 0.50 - TOLERANCIA_CUERPO)
-esIndecisionSell = cuerpoIndSell <= 0.50 + TOLERANCIA and not esMartilloIndSell
+esIndecisionSell = cuerpoIndSell < 0.50 - TOLERANCIA and not esMartilloIndSell
 
 wickContraSell = math.min(nivelOpenIndSell, nivelCloseIndSell)
 wickFavorSell  = 1 - math.max(nivelOpenIndSell, nivelCloseIndSell)
 tipoIndSell = esIndecisionSell ? (math.abs(wickContraSell - wickFavorSell) <= 0.15 ? "Doji" : "Pinbar") : na
 
-pullbackStartBuy  = close[2] <= open[2]
-pullbackStartSell = close[2] >= open[2]
+// Vela de retroceso del patrón Start (fix 30/09, mismo criterio que
+// pullbackEnvolventeBuy/Sell más arriba -- ver ese comentario para el
+// detalle): una vela cruz (sin cuerpo) ya no cuenta como retroceso.
+pullbackStartBuy  = close[2] < open[2]
+pullbackStartSell = close[2] > open[2]
 
 mismoColor3 = (close > open and close[1] > open[1] and close[2] > open[2]) or (close < open and close[1] < open[1] and close[2] < open[2])
 

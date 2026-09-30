@@ -843,7 +843,7 @@ tocar los defaults ya validados en oro).
   Implementado en `fase4_strategy_backtest.pine`. Fabián confirmó que
   ambos quedaron implementados correctamente.
 
-- [ ] **Fase 4 (backtesting) — filtro por patrón de entrada: Envolvente vs.
+- [x] **Fase 4 (backtesting) — filtro por patrón de entrada: Envolvente vs.
   Start (29/09)**: Fabián sospecha que el patrón "MEC Start" no aporta gran
   cosa a la rentabilidad y quiere poder aislar cada patrón por separado
   (y ambos en conjunto) para comparar métricas en la Strategy Tester --
@@ -857,7 +857,34 @@ tocar los defaults ya validados en oro).
   -- **no** en la Sección 6, que sigue siendo copia literal del indicador
   sin tocar. Con los dos activados (default) el comportamiento es idéntico
   al actual; desactivando uno, solo entra el otro patrón. Implementado en
-  `fase4_strategy_backtest.pine`. **Validación pendiente por Fabián.**
+  `fase4_strategy_backtest.pine`. Fabián confirmó que el botón quedó bien
+  implementado.
+
+- [ ] **Fase 4 (backtesting) — criterio de vela de indecisión y vela de
+  retroceso, dos ajustes (30/09)**: caso reportado por Fabián, GBPUSD BUY
+  29/09 08:04 -- la vela de indecisión del patrón Start tenía un cuerpo de
+  exactamente 50% (medido con la cuadrícula de Gann) y el código la tomó
+  como válida.
+  1. **Vela de indecisión** (`esIndecisionBuy`/`Sell`, Sección 4, patrón
+     Start): el umbral era "cuerpo <= 50% + tolerancia" -- un cuerpo de
+     exactamente 50% (o algo más) todavía contaba como indecisión. Fix:
+     ahora exige cuerpo estrictamente MENOR al 50% (`< 0.50 - TOLERANCIA`,
+     la tolerancia se mantiene como margen de precisión de punto flotante,
+     ya no como concesión hacia arriba).
+  2. **Vela de retroceso** (`pullbackEnvolventeBuy`/`Sell`, Sección 3, y
+     `pullbackStartBuy`/`Sell`, Sección 4): una vela cruz/doji (open ==
+     close, sin cuerpo) contaba SIEMPRE como retroceso válido
+     (comparaciones "<="/">="). Fabián decidió que ya no es lógico -- una
+     vela sin cuerpo no se revalorizó ni se depreció, no es un retroceso
+     real. Fix: ahora exige un cierre estrictamente del lado correcto de la
+     apertura (comparaciones "<"/">"), una vela cruz queda ignorada. Este
+     cambio **no** afecta el trazado de altos/bajos M3 (Sección 2) -- esa
+     lógica marca sus propios dojis sobre la vela AGREGADA M3 (`candleDir
+     == "doji"` dentro de `procesarVelaM3`), un mecanismo completamente
+     separado del de Envolvente/Start, que usa velas M1 crudas.
+
+  Implementado en `fase4_strategy_backtest.pine`. **Validación pendiente
+  por Fabián.**
 
 ## Decisiones de diseño (confirmadas con Fabián)
 
