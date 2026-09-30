@@ -28,3 +28,10 @@ Registro de todo lo que se decide y se conversa. Se actualiza en cada sesión. F
 - El usuario quiere ir construyendo los departamentos de a poco.
 - Pregunta abierta resuelta: los "mini-Jarvis" son roles definidos en archivos, no bots que corren solos. Ver explicación en la sesión.
 - Copia abrible del organigrama: `empresa/organigrama.html`.
+
+### Estado de accesos (30/09/2026)
+- El usuario indicó que dio acceso a ManyChat, Meta y n8n. Verificado en esta sesión en la nube: **no hay conexión** a ninguno de los tres.
+- Conectores activos hoy: Gmail y Google Calendar. Canva está instalado pero necesita reconectarse.
+- En el registro de conectores existen n8n, Supermetrics (incluye Facebook Ads) y Adspirer (incluye Meta Ads), sin instalar. ManyChat no aparece en el registro.
+- Caminos posibles: (1) instalar conectores en claude.ai, (2) sesión Local en la Mac con Claude in Chrome para Meta y ManyChat, (3) export manual de Ads Manager.
+- Regla: no pasar contraseñas ni tokens por el chat.
