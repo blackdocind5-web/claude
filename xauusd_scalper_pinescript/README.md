@@ -823,13 +823,14 @@ tocar los defaults ya validados en oro).
   los valores de DEBUG relevantes bar a bar) antes de intentar un fix de
   nuevo.
 
-- [ ] **Fase 4 (backtesting) — corte Pre-NY/NY a las 09:01 y margen de
-  tolerancia al TP — REINTENTADOS (29/09)**: estos dos ajustes se habían
-  implementado el 28/09 y se revirtieron junto con `finalVelaM3` cuando
-  apareció el bug de marcado incorrecto de la estructura M3 (no se podía
-  descartar en el momento que tuvieran algo que ver). Con la causa real ya
-  identificada y corregida -- era enteramente de `finalVelaM3`, ninguno de
-  estos dos cambios toca la Sección 2 -- se reintentan sin modificaciones:
+- [x] **Fase 4 (backtesting) — corte Pre-NY/NY a las 09:01 y margen de
+  tolerancia al TP — REINTENTADOS Y CONFIRMADOS (29/09)**: estos dos
+  ajustes se habían implementado el 28/09 y se revirtieron junto con
+  `finalVelaM3` cuando apareció el bug de marcado incorrecto de la
+  estructura M3 (no se podía descartar en el momento que tuvieran algo que
+  ver). Con la causa real ya identificada y corregida -- era enteramente
+  de `finalVelaM3`, ninguno de estos dos cambios toca la Sección 2 -- se
+  reintentaron sin modificaciones:
   - Corte Pre-NY/NY (Sección 1): `sesionPreNYStr = "0700-0901:23456"`,
     `sesionNYStr = "0901-1100:23456"` -- la vela M1 que abre a las 09:00
     (cierra a las 09:01) pasa a ejecutarse como parte de Pre-NY en vez de
@@ -839,8 +840,24 @@ tocar los defaults ya validados en oro).
     distancia total, para que el bracket llene cuando el precio está a esa
     tolerancia de tocar el TP teórico completo, en vez de exigir el toque
     exacto.
-  Implementado en `fase4_strategy_backtest.pine`. **Validación pendiente
-  por Fabián.**
+  Implementado en `fase4_strategy_backtest.pine`. Fabián confirmó que
+  ambos quedaron implementados correctamente.
+
+- [ ] **Fase 4 (backtesting) — filtro por patrón de entrada: Envolvente vs.
+  Start (29/09)**: Fabián sospecha que el patrón "MEC Start" no aporta gran
+  cosa a la rentabilidad y quiere poder aislar cada patrón por separado
+  (y ambos en conjunto) para comparar métricas en la Strategy Tester --
+  mismo mecanismo que los toggles de sesión/día ya existentes. El código
+  ya distinguía internamente los dos patrones desde siempre:
+  `candidataEnvolventeBuy`/`Sell` (patrón Envolvente, Sección 3) y
+  `esStartBuy`/`Sell` (patrón Start, Sección 4), combinados con `or` en
+  `mecBuyBruto`/`mecSellBruto` (Sección 6). Fix: nuevos toggles
+  `habilitarEnvolvente`/`habilitarStart` (grupo "Backtest — Filtros de
+  patrón de entrada", Sección 6C), aplicados en `mecBuyGate`/`mecSellGate`
+  -- **no** en la Sección 6, que sigue siendo copia literal del indicador
+  sin tocar. Con los dos activados (default) el comportamiento es idéntico
+  al actual; desactivando uno, solo entra el otro patrón. Implementado en
+  `fase4_strategy_backtest.pine`. **Validación pendiente por Fabián.**
 
 ## Decisiones de diseño (confirmadas con Fabián)
 
