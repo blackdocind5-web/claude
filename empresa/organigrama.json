@@ -1,0 +1,120 @@
+{
+  "empresa": "Por definir (clínica / agencia de cirugía estética)",
+  "actualizado": "30/09/2026",
+  "nota": "Borrador inicial armado en la sesión del 30/09/2026. Los supuestos están marcados y se corrigen con el usuario.",
+  "direccion": {
+    "id": "direccion",
+    "nombre": "Dirección",
+    "agente": "Jarvis Central",
+    "mision": "Consolida los informes de todos los departamentos, prioriza las decisiones del día y abre cada mañana con el estado de la empresa.",
+    "informe_diario": "Briefing matutino: 5 cifras clave, 3 alertas, 3 decisiones pendientes.",
+    "fuentes": ["Informes de los demás departamentos", "empresa/bitacora.md"],
+    "kpis": ["Decisiones tomadas vs. pendientes", "Departamentos con informe al día"],
+    "estado": "planificado",
+    "fase": 0
+  },
+  "areas": [
+    {
+      "id": "mercado",
+      "nombre": "Mercado",
+      "departamentos": [
+        {
+          "id": "publicidad",
+          "nombre": "Publicidad y Meta Ads",
+          "agente": "Mini-Jarvis Ads",
+          "mision": "Mide qué anuncios, conjuntos y campañas rinden, detecta fugas de presupuesto y propone qué pausar, escalar o duplicar.",
+          "informe_diario": "Últimas 24 h y 7 días: gasto, alcance, frecuencia, CPM, CTR, costo por conversación o lead, mejor y peor anuncio.",
+          "fuentes": ["Export de Ads Manager (.csv) en empresa/datos/meta/", "Sesión local con Claude in Chrome", "API de Marketing de Meta (a futuro)"],
+          "kpis": ["Costo por conversación", "CTR de enlace", "Frecuencia", "Gasto diario"],
+          "estado": "por_conectar",
+          "fase": 1
+        },
+        {
+          "id": "inteligencia",
+          "nombre": "Inteligencia Competitiva",
+          "agente": "Mini-Jarvis Mercado",
+          "mision": "Vigila los anuncios de los mejores cirujanos de Brasil, Argentina, Chile, Colombia, Miami, París y Turquía y extrae ángulos, ofertas y formatos que funcionan.",
+          "informe_diario": "Alertas de anuncios nuevos o de larga duración en la Biblioteca de anuncios de Meta. Informe completo cada semana.",
+          "fuentes": ["Biblioteca de anuncios de Meta", "Instagram público", "Búsqueda web"],
+          "kpis": ["Anuncios nuevos detectados", "Ángulos repetidos entre competidores"],
+          "estado": "planificado",
+          "fase": 2
+        }
+      ]
+    },
+    {
+      "id": "creativo_ventas",
+      "nombre": "Creatividad y Ventas",
+      "departamentos": [
+        {
+          "id": "creativos",
+          "nombre": "Neuromarketing y Creativos",
+          "agente": "Mini-Jarvis Creativo",
+          "mision": "Convierte los hallazgos de datos y competencia en ganchos, guiones, copys y tests A/B, respetando las políticas de Meta para cirugía estética.",
+          "informe_diario": "3 ideas de anuncio nuevas con hipótesis de neuromarketing y el test A/B recomendado.",
+          "fuentes": ["Informes de Publicidad e Inteligencia", "Banco de creativos ganadores"],
+          "kpis": ["Creativos probados por semana", "Tasa de creativos ganadores"],
+          "estado": "planificado",
+          "fase": 2
+        },
+        {
+          "id": "ventas",
+          "nombre": "Ventas y Cierre",
+          "agente": "Mini-Jarvis Closer",
+          "mision": "Sigue cada lead desde la primera conversación hasta la consulta pagada: tiempos de respuesta, objeciones, guiones de WhatsApp y seguimiento.",
+          "informe_diario": "Leads nuevos, sin responder, consultas agendadas, objeciones más frecuentes y mensajes de seguimiento sugeridos.",
+          "fuentes": ["ManyChat", "WhatsApp Business", "Agenda de consultas"],
+          "kpis": ["Tiempo de primera respuesta", "Lead a consulta", "Consulta a cirugía"],
+          "estado": "por_conectar",
+          "fase": 2
+        }
+      ]
+    },
+    {
+      "id": "soporte",
+      "nombre": "Soporte",
+      "departamentos": [
+        {
+          "id": "datos",
+          "nombre": "Datos y Analítica",
+          "agente": "Mini-Jarvis Datos",
+          "mision": "Une publicidad, ventas y resultados para medir el costo real por paciente y segmentar por calidad de lead, gustos y procedimiento.",
+          "informe_diario": "Embudo completo del día y de la semana, con el punto donde se pierde más gente.",
+          "fuentes": ["Informes de Publicidad y Ventas", "Planilla de pacientes (a definir)"],
+          "kpis": ["Costo por paciente", "Valor por lead", "Calidad de lead por segmento"],
+          "estado": "planificado",
+          "fase": 3
+        },
+        {
+          "id": "compliance",
+          "nombre": "Normativa y Reputación",
+          "agente": "Mini-Jarvis Compliance",
+          "mision": "Revisa cada anuncio contra las políticas de Meta y la normativa publicitaria de cada país, y monitorea reseñas y menciones.",
+          "informe_diario": "Anuncios en riesgo de rechazo, cambios de políticas y nuevas reseñas.",
+          "fuentes": ["Políticas de publicidad de Meta", "Normativa local", "Reseñas públicas"],
+          "kpis": ["Anuncios rechazados", "Puntaje de reseñas"],
+          "estado": "planificado",
+          "fase": 3
+        },
+        {
+          "id": "finanzas",
+          "nombre": "Finanzas",
+          "agente": "Jarvis Finanzas (ya existe)",
+          "mision": "Hoy sigue el portfolio y el mercado. Más adelante suma rentabilidad de campañas: retorno de inversión publicitaria y margen por procedimiento.",
+          "informe_diario": "Briefing de mercado y estado del portfolio con los scripts de jarvis/scripts.",
+          "fuentes": ["Yahoo Finance", "jarvis/portfolio/active_positions.json"],
+          "kpis": ["P&L del portfolio", "ROAS (a futuro)"],
+          "estado": "activo",
+          "fase": 0
+        }
+      ]
+    }
+  ],
+  "fases": [
+    {"n": 0, "nombre": "Cimientos", "cuando": "Hoy", "items": ["Organigrama y bitácora guardados en el repositorio", "Un mini-agente definido por departamento", "Comando /manana para abrir cada día"]},
+    {"n": 1, "nombre": "Datos de Meta", "cuando": "Semana 1", "items": ["Conectar las métricas (export diario o sesión local con Chrome)", "Primer informe diario de Publicidad", "Diagnóstico de la última semana"]},
+    {"n": 2, "nombre": "Mercado y creatividad", "cuando": "Semanas 2 y 3", "items": ["Benchmark de los 7 mercados", "Banco de creativos y tests A/B", "Seguimiento de leads y guiones de cierre"]},
+    {"n": 3, "nombre": "Análisis cruzado", "cuando": "Semana 4", "items": ["Embudo completo y costo por paciente", "Revisión de normativa por país", "Segmentación por gustos y calidad"]},
+    {"n": 4, "nombre": "Automatización", "cuando": "Mes 2", "items": ["Informes programados cada mañana", "Envío por email", "Alertas cuando una métrica sale de rango"]}
+  ]
+}
