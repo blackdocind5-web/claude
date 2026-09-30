@@ -192,6 +192,23 @@ strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=1
 // `procesarVelaM3`), un mecanismo completamente separado del de
 // Envolvente/Start, que usa velas M1 crudas.
 //
+// Prueba temporal: arrastre sin cierre forzado (30/09, a pedido de Fabián --
+// quiere correr un backtesting profundo comparando esta variante contra el
+// comportamiento actual, SIN que sea todavía un cambio definitivo): nuevo
+// toggle `dejarCorrerHastaSLTP` (grupo "Backtest — Prueba: arrastre sin
+// cierre forzado (temporal)", Sección 6C). Activado, un trade que sigue
+// abierto ya no se cierra por ninguna condición de estructura -- ni la
+// regla 3 de `procesarSesionTrade` (cierre al terminar la sesión si la
+// estructura está en contra) ni la regla 4 (CHoCH real en contra durante el
+// arrastre) -- se deja correr hasta que el propio bracket (SL/TP, regla 2)
+// lo cierre. Por pedido explícito de Fabián, esto NO toca el cierre por
+// Hedge Position (ni dentro de una sesión, en "entradas reales", ni "Hedge
+// Position entre sesiones" más abajo) -- ambos mecanismos siguen cerrando
+// el trade viejo para abrir el nuevo exactamente igual que hoy, pase lo que
+// pase con este toggle. Apagado (default), el comportamiento es idéntico
+// al actual. Es una prueba, no un cambio permanente -- pendiente de que
+// Fabián decida, tras comparar resultados, si lo deja así o lo revierte.
+//
 // Sesión "Wall Street" (09:30-11:00 EST, agregada 16/09 para backtestear
 // índices: Nasdaq, S&P 500, Dow Jones): a diferencia de Pre-NY/NY/Asia, que
 // son mutuamente excluyentes, esta se SUPERPONE con la sesión NY (09:00-
@@ -776,7 +793,7 @@ tpSell = not na(distanciaFinalSell) ? close - distanciaFinalSell * RR_TP * (1 - 
 //      (señal fantasma). Este fix resolvió el caso reportado en EURUSD; el
 //      cierre tardío en GBPUSD/AUDUSD tenía una causa distinta -- ver el
 //      fix del 18/09 en la regla 2.
-procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tpBuyIn, slSellIn, tpSellIn, tendenciaActual, esCambioEstrAlto, esCambioEstrBajo, senalesIn, cerradaIn, dirIn, slIn, tpIn, hedgeFlagIn, habilitadaEjecucion, qtyBuyDisponible, qtySellDisponible) =>
+procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tpBuyIn, slSellIn, tpSellIn, tendenciaActual, esCambioEstrAlto, esCambioEstrBajo, senalesIn, cerradaIn, dirIn, slIn, tpIn, hedgeFlagIn, habilitadaEjecucion, qtyBuyDisponible, qtySellDisponible, dejarCorrerHastaSLTP) =>
     senalesOut = senalesIn
     cerradaOut = cerradaIn
     dirOut = dirIn
@@ -840,18 +857,21 @@ procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tp
                 cerradaOut := true
 
     // 3) fin de sesión con trade abierto -- arrastre o cierre según estructura
+    // (a menos que `dejarCorrerHastaSLTP` esté activo -- ver comentario largo
+    // junto al input `dejarCorrerHastaSLTP` más abajo)
     finEstaSesion = enEstaSesion[1] and not enEstaSesion
     if finEstaSesion and not na(dirOut)
         estructuraAFavor = (dirOut == "BUY" and tendenciaActual == "alcista") or (dirOut == "SELL" and tendenciaActual == "bajista")
-        if not estructuraAFavor
+        if not estructuraAFavor and not dejarCorrerHastaSLTP
             cerrarBroker := true
             motivoCierre := "Cierre fin de sesión (estructura en contra)"
             dirOut := na
 
     // 4) arrastre en curso -- se cierra solo ante un CHoCH real en contra
+    // (también suprimido por `dejarCorrerHastaSLTP`, ver más abajo)
     if not enEstaSesion and not na(dirOut)
         chochEnContra = (dirOut == "BUY" and esCambioEstrBajo) or (dirOut == "SELL" and esCambioEstrAlto)
-        if chochEnContra
+        if chochEnContra and not dejarCorrerHastaSLTP
             cerrarBroker := true
             motivoCierre := "CHoCH en contra (arrastre)"
             dirOut := na
@@ -913,6 +933,22 @@ habilitarViernes = input.bool(true, "Habilitar Viernes", group=grpFiltros)
 grpFiltrosPatron = "Backtest — Filtros de patrón de entrada"
 habilitarEnvolvente = input.bool(true, "Habilitar señales por patrón Envolvente", group=grpFiltrosPatron)
 habilitarStart = input.bool(true, "Habilitar señales por patrón Start", group=grpFiltrosPatron)
+
+// -- prueba temporal (30/09, a pedido de Fabián -- quiere comparar en
+// backtesting profundo esta variante contra el comportamiento actual, SIN
+// que sea todavía un cambio definitivo): con el toggle activado, un trade
+// que sigue abierto ya NO se cierra por ninguna condición de estructura --
+// ni por la regla 3 (fin de sesión con la estructura en contra) ni por la
+// regla 4 (CHoCH real en contra durante el arrastre, ver
+// `procesarSesionTrade` más arriba) -- se deja correr hasta que el propio
+// bracket (SL/TP, regla 2) lo cierre. Por diseño, esto NO toca el cierre
+// por Hedge Position (ni el de dentro de una sesión en "entradas reales",
+// ni el de "Hedge Position entre sesiones" más abajo) -- ambos siguen
+// cerrando el trade viejo para abrir el nuevo exactamente igual que hoy,
+// sin importar este toggle. Apagado (default) el comportamiento es
+// idéntico al actual.
+grpCierreSesion = "Backtest — Prueba: arrastre sin cierre forzado (temporal)"
+dejarCorrerHastaSLTP = input.bool(false, "PRUEBA: no cerrar por fin de sesión ni por CHoCH en arrastre -- dejar correr todo trade abierto hasta SL o TP (no afecta Hedge Position)", group=grpCierreSesion)
 
 diaSemanaNY = dayofweek(time, "America/New_York")
 diaHabilitado = (diaSemanaNY == dayofweek.sunday and habilitarDomingo) or (diaSemanaNY == dayofweek.monday and habilitarLunes) or (diaSemanaNY == dayofweek.tuesday and habilitarMartes) or (diaSemanaNY == dayofweek.wednesday and habilitarMiercoles) or (diaSemanaNY == dayofweek.thursday and habilitarJueves) or (diaSemanaNY == dayofweek.friday and habilitarViernes)
@@ -990,7 +1026,7 @@ var string idActualAsia = "Asia_0"
 var int contadorWallStreet = 0
 var string idActualWallStreet = "WallStreet_0"
 
-[senalesPreNYOut, cerradaPreNYOut, dirPreNYOut, slPreNYOut, tpPreNYOut, hedgePreNYOut, abrirBuyPreNY, abrirSellPreNY, cerrarBrokerPreNY, motivoPreNY] = procesarSesionTrade(enPreNY, inicioPreNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesPreNY, cerradaPreNY, dirPreNY, slPreNY, tpPreNY, hedgePreNY, habilitarPreNY, qtyBuyDisponible, qtySellDisponible)
+[senalesPreNYOut, cerradaPreNYOut, dirPreNYOut, slPreNYOut, tpPreNYOut, hedgePreNYOut, abrirBuyPreNY, abrirSellPreNY, cerrarBrokerPreNY, motivoPreNY] = procesarSesionTrade(enPreNY, inicioPreNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesPreNY, cerradaPreNY, dirPreNY, slPreNY, tpPreNY, hedgePreNY, habilitarPreNY, qtyBuyDisponible, qtySellDisponible, dejarCorrerHastaSLTP)
 senalesPreNY := senalesPreNYOut
 cerradaPreNY := cerradaPreNYOut
 dirPreNY := dirPreNYOut
@@ -998,7 +1034,7 @@ slPreNY := slPreNYOut
 tpPreNY := tpPreNYOut
 hedgePreNY := hedgePreNYOut
 
-[senalesNYOut, cerradaNYOut, dirNYOut, slNYOut, tpNYOut, hedgeNYOut, abrirBuyNY, abrirSellNY, cerrarBrokerNY, motivoNY] = procesarSesionTrade(enNY, inicioNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesNY, cerradaNY, dirNY, slNY, tpNY, hedgeNY, habilitarNY, qtyBuyDisponible, qtySellDisponible)
+[senalesNYOut, cerradaNYOut, dirNYOut, slNYOut, tpNYOut, hedgeNYOut, abrirBuyNY, abrirSellNY, cerrarBrokerNY, motivoNY] = procesarSesionTrade(enNY, inicioNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesNY, cerradaNY, dirNY, slNY, tpNY, hedgeNY, habilitarNY, qtyBuyDisponible, qtySellDisponible, dejarCorrerHastaSLTP)
 senalesNY := senalesNYOut
 cerradaNY := cerradaNYOut
 dirNY := dirNYOut
@@ -1006,7 +1042,7 @@ slNY := slNYOut
 tpNY := tpNYOut
 hedgeNY := hedgeNYOut
 
-[senalesAsiaOut, cerradaAsiaOut, dirAsiaOut, slAsiaOut, tpAsiaOut, hedgeAsiaOut, abrirBuyAsia, abrirSellAsia, cerrarBrokerAsia, motivoAsia] = procesarSesionTrade(enAsia, inicioAsia, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesAsia, cerradaAsia, dirAsia, slAsia, tpAsia, hedgeAsia, habilitarAsia, qtyBuyDisponible, qtySellDisponible)
+[senalesAsiaOut, cerradaAsiaOut, dirAsiaOut, slAsiaOut, tpAsiaOut, hedgeAsiaOut, abrirBuyAsia, abrirSellAsia, cerrarBrokerAsia, motivoAsia] = procesarSesionTrade(enAsia, inicioAsia, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesAsia, cerradaAsia, dirAsia, slAsia, tpAsia, hedgeAsia, habilitarAsia, qtyBuyDisponible, qtySellDisponible, dejarCorrerHastaSLTP)
 senalesAsia := senalesAsiaOut
 cerradaAsia := cerradaAsiaOut
 dirAsia := dirAsiaOut
@@ -1014,7 +1050,7 @@ slAsia := slAsiaOut
 tpAsia := tpAsiaOut
 hedgeAsia := hedgeAsiaOut
 
-[senalesWallStreetOut, cerradaWallStreetOut, dirWallStreetOut, slWallStreetOut, tpWallStreetOut, hedgeWallStreetOut, abrirBuyWallStreet, abrirSellWallStreet, cerrarBrokerWallStreet, motivoWallStreet] = procesarSesionTrade(enWallStreet, inicioWallStreet, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesWallStreet, cerradaWallStreet, dirWallStreet, slWallStreet, tpWallStreet, hedgeWallStreet, habilitarWallStreet, qtyBuyDisponible, qtySellDisponible)
+[senalesWallStreetOut, cerradaWallStreetOut, dirWallStreetOut, slWallStreetOut, tpWallStreetOut, hedgeWallStreetOut, abrirBuyWallStreet, abrirSellWallStreet, cerrarBrokerWallStreet, motivoWallStreet] = procesarSesionTrade(enWallStreet, inicioWallStreet, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesWallStreet, cerradaWallStreet, dirWallStreet, slWallStreet, tpWallStreet, hedgeWallStreet, habilitarWallStreet, qtyBuyDisponible, qtySellDisponible, dejarCorrerHastaSLTP)
 senalesWallStreet := senalesWallStreetOut
 cerradaWallStreet := cerradaWallStreetOut
 dirWallStreet := dirWallStreetOut

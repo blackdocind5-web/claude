@@ -883,8 +883,32 @@ tocar los defaults ya validados en oro).
      == "doji"` dentro de `procesarVelaM3`), un mecanismo completamente
      separado del de Envolvente/Start, que usa velas M1 crudas.
 
-  Implementado en `fase4_strategy_backtest.pine`. **Validación pendiente
-  por Fabián.**
+  Implementado en `fase4_strategy_backtest.pine`. Fabián confirmó que ambos
+  ajustes quedaron bien implementados.
+
+- [ ] **Fase 4 (backtesting) — prueba temporal: arrastre sin cierre forzado
+  (30/09)**: Fabián quiere correr un backtesting profundo comparando una
+  variante de la estrategia que NO cierre los trades que siguen abiertos al
+  terminar la sesión operativa, dejándolos correr hasta que toquen SL o TP
+  por sí solos -- para comparar métricas contra el comportamiento actual.
+  Aclaró explícitamente que es una prueba, no un cambio definitivo todavía.
+  Se le consultó si el cambio también debía suprimir el cierre por CHoCH
+  real en contra durante el arrastre (regla 4 de `procesarSesionTrade`,
+  mecanismo separado de la regla 3 de cierre por fin de sesión) -- confirmó
+  que sí, quiere que el trade **solo** se cierre por SL o TP, sin ninguna
+  otra condición de estructura de por medio. Fix: nuevo toggle
+  `dejarCorrerHastaSLTP` (grupo "Backtest — Prueba: arrastre sin cierre
+  forzado (temporal)", Sección 6C, default `false`). Activado, suprime
+  tanto la regla 3 (cierre al fin de sesión con estructura en contra) como
+  la regla 4 (CHoCH en contra durante el arrastre) de `procesarSesionTrade`
+  -- el trade se deja correr hasta que lo cierre el bracket nativo (SL/TP,
+  regla 2). Por pedido explícito de Fabián, **no** afecta el cierre por
+  Hedge Position (ni dentro de una sesión, en "entradas reales", ni "Hedge
+  Position entre sesiones") -- ambos mecanismos siguen cerrando el trade
+  viejo para abrir el nuevo exactamente igual que hoy. Apagado (default),
+  el comportamiento es idéntico al actual. Implementado en
+  `fase4_strategy_backtest.pine`. **Validación pendiente por Fabián --
+  prueba temporal, no definitiva.**
 
 ## Decisiones de diseño (confirmadas con Fabián)
 
