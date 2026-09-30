@@ -92,6 +92,10 @@ details summary{cursor:pointer;color:var(--fg2);font-size:14px}
 .verdict{border:1px solid var(--gold);border-radius:6px;padding:18px 20px;background:var(--gold-soft);display:grid;gap:10px}
 .verdict p{margin:0;color:var(--fg2);max-width:80ch} .verdict b{color:var(--fg)}
 .verdict .big{font:700 clamp(20px,2.6vw,26px)/1.2 var(--f-display);font-stretch:85%;color:var(--fg);text-wrap:balance}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:5px;overflow:hidden;justify-self:start}
+.seg button{font:500 12.5px var(--f-body);background:transparent;color:var(--fg2);border:0;padding:6px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--gold-soft);color:var(--fg);box-shadow:inset 0 -2px 0 var(--gold)}
+.seg button:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
 .plan{margin:0;padding-left:20px;display:grid;gap:8px;color:var(--fg2);max-width:84ch}
 .plan b{color:var(--fg)}
 @media (max-width:760px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -116,11 +120,16 @@ details summary{cursor:pointer;color:var(--fg2);font-size:14px}
   <button role="tab" id="tab-combinado" data-k="combinado" aria-controls="report">Sistema MEC (Envolvente + START)</button>
   <button role="tab" id="tab-envolvente" data-k="envolvente" aria-controls="report">Envolvente | Backtest 2026</button>
   <button role="tab" id="tab-start" data-k="start" aria-controls="report">START | Backtest 2026</button>
+  <button role="tab" id="tab-gestion" data-k="gestion" aria-controls="gestion">Gestión: variante SL/TP</button>
   <button role="tab" id="tab-comparativa" data-k="comparativa" aria-controls="compare">Comparativa y recomendación</button>
 </nav>
 
 <div id="report" class="view" role="tabpanel">
-<div class="view-head"><span class="eyebrow" id="r-eyebrow"></span><h2 id="r-title"></h2><p id="r-desc"></p></div>
+<div class="view-head"><span class="eyebrow" id="r-eyebrow"></span><h2 id="r-title"></h2><p id="r-desc"></p>
+  <div class="seg" role="group" aria-label="Versión de la gestión" style="margin-top:8px">
+    <button type="button" id="ver-o" aria-pressed="true">Gestión original</button>
+    <button type="button" id="ver-v" aria-pressed="false">Variante SL/TP (sin CHoCH ni cierre de sesión)</button>
+  </div></div>
 
 <section aria-labelledby="s-res">
   <div class="sec-head"><h2 id="s-res">Resumen de rendimiento</h2><p>Solo operaciones válidas según el calendario de restricciones 2026</p></div>
@@ -197,6 +206,32 @@ details summary{cursor:pointer;color:var(--fg2);font-size:14px}
     <p class="note">Antes de cambiar el calendario, validá estos dos cambios con datos que no se usaron para decidirlos: el mismo backtest sobre 2025 (Premium permite backtest profundo) o registrándolos aparte en vivo durante los próximos meses.</p>
   </div>
   <div class="panel"><details><summary id="ex-sum"></summary><div class="tbl" style="margin-top:10px"><table id="t-excl"></table></div></details></div>
+</section>
+</div>
+
+<div id="gestion" class="view" role="tabpanel" hidden>
+<div class="view-head"><span class="eyebrow">Prueba de la recomendación de gestión</span><h2>Gestión: variante SL/TP</h2><p>La misma muestra y las mismas entradas, pero sin las salidas por CHoCH en contra ni por cierre de fin de sesión: cada operación corre hasta su SL o su TP. El Reset se mantiene porque es parte del sistema.</p></div>
+<div class="verdict" id="g-verdict"></div>
+<section aria-labelledby="g-s1">
+  <div class="sec-head"><h2 id="g-s1">Original vs variante</h2><p>Operaciones válidas según el calendario de restricciones</p></div>
+  <div class="panel tbl"><table class="cmp" id="t-gv"></table></div>
+</section>
+<section aria-labelledby="g-s2">
+  <div class="sec-head"><h2 id="g-s2">Qué aporta cada salida</h2><p>Las mismas operaciones con la salida original y dejándolas correr hasta SL o TP</p></div>
+  <div class="panel tbl"><table class="cmp" id="t-gtipo"></table><p class="note">R original: resultado con la salida por gestión. R variante: resultado de esas mismas operaciones corriendo hasta su SL o TP. Una diferencia negativa significa que la salida por gestión protegía capital.</p></div>
+</section>
+<section aria-labelledby="g-s3">
+  <div class="sec-head"><h2 id="g-s3">Curvas de capital</h2><p>Línea llena: gestión original · Línea punteada: variante SL/TP</p></div>
+  <div class="grid3" id="g-curves"></div>
+</section>
+<section aria-labelledby="g-s4">
+  <div class="sec-head"><h2 id="g-s4">Operaciones que cambiaron (Envolvente)</h2><p id="g-s4p"></p></div>
+  <div class="panel tbl"><table id="t-gcamb"></table></div>
+  <div class="panel"><details><summary>Ver las operaciones que cambiaron en Envolvente + START y en START</summary><div class="tbl" style="margin-top:10px"><table id="t-gcamb2"></table></div></details></div>
+</section>
+<section aria-labelledby="g-s5">
+  <div class="sec-head"><h2 id="g-s5">Conclusión y siguiente prueba</h2></div>
+  <ul class="findings" id="g-reco"></ul>
 </section>
 </div>
 
@@ -388,7 +423,9 @@ const REC={
 function statTable(id,head,rows,bestRow){$(id).innerHTML=row(head.map((h,i)=>`<th${i?' class="n"':''}>${h}</th>`))+rows.map((r,i)=>`<tr${i===bestRow?' class="best"':''}>${r}</tr>`).join('')}
 function renderReport(){
   setPts();
-  $('#r-eyebrow').textContent=EYEBROW[D.clave]; $('#r-title').textContent=TITLE[D.clave]; $('#r-desc').textContent=DESC[D.clave];
+  const ck=D.clave.replace('_v',''), isV=D.clave.endsWith('_v');
+  $('#r-eyebrow').textContent=EYEBROW[ck]+(isV?' · variante SL/TP':''); $('#r-title').textContent=TITLE[ck];
+  $('#r-desc').textContent=isV?DESC[ck]+' Versión sin salidas por CHoCH en contra ni cierre de fin de sesión: cada operación corre hasta su SL o TP.':DESC[ck];
   $('#m-period').textContent=D.first+' – '+D.last;
   $('#m-sample').textContent=D.n+' operaciones válidas de '+D.n_total+' ('+D.n_excl+' excluidas por calendario)';
   $('#m-file').textContent='Archivo: '+D.archivo+'.csv';
@@ -472,25 +509,29 @@ function renderReport(){
 }
 
 __COMPARE__
+__GESTION__
 
 /* ---------- Pestañas ---------- */
-const TABS=['combinado','envolvente','start','comparativa'];
+const TABS=['combinado','envolvente','start','gestion','comparativa'];
+let VER='';
 function show(k,push){
   if(!TABS.includes(k)) k='combinado';
   VIEW=k;
   TABS.forEach(t=>$('#tab-'+t).setAttribute('aria-selected',String(t===k)));
-  const cmp=k==='comparativa';
-  $('#report').hidden=cmp; $('#compare').hidden=!cmp;
-  if(cmp){
+  const cmp=k==='comparativa', ges=k==='gestion';
+  $('#report').hidden=cmp||ges; $('#compare').hidden=!cmp; $('#gestion').hidden=!ges;
+  if(cmp||ges){
     $('#m-period').textContent=DATA.combinado.first+' – '+DATA.combinado.last;
-    $('#m-sample').textContent='3 configuraciones del sistema MEC';
-    $('#m-file').textContent='Envolvente · START · Envolvente + START';
-    renderCompare();
-  } else { D=DATA[k]; renderReport(); }
+    $('#m-sample').textContent=cmp?'3 configuraciones del sistema MEC':'Gestión original vs variante SL/TP';
+    $('#m-file').textContent=cmp?'Envolvente · START · Envolvente + START':'Archivos XAU_m1_2026_VARIANTE_*.csv';
+    cmp?renderCompare():renderGestion();
+  } else { D=DATA[k+VER]; renderReport(); }
   if(push){try{history.replaceState(null,'','#'+k)}catch(e){}}
 }
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>show(b.dataset.k,true)));
-function rerender(){ if(VIEW==='comparativa') renderCompare(); else renderCharts(); }
+function setVer(v){VER=v;$('#ver-o').setAttribute('aria-pressed',String(v===''));$('#ver-v').setAttribute('aria-pressed',String(v==='_v'));show(VIEW,false)}
+$('#ver-o').addEventListener('click',()=>setVer(''));$('#ver-v').addEventListener('click',()=>setVer('_v'));
+function rerender(){ if(VIEW==='comparativa') renderCompare(); else if(VIEW==='gestion') renderGestion(); else renderCharts(); }
 show((location.hash||'').slice(1)||'combinado',false);
 let rz; window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(rerender,150)});
 if(window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',rerender);
