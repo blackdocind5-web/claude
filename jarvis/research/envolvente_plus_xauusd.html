@@ -1,0 +1,321 @@
+<title>Envolvente Plus XAUUSD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f4f3ef; --panel:#fbfaf7; --line:#dedbd3; --grid:#e9e6df;
+  --fg:#16181d; --fg2:#4d5058; --fg3:#7a7d85;
+  --gain:#0e8a6e; --loss:#c92f45; --gold:#9a700f; --gold-soft:#a87a1222; --gain-soft:#0e9c7c1f; --loss-soft:#d6334a1f;
+  --c1:#2a78d6; --c2:#eb6834; --c3:#1baf7a; --c4:#8a5cd0;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;
+  --bg:#0f1115; --panel:#15171c; --line:#262a31; --grid:#20242a;
+  --fg:#eceef2; --fg2:#a9adb6; --fg3:#737883;
+  --gain:#2fb593; --loss:#ef6275; --gold:#d3a53c; --gold-soft:#c99a2e24; --gain-soft:#1f9f8426; --loss-soft:#e84a6026;
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#9b74e0}}
+:root[data-theme="dark"]{color-scheme:dark;
+  --bg:#0f1115; --panel:#15171c; --line:#262a31; --grid:#20242a;
+  --fg:#eceef2; --fg2:#a9adb6; --fg3:#737883;
+  --gain:#2fb593; --loss:#ef6275; --gold:#d3a53c; --gold-soft:#c99a2e24; --gain-soft:#1f9f8426; --loss-soft:#e84a6026;
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#9b74e0}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--f-body);padding:0 18px}
+.wrap{max-width:1120px;margin:0 auto;padding-block:36px 64px;display:grid;gap:40px}
+h1,h2,h3{font-family:var(--f-display);font-stretch:85%;margin:0;text-wrap:balance}
+h1{font-size:clamp(30px,5vw,46px);font-weight:800;line-height:1.05}
+h2{font-size:clamp(22px,3vw,28px);font-weight:700}
+h3{font-family:var(--f-body);font-stretch:100%;font-size:15px;font-weight:600}
+p{margin:0}
+a{color:var(--c1)}
+.eyebrow{font:500 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--fg3)}
+.lede{color:var(--fg2);max-width:78ch;font-size:16px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;color:var(--fg2);font-size:14px}
+.meta b{color:var(--fg)}
+header{display:grid;gap:12px}
+section{display:grid;gap:14px}
+.sh{display:grid;gap:4px;border-bottom:1px solid var(--line);padding-bottom:8px}
+.sh p{color:var(--fg3);font-size:13.5px;max-width:90ch}
+.num,td.n,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.pos{color:var(--gain)} .neg{color:var(--loss)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.kpi{background:var(--panel);padding:14px 16px;display:grid;gap:2px;align-content:start;min-width:0}
+.kpi .l{font-size:12.5px;color:var(--fg3)}
+.kpi .v{font:500 24px var(--f-mono);font-variant-numeric:tabular-nums}
+.kpi .s{font-size:12px;color:var(--fg2)}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;min-width:0;display:grid;gap:10px;align-content:start}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr));gap:14px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.05em;color:var(--fg3);text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:bottom}
+td{padding:7px 10px;border-bottom:1px solid var(--grid);vertical-align:top}
+td.n,th.n{text-align:right}
+tr.hl td{background:var(--gain-soft)}
+tr.warn td{background:var(--loss-soft)}
+tr.grp td{font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--fg3);padding-top:14px;border-bottom:1px solid var(--line)}
+.verdict{border:1px solid var(--gold);border-radius:6px;padding:18px 20px;background:var(--gold-soft);display:grid;gap:12px}
+.verdict .big{font:700 clamp(20px,2.6vw,26px)/1.2 var(--f-display);font-stretch:85%;text-wrap:balance}
+.verdict ul{margin:0;padding-left:18px;display:grid;gap:6px;color:var(--fg2);max-width:92ch}
+.verdict b{color:var(--fg)}
+.findings{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.findings li{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.findings p{color:var(--fg2)} .findings b{color:var(--fg)}
+.tag{font:600 11px var(--f-mono);padding:3px 7px;border-radius:3px;white-space:nowrap;letter-spacing:.04em;display:inline-block}
+.tag.g{background:var(--gain-soft);color:var(--gain)} .tag.r{background:var(--loss-soft);color:var(--loss)} .tag.y{background:var(--gold-soft);color:var(--gold)} .tag.n{border:1px solid var(--line);color:var(--fg2)}
+.note{font-size:12.5px;color:var(--fg3)}
+.rules{counter-reset:r;display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.rules li{display:grid;grid-template-columns:30px 1fr;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.rules li::before{counter-increment:r;content:counter(r);font:600 15px var(--f-mono);color:var(--gold)}
+.rules p{color:var(--fg2);font-size:14px} .rules b{color:var(--fg)}
+.chart{position:relative;width:100%}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.ax{font:11px var(--f-mono);fill:var(--fg3)}
+.gl{stroke:var(--grid);stroke-width:1}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--fg2)}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:3px}
+.tip{position:absolute;pointer-events:none;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:7px 10px;font:12px/1.5 var(--f-mono);color:var(--fg);white-space:nowrap;box-shadow:0 4px 14px #0003;z-index:5}
+.timeline{display:grid;gap:0;border-left:2px solid var(--line);margin-left:6px}
+.ev{display:grid;grid-template-columns:110px 1fr;gap:12px;padding:8px 0 8px 16px;position:relative}
+.ev::before{content:"";position:absolute;left:-7px;top:14px;width:12px;height:12px;border-radius:50%;background:var(--panel);border:2px solid var(--gold)}
+.ev time{font:500 12.5px var(--f-mono);color:var(--gold);padding-top:1px}
+.ev p{color:var(--fg2);font-size:14px} .ev b{color:var(--fg)}
+.sources{font-size:13px;color:var(--fg2);padding-left:18px;margin:0;display:grid;gap:4px}
+.sources .d{font-family:var(--f-mono);font-size:12px;color:var(--fg3)}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">XAUUSD · M1 · Pre NY 07:00–09:00 · Solo patrón envolvente · 125 operaciones válidas</span>
+  <h1>Envolvente Plus: cómo exprimir el patrón envolvente</h1>
+  <p class="lede">Análisis operación por operación del backtest 2026 (26/01–30/09/2026) del patrón envolvente, con escenarios de riesgo del 1% al 3%, el efecto de sacar los meses malos, la idea de cargar más los lunes y martes, y los patrones que aparecen al mirar cada día, cada mes y cada secuencia. Termina con una estrategia concreta y reglas para aplicarla.</p>
+  <div class="meta"><span>Fuente: <b>XAUUSD | Backtest 2026</b> (lista de operaciones de TradingView)</span><span>Capital de referencia <b>1.000 USD</b></span><span>Fecha del análisis <b>30/09/2026</b></span></div>
+</header>
+
+<div class="verdict">
+  <p class="big">Recomendación: Envolvente Plus con riesgo base de 1,5% y freno por caída. Rinde más que el 2% plano (+58,3% vs +54,5%) con la mitad del riesgo de cola (P95 de caída 9,8% vs 15,3%).</p>
+  <ul>
+    <li><b>Riesgo 1–3%:</b> el sistema aguanta hasta ~2% plano. Con 3% la caída esperable en el peor 5% de los casos llega al 22% y hay 95% de probabilidad de ver una caída mayor al 10%. No lo recomiendo.</li>
+    <li><b>Sacar enero:</b> suma +3,8 puntos (de +21,1% a +24,9% al 1%). <b>Diciembre no está en la muestra</b> (el backtest arranca el 26/01), así que no se puede medir. Para ese período propongo una regla de mercado en lugar de un recorte a ciegas.</li>
+    <li><b>Lunes y martes:</b> la idea va en la dirección correcta pero está incompleta. <b>El martes</b> fue bueno en las dos mitades del año. <b>El lunes</b> solo en la segunda. <b>El jueves</b> rinde casi igual que ellos y <b>el viernes</b> es el día flojo en las dos mitades. Conviene más ponderar por "días fuertes" que duplicar los lunes y martes.</li>
+    <li><b>Hallazgo más fuerte:</b> cuando la primera envolvente del día pierde, la <b>segunda entrada gana el 77% de las veces</b> (17 de 22). Pasó en las dos mitades del año (8/11 y 9/11). Es la regla más robusta del estudio.</li>
+    <li><b>Gestión:</b> mantener la salida original (CHoCH y cierre de sesión). La variante que deja correr cada trade hasta el SL o el TP rinde menos (20,35R vs 21,77R) y cae más (5,29% vs 4,58%).</li>
+  </ul>
+</div>
+
+<section>
+  <div class="sh"><span class="eyebrow">Punto de partida</span><h2>El patrón envolvente solo, tal como está hoy</h2><p>Operaciones válidas según el calendario de restricciones 2026, con 1% de riesgo por operación (SL completo = −1% del capital; TP = +0,9%).</p></div>
+  <div class="kpis">
+    <div class="kpi"><span class="l">Rendimiento</span><span class="v pos">+21,1%</span><span class="s">1.000 → 1.210,70 USD en 8 meses</span></div>
+    <div class="kpi"><span class="l">Win rate</span><span class="v">59,2%</span><span class="s">74 ganadoras · 51 perdedoras</span></div>
+    <div class="kpi"><span class="l">Profit factor</span><span class="v">1,45</span><span class="s">R promedio +0,174 por operación</span></div>
+    <div class="kpi"><span class="l">Caída máxima</span><span class="v neg">−4,6%</span><span class="s">26/01 → 06/02/2026</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="eyebrow">Pedido 1</span><h2>Escenarios de riesgo del 1% al 3% por operación</h2><p>Interés compuesto sobre las mismas operaciones. "Caída P95" sale de un Monte Carlo de 4.000 órdenes al azar de los mismos trades: el 95% de las secuencias posibles cae menos que eso. Es la caída para la que hay que estar preparado, no la que tocó en el backtest.</p></div>
+  <div class="panel tbl"><table>
+    <thead><tr><th>Riesgo por operación</th><th class="n">Rendimiento</th><th class="n">Caída real</th><th class="n">Caída P95 (Monte Carlo)</th><th class="n">Prob. caída &gt;10%</th><th class="n">Prob. caída &gt;20%</th><th class="n">Peor mes</th></tr></thead>
+    <tbody>
+      <tr class="grp"><td colspan="7">Sin enero (120 operaciones, feb–sep 2026)</td></tr>
+      <tr class="hl"><td>1%</td><td class="n pos">+24,9%</td><td class="n">4,5%</td><td class="n">7,9%</td><td class="n">0,7%</td><td class="n">0%</td><td class="n neg">−1,3%</td></tr>
+      <tr><td>1,5%</td><td class="n pos">+39,1%</td><td class="n">6,8%</td><td class="n">11,6%</td><td class="n">14,0%</td><td class="n">0%</td><td class="n neg">−2,0%</td></tr>
+      <tr><td>2%</td><td class="n pos">+54,5%</td><td class="n">9,0%</td><td class="n">15,3%</td><td class="n">47,9%</td><td class="n">0,4%</td><td class="n neg">−2,7%</td></tr>
+      <tr class="warn"><td>2,5%</td><td class="n pos">+71,3%</td><td class="n">11,3%</td><td class="n">18,8%</td><td class="n">79,0%</td><td class="n">3,1%</td><td class="n neg">−3,5%</td></tr>
+      <tr class="warn"><td>3%</td><td class="n pos">+89,5%</td><td class="n">13,5%</td><td class="n">22,2%</td><td class="n">94,7%</td><td class="n">11,1%</td><td class="n neg">−4,2%</td></tr>
+      <tr class="grp"><td colspan="7">Con enero (125 operaciones, muestra completa)</td></tr>
+      <tr><td>1%</td><td class="n pos">+21,1%</td><td class="n">4,6%</td><td class="n">8,8%</td><td class="n">1,7%</td><td class="n">0%</td><td class="n neg">−3,0%</td></tr>
+      <tr><td>1,5%</td><td class="n pos">+32,7%</td><td class="n">6,8%</td><td class="n">13,0%</td><td class="n">24,6%</td><td class="n">0,1%</td><td class="n neg">−4,6%</td></tr>
+      <tr><td>2%</td><td class="n pos">+45,2%</td><td class="n">9,0%</td><td class="n">17,0%</td><td class="n">64,5%</td><td class="n">1,1%</td><td class="n neg">−6,0%</td></tr>
+      <tr class="warn"><td>2,5%</td><td class="n pos">+58,4%</td><td class="n">11,3%</td><td class="n">21,0%</td><td class="n">89,9%</td><td class="n">6,9%</td><td class="n neg">−7,5%</td></tr>
+      <tr class="warn"><td>3%</td><td class="n pos">+72,5%</td><td class="n">13,5%</td><td class="n">24,7%</td><td class="n">98,2%</td><td class="n">20,3%</td><td class="n neg">−9,0%</td></tr>
+    </tbody></table>
+    <p class="note">Si se opera en una cuenta de fondeo con límite de pérdida total del 10%, la columna "Prob. caída &gt;10%" es la probabilidad aproximada de perder la cuenta en un período como este. Con 2% plano es casi una moneda al aire.</p>
+  </div>
+
+  <div class="panel">
+    <h3>Curva de capital sin enero (1.000 USD iniciales)</h3>
+    <div class="legend" id="lg"></div>
+    <div class="chart" id="eq"></div>
+    <p class="note">Eje horizontal: número de operación (120). Pasá el cursor para ver la fecha y el capital de cada escenario.</p>
+  </div>
+
+  <div class="panel tbl"><h3>Resultado mes a mes según el riesgo (sin enero)</h3><table>
+    <thead><tr><th>Mes</th><th class="n">Operaciones</th><th class="n">Win rate</th><th class="n">R</th><th class="n">1%</th><th class="n">2%</th><th class="n">3%</th><th class="n">Plus 1,5%</th></tr></thead>
+    <tbody><tr><td>Feb</td><td class='n'>14</td><td class='n'>57,1%</td><td class='n pos'>+1,48</td><td class='n pos'>+1,3%</td><td class='n pos'>+2,5%</td><td class='n pos'>+3,6%</td><td class='n pos'>+0,3%</td></tr>
+<tr><td>Mar</td><td class='n'>12</td><td class='n'>75,0%</td><td class='n pos'>+5,24</td><td class='n pos'>+4,8%</td><td class='n pos'>+9,7%</td><td class='n pos'>+14,7%</td><td class='n pos'>+10,5%</td></tr>
+<tr><td>Abr</td><td class='n'>10</td><td class='n'>60,0%</td><td class='n pos'>+2,51</td><td class='n pos'>+2,2%</td><td class='n pos'>+4,5%</td><td class='n pos'>+6,6%</td><td class='n pos'>+5,5%</td></tr>
+<tr><td>May</td><td class='n'>16</td><td class='n'>43,8%</td><td class='n neg'>−1,43</td><td class='n neg'>−1,3%</td><td class='n neg'>−2,7%</td><td class='n neg'>−4,2%</td><td class='n pos'>+0,4%</td></tr>
+<tr><td>Jun</td><td class='n'>12</td><td class='n'>58,3%</td><td class='n pos'>+2,35</td><td class='n pos'>+2,1%</td><td class='n pos'>+4,1%</td><td class='n pos'>+6,1%</td><td class='n pos'>+5,6%</td></tr>
+<tr><td>Jul</td><td class='n'>17</td><td class='n'>76,5%</td><td class='n pos'>+7,40</td><td class='n pos'>+6,8%</td><td class='n pos'>+13,9%</td><td class='n pos'>+21,4%</td><td class='n pos'>+14,1%</td></tr>
+<tr><td>Ago</td><td class='n'>18</td><td class='n'>61,1%</td><td class='n pos'>+4,82</td><td class='n pos'>+4,4%</td><td class='n pos'>+8,8%</td><td class='n pos'>+13,2%</td><td class='n pos'>+8,3%</td></tr>
+<tr><td>Sep</td><td class='n'>21</td><td class='n'>57,1%</td><td class='n pos'>+2,81</td><td class='n pos'>+2,5%</td><td class='n pos'>+4,9%</td><td class='n pos'>+7,1%</td><td class='n pos'>+6,0%</td></tr></tbody></table>
+    <p class="note">Con Envolvente Plus a 1,5%, mayo pasa de negativo a +0,4% y los 8 meses cierran en positivo.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sh"><span class="eyebrow">Pedido 2</span><h2>Sacar diciembre y enero</h2></div>
+  <ul class="findings">
+    <li><span class="tag r">ENERO</span><p><b>5 operaciones, 1 ganadora, −3,41R (−3,0%).</b> Es el peor mes de la muestra y el que marca la caída máxima del sistema. Sacarlo sube el rendimiento de +21,1% a +24,9% al 1% y baja la caída P95 de 8,8% a 7,9%. Ojo: son solo 5 operaciones de la última semana de enero, justo la semana del máximo histórico del oro y el desplome del 30/01 (ver contexto de mercado).</p></li>
+    <li><span class="tag n">DICIEMBRE</span><p><b>No hay operaciones de diciembre en este backtest</b> (empieza el 26/01/2026), así que no puedo confirmar con datos que sea un mes malo. Si tienen un backtest de diciembre 2025 en TradingView, exportalo y lo sumo.</p></li>
+    <li><span class="tag y">MI LECTURA</span><p>Sacar meses mirando el resultado es sobreoptimizar: enero no fue malo por ser enero sino por el régimen del mercado (volatilidad extrema por noticias). Diciembre sí tiene una razón estructural (baja liquidez por fiestas, cierre de año de los fondos) y ya la cubre en parte el calendario de feriados. <b>Propuesta:</b> operar del 15/12 al 15/01 con la mitad del riesgo, en lugar de apagar dos meses completos. Así se protege sin perder los días buenos que pueda haber.</p></li>
+  </ul>
+</section>
+
+<section>
+  <div class="sh"><span class="eyebrow">Pedido 3</span><h2>¿Lunes y martes son los mejores días? ¿Conviene cargar más?</h2><p>R promedio por operación. Para verificar que el patrón no sea casualidad, la muestra está partida en dos mitades: ene–may y jun–sep.</p></div>
+  <div class="panel tbl"><table>
+    <thead><tr><th>Día</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">R total</th><th class="n">R prom.</th><th class="n">R prom. ene–may</th><th class="n">R prom. jun–sep</th><th>Lectura</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td>Lunes</td><td class="n">20</td><td class="n">65,0%</td><td class="n pos">+5,52</td><td class="n pos">+0,276</td><td class="n neg">−0,054</td><td class="n pos">+0,496</td><td>Fuerte, pero solo en la segunda mitad</td></tr>
+      <tr class="hl"><td>Martes</td><td class="n">30</td><td class="n">63,3%</td><td class="n pos">+8,14</td><td class="n pos">+0,271</td><td class="n pos">+0,345</td><td class="n pos">+0,215</td><td><b>El más consistente</b></td></tr>
+      <tr><td>Miércoles</td><td class="n">24</td><td class="n">54,2%</td><td class="n pos">+1,84</td><td class="n pos">+0,077</td><td class="n neg">−0,020</td><td class="n pos">+0,146</td><td>Débil</td></tr>
+      <tr class="hl"><td>Jueves</td><td class="n">26</td><td class="n">65,4%</td><td class="n pos">+6,45</td><td class="n pos">+0,248</td><td class="n pos">+0,124</td><td class="n pos">+0,354</td><td>Tan bueno como lunes y martes</td></tr>
+      <tr class="warn"><td>Viernes</td><td class="n">25</td><td class="n">48,0%</td><td class="n neg">−0,18</td><td class="n neg">−0,007</td><td class="n neg">−0,069</td><td class="n pos">+0,071</td><td><b>El peor en las dos mitades</b></td></tr>
+    </tbody></table>
+    <p class="note">Ningún día por sí solo tiene un intervalo de confianza del 95% que excluya el cero (20–30 operaciones por día es poco). Por eso no recomiendo apagar días ni duplicar el riesgo en uno: conviene ponderar con moderación (×1,5 y ×0,5).</p>
+  </div>
+  <ul class="findings">
+    <li><span class="tag g">SÍ</span><p><b>Cargar más los días buenos mejora el sistema, no solo lo apalanca.</b> Medido en R ganado por cada unidad de riesgo puesta, "Lun/Mar ×1,5" sube de 0,210 a 0,235 y "Días fuertes" (Lun/Mar/Jue ×1,5 y Vie ×0,5) a 0,252.</p></li>
+    <li><span class="tag y">PERO</span><p><b>"Lun/Mar ×2" gana más sobre todo porque arriesga más</b> (riesgo medio 1,39%). Su caída real sube a 7,8% y la P95 a 10,6%. "Días fuertes" gana casi lo mismo por unidad de riesgo con una caída real de 4,8%, casi la del sistema plano.</p></li>
+  </ul>
+</section>
+
+<section>
+  <div class="sh"><span class="eyebrow">Pedido 4</span><h2>Patrones encontrados en los 125 trades</h2><p>Revisé cada operación por día, hora, dirección, orden dentro del día, resultado anterior y mes.</p></div>
+  <div class="panel tbl"><table>
+    <thead><tr><th>Patrón</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">R prom.</th><th>¿Se repite en las dos mitades?</th><th>Uso</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td><b>2da entrada del día (tras perder la 1ra)</b></td><td class="n">23</td><td class="n">73,9%</td><td class="n pos">+0,375</td><td>Sí: 8/11 y 9/11 (sin enero)</td><td>Subir el riesgo ×1,5</td></tr>
+      <tr><td>1ra entrada del día</td><td class="n">102</td><td class="n">55,9%</td><td class="n pos">+0,129</td><td>—</td><td>Riesgo normal</td></tr>
+      <tr class="hl"><td>Entrada 07:00–07:59</td><td class="n">60</td><td class="n">61,7%</td><td class="n pos">+0,238</td><td>Sí</td><td>Priorizar</td></tr>
+      <tr><td>Entrada 08:00–08:59</td><td class="n">60</td><td class="n">56,7%</td><td class="n pos">+0,108</td><td>Sí</td><td>Riesgo normal</td></tr>
+      <tr class="hl"><td>Jueves 07:00–07:59</td><td class="n">15</td><td class="n">73,3%</td><td class="n pos">+0,462</td><td>Muestra chica</td><td>Dentro de "días fuertes"</td></tr>
+      <tr class="warn"><td>Jueves 08:00–08:59</td><td class="n">10</td><td class="n">50,0%</td><td class="n neg">−0,148</td><td>Muestra chica</td><td>Riesgo normal</td></tr>
+      <tr><td>Día después de un día ganador</td><td class="n">73</td><td class="n">63,0%</td><td class="n pos">+0,228</td><td>Sí</td><td>Informativo</td></tr>
+      <tr><td>Día después de un día perdedor</td><td class="n">50</td><td class="n">56,0%</td><td class="n pos">+0,147</td><td>Sí</td><td>Informativo</td></tr>
+      <tr class="warn"><td>Tras 2 perdedoras seguidas</td><td class="n">19</td><td class="n">52,6%</td><td class="n pos">+0,030</td><td>—</td><td>No subir riesgo por "revancha"</td></tr>
+      <tr><td>Compras / ventas</td><td class="n">68 / 57</td><td class="n">61,8% / 56,1%</td><td class="n pos">+0,179 / +0,169</td><td>—</td><td>Sin diferencia: operar ambas</td></tr>
+    </tbody></table>
+  </div>
+  <ul class="findings">
+    <li><span class="tag g">CLAVE</span><p><b>El sistema nunca toma una segunda entrada después de ganar</b> (una ganadora cierra el día), y la segunda entrada después de una pérdida gana 3 de cada 4 veces. En la práctica, el peor día posible es de −2,2R: la pérdida diaria ya viene acotada por diseño. En 19 de las 23 segundas entradas la dirección fue opuesta a la primera, o sea que el mercado "barrió" un lado y después fue hacia el otro.</p></li>
+    <li><span class="tag r">CUIDADO</span><p><b>No es martingala.</b> Subir el riesgo en la 2da entrada funciona porque ese trade tiene mejor estadística propia. Duplicar después de cada pérdida no: tras dos perdedoras seguidas (en días distintos) el R promedio cae a +0,03.</p></li>
+  </ul>
+</section>
+
+<section>
+  <div class="sh"><span class="eyebrow">Pedido 5</span><h2>Estrategias para potenciar la ganancia</h2><p>Todas usan las mismas 120 operaciones sin enero. "R por unidad de riesgo" es la métrica justa: dice si la estrategia mejora la calidad o solo sube el apalancamiento. "Jun–sep" aplica la regla solo a la segunda mitad como control.</p></div>
+  <div class="panel tbl"><table>
+    <thead><tr><th>Estrategia</th><th class="n">Riesgo medio</th><th class="n">R por unidad de riesgo</th><th class="n">Base 1%: rend.</th><th class="n">Caída real</th><th class="n">Caída P95</th><th class="n">Base 2%: rend.</th><th class="n">Caída P95</th><th class="n">Prob. &gt;10%</th><th class="n">Jun–sep 1%</th></tr></thead>
+    <tbody>
+      <tr><td>Plano (todos los días igual)</td><td class="n">1,00×</td><td class="n">0,210</td><td class="n pos">+24,9%</td><td class="n">4,5%</td><td class="n">7,9%</td><td class="n pos">+54,5%</td><td class="n">15,3%</td><td class="n">47,9%</td><td class="n pos">+16,6%</td></tr>
+      <tr><td>Lun/Mar ×1,5</td><td class="n">1,20×</td><td class="n">0,235</td><td class="n pos">+34,5%</td><td class="n">6,2%</td><td class="n">9,1%</td><td class="n pos">+78,5%</td><td class="n">17,5%</td><td class="n">68,5%</td><td class="n pos">+21,6%</td></tr>
+      <tr><td>Lun/Mar ×2</td><td class="n">1,39×</td><td class="n">0,252</td><td class="n pos">+44,7%</td><td class="n">7,8%</td><td class="n">10,6%</td><td class="n pos">+105,4%</td><td class="n">20,3%</td><td class="n">87,2%</td><td class="n pos">+26,7%</td></tr>
+      <tr><td>Días fuertes (Lun/Mar/Jue ×1,5 · Vie ×0,5)</td><td class="n">1,20×</td><td class="n">0,252</td><td class="n pos">+37,8%</td><td class="n">4,8%</td><td class="n">9,4%</td><td class="n pos">+87,2%</td><td class="n">18,1%</td><td class="n">72,6%</td><td class="n pos">+23,9%</td></tr>
+      <tr><td>07:00–07:59 ×1,5</td><td class="n">1,24×</td><td class="n">0,217</td><td class="n pos">+32,9%</td><td class="n">5,2%</td><td class="n">10,0%</td><td class="n pos">+73,9%</td><td class="n">19,2%</td><td class="n">82,2%</td><td class="n pos">+23,2%</td></tr>
+      <tr><td>2da entrada del día ×1,5</td><td class="n">1,09×</td><td class="n">0,229</td><td class="n pos">+30,3%</td><td class="n">4,9%</td><td class="n">8,2%</td><td class="n pos">+68,1%</td><td class="n">16,0%</td><td class="n">54,0%</td><td class="n pos">+19,6%</td></tr>
+      <tr><td>Sin viernes</td><td class="n">0,80×</td><td class="n">0,253</td><td class="n pos">+24,0%</td><td class="n">3,3%</td><td class="n">6,9%</td><td class="n pos">+52,5%</td><td class="n">13,5%</td><td class="n">28,2%</td><td class="n pos">+15,9%</td></tr>
+      <tr class="hl"><td><b>Envolvente Plus</b></td><td class="n">1,16×</td><td class="n"><b>0,265</b></td><td class="n pos"><b>+38,5%</b></td><td class="n"><b>4,3%</b></td><td class="n">8,8%</td><td class="n pos">+89,2%</td><td class="n">17,0%</td><td class="n">62,9%</td><td class="n pos">+24,3%</td></tr>
+      <tr class="hl"><td><b>Envolvente Plus 1,5% + freno</b></td><td class="n">≈1,7%</td><td class="n">0,265</td><td class="n" colspan="3"><b class="pos">+58,3%</b> · caída real 6,4% · P95 9,8%</td><td class="n" colspan="2">—</td><td class="n"><b>3,8%</b></td><td class="n">—</td></tr>
+    </tbody></table>
+    <p class="note">Envolvente Plus tiene la mejor calidad (R por unidad de riesgo +26% sobre el plano), la menor caída real y el mejor resultado en jun–sep. A igual riesgo medio (1,16% plano ≈ +29% con 5,2% de caída), Plus rinde +38,5% con 4,3%.</p>
+  </div>
+
+  <h3 style="margin-top:6px">Reglas de Envolvente Plus</h3>
+  <ol class="rules">
+    <li><p><b>Riesgo base: 1,5% del capital</b> (arrancar con 1% el primer mes en real para validar).</p></li>
+    <li><p><b>×1,5 (2,25%)</b> cuando se cumpla cualquiera: segunda entrada del día después de perder la primera · cualquier entrada del <b>martes</b> · entrada del <b>lunes o jueves entre 07:00 y 07:59</b>.</p></li>
+    <li><p><b>×0,5 (0,75%) los viernes.</b> El resto de las entradas va con el riesgo base.</p></li>
+    <li><p><b>Freno por caída:</b> si el capital cae 5% desde su máximo, todo el riesgo se reduce a la mitad hasta recuperar el máximo. Con esto la probabilidad de una caída mayor al 10% baja de 22,8% a 3,8%.</p></li>
+    <li><p><b>Máximo 2 entradas por día</b> (ya lo hace el sistema). Nunca subir el riesgo por "revancha" fuera de la regla 2.</p></li>
+    <li><p><b>Temporada festiva (15/12–15/01) y semanas de shock macro</b> (cambio de presidente de la Fed, decisión de tasas sorpresiva, oro moviéndose más del 3% diario): riesgo a la mitad.</p></li>
+    <li><p><b>Mantener la gestión original:</b> CHoCH en contra, cierre de sesión y Reset. No pasar a SL/TP puro.</p></li>
+    <li><p><b>Revisión mensual:</b> si en 40 operaciones reales la 2da entrada o los días fuertes rinden por debajo del promedio del sistema, volver a riesgo plano.</p></li>
+  </ol>
+</section>
+
+<section>
+  <div class="sh"><span class="eyebrow">Contexto de mercado</span><h2>El oro en 2026 y por qué enero y mayo fueron malos</h2><p>Comparé los meses flojos del backtest con lo que pasó en el mercado del oro.</p></div>
+  <div class="timeline">
+    <div class="ev"><time>28–30/01/2026</time><p><b>Máximo histórico cerca de US$5.595 y desplome de ~11% en un día</b> tras la nominación de Kevin Warsh (visto como halcón) a la presidencia de la Fed. Fue la peor caída diaria desde los años 80. <b>Coincide con la semana de −3,41R del sistema.</b></p></div>
+    <div class="ev"><time>Abr–may 2026</time><p><b>CPI de EE.UU. en 3,8% (abril), dólar firme y rendimientos reales en alza.</b> El oro perdió los US$4.300 y borró la ganancia del año. <b>Mayo es el otro mes negativo del sistema</b> (−1,43R, 43,8% de win rate).</p></div>
+    <div class="ev"><time>05/06/2026</time><p>NFP de mayo muy fuerte (172.000 empleos vs ~90.000 esperados) y nueva ola de ventas: el oro tocó mínimos de dos meses.</p></div>
+    <div class="ev"><time>Jul–ago 2026</time><p>Mercado más ordenado y con tendencia: <b>los dos mejores meses del sistema</b> (julio +7,40R con 76,5% de win rate; agosto +4,82R).</p></div>
+    <div class="ev"><time>Sep 2026</time><p>La Fed subió tasas por primera vez en tres años y el discurso de Warsh en Jackson Hole fue duro. El oro opera entre ~US$4.100 y US$4.450, con probabilidad de otra suba de tasas en octubre estimada cerca del 70%. Los bancos proyectan cierre de año entre US$4.360 y US$5.500.</p></div>
+  </div>
+  <ul class="findings">
+    <li><span class="tag y">CONCLUSIÓN</span><p><b>El patrón envolvente sufre en shocks de volatilidad por noticias</b> (enero) y en mercados de rango nervioso dominados por datos macro (mayo). Rinde mejor con tendencia ordenada (julio y agosto). Con otra suba de tasas posible en octubre, el entorno se parece más a mayo que a julio: razón extra para arrancar Plus con 1% base y activar el freno.</p></li>
+    <li><span class="tag n">LÍMITE</span><p>No pude cruzar cada trade con el precio diario del oro (volatilidad y tendencia del día) porque la red de este entorno bloquea Yahoo Finance y Stooq. Es el próximo paso natural: un filtro de régimen por ATR diario podría explicar mejor los meses malos que el calendario.</p></li>
+  </ul>
+</section>
+
+<section>
+  <div class="sh"><span class="eyebrow">Honestidad estadística</span><h2>Qué tan confiable es todo esto</h2></div>
+  <ul class="findings">
+    <li><span class="tag y">MUESTRA</span><p>125 operaciones en 8 meses. El sistema base tiene un intervalo de confianza del 95% para el R promedio de +0,01 a +0,34: la ventaja es probablemente real (98% de los remuestreos son positivos), pero su tamaño es incierto.</p></li>
+    <li><span class="tag y">SOBREAJUSTE</span><p>Los pesos por día salieron de los mismos datos que los miden. Por eso preferí multiplicadores moderados (×1,5 / ×0,5) y reglas que además se repiten en las dos mitades del año o tienen una razón de mercado.</p></li>
+    <li><span class="tag g">VALIDAR</span><p>Antes de subir a 1,5%: correr el mismo backtest sobre 2025 en TradingView y/o operar Plus a 1% durante 40 operaciones reales. Si la 2da entrada sigue arriba del 65% de win rate, escalar.</p></li>
+  </ul>
+</section>
+
+<section>
+  <div class="sh"><span class="eyebrow">Fuentes</span><h2>Referencias</h2></div>
+  <ul class="sources">
+    <li>Datos del sistema: <b>XAUUSD | Backtest 2026</b>, lista de operaciones XAU_m1_2026_Envolvente (TradingView), 26/01–30/09/2026.</li>
+    <li><a href="https://www.abc.net.au/news/2026-01-30/gold-silver-prices-drop-us-federal-reserve-chair-announcement/106289302">ABC News — Gold and silver prices collapse ahead of new Fed chair announcement</a> <span class="d">[30/01/2026]</span></li>
+    <li><a href="https://londongoldexchange.co.uk/blog/gold-price-crash-january-2026">London Gold Exchange — Gold price crash January 2026</a> <span class="d">[fecha no disponible]</span></li>
+    <li><a href="https://goldsilver.com/industry-news/article/gold-price-outlook-may-2026-why-institutional-forecasters-still-see-5000/">GoldSilver — Gold price outlook May 2026</a> <span class="d">[05/2026]</span></li>
+    <li><a href="https://www.tradingkey.com/analysis/commodities/metal/261952593-xauusd-gold-2026-5400-goldman-sachs-cpi-nfp-tradingkey">TradingKey — Gold drops below $4,300 erasing YTD gains</a> <span class="d">[fecha no disponible]</span></li>
+    <li><a href="https://capital.com/en-int/market-updates/gold-price-forecast-10-06-2026">Capital.com — Gold price forecast</a> <span class="d">[10/06/2026]</span></li>
+    <li><a href="https://www.cbsnews.com/news/golds-price-down-by-over-21-percent-where-will-it-head-september-2026/">CBS News — Gold's price is down by over 21%. Where will it head this September?</a> <span class="d">[09/2026]</span></li>
+    <li><a href="https://roboforex.com/beginners/analytics/forex-forecast/commodities/xau-usd-gold-forecast-2026-09-29">RoboForex — XAUUSD forecast</a> <span class="d">[29/09/2026]</span></li>
+    <li><a href="https://goldsilver.com/industry-news/article/gold-price-forecast-2026-2027-key-predictions-from-top-analysts/">GoldSilver — Every major bank cut its 2026 gold forecast</a> <span class="d">[fecha no disponible]</span></li>
+    <li><a href="https://kitco.com/news/article/2026-09-28/gold-and-silver-prices-are-struggling-now-much-higher-long-term-base">Kitco — BMO: gold and silver struggling now, higher long-term base</a> <span class="d">[28/09/2026]</span></li>
+  </ul>
+  <p class="note">Metodología: R = PyG / (0,9% del capital previo); a riesgo r%, cada operación rinde R × 0,9 × r% del capital (compuesto). Monte Carlo: 4.000 permutaciones del orden de los trades; probabilidad de pérdida por bootstrap con reposición. Material de análisis; no constituye recomendación de inversión.</p>
+</section>
+</div>
+
+<script>
+const C={"p1": [1008.9, 999.6, 989.8, 984.2, 992.9, 994.3, 988.2, 997.2, 1006.1, 1015.0, 1004.9, 995.1, 1004.0, 1012.9, 1021.8, 1011.6, 1020.5, 1029.7, 1019.4, 1028.6, 1037.9, 1047.3, 1056.8, 1066.4, 1055.7, 1061.3, 1071.1, 1080.9, 1070.1, 1067.6, 1077.5, 1087.4, 1097.3, 1107.3, 1096.1, 1085.1, 1094.9, 1086.5, 1096.2, 1105.7, 1095.0, 1104.6, 1093.7, 1103.3, 1097.8, 1088.6, 1083.2, 1086.3, 1095.8, 1085.2, 1081.2, 1070.7, 1080.1, 1089.6, 1099.2, 1088.4, 1078.2, 1067.5, 1057.1, 1066.4, 1064.5, 1073.8, 1083.4, 1093.0, 1102.5, 1112.2, 1122.0, 1131.9, 1120.6, 1130.5, 1140.5, 1150.9, 1161.2, 1171.4, 1159.7, 1159.8, 1170.2, 1158.6, 1168.9, 1157.3, 1167.5, 1177.8, 1188.3, 1198.9, 1187.2, 1197.6, 1208.1, 1218.7, 1211.4, 1199.5, 1195.6, 1188.0, 1198.6, 1209.2, 1198.5, 1209.0, 1197.1, 1207.7, 1218.5, 1229.2, 1240.2, 1251.3, 1262.5, 1249.9, 1261.1, 1248.4, 1259.7, 1252.6, 1264.0, 1256.9, 1268.4, 1279.9, 1266.9, 1264.1, 1251.3, 1251.8, 1263.4, 1274.7, 1261.7, 1248.7], "p2": [1017.8, 998.9, 979.4, 968.4, 985.5, 988.3, 976.1, 994.0, 1011.7, 1029.5, 1009.2, 989.4, 1007.0, 1024.9, 1043.0, 1022.2, 1040.2, 1058.9, 1037.8, 1056.5, 1075.5, 1095.0, 1114.9, 1135.2, 1112.3, 1124.1, 1145.0, 1165.8, 1142.5, 1137.1, 1158.2, 1179.5, 1201.1, 1223.0, 1198.1, 1174.2, 1195.3, 1177.0, 1198.0, 1218.9, 1195.2, 1216.1, 1192.2, 1213.0, 1201.0, 1180.9, 1169.2, 1176.0, 1196.5, 1173.2, 1164.6, 1141.9, 1162.1, 1182.6, 1203.4, 1179.6, 1157.5, 1134.6, 1112.6, 1132.0, 1128.1, 1147.8, 1168.3, 1189.1, 1209.6, 1231.0, 1252.7, 1274.8, 1249.3, 1271.3, 1293.8, 1317.5, 1341.0, 1364.7, 1337.4, 1337.6, 1361.5, 1334.5, 1358.3, 1331.4, 1354.9, 1378.8, 1403.4, 1428.4, 1400.3, 1425.0, 1449.9, 1475.5, 1457.7, 1429.1, 1419.8, 1401.7, 1426.7, 1452.1, 1426.2, 1451.4, 1422.6, 1448.0, 1473.8, 1499.8, 1526.5, 1553.7, 1581.7, 1550.1, 1578.0, 1546.2, 1574.0, 1556.4, 1584.7, 1566.8, 1595.5, 1624.5, 1591.5, 1584.3, 1552.4, 1553.5, 1582.3, 1610.8, 1577.7, 1545.4], "p3": [1026.7, 998.2, 968.8, 952.6, 977.8, 982.0, 963.7, 990.3, 1016.7, 1043.6, 1012.6, 982.8, 1009.1, 1036.1, 1063.5, 1031.6, 1058.9, 1087.5, 1054.9, 1083.4, 1112.6, 1143.0, 1174.2, 1206.2, 1169.7, 1188.3, 1221.4, 1254.7, 1217.1, 1208.5, 1242.2, 1276.4, 1311.5, 1347.3, 1306.2, 1267.0, 1301.2, 1271.4, 1305.4, 1339.5, 1300.5, 1334.5, 1295.3, 1329.2, 1309.5, 1276.6, 1257.6, 1268.5, 1301.7, 1263.7, 1249.8, 1213.3, 1245.4, 1278.4, 1312.2, 1273.2, 1237.5, 1200.7, 1165.7, 1196.2, 1190.1, 1221.3, 1253.9, 1287.4, 1320.8, 1355.7, 1391.6, 1428.4, 1385.6, 1422.3, 1459.9, 1500.1, 1540.2, 1581.0, 1533.6, 1534.0, 1575.0, 1528.2, 1569.1, 1522.5, 1562.8, 1604.1, 1647.0, 1691.0, 1641.3, 1684.7, 1728.8, 1774.6, 1742.5, 1691.2, 1674.7, 1642.6, 1686.5, 1731.6, 1685.3, 1729.9, 1678.6, 1723.4, 1769.5, 1816.3, 1864.9, 1914.7, 1966.4, 1907.5, 1959.0, 1899.7, 1951.0, 1918.4, 1970.7, 1937.2, 1990.5, 2044.8, 1982.4, 1969.0, 1909.5, 1911.5, 1964.7, 2017.7, 1955.6, 1895.4], "plus": [1020.0, 1005.9, 983.7, 979.5, 986.0, 988.2, 974.3, 994.5, 1001.1, 1014.4, 999.3, 977.2, 996.8, 1003.5, 1023.4, 1000.4, 1020.3, 1040.9, 1033.1, 1054.0, 1068.3, 1082.8, 1105.0, 1112.5, 1095.7, 1108.8, 1124.2, 1147.2, 1130.0, 1126.0, 1149.5, 1157.4, 1181.3, 1205.5, 1196.3, 1169.4, 1185.2, 1171.6, 1195.1, 1202.9, 1176.6, 1199.7, 1182.1, 1205.3, 1200.8, 1193.3, 1180.0, 1187.6, 1203.2, 1185.6, 1182.4, 1173.7, 1189.3, 1212.9, 1236.9, 1209.4, 1200.9, 1183.1, 1157.2, 1168.6, 1166.3, 1173.9, 1185.7, 1209.5, 1225.2, 1249.5, 1266.0, 1282.8, 1263.5, 1288.6, 1314.2, 1323.2, 1349.8, 1376.5, 1366.2, 1366.3, 1393.7, 1362.7, 1380.9, 1370.6, 1379.7, 1407.1, 1435.3, 1454.5, 1433.1, 1461.5, 1480.6, 1510.0, 1489.5, 1456.7, 1453.1, 1439.2, 1468.0, 1477.8, 1448.2, 1477.0, 1455.0, 1484.2, 1494.1, 1523.8, 1544.1, 1575.1, 1607.0, 1582.9, 1615.0, 1578.3, 1610.3, 1590.1, 1622.6, 1615.7, 1649.1, 1682.8, 1657.1, 1648.7, 1611.3, 1612.6, 1623.9, 1645.8, 1607.8, 1583.0], "d": ["03/02", "04/02", "04/02", "06/02", "06/02", "12/02", "17/02", "17/02", "20/02", "23/02", "25/02", "26/02", "26/02", "27/02", "03/03", "05/03", "05/03", "10/03", "13/03", "17/03", "18/03", "23/03", "26/03", "27/03", "30/03", "31/03", "01/04", "07/04", "08/04", "09/04", "14/04", "17/04", "20/04", "23/04", "24/04", "28/04", "07/05", "13/05", "13/05", "15/05", "18/05", "18/05", "21/05", "21/05", "22/05", "22/05", "26/05", "26/05", "27/05", "28/05", "29/05", "29/05", "03/06", "04/06", "08/06", "09/06", "12/06", "15/06", "16/06", "16/06", "23/06", "24/06", "25/06", "30/06", "06/07", "07/07", "08/07", "13/07", "15/07", "15/07", "16/07", "17/07", "21/07", "23/07", "24/07", "24/07", "27/07", "28/07", "29/07", "31/07", "31/07", "03/08", "04/08", "05/08", "06/08", "06/08", "10/08", "11/08", "13/08", "13/08", "14/08", "17/08", "20/08", "21/08", "25/08", "25/08", "26/08", "27/08", "28/08", "01/09", "02/09", "03/09", "08/09", "09/09", "09/09", "14/09", "14/09", "15/09", "17/09", "18/09", "21/09", "22/09", "23/09", "23/09", "24/09", "24/09", "25/09", "28/09", "29/09", "30/09"]};
+const S=[['p1','Plano 1%','--c1'],['p2','Plano 2%','--c2'],['p3','Plano 3%','--c4'],['plus','Plus 1,5% + freno','--c3']];
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt=v=>v.toLocaleString('es-AR',{minimumFractionDigits:0,maximumFractionDigits:0});
+const NS='http://www.w3.org/2000/svg';
+function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
+function draw(){
+  const box=document.getElementById('eq');box.innerHTML='';
+  const W=Math.max(320,box.clientWidth),H=Math.round(Math.min(380,Math.max(240,W*0.42)));
+  const m={l:52,r:112,t:10,b:28};const iw=W-m.l-m.r,ih=H-m.t-m.b;
+  const n=C.p1.length;let lo=1000,hi=1000;S.forEach(([k])=>C[k].forEach(v=>{lo=Math.min(lo,v);hi=Math.max(hi,v)}));
+  lo=Math.floor(lo/100)*100;hi=Math.ceil(hi/100)*100;
+  const x=i=>m.l+iw*i/(n-1),y=v=>m.t+ih*(1-(v-lo)/(hi-lo));
+  const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,role:'img','aria-label':'Curvas de capital por escenario de riesgo'},box);
+  for(let v=lo;v<=hi;v+=200){el('line',{x1:m.l,x2:m.l+iw,y1:y(v),y2:y(v),class:'gl'},svg);const t=el('text',{x:m.l-8,y:y(v)+4,'text-anchor':'end',class:'ax'},svg);t.textContent=fmt(v)}
+  [0,30,60,90,119].forEach(i=>{const t=el('text',{x:x(i),y:H-8,'text-anchor':'middle',class:'ax'},svg);t.textContent=C.d[i]});
+  const ends=[];
+  S.forEach(([k,lab,c])=>{
+    el('path',{d:C[k].map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)).join(''),fill:'none',stroke:css(c),'stroke-width':k==='plus'?2.5:2,'stroke-linejoin':'round'},svg);
+    ends.push({y:y(C[k][n-1]),lab,v:C[k][n-1],c});
+  });
+  ends.sort((a,b)=>a.y-b.y);for(let i=1;i<ends.length;i++)if(ends[i].y-ends[i-1].y<14)ends[i].y=ends[i-1].y+14;
+  ends.forEach(e=>{const t=el('text',{x:m.l+iw+8,y:e.y+4,class:'ax',style:'fill:'+css('--fg2')},svg);t.textContent=e.lab.split(' ')[0]+' '+e.lab.split(' ')[1]+' '+fmt(e.v)});
+  const cross=el('line',{y1:m.t,y2:m.t+ih,stroke:css('--fg3'),'stroke-width':1,opacity:0},svg);
+  const tip=document.createElement('div');tip.className='tip';tip.hidden=true;box.appendChild(tip);
+  const hit=el('rect',{x:m.l,y:m.t,width:iw,height:ih,fill:'transparent'},svg);
+  const move=ev=>{const r=svg.getBoundingClientRect();const px=(ev.clientX-r.left)*W/r.width;let i=Math.round((px-m.l)/iw*(n-1));i=Math.max(0,Math.min(n-1,i));
+    cross.setAttribute('x1',x(i));cross.setAttribute('x2',x(i));cross.setAttribute('opacity',.6);
+    tip.innerHTML=`<b>Op. ${i+1} · ${C.d[i]}</b><br>`+S.map(([k,l,c])=>`<span style="color:${css(c)}">■</span> ${l}: ${fmt(C[k][i])} USD`).join('<br>');
+    tip.hidden=false;const bx=(x(i)/W)*r.width;tip.style.left=Math.min(bx+12,r.width-tip.offsetWidth-4)+'px';tip.style.top='8px'};
+  hit.addEventListener('pointermove',move);hit.addEventListener('pointerleave',()=>{tip.hidden=true;cross.setAttribute('opacity',0)});
+  document.getElementById('lg').innerHTML=S.map(([k,l,c])=>`<span><i style="background:var(${c})"></i>${l}</span>`).join('');
+}
+draw();let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(draw,150)});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw);
+new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+</script>
