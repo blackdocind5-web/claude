@@ -12,9 +12,9 @@ Se usa para limpiar los exports de TradingView antes de cualquier análisis.
 
 | Regla | Qué significa | Eventos que la activan |
 |---|---|---|
-| ⛔ **No operar** (`SIN_OPERAR`) | Se descarta **cualquier** operación cuya entrada caiga ese día. | Feriados bancarios de EE. UU., Reino Unido, Alemania, Francia e Italia (incluido el feriado parcial de Italia) · NFP (USD) · CPI (USD) · CPI (GBP) · Discursos del presidente de EE. UU. o del presidente de la Fed **dentro de 07:00–09:00** |
+| ⛔ **No operar** (`SIN_OPERAR`) | Se descarta **cualquier** operación cuya entrada caiga ese día. | Feriados bancarios de EE. UU., Reino Unido, Alemania, Francia e Italia (incluido el feriado parcial de Italia) · NFP (USD) · CPI (USD) · CPI (GBP) · PIB final trimestral (USD) · Discursos del presidente de EE. UU. o del presidente de la Fed **dentro de 07:00–09:00** |
 | ⚠️ **Solo entradas en ventana** (`SOLO_ENTRADA`) | Solo vale una operación con **entrada** dentro de la ventana (07:00–07:59). La salida no importa: si queda abierta, sigue hasta su SL o TP. | BCE: Main Refinancing Rate, Monetary Policy Statement, ECB Press Conference (EUR) |
-| ⏸️ **Sin abrir** (`BLOQUEO_NOTICIA`) | Se descarta la operación si su **entrada** cae dentro del bloqueo (10 min antes a 3 min después del dato, extremos incluidos). Una operación ya abierta puede cerrarse dentro del bloqueo por SL o TP automático. | ADP Non-Farm Employment Change (USD, 08:15 → bloqueo 08:05–08:18) |
+| ⏸️ **Sin abrir** (`BLOQUEO_NOTICIA`) | Se descarta la operación si su **entrada** cae dentro del bloqueo (10 min antes a 3 min después del dato, extremos incluidos). Una operación ya abierta puede cerrarse dentro del bloqueo por SL o TP automático. | ADP Non-Farm Employment Change (USD, 08:15 → bloqueo 08:05–08:18) · Core PCE Price Index m/m (USD, 08:30 → bloqueo 08:20–08:33) |
 
 Si un día tiene varias reglas, gana ⛔ **No operar**.
 
@@ -34,7 +34,7 @@ una fila por evento; un día puede tener varias). El script lee todos los `calen
 
 ---
 
-## Calendario 2026 (58 días · 59 eventos: 44 ⛔ · 6 ⚠️ · 9 ⏸️)
+## Calendario 2026 (67 días · 73 eventos: 48 ⛔ · 6 ⚠️ · 19 ⏸️)
 
 ### Enero
 
@@ -47,6 +47,8 @@ una fila por evento; un día puede tener varias). El script lee todos los `calen
 | 13/01/2026 | Mar | ⛔ No operar | USD | CPI m/m (USD) |
 | 19/01/2026 | Lun | ⛔ No operar | USD | Feriado bancario EE. UU. (Martin Luther King Jr.) |
 | 21/01/2026 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
+| 22/01/2026 | Jue | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
+| 22/01/2026 | Jue | ⛔ No operar | USD | PIB final trimestral - Final GDP q/q (USD) |
 
 ### Febrero
 
@@ -58,6 +60,7 @@ una fila por evento; un día puede tener varias). El script lee todos los `calen
 | 13/02/2026 | Vie | ⛔ No operar | USD | CPI m/m (USD) |
 | 16/02/2026 | Lun | ⛔ No operar | USD | Feriado bancario EE. UU. (Presidents' Day) |
 | 18/02/2026 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
+| 20/02/2026 | Vie | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
 
 ### Marzo
 
@@ -66,6 +69,7 @@ una fila por evento; un día puede tener varias). El script lee todos los `calen
 | 04/03/2026 | Mié | ⏸️ Sin abrir 08:05–08:18 | USD | ADP Non-Farm Employment Change (dato 08:15) |
 | 06/03/2026 | Vie | ⛔ No operar | USD | NFP - Non-Farm Payrolls (USD) |
 | 11/03/2026 | Mié | ⛔ No operar | USD | CPI m/m (USD) |
+| 13/03/2026 | Vie | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
 | 19/03/2026 | Jue | ⚠️ Solo entradas 07:00–08:00 | EUR | BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference |
 | 25/03/2026 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
 
@@ -76,9 +80,12 @@ una fila por evento; un día puede tener varias). El script lee todos los `calen
 | 01/04/2026 | Mié | ⏸️ Sin abrir 08:05–08:18 | USD | ADP Non-Farm Employment Change (dato 08:15) |
 | 03/04/2026 | Vie | ⛔ No operar | USD/GBP/EUR | NFP + Feriado bancario Reino Unido y Alemania (Viernes Santo) |
 | 06/04/2026 | Lun | ⛔ No operar | GBP/EUR | Feriado bancario Reino Unido, Alemania, Francia e Italia (Lunes de Pascua) |
+| 09/04/2026 | Jue | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
+| 09/04/2026 | Jue | ⛔ No operar | USD | PIB final trimestral - Final GDP q/q (USD) |
 | 10/04/2026 | Vie | ⛔ No operar | USD | CPI m/m (USD) |
 | 21/04/2026 | Mar | ⛔ No operar | USD | Discurso/entrevista de Trump (presidente de EE. UU.) a las 08:30 NY |
 | 22/04/2026 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
+| 30/04/2026 | Jue | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
 | 30/04/2026 | Jue | ⚠️ Solo entradas 07:00–08:00 | EUR | BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference |
 
 ### Mayo
@@ -93,6 +100,7 @@ una fila por evento; un día puede tener varias). El script lee todos los `calen
 | 14/05/2026 | Jue | ⛔ No operar | EUR | Feriado bancario Alemania y Francia (Ascensión) |
 | 20/05/2026 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
 | 25/05/2026 | Lun | ⛔ No operar | USD/GBP/EUR | Feriado bancario EE. UU. (Memorial Day), Reino Unido (Spring Bank Holiday), Alemania y Francia (Lunes de Pentecostés) |
+| 28/05/2026 | Jue | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
 
 ### Junio
 
@@ -105,6 +113,8 @@ una fila por evento; un día puede tener varias). El script lee todos los `calen
 | 11/06/2026 | Jue | ⚠️ Solo entradas 07:00–08:00 | EUR | BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference |
 | 17/06/2026 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
 | 19/06/2026 | Vie | ⛔ No operar | USD | Feriado bancario EE. UU. (Juneteenth) |
+| 25/06/2026 | Jue | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
+| 25/06/2026 | Jue | ⛔ No operar | USD | PIB final trimestral - Final GDP q/q (USD) |
 | 29/06/2026 | Lun | ⛔ No operar | EUR | Feriado bancario parcial Italia (San Pedro y San Pablo, solo algunos bancos) |
 
 ### Julio
@@ -118,6 +128,7 @@ una fila por evento; un día puede tener varias). El script lee todos los `calen
 | 14/07/2026 | Mar | ⛔ No operar | USD/EUR | CPI USD + Feriado bancario Francia (Día Nacional) |
 | 22/07/2026 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
 | 23/07/2026 | Jue | ⚠️ Solo entradas 07:00–08:00 | EUR | BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference |
+| 30/07/2026 | Jue | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
 
 ### Agosto
 
@@ -127,6 +138,7 @@ una fila por evento; un día puede tener varias). El script lee todos los `calen
 | 07/08/2026 | Vie | ⛔ No operar | USD | NFP - Non-Farm Payrolls (USD) |
 | 12/08/2026 | Mié | ⛔ No operar | USD | CPI m/m (USD) |
 | 19/08/2026 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
+| 26/08/2026 | Mié | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
 | 31/08/2026 | Lun | ⛔ No operar | GBP | Feriado bancario Reino Unido (Summer Bank Holiday) |
 
 ### Septiembre
@@ -139,3 +151,5 @@ una fila por evento; un día puede tener varias). El script lee todos los `calen
 | 10/09/2026 | Jue | ⚠️ Solo entradas 07:00–08:00 | EUR | BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference |
 | 11/09/2026 | Vie | ⛔ No operar | USD | CPI m/m (USD) |
 | 16/09/2026 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
+| 30/09/2026 | Mié | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
+| 30/09/2026 | Mié | ⛔ No operar | USD | PIB final trimestral - Final GDP q/q (USD) |

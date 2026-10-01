@@ -11,9 +11,9 @@ from collections import OrderedDict, defaultdict
 CAP = 1000.0
 TP_FRAC = 0.009  # 1R = 1 TP = 0,9% del capital antes de la operación
 MODELOS = [
-    ("combinado", "Envolvente + START", "XAU_m1_Envolvente_y_START"),
-    ("envolvente", "Envolvente", "XAU_m1_2026_Envolvente"),
-    ("start", "START", "XAU_m1_2026_START"),
+    ("combinado", "Envolvente + START", "XAU_m1_2026_CORREGIDO_Envolvente_y_START"),
+    ("envolvente", "Envolvente", "XAU_m1_2026_CORREGIDO_Envolvente"),
+    ("start", "START", "XAU_m1_2026_CORREGIDO_START"),
 ]
 MES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
 DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
@@ -60,13 +60,14 @@ def categorias(t):
             if not m.startswith("Día"):
                 out.append("BCE: entrada después de 08:00")
         elif c["regla"] == "BLOQUEO_NOTICIA":
-            if m.startswith("Entrada dentro"):
-                out.append("ADP: entrada 08:05–08:18")
+            if m.startswith("Entrada dentro") and c["evento"].split(" (")[0] in m:
+                out.append("ADP: entrada 08:05–08:18" if "ADP" in e else "Core PCE: entrada 08:20–08:33")
         elif m.startswith("Día"):
             if "NFP" in e: out.append("NFP (USD)")
             if "CPI m/m" in e or "CPI USD" in e: out.append("CPI (USD)")
             if "(GBP)" in e: out.append("CPI (GBP)")
             if "Discurso" in e: out.append("Discurso Trump / Warsh")
+            if "Final GDP" in e: out.append("PIB final (USD)")
             if "Feriado" in e:
                 fer = e[e.index("Feriado"):]
                 if "EE. UU." in fer: out.append("Feriado EE. UU.")
@@ -213,6 +214,20 @@ def analizar(clave, nombre, base):
             a["n"] += 1; a["w"] += t["pnl"] > 0; a["pnl"] += t["pnl"]; a["R"] += t["R"]; a["dias"].add(t["ent"].date())
     D["excl_cats"] = [dict(cat=a["cat"], n=a["n"], dias=len(a["dias"]), wr=round(100 * a["w"] / a["n"], 1),
                            pnl=round(a["pnl"], 2), R=round(a["R"], 2)) for a in sorted(agg.values(), key=lambda a: -a["R"])]
+    # operaciones válidas en días con regla parcial (se operan con restricción horaria)
+    parciales = {}
+    for t in V:
+        for c in CAL[t["ent"].strftime("%d/%m/%Y")]:
+            if c["regla"] in ("SOLO_ENTRADA", "BLOQUEO_NOTICIA"):
+                lab = "BCE" if "BCE" in c["evento"] else ("ADP" if "ADP" in c["evento"] else "Core PCE")
+                parciales.setdefault(lab, []).append(t)
+    D["dias_parciales"] = []
+    for lab in ("Core PCE", "ADP", "BCE"):
+        ts = parciales.get(lab, [])
+        g = grupo(ts) if ts else dict(n=0, wr=0, pnl=0, pct=0, R=0)
+        g.update(evento=lab, ops=[dict(f=t["ent"].strftime("%d/%m"), h=t["ent"].strftime("%H:%M"), hs=t["sal"].strftime("%H:%M"),
+                                       dir=t["dir"], R=round(t["R"], 2), pnl=round(t["pnl"], 2)) for t in ts])
+        D["dias_parciales"].append(g)
     gbp = [t for t in X if t["cats"] == ["CPI (GBP)"]]
     cpiu = [t for t in X if t["cats"] == ["CPI (USD)"] and t["ent"].hour < 8]
     s = lambda ts: (round(sum(t["R"] for t in ts), 2), round(sum(t["pnl"] for t in ts), 2))

@@ -120,16 +120,11 @@ details summary{cursor:pointer;color:var(--fg2);font-size:14px}
   <button role="tab" id="tab-combinado" data-k="combinado" aria-controls="report">Sistema MEC (Envolvente + START)</button>
   <button role="tab" id="tab-envolvente" data-k="envolvente" aria-controls="report">Envolvente | Backtest 2026</button>
   <button role="tab" id="tab-start" data-k="start" aria-controls="report">START | Backtest 2026</button>
-  <button role="tab" id="tab-gestion" data-k="gestion" aria-controls="gestion">Gestión: variante SL/TP</button>
   <button role="tab" id="tab-comparativa" data-k="comparativa" aria-controls="compare">Comparativa y recomendación</button>
 </nav>
 
 <div id="report" class="view" role="tabpanel">
-<div class="view-head"><span class="eyebrow" id="r-eyebrow"></span><h2 id="r-title"></h2><p id="r-desc"></p>
-  <div class="seg" role="group" aria-label="Versión de la gestión" style="margin-top:8px">
-    <button type="button" id="ver-o" aria-pressed="true">Gestión original</button>
-    <button type="button" id="ver-v" aria-pressed="false">Variante SL/TP (sin CHoCH ni cierre de sesión)</button>
-  </div></div>
+<div class="view-head"><span class="eyebrow" id="r-eyebrow"></span><h2 id="r-title"></h2><p id="r-desc"></p></div>
 
 <section aria-labelledby="s-res">
   <div class="sec-head"><h2 id="s-res">Resumen de rendimiento</h2><p>Solo operaciones válidas según el calendario de restricciones 2026</p></div>
@@ -196,6 +191,12 @@ details summary{cursor:pointer;color:var(--fg2);font-size:14px}
     <div class="tbl"><table id="t-cats"></table></div>
   </div>
   <div class="panel">
+    <h3>Días con regla parcial: operaciones válidas</h3>
+    <p class="note">En los días de ADP, Core PCE y BCE el sistema opera con restricción horaria. Estas son las operaciones que sí se tomaron esos días, para ver si la restricción alcanza.</p>
+    <div class="tbl"><table id="t-parc"></table></div>
+    <div id="parc-note"></div>
+  </div>
+  <div class="panel">
     <h3>Qué haría con cada evento</h3>
     <p class="note"><b>Antes de leer la tabla:</b> cada evento tiene muy pocas operaciones. Con esa muestra, una sola operación mueve el resultado ±1R, así que ningún número de acá prueba nada por sí solo. La recomendación combina el dato con la razón de mercado. Habilitar un evento solo porque ganó en este backtest sería ajustar las reglas a la muestra (sobreoptimización).</p>
     <div class="tbl"><table id="t-reco"></table></div>
@@ -209,34 +210,8 @@ details summary{cursor:pointer;color:var(--fg2);font-size:14px}
 </section>
 </div>
 
-<div id="gestion" class="view" role="tabpanel" hidden>
-<div class="view-head"><span class="eyebrow">Prueba de la recomendación de gestión</span><h2>Gestión: variante SL/TP</h2><p>La misma muestra y las mismas entradas, pero sin las salidas por CHoCH en contra ni por cierre de fin de sesión: cada operación corre hasta su SL o su TP. El Reset se mantiene porque es parte del sistema.</p></div>
-<div class="verdict" id="g-verdict"></div>
-<section aria-labelledby="g-s1">
-  <div class="sec-head"><h2 id="g-s1">Original vs variante</h2><p>Operaciones válidas según el calendario de restricciones</p></div>
-  <div class="panel tbl"><table class="cmp" id="t-gv"></table></div>
-</section>
-<section aria-labelledby="g-s2">
-  <div class="sec-head"><h2 id="g-s2">Qué aporta cada salida</h2><p>Las mismas operaciones con la salida original y dejándolas correr hasta SL o TP</p></div>
-  <div class="panel tbl"><table class="cmp" id="t-gtipo"></table><p class="note">R original: resultado con la salida por gestión. R variante: resultado de esas mismas operaciones corriendo hasta su SL o TP. Una diferencia negativa significa que la salida por gestión protegía capital.</p></div>
-</section>
-<section aria-labelledby="g-s3">
-  <div class="sec-head"><h2 id="g-s3">Curvas de capital</h2><p>Línea llena: gestión original · Línea punteada: variante SL/TP</p></div>
-  <div class="grid3" id="g-curves"></div>
-</section>
-<section aria-labelledby="g-s4">
-  <div class="sec-head"><h2 id="g-s4">Operaciones que cambiaron (Envolvente)</h2><p id="g-s4p"></p></div>
-  <div class="panel tbl"><table id="t-gcamb"></table></div>
-  <div class="panel"><details><summary>Ver las operaciones que cambiaron en Envolvente + START y en START</summary><div class="tbl" style="margin-top:10px"><table id="t-gcamb2"></table></div></details></div>
-</section>
-<section aria-labelledby="g-s5">
-  <div class="sec-head"><h2 id="g-s5">Conclusión y siguiente prueba</h2></div>
-  <ul class="findings" id="g-reco"></ul>
-</section>
-</div>
-
 <div id="compare" class="view" role="tabpanel" hidden>
-<div class="view-head"><span class="eyebrow">Envolvente vs START vs los dos juntos</span><h2>Comparativa y recomendación</h2><p>La misma muestra (26/01–30/09/2026), el mismo calendario de restricciones y el mismo riesgo por operación, analizada con tres configuraciones: solo Envolvente, solo START y los dos modelos juntos (una operación a la vez).</p></div>
+<div class="view-head"><span class="eyebrow">Envolvente vs START vs los dos juntos</span><h2>Comparativa y recomendación</h2><p>La misma muestra (26/01–01/10/2026), el mismo calendario de restricciones y el mismo riesgo por operación, analizada con tres configuraciones: solo Envolvente, solo START y los dos modelos juntos (una operación a la vez).</p></div>
 
 <div class="verdict" id="verdict"></div>
 
@@ -289,8 +264,8 @@ details summary{cursor:pointer;color:var(--fg2);font-size:14px}
 <section aria-labelledby="s-met">
   <div class="sec-head"><h2 id="s-met">Metodología</h2></div>
   <div class="panel"><ul class="note" style="margin:0;padding-left:18px;display:grid;gap:4px">
-    <li>Fuente: listas de operaciones exportadas del Strategy Tester de TradingView (XAU_m1_Envolvente_y_START, XAU_m1_2026_Envolvente y XAU_m1_2026_START), horario de Nueva York.</li>
-    <li>Filtro: calendario de restricciones 2026 (feriados bancarios, NFP, CPI USD/GBP, discursos en Pre NY → día completo; BCE → solo entradas 07:00–07:59; ADP → sin aperturas 08:05–08:18).</li>
+    <li>Fuente: listas de operaciones exportadas del Strategy Tester de TradingView (XAU_m1_2026_CORREGIDO_Envolvente_y_START, XAU_m1_2026_CORREGIDO_Envolvente y XAU_m1_2026_CORREGIDO_START, con el código corregido que identifica bien los dos patrones), horario de Nueva York.</li>
+    <li>Filtro: calendario de restricciones 2026 (feriados bancarios, NFP, CPI USD/GBP, discursos en Pre NY → día completo; PIB final trimestral → día completo; BCE → solo entradas 07:00–07:59; ADP → sin aperturas 08:05–08:18; Core PCE → sin aperturas 08:20–08:33).</li>
     <li>La curva de capital suma el PyG en USD de las operaciones válidas sobre 1.000 USD. Los tamaños vienen del backtest original, así que el PyG en USD de cada operación es el mismo que en TradingView.</li>
     <li>R = PyG / (0,9% del capital antes de la operación). Operación ganadora = PyG &gt; 0. R promedio semanal = R total / semanas del período.</li>
     <li>Sharpe y Sortino: retornos diarios en días hábiles (días sin operación = 0%), anualizados con √252, tasa libre de riesgo 0. Calmar = rendimiento anualizado / caída máxima.</li>
@@ -418,14 +393,14 @@ const REC={
  'Feriado Reino Unido':c=>['r','MANTENER',`Con Londres cerrado, la sesión Pre NY pierde a su principal fuente de liquidez. En este modelo: ${st_(c)}.`],
  'Feriado solo Europa continental':c=>['n','MANTENER',`Londres abre normalmente y el impacto en el oro es bajo, pero no hay evidencia firme para habilitarlo. Revisar con más muestra. En este modelo: ${st_(c)}.`],
  'ADP: entrada 08:05–08:18':c=>['r','MANTENER',`La regla es barata: solo bloquea 14 minutos alrededor del dato. En este modelo: ${st_(c)}.`],
+ 'PIB final (USD)':c=>['r','MANTENER',`Sale a las 08:30 NY. Suele ser la revisión final del PIB y por sí sola mueve poco, pero en 2026 los tres días con operaciones coincidieron con el Core PCE. En este modelo: ${st_(c)}. Mantener excluido mientras coincida con el PCE.`],
+ 'Core PCE: entrada 08:20–08:33':c=>['r','MANTENER',`Bloqueo de 10 minutos antes a 3 minutos después del dato de las 08:30. En este modelo: ${st_(c)}.`],
  'NFP (USD)':c=>['r','MANTENER',`A las 08:30 hay saltos de precio y spreads que el backtest no simula; el riesgo real es mayor que el que muestra el dato. En este modelo: ${st_(c)}.`],
 };
 function statTable(id,head,rows,bestRow){$(id).innerHTML=row(head.map((h,i)=>`<th${i?' class="n"':''}>${h}</th>`))+rows.map((r,i)=>`<tr${i===bestRow?' class="best"':''}>${r}</tr>`).join('')}
 function renderReport(){
   setPts();
-  const ck=D.clave.replace('_v',''), isV=D.clave.endsWith('_v');
-  $('#r-eyebrow').textContent=EYEBROW[ck]+(isV?' · variante SL/TP':''); $('#r-title').textContent=TITLE[ck];
-  $('#r-desc').textContent=isV?DESC[ck]+' Versión sin salidas por CHoCH en contra ni cierre de fin de sesión: cada operación corre hasta su SL o TP.':DESC[ck];
+  $('#r-eyebrow').textContent=EYEBROW[D.clave]; $('#r-title').textContent=TITLE[D.clave]; $('#r-desc').textContent=DESC[D.clave];
   $('#m-period').textContent=D.first+' – '+D.last;
   $('#m-sample').textContent=D.n+' operaciones válidas de '+D.n_total+' ('+D.n_excl+' excluidas por calendario)';
   $('#m-file').textContent='Archivo: '+D.archivo+'.csv';
@@ -483,6 +458,11 @@ function renderReport(){
     D.excl.map(x=>`<tr><td class="n">${x.n}</td><td>${x.f}</td><td class="mono">${x.h}</td><td class="mono">${x.hs}</td><td>${x.dir}</td><td class="n ${cls(x.pnl)}">${sg(x.pnl)}</td><td class="n ${cls(x.R)}">${sg(x.R)}</td><td>${x.cats.join(' + ')}</td></tr>`).join('');
   $('#t-cats').innerHTML='<tr><th>Evento</th><th class="n">Ops.</th><th class="n">Días</th><th class="n">Win rate</th><th class="n">PyG USD</th><th class="n">R</th></tr>'+
     D.excl_cats.map(c=>`<tr><td>${c.cat}</td><td class="n">${c.n}</td><td class="n">${c.dias}</td><td class="n">${fmt(c.wr,1)}%</td><td class="n ${cls(c.pnl)}">${sg(c.pnl)}</td><td class="n ${cls(c.R)}">${sg(c.R)}</td></tr>`).join('');
+  $('#t-parc').innerHTML='<tr><th>Evento</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">R</th><th>Operaciones (entrada → salida, R)</th></tr>'+
+    D.dias_parciales.map(p=>`<tr><td style="white-space:nowrap">${p.evento}</td><td class="n">${p.n}</td><td class="n">${p.n?fmt(p.wr,1)+'%':'—'}</td><td class="n ${cls(p.R)}">${p.n?sg(p.R):'—'}</td><td style="color:var(--fg2)">${p.ops.map(o=>`${o.f} ${o.h}→${o.hs} <span class="${cls(o.R)}">${sg(o.R)}</span>`).join(' · ')||'—'}</td></tr>`).join('');
+  const pce=D.dias_parciales.find(p=>p.evento==='Core PCE');
+  const pceOut=pce.ops.filter(o=>o.h>='08:00'), pceGain=-pceOut.reduce((a,o)=>a+o.R,0);
+  $('#parc-note').innerHTML=pce.n?`<ul class="findings" style="margin-top:6px"><li><span class="tag ${pce.R<0?'y':'n'}">CORE PCE</span><p><b>El bloqueo de 08:20 a 08:33 no protege las operaciones abiertas antes.</b> El dato sale a las 08:30 y en este modelo hubo ${pce.n} operaciones válidas en días de Core PCE (${sg(pce.R)}R). ${pceOut.length?`Si se usara la misma regla que el BCE (solo entradas de 07:00 a 07:59), quedarían fuera ${pceOut.length} de ellas (${sg(-pceGain)}R), lo que mejoraría el resultado en ${sg(pceGain)}R.`:''} Muestra chica: tomarlo como hipótesis a validar con 2025.</p></li></ul>`:'';
   $('#t-reco').innerHTML='<tr><th>Evento</th><th>Recomendación</th><th>Por qué</th></tr>'+
     D.excl_cats.map(c=>{const r=(REC[c.cat]||(()=>['n','—','']))(c);return `<tr><td style="white-space:nowrap">${c.cat}</td><td><span class="tag ${r[0]}">${r[1]}</span></td><td style="min-width:260px;color:var(--fg2)">${r[2]}</td></tr>`}).join('');
   $('#t-esc').innerHTML='<tr><th>Escenario</th><th class="n">Ops.</th><th class="n">R total</th><th class="n">PyG USD</th></tr>'+
@@ -509,29 +489,25 @@ function renderReport(){
 }
 
 __COMPARE__
-__GESTION__
 
 /* ---------- Pestañas ---------- */
-const TABS=['combinado','envolvente','start','gestion','comparativa'];
-let VER='';
+const TABS=['combinado','envolvente','start','comparativa'];
 function show(k,push){
   if(!TABS.includes(k)) k='combinado';
   VIEW=k;
   TABS.forEach(t=>$('#tab-'+t).setAttribute('aria-selected',String(t===k)));
-  const cmp=k==='comparativa', ges=k==='gestion';
-  $('#report').hidden=cmp||ges; $('#compare').hidden=!cmp; $('#gestion').hidden=!ges;
-  if(cmp||ges){
+  const cmp=k==='comparativa';
+  $('#report').hidden=cmp; $('#compare').hidden=!cmp;
+  if(cmp){
     $('#m-period').textContent=DATA.combinado.first+' – '+DATA.combinado.last;
-    $('#m-sample').textContent=cmp?'3 configuraciones del sistema MEC':'Gestión original vs variante SL/TP';
-    $('#m-file').textContent=cmp?'Envolvente · START · Envolvente + START':'Archivos XAU_m1_2026_VARIANTE_*.csv';
-    cmp?renderCompare():renderGestion();
-  } else { D=DATA[k+VER]; renderReport(); }
+    $('#m-sample').textContent='3 configuraciones del sistema MEC';
+    $('#m-file').textContent='Envolvente · START · Envolvente + START';
+    renderCompare();
+  } else { D=DATA[k]; renderReport(); }
   if(push){try{history.replaceState(null,'','#'+k)}catch(e){}}
 }
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>show(b.dataset.k,true)));
-function setVer(v){VER=v;$('#ver-o').setAttribute('aria-pressed',String(v===''));$('#ver-v').setAttribute('aria-pressed',String(v==='_v'));show(VIEW,false)}
-$('#ver-o').addEventListener('click',()=>setVer(''));$('#ver-v').addEventListener('click',()=>setVer('_v'));
-function rerender(){ if(VIEW==='comparativa') renderCompare(); else if(VIEW==='gestion') renderGestion(); else renderCharts(); }
+function rerender(){ if(VIEW==='comparativa') renderCompare(); else renderCharts(); }
 show((location.hash||'').slice(1)||'combinado',false);
 let rz; window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(rerender,150)});
 if(window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',rerender);

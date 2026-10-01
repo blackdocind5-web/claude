@@ -5,7 +5,8 @@ Criterios que pidió Fabián para cada análisis de un CSV de TradingView. Aplic
 ## Flujo
 1. Filtrar cada CSV con `../mec_filtros/filtrar_trades.py` y trabajar solo con `<nombre>_validos.csv`.
 2. `python metricas.py` (modelos definidos en `MODELOS`: combinado, envolvente, start) → `datos.json`.
-   Variantes de gestión: `python variante.py` (después de `metricas.py`) agrega `<modelo>_v` y la comparación a `datos.json`; se ven en la pestaña "Gestión: variante SL/TP" y con el selector de versión de cada informe. El Reset no se toca nunca: es parte fundamental del sistema.
+   Muestra vigente: archivos `XAU_m1_2026_CORREGIDO_*` (código con la identificación de patrones corregida). Los archivos sin "CORREGIDO" son la muestra sesgada anterior; no usarlos.
+   La gestión (Reset, CHoCH en contra, cierre de fin de sesión) no se estudia ni se modifica: decisión de Fabián.
 3. `python build.py` arma `XAUUSD_Backtest_2026.html` desde `plantilla.html` + `comparativa.js` + `datos.json`.
 4. Publicar en el mismo enlace de siempre: https://claude.ai/artifact/8vaF1wPne8ThugaGpN1BjE (título "XAUUSD | Backtest 2026"; pestañas "Sistema MEC (Envolvente + START)", "Envolvente | Backtest 2026", "START | Backtest 2026" y "Comparativa y recomendación").
 5. Entregar todo por el chat (enlace a la presentación y archivos). Fabián no tiene acceso a GitHub.
