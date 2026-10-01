@@ -907,8 +907,29 @@ tocar los defaults ya validados en oro).
   Position entre sesiones") -- ambos mecanismos siguen cerrando el trade
   viejo para abrir el nuevo exactamente igual que hoy. Apagado (default),
   el comportamiento es idéntico al actual. Implementado en
-  `fase4_strategy_backtest.pine`. **Validación pendiente por Fabián --
-  prueba temporal, no definitiva.**
+  `fase4_strategy_backtest.pine`. Fabián confirmó que el toggle quedó bien
+  implementado y pidió mantenerlo activo para seguir probando variantes de
+  backtesting -- **sigue siendo una prueba, no un cambio definitivo**, a la
+  espera de que Fabián decida si lo deja así, lo revierte o lo integra.
+
+- [ ] **Fase 4 (backtesting) — color de la vela de indecisión del patrón
+  Start (01/10)**: bug encontrado por Fabián al usar el filtro
+  `habilitarEnvolvente`/`habilitarStart` del 29/09 -- caso SELL XAUUSD
+  01/10 08:59 clasificado como patrón Start cuando en realidad era un
+  patrón Envolvente. `esIndecisionBuy`/`Sell` (Sección 4) medían la FORMA
+  del cuerpo de la vela `[1]` (¿cuerpo chico, tipo doji/pinbar?) pero nunca
+  verificaban su COLOR real -- una vela `[1]` ALCISTA podía colar como
+  indecisión válida de un Start SELL (o viceversa). Regla correcta,
+  confirmada por Fabián: la vela de indecisión debe ser del MISMO color
+  que la vela de entrada -- "si la vela de entrada envuelve a una vela de
+  su mismo color, es un Start; si envuelve a una de distinto color, es un
+  Envolvente". Fix: `esIndecisionBuy` ahora exige `close[1] > open[1]`
+  (indecisión alcista) y `esIndecisionSell` exige `close[1] < open[1]`
+  (indecisión bajista), antes de evaluar la forma del cuerpo. El caso
+  reportado (indecisión alcista en una entrada SELL) ahora se reclasifica
+  correctamente como candidato a patrón Envolvente en vez de Start.
+  Implementado en `fase4_strategy_backtest.pine`. **Validación pendiente
+  por Fabián.**
 
 ## Decisiones de diseño (confirmadas con Fabián)
 

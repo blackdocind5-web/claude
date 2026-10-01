@@ -209,6 +209,22 @@ strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=1
 // al actual. Es una prueba, no un cambio permanente -- pendiente de que
 // Fabián decida, tras comparar resultados, si lo deja así o lo revierte.
 //
+// Color de la vela de indecisión del patrón Start (fix 01/10, bug
+// encontrado por Fabián al usar el filtro `habilitarEnvolvente`/
+// `habilitarStart` del 29/09 -- caso SELL XAUUSD 01/10 08:59 mal
+// clasificado como Start): `esIndecisionBuy`/`Sell` (Sección 4) medían la
+// FORMA del cuerpo de la vela [1] pero nunca verificaban su COLOR real --
+// una vela [1] ALCISTA podía colar como indecisión válida de un Start SELL
+// (o viceversa). Regla correcta, confirmada por Fabián: la vela de
+// indecisión debe ser del MISMO color que la vela de entrada ("si la vela
+// de entrada envuelve a una vela de su mismo color, es un Start; si
+// envuelve a una de distinto color, es un Envolvente"). Fix: ahora
+// `esIndecisionBuy` exige `close[1] > open[1]` (indecisión alcista) y
+// `esIndecisionSell` exige `close[1] < open[1]` (indecisión bajista),
+// antes de evaluar la forma del cuerpo. El caso reportado (indecisión
+// alcista en una entrada SELL) ahora se reclasifica correctamente como
+// candidato a patrón Envolvente en vez de Start.
+//
 // Sesión "Wall Street" (09:30-11:00 EST, agregada 16/09 para backtestear
 // índices: Nasdaq, S&P 500, Dow Jones): a diferencia de Pre-NY/NY/Asia, que
 // son mutuamente excluyentes, esta se SUPERPONE con la sesión NY (09:00-
@@ -634,7 +650,19 @@ esMartilloIndBuy = (nivelOpenIndBuy >= 0.40 - TOLERANCIA_CUERPO and nivelOpenInd
 // cuerpo igual o mayor al 50% ya no es una vela de indecisión válida. La
 // tolerancia se mantiene (como margen de precisión de punto flotante, no
 // como concesión hacia arriba) restándose del umbral en vez de sumarse.
-esIndecisionBuy = cuerpoIndBuy < 0.50 - TOLERANCIA and not esMartilloIndBuy
+// Color de la vela de indecisión (fix 01/10, bug reportado por Fabián --
+// SELL XAUUSD 01/10 08:59 mal clasificado como patrón Start): esta
+// condición medía la FORMA del cuerpo de la vela [1] (¿tiene cuerpo chico,
+// tipo doji/pinbar, según la escala orientada a BUY?) pero nunca verificaba
+// el COLOR real de esa vela -- una vela [1] ALCISTA podía colar como
+// "indecisión válida" de un Start BUY aunque el patrón real exigiera que
+// esa vela de indecisión fuera del MISMO color que la vela de entrada
+// (regla de Fabián: "si la vela de entrada envuelve a una vela de su mismo
+// color, es un Start; si envuelve a una de distinto color, es un
+// Envolvente"). Ahora se exige explícitamente `close[1] > open[1]`
+// (indecisión ALCISTA, igual que la entrada de un Start BUY) antes de
+// evaluar la forma del cuerpo.
+esIndecisionBuy = close[1] > open[1] and cuerpoIndBuy < 0.50 - TOLERANCIA and not esMartilloIndBuy
 
 wickContraBuy = math.min(nivelOpenIndBuy, nivelCloseIndBuy)
 wickFavorBuy  = 1 - math.max(nivelOpenIndBuy, nivelCloseIndBuy)
@@ -644,7 +672,14 @@ nivelOpenIndSell  = rangoInd > 0 ? (high[1] - open[1]) / rangoInd : na
 nivelCloseIndSell = rangoInd > 0 ? (high[1] - close[1]) / rangoInd : na
 cuerpoIndSell = math.abs(nivelCloseIndSell - nivelOpenIndSell)
 esMartilloIndSell = (nivelOpenIndSell >= 0.40 - TOLERANCIA_CUERPO and nivelOpenIndSell <= 0.50 + TOLERANCIA_CUERPO and nivelCloseIndSell >= 0.85 - TOLERANCIA_CUERPO) or (nivelOpenIndSell < 0.15 and nivelCloseIndSell > 0.50 - TOLERANCIA_CUERPO)
-esIndecisionSell = cuerpoIndSell < 0.50 - TOLERANCIA and not esMartilloIndSell
+// Color de la vela de indecisión (fix 01/10, mismo bug que esIndecisionBuy
+// -- ver comentario largo junto a esa variable más arriba): exige
+// `close[1] < open[1]` (indecisión BAJISTA, igual que la entrada de un
+// Start SELL) antes de evaluar la forma del cuerpo. Este fue justo el caso
+// reportado: la vela [1] (08:58) era ALCISTA y el código la aceptaba igual
+// como indecisión de un SELL -- con este fix, ese caso puntual pasa a
+// evaluarse (correctamente) como candidato a patrón Envolvente, no Start.
+esIndecisionSell = close[1] < open[1] and cuerpoIndSell < 0.50 - TOLERANCIA and not esMartilloIndSell
 
 wickContraSell = math.min(nivelOpenIndSell, nivelCloseIndSell)
 wickFavorSell  = 1 - math.max(nivelOpenIndSell, nivelCloseIndSell)
