@@ -1,29 +1,75 @@
 fecha;regla;ventana_NY;divisa;evento;estado;fuente
 01/01/2025;SIN_OPERAR;;USD/GBP/EUR;Feriado bancario EE. UU., Reino Unido, Alemania, Francia y Italia (Año Nuevo);confirmado;Capturas FF feriados 2025
 06/01/2025;SIN_OPERAR;;EUR;Feriado bancario Italia (Epifanía);confirmado;Capturas FF feriados 2025
+10/01/2025;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP 2025
+15/01/2025;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD 2025
+15/01/2025;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025
 20/01/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Martin Luther King Jr.);confirmado;Capturas FF feriados 2025
+31/01/2025;BLOQUEO_NOTICIA;08:20-08:33;USD;Core PCE Price Index m/m (dato 08:30);confirmado;Captura FF Core PCE 2025
+07/02/2025;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP 2025
+12/02/2025;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD 2025
 17/02/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Presidents' Day);confirmado;Capturas FF feriados 2025
+19/02/2025;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025
+28/02/2025;BLOQUEO_NOTICIA;08:20-08:33;USD;Core PCE Price Index m/m (dato 08:30);confirmado;Captura FF Core PCE 2025
+07/03/2025;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP 2025
+12/03/2025;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD 2025
+26/03/2025;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025
+27/03/2025;SIN_OPERAR;;USD;PIB final trimestral - Final GDP q/q (USD);confirmado;Captura FF Final GDP 2025
+28/03/2025;BLOQUEO_NOTICIA;08:20-08:33;USD;Core PCE Price Index m/m (dato 08:30);confirmado;Captura FF Core PCE 2025
+04/04/2025;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP 2025
+10/04/2025;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD 2025
+16/04/2025;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025
 18/04/2025;SIN_OPERAR;;GBP/EUR;Feriado bancario Reino Unido y Alemania (Viernes Santo);confirmado;Capturas FF feriados 2025
 21/04/2025;SIN_OPERAR;;GBP/EUR;Feriado bancario Reino Unido, Alemania, Francia y Italia (Lunes de Pascua);confirmado;Capturas FF feriados 2025
 25/04/2025;SIN_OPERAR;;EUR;Feriado bancario Italia (Día de la Liberación);confirmado;Capturas FF feriados 2025
+30/04/2025;BLOQUEO_NOTICIA;08:20-08:33;USD;Core PCE Price Index m/m (dato 08:30);confirmado;Captura FF Core PCE 2025
 01/05/2025;SIN_OPERAR;;EUR;Feriado bancario Alemania, Francia y Italia (Día del Trabajo);confirmado;Capturas FF feriados 2025
+02/05/2025;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP 2025
 05/05/2025;SIN_OPERAR;;GBP;Feriado bancario Reino Unido (May Day);confirmado;Capturas FF feriados 2025
 08/05/2025;SIN_OPERAR;;EUR;Feriado bancario Francia (Día de la Victoria);confirmado;Capturas FF feriados 2025
+13/05/2025;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD 2025
+21/05/2025;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025
 26/05/2025;SIN_OPERAR;;USD/GBP;Feriado bancario EE. UU. y Reino Unido (Memorial Day / Spring Bank Holiday);confirmado;Capturas FF feriados 2025
 29/05/2025;SIN_OPERAR;;EUR;Feriado bancario Alemania y Francia (Ascensión);confirmado;Capturas FF feriados 2025
+30/05/2025;BLOQUEO_NOTICIA;08:20-08:33;USD;Core PCE Price Index m/m (dato 08:30);confirmado;Captura FF Core PCE 2025
 02/06/2025;SIN_OPERAR;;EUR;Feriado bancario Italia (Día de la República);confirmado;Capturas FF feriados 2025
+06/06/2025;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP 2025
 09/06/2025;SIN_OPERAR;;EUR;Feriado bancario Alemania y Francia (Lunes de Pentecostés);confirmado;Capturas FF feriados 2025
+11/06/2025;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD 2025
+18/06/2025;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025
 19/06/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Juneteenth);confirmado;Capturas FF feriados 2025
+26/06/2025;SIN_OPERAR;;USD;PIB final trimestral - Final GDP q/q (USD);confirmado;Captura FF Final GDP 2025
+27/06/2025;BLOQUEO_NOTICIA;08:20-08:33;USD;Core PCE Price Index m/m (dato 08:30);confirmado;Captura FF Core PCE 2025
+03/07/2025;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP 2025
 04/07/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Día de la Independencia);confirmado;Capturas FF feriados 2025
 14/07/2025;SIN_OPERAR;;EUR;Feriado bancario Francia (Día Nacional);confirmado;Capturas FF feriados 2025
+15/07/2025;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD 2025
+16/07/2025;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025
+31/07/2025;BLOQUEO_NOTICIA;08:20-08:33;USD;Core PCE Price Index m/m (dato 08:30);confirmado;Captura FF Core PCE 2025
+01/08/2025;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP 2025
+12/08/2025;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD 2025
 15/08/2025;SIN_OPERAR;;EUR;Feriado bancario Francia y Italia (Asunción);confirmado;Capturas FF feriados 2025
+20/08/2025;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025
 25/08/2025;SIN_OPERAR;;GBP;Feriado bancario Reino Unido (Summer Bank Holiday);confirmado;Capturas FF feriados 2025
+29/08/2025;BLOQUEO_NOTICIA;08:20-08:33;USD;Core PCE Price Index m/m (dato 08:30);confirmado;Captura FF Core PCE 2025
 01/09/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Labor Day);confirmado;Capturas FF feriados 2025
+05/09/2025;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP 2025
+11/09/2025;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD 2025
+17/09/2025;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025
+25/09/2025;SIN_OPERAR;;USD;PIB final trimestral - Final GDP q/q (USD);confirmado;Captura FF Final GDP 2025
+26/09/2025;BLOQUEO_NOTICIA;08:20-08:33;USD;Core PCE Price Index m/m (dato 08:30);confirmado;Captura FF Core PCE 2025
 03/10/2025;SIN_OPERAR;;EUR;Feriado bancario Alemania (Día de la Unidad);confirmado;Capturas FF feriados 2025
 13/10/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Columbus Day);confirmado;Capturas FF feriados 2025
+22/10/2025;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025
+24/10/2025;SIN_OPERAR;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD 2025
 11/11/2025;SIN_OPERAR;;USD/EUR;Feriado bancario EE. UU. y Francia (Armisticio / Veterans Day);confirmado;Capturas FF feriados 2025
+19/11/2025;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025
+20/11/2025;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP 2025
 27/11/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Acción de Gracias);confirmado;Capturas FF feriados 2025
+05/12/2025;BLOQUEO_NOTICIA;08:20-08:33;USD;Core PCE Price Index m/m (dato 08:30);confirmado;Captura FF Core PCE 2025
 08/12/2025;SIN_OPERAR;;EUR;Feriado bancario Italia (Inmaculada Concepción);confirmado;Capturas FF feriados 2025
+16/12/2025;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP 2025
+17/12/2025;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025
 24/12/2025;SIN_OPERAR;;EUR;Feriado bancario Alemania (Nochebuena);confirmado;Capturas FF feriados 2025
 25/12/2025;SIN_OPERAR;;USD/GBP/EUR;Feriado bancario EE. UU., Reino Unido, Alemania, Francia y Italia (Navidad);confirmado;Capturas FF feriados 2025
 26/12/2025;SIN_OPERAR;;GBP/EUR;Feriado bancario Reino Unido, Alemania y Italia (Boxing Day / San Esteban);confirmado;Capturas FF feriados 2025
