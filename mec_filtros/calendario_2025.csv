@@ -1,0 +1,30 @@
+fecha;regla;ventana_NY;divisa;evento;estado;fuente
+01/01/2025;SIN_OPERAR;;USD/GBP/EUR;Feriado bancario EE. UU., Reino Unido, Alemania, Francia y Italia (Año Nuevo);confirmado;Capturas FF feriados 2025
+06/01/2025;SIN_OPERAR;;EUR;Feriado bancario Italia (Epifanía);confirmado;Capturas FF feriados 2025
+20/01/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Martin Luther King Jr.);confirmado;Capturas FF feriados 2025
+17/02/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Presidents' Day);confirmado;Capturas FF feriados 2025
+18/04/2025;SIN_OPERAR;;GBP/EUR;Feriado bancario Reino Unido y Alemania (Viernes Santo);confirmado;Capturas FF feriados 2025
+21/04/2025;SIN_OPERAR;;GBP/EUR;Feriado bancario Reino Unido, Alemania, Francia y Italia (Lunes de Pascua);confirmado;Capturas FF feriados 2025
+25/04/2025;SIN_OPERAR;;EUR;Feriado bancario Italia (Día de la Liberación);confirmado;Capturas FF feriados 2025
+01/05/2025;SIN_OPERAR;;EUR;Feriado bancario Alemania, Francia y Italia (Día del Trabajo);confirmado;Capturas FF feriados 2025
+05/05/2025;SIN_OPERAR;;GBP;Feriado bancario Reino Unido (May Day);confirmado;Capturas FF feriados 2025
+08/05/2025;SIN_OPERAR;;EUR;Feriado bancario Francia (Día de la Victoria);confirmado;Capturas FF feriados 2025
+26/05/2025;SIN_OPERAR;;USD/GBP;Feriado bancario EE. UU. y Reino Unido (Memorial Day / Spring Bank Holiday);confirmado;Capturas FF feriados 2025
+29/05/2025;SIN_OPERAR;;EUR;Feriado bancario Alemania y Francia (Ascensión);confirmado;Capturas FF feriados 2025
+02/06/2025;SIN_OPERAR;;EUR;Feriado bancario Italia (Día de la República);confirmado;Capturas FF feriados 2025
+09/06/2025;SIN_OPERAR;;EUR;Feriado bancario Alemania y Francia (Lunes de Pentecostés);confirmado;Capturas FF feriados 2025
+19/06/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Juneteenth);confirmado;Capturas FF feriados 2025
+04/07/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Día de la Independencia);confirmado;Capturas FF feriados 2025
+14/07/2025;SIN_OPERAR;;EUR;Feriado bancario Francia (Día Nacional);confirmado;Capturas FF feriados 2025
+15/08/2025;SIN_OPERAR;;EUR;Feriado bancario Francia y Italia (Asunción);confirmado;Capturas FF feriados 2025
+25/08/2025;SIN_OPERAR;;GBP;Feriado bancario Reino Unido (Summer Bank Holiday);confirmado;Capturas FF feriados 2025
+01/09/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Labor Day);confirmado;Capturas FF feriados 2025
+03/10/2025;SIN_OPERAR;;EUR;Feriado bancario Alemania (Día de la Unidad);confirmado;Capturas FF feriados 2025
+13/10/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Columbus Day);confirmado;Capturas FF feriados 2025
+11/11/2025;SIN_OPERAR;;USD/EUR;Feriado bancario EE. UU. y Francia (Armisticio / Veterans Day);confirmado;Capturas FF feriados 2025
+27/11/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Acción de Gracias);confirmado;Capturas FF feriados 2025
+08/12/2025;SIN_OPERAR;;EUR;Feriado bancario Italia (Inmaculada Concepción);confirmado;Capturas FF feriados 2025
+24/12/2025;SIN_OPERAR;;EUR;Feriado bancario Alemania (Nochebuena);confirmado;Capturas FF feriados 2025
+25/12/2025;SIN_OPERAR;;USD/GBP/EUR;Feriado bancario EE. UU., Reino Unido, Alemania, Francia y Italia (Navidad);confirmado;Capturas FF feriados 2025
+26/12/2025;SIN_OPERAR;;GBP/EUR;Feriado bancario Reino Unido, Alemania y Italia (Boxing Day / San Esteban);confirmado;Capturas FF feriados 2025
+31/12/2025;SIN_OPERAR;;EUR;Feriado bancario Alemania (Fin de año);confirmado;Capturas FF feriados 2025
