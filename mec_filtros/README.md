@@ -153,3 +153,165 @@ una fila por evento; un día puede tener varias). El script lee todos los `calen
 | 16/09/2026 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
 | 30/09/2026 | Mié | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
 | 30/09/2026 | Mié | ⛔ No operar | USD | PIB final trimestral - Final GDP q/q (USD) |
+
+## Calendario 2025 (97 días · 100 eventos: 70 ⛔ · 8 ⚠️ · 22 ⏸️)
+
+### Enero
+
+| Fecha | Día | Regla | Divisa | Evento |
+|---|---|---|---|---|
+| 01/01/2025 | Mié | ⛔ No operar | USD/GBP/EUR | Feriado bancario EE. UU., Reino Unido, Alemania, Francia y Italia (Año Nuevo) |
+| 06/01/2025 | Lun | ⛔ No operar | EUR | Feriado bancario Italia (Epifanía) |
+| 08/01/2025 | Mié | ⏸️ Sin abrir 08:05–08:18 | USD | ADP Non-Farm Employment Change (dato 08:15) |
+| 10/01/2025 | Vie | ⛔ No operar | USD | NFP - Non-Farm Payrolls (USD) |
+| 15/01/2025 | Mié | ⛔ No operar | USD | CPI m/m (USD) |
+| 15/01/2025 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
+| 20/01/2025 | Lun | ⛔ No operar | USD | Feriado bancario EE. UU. (Martin Luther King Jr.) |
+| 30/01/2025 | Jue | ⚠️ Solo entradas 07:00–08:00 | EUR | BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference |
+| 31/01/2025 | Vie | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
+
+### Febrero
+
+| Fecha | Día | Regla | Divisa | Evento |
+|---|---|---|---|---|
+| 05/02/2025 | Mié | ⏸️ Sin abrir 08:05–08:18 | USD | ADP Non-Farm Employment Change (dato 08:15) |
+| 07/02/2025 | Vie | ⛔ No operar | USD | NFP - Non-Farm Payrolls (USD) |
+| 12/02/2025 | Mié | ⛔ No operar | USD | CPI m/m (USD) |
+| 17/02/2025 | Lun | ⛔ No operar | USD | Feriado bancario EE. UU. (Presidents' Day) |
+| 19/02/2025 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
+| 28/02/2025 | Vie | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
+
+### Marzo
+
+| Fecha | Día | Regla | Divisa | Evento |
+|---|---|---|---|---|
+| 05/03/2025 | Mié | ⏸️ Sin abrir 08:05–08:18 | USD | ADP Non-Farm Employment Change (dato 08:15) |
+| 06/03/2025 | Jue | ⚠️ Solo entradas 07:00–08:00 | EUR | BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference |
+| 07/03/2025 | Vie | ⛔ No operar | USD | NFP - Non-Farm Payrolls (USD) |
+| 12/03/2025 | Mié | ⛔ No operar | USD | CPI m/m (USD) |
+| 26/03/2025 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
+| 27/03/2025 | Jue | ⛔ No operar | USD | PIB final trimestral - Final GDP q/q (USD) |
+| 28/03/2025 | Vie | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
+
+### Abril
+
+| Fecha | Día | Regla | Divisa | Evento |
+|---|---|---|---|---|
+| 02/04/2025 | Mié | ⏸️ Sin abrir 08:05–08:18 | USD | ADP Non-Farm Employment Change (dato 08:15) |
+| 04/04/2025 | Vie | ⛔ No operar | USD | NFP - Non-Farm Payrolls (USD) |
+| 10/04/2025 | Jue | ⛔ No operar | USD | CPI m/m (USD) |
+| 16/04/2025 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
+| 17/04/2025 | Jue | ⚠️ Solo entradas 07:00–08:00 | EUR | BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference |
+| 18/04/2025 | Vie | ⛔ No operar | GBP/EUR | Feriado bancario Reino Unido y Alemania (Viernes Santo) |
+| 21/04/2025 | Lun | ⛔ No operar | GBP/EUR | Feriado bancario Reino Unido, Alemania, Francia y Italia (Lunes de Pascua) |
+| 25/04/2025 | Vie | ⛔ No operar | EUR | Feriado bancario Italia (Día de la Liberación) |
+| 30/04/2025 | Mié | ⏸️ Sin abrir 09:50–10:03 | USD | Core PCE Price Index m/m (dato 10:00, fuera de la sesión) |
+| 30/04/2025 | Mié | ⏸️ Sin abrir 08:05–08:18 | USD | ADP Non-Farm Employment Change (dato 08:15) |
+
+### Mayo
+
+| Fecha | Día | Regla | Divisa | Evento |
+|---|---|---|---|---|
+| 01/05/2025 | Jue | ⛔ No operar | EUR | Feriado bancario Alemania, Francia y Italia (Día del Trabajo) |
+| 02/05/2025 | Vie | ⛔ No operar | USD | NFP - Non-Farm Payrolls (USD) |
+| 05/05/2025 | Lun | ⛔ No operar | GBP | Feriado bancario Reino Unido (May Day) |
+| 08/05/2025 | Jue | ⛔ No operar | EUR | Feriado bancario Francia (Día de la Victoria) |
+| 13/05/2025 | Mar | ⛔ No operar | USD | CPI m/m (USD) |
+| 15/05/2025 | Jue | ⛔ No operar | USD | Discurso de Powell (presidente de la Fed) a las 08:40 NY |
+| 21/05/2025 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
+| 26/05/2025 | Lun | ⛔ No operar | USD/GBP | Feriado bancario EE. UU. y Reino Unido (Memorial Day / Spring Bank Holiday) |
+| 29/05/2025 | Jue | ⛔ No operar | EUR | Feriado bancario Alemania y Francia (Ascensión) |
+| 30/05/2025 | Vie | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
+
+### Junio
+
+| Fecha | Día | Regla | Divisa | Evento |
+|---|---|---|---|---|
+| 02/06/2025 | Lun | ⛔ No operar | EUR | Feriado bancario Italia (Día de la República) |
+| 04/06/2025 | Mié | ⏸️ Sin abrir 08:05–08:18 | USD | ADP Non-Farm Employment Change (dato 08:15) |
+| 05/06/2025 | Jue | ⚠️ Solo entradas 07:00–08:00 | EUR | BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference |
+| 06/06/2025 | Vie | ⛔ No operar | USD | NFP - Non-Farm Payrolls (USD) |
+| 09/06/2025 | Lun | ⛔ No operar | EUR | Feriado bancario Alemania y Francia (Lunes de Pentecostés) |
+| 11/06/2025 | Mié | ⛔ No operar | USD | CPI m/m (USD) |
+| 18/06/2025 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
+| 19/06/2025 | Jue | ⛔ No operar | USD | Feriado bancario EE. UU. (Juneteenth) |
+| 26/06/2025 | Jue | ⛔ No operar | USD | PIB final trimestral - Final GDP q/q (USD) |
+| 27/06/2025 | Vie | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
+
+### Julio
+
+| Fecha | Día | Regla | Divisa | Evento |
+|---|---|---|---|---|
+| 02/07/2025 | Mié | ⏸️ Sin abrir 08:05–08:18 | USD | ADP Non-Farm Employment Change (dato 08:15) |
+| 03/07/2025 | Jue | ⛔ No operar | USD | NFP - Non-Farm Payrolls (USD) |
+| 04/07/2025 | Vie | ⛔ No operar | USD | Feriado bancario EE. UU. (Día de la Independencia) |
+| 14/07/2025 | Lun | ⛔ No operar | EUR | Feriado bancario Francia (Día Nacional) |
+| 15/07/2025 | Mar | ⛔ No operar | USD | CPI m/m (USD) |
+| 16/07/2025 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
+| 22/07/2025 | Mar | ⛔ No operar | USD | Discurso de Powell (presidente de la Fed) a las 08:30 NY |
+| 24/07/2025 | Jue | ⚠️ Solo entradas 07:00–08:00 | EUR | BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference |
+| 30/07/2025 | Mié | ⏸️ Sin abrir 08:05–08:18 | USD | ADP Non-Farm Employment Change (dato 08:15) |
+| 31/07/2025 | Jue | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
+
+### Agosto
+
+| Fecha | Día | Regla | Divisa | Evento |
+|---|---|---|---|---|
+| 01/08/2025 | Vie | ⛔ No operar | USD | NFP - Non-Farm Payrolls (USD) |
+| 05/08/2025 | Mar | ⛔ No operar | USD | Discurso de Trump (presidente de EE. UU.) a las 08:00 NY |
+| 12/08/2025 | Mar | ⛔ No operar | USD | CPI m/m (USD) |
+| 15/08/2025 | Vie | ⛔ No operar | EUR | Feriado bancario Francia y Italia (Asunción) |
+| 19/08/2025 | Mar | ⛔ No operar | USD | Discurso de Trump (presidente de EE. UU.) a las 08:00 NY |
+| 20/08/2025 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
+| 25/08/2025 | Lun | ⛔ No operar | GBP | Feriado bancario Reino Unido (Summer Bank Holiday) |
+| 29/08/2025 | Vie | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
+
+### Septiembre
+
+| Fecha | Día | Regla | Divisa | Evento |
+|---|---|---|---|---|
+| 01/09/2025 | Lun | ⛔ No operar | USD | Feriado bancario EE. UU. (Labor Day) |
+| 04/09/2025 | Jue | ⏸️ Sin abrir 08:05–08:18 | USD | ADP Non-Farm Employment Change (dato 08:15) |
+| 05/09/2025 | Vie | ⛔ No operar | USD | NFP - Non-Farm Payrolls (USD) |
+| 11/09/2025 | Jue | ⛔ No operar | USD | CPI m/m (USD) |
+| 11/09/2025 | Jue | ⚠️ Solo entradas 07:00–08:00 | EUR | BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference |
+| 17/09/2025 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
+| 25/09/2025 | Jue | ⛔ No operar | USD | PIB final trimestral - Final GDP q/q (USD) |
+| 26/09/2025 | Vie | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
+
+### Octubre
+
+| Fecha | Día | Regla | Divisa | Evento |
+|---|---|---|---|---|
+| 01/10/2025 | Mié | ⏸️ Sin abrir 08:05–08:18 | USD | ADP Non-Farm Employment Change (dato 08:15) |
+| 03/10/2025 | Vie | ⛔ No operar | EUR | Feriado bancario Alemania (Día de la Unidad) |
+| 09/10/2025 | Jue | ⛔ No operar | USD | Discurso de Powell (presidente de la Fed) a las 08:30 NY |
+| 13/10/2025 | Lun | ⛔ No operar | USD | Feriado bancario EE. UU. (Columbus Day) |
+| 22/10/2025 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
+| 24/10/2025 | Vie | ⛔ No operar | USD | CPI m/m (USD) |
+| 30/10/2025 | Jue | ⚠️ Solo entradas 07:00–08:00 | EUR | BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference |
+
+### Noviembre
+
+| Fecha | Día | Regla | Divisa | Evento |
+|---|---|---|---|---|
+| 05/11/2025 | Mié | ⏸️ Sin abrir 08:05–08:18 | USD | ADP Non-Farm Employment Change (dato 08:15) |
+| 11/11/2025 | Mar | ⛔ No operar | USD/EUR | Feriado bancario EE. UU. y Francia (Armisticio / Veterans Day) |
+| 19/11/2025 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
+| 20/11/2025 | Jue | ⛔ No operar | USD | NFP - Non-Farm Payrolls (USD) |
+| 27/11/2025 | Jue | ⛔ No operar | USD | Feriado bancario EE. UU. (Acción de Gracias) |
+
+### Diciembre
+
+| Fecha | Día | Regla | Divisa | Evento |
+|---|---|---|---|---|
+| 03/12/2025 | Mié | ⏸️ Sin abrir 08:05–08:18 | USD | ADP Non-Farm Employment Change (dato 08:15) |
+| 05/12/2025 | Vie | ⏸️ Sin abrir 09:50–10:03 | USD | Core PCE Price Index m/m (dato 10:00, fuera de la sesión) |
+| 08/12/2025 | Lun | ⛔ No operar | EUR | Feriado bancario Italia (Inmaculada Concepción) |
+| 16/12/2025 | Mar | ⛔ No operar | USD | NFP - Non-Farm Payrolls (USD) |
+| 17/12/2025 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
+| 18/12/2025 | Jue | ⚠️ Solo entradas 07:00–08:00 | EUR | BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference |
+| 24/12/2025 | Mié | ⛔ No operar | EUR | Feriado bancario Alemania (Nochebuena) |
+| 25/12/2025 | Jue | ⛔ No operar | USD/GBP/EUR | Feriado bancario EE. UU., Reino Unido, Alemania, Francia y Italia (Navidad) |
+| 26/12/2025 | Vie | ⛔ No operar | GBP/EUR | Feriado bancario Reino Unido, Alemania y Italia (Boxing Day / San Esteban) |
+| 31/12/2025 | Mié | ⛔ No operar | EUR | Feriado bancario Alemania (Fin de año) |

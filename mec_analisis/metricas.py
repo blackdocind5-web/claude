@@ -10,16 +10,21 @@ from collections import OrderedDict, defaultdict
 
 CAP = 1000.0
 TP_FRAC = 0.009  # 1R = 1 TP = 0,9% del capital antes de la operación
-MODELOS = [
-    ("combinado", "Envolvente + START", "XAU_m1_2026_CORREGIDO_Envolvente_y_START"),
-    ("envolvente", "Envolvente", "XAU_m1_2026_CORREGIDO_Envolvente"),
-    ("start", "START", "XAU_m1_2026_CORREGIDO_START"),
-]
+MODELOS = {
+    "2025": [("combinado", "Envolvente + START", "XAU_m1_2025_Envolvente_y_START"),
+             ("envolvente", "Envolvente", "XAU_m1_2025_Envolvente"),
+             ("start", "START", "XAU_m1_2025_START")],
+    "2026": [("combinado", "Envolvente + START", "XAU_m1_2026_CORREGIDO_Envolvente_y_START"),
+             ("envolvente", "Envolvente", "XAU_m1_2026_CORREGIDO_Envolvente"),
+             ("start", "START", "XAU_m1_2026_CORREGIDO_START")],
+}
 MES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
 DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
 CAL = defaultdict(list)
-for r in csv.DictReader(open("../mec_filtros/calendario_2026.csv", encoding="utf-8-sig"), delimiter=";"):
-    CAL[r["fecha"]].append(r)
+import glob as _glob
+for _f in sorted(_glob.glob("../mec_filtros/calendario_*.csv")):
+    for r in csv.DictReader(open(_f, encoding="utf-8-sig"), delimiter=";"):
+        CAL[r["fecha"]].append(r)
 
 
 def leer(path):
@@ -38,6 +43,7 @@ def leer(path):
             pnl=pnl, bars=int(e["Duración (barras)"]), salida=s["Señal"],
             eq_bt=CAP + float(e["PyG acumuladas USD"]) - pnl,  # capital antes, en el backtest completo
             motivo=e.get("Motivo de exclusión", ""),
+            px=float(e["Precio USD"]),
         ))
     return out
 
@@ -258,19 +264,18 @@ def analizar(clave, nombre, base):
     return D, V
 
 
-if __name__ == "__main__":
+def procesar_anio(anio):
     out = {}; ops = {}
-    for clave, nombre, base in MODELOS:
+    for clave, nombre, base in MODELOS[anio]:
         out[clave], ops[clave] = analizar(clave, nombre, base)
+        out[clave]["anio"] = anio
         d = out[clave]
-        print(f'{nombre:20} n={d["n"]} WR={d["wr"]} PF={d["pf"]} R={d["R_tot"]} R/sem={d["R_week"]} DD={d["mdd_pct"]} '
+        print(f'{anio} {nombre:20} n={d["n"]} WR={d["wr"]} PF={d["pf"]} R={d["R_tot"]} R/sem={d["R_week"]} DD={d["mdd_pct"]} '
               f'MC95={d["mc_dd95"]} t={d["t_stat"]} Ppos={d["p_exp_pos"]} pnl={d["pnl"]} sharpe={d["sharpe"]}')
-    # solapamiento entre modelos (operaciones válidas con la misma entrada)
     key = lambda t: (t["ent"], t["dir"])
     E = {key(t): t for t in ops["envolvente"]}; S = {key(t): t for t in ops["start"]}; C = {key(t): t for t in ops["combinado"]}
-    both = E.keys() & S.keys()
     out["solapamiento"] = dict(
-        ambos=len(both), solo_env=len(E.keys() - S.keys()), solo_start=len(S.keys() - E.keys()),
+        ambos=len(E.keys() & S.keys()), solo_env=len(E.keys() - S.keys()), solo_start=len(S.keys() - E.keys()),
         comb_de_env=len(C.keys() & E.keys()), comb_de_start=len(C.keys() & S.keys()),
         comb_solo_start=len(C.keys() & (S.keys() - E.keys())),
         R_comb_solo_start=round(sum(C[k]["R"] for k in C.keys() & (S.keys() - E.keys())), 2),
@@ -279,8 +284,13 @@ if __name__ == "__main__":
         start_solo_R=round(sum(S[k]["R"] for k in S.keys() - E.keys()), 2),
         start_solo_wr=round(100 * sum(S[k]["pnl"] > 0 for k in S.keys() - E.keys()) / max(1, len(S.keys() - E.keys())), 1),
     )
-    print(out["solapamiento"])
-    for c in out:
-        if c != "solapamiento":
-            print(c, [(v["nombre"], v["n"], v["R"], v["mdd"], v["t"]) for v in out[c]["variantes"]])
-    json.dump(out, open("datos.json", "w"), ensure_ascii=False)
+    return out, ops
+
+
+if __name__ == "__main__":
+    import anual
+    datos = {}; OPS = {}
+    for anio in MODELOS:
+        datos[anio], OPS[anio] = procesar_anio(anio)
+    datos["anual"] = anual.comparar(datos, OPS)
+    json.dump(datos, open("datos.json", "w"), ensure_ascii=False)

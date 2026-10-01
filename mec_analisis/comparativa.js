@@ -5,7 +5,7 @@ function drawMulti(host){
   const W=Math.max(320,box.clientWidth), H=320, M={l:52,r:120,t:12,b:24};
   if(W<560) M.r=14;
   const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,role:'img','aria-label':'Curvas de capital de los tres modelos'},box);
-  const S=MODS.map(([k,n,c])=>({k,n,c:css(c),p:DATA[k].curve.map(x=>({t:parseT(x.t).getTime(),eq:x.eq}))}));
+  const S=MODS.map(([k,n,c])=>({k,n,c:css(c),p:DATA[YEAR][k].curve.map(x=>({t:parseT(x.t).getTime(),eq:x.eq}))}));
   const a=Math.min(...S.map(s=>s.p[0].t)), b=Math.max(...S.map(s=>s.p[s.p.length-1].t));
   let mn=Math.min(1000,...S.flatMap(s=>s.p.map(p=>p.eq))), mx=Math.max(1000,...S.flatMap(s=>s.p.map(p=>p.eq))); const pad=(mx-mn)*0.06; mn-=pad; mx+=pad;
   const X=t=>M.l+(t-a)/(b-a)*(W-M.l-M.r), Y=v=>M.t+(mx-v)/(mx-mn)*(H-M.t-M.b);
@@ -29,11 +29,11 @@ function drawCI(host){
   const box=$(host); box.innerHTML='';
   const W=Math.max(300,box.clientWidth), rowH=46, M={l:130,r:20,t:10,b:28}, H=M.t+M.b+rowH*MODS.length;
   const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,role:'img','aria-label':'Intervalo de confianza del R promedio'},box);
-  const lo=Math.min(...MODS.map(([k])=>DATA[k].exp_ci[0]),0)-0.05, hi=Math.max(...MODS.map(([k])=>DATA[k].exp_ci[1]),0)+0.05;
+  const lo=Math.min(...MODS.map(([k])=>DATA[YEAR][k].exp_ci[0]),0)-0.05, hi=Math.max(...MODS.map(([k])=>DATA[YEAR][k].exp_ci[1]),0)+0.05;
   const X=v=>M.l+(v-lo)/(hi-lo)*(W-M.l-M.r);
   niceTicks(lo,hi,5).t.forEach(v=>{el('line',{x1:X(v),x2:X(v),y1:M.t,y2:H-M.b,class:'gl'},svg);el('text',{x:X(v),y:H-8,'text-anchor':'middle',class:'ax'},svg).textContent=sg(v,1)+'R'});
   el('line',{x1:X(0),x2:X(0),y1:M.t,y2:H-M.b,class:'zero'},svg);
-  MODS.forEach(([k,n,c],i)=>{const d=DATA[k], y=M.t+rowH*i+rowH/2, col=css(c);
+  MODS.forEach(([k,n,c],i)=>{const d=DATA[YEAR][k], y=M.t+rowH*i+rowH/2, col=css(c);
     el('text',{x:M.l-10,y:y+4,'text-anchor':'end',class:'lbl'},svg).textContent=n;
     el('line',{x1:X(d.exp_ci[0]),x2:X(d.exp_ci[1]),y1:y,y2:y,stroke:col,'stroke-width':6,'stroke-linecap':'round',opacity:.45},svg);
     el('circle',{cx:X(d.R_avg),cy:y,r:6,fill:col,stroke:css('--panel'),'stroke-width':2},svg);
@@ -45,17 +45,17 @@ function cmpTable(id,groups){
   // groups: [[titulo,[ [etiqueta, fn(d)->valor, formato(v)->html, mejor:'max'|'min'|null ], ...]], ...]
   let h='<tr><th>Métrica</th>'+MODS.map(([k,n,c])=>`<th class="n"><i style="display:inline-block;width:9px;height:9px;border-radius:2px;background:var(${c});margin-right:6px"></i>${n}</th>`).join('')+'</tr>';
   groups.forEach(([g,rows])=>{h+=`<tr class="grp"><td colspan="4">${g}</td></tr>`;
-    rows.forEach(([lab,f,fm,best])=>{const vals=MODS.map(([k])=>f(DATA[k]));const ok=vals.filter(v=>v!=null);
+    rows.forEach(([lab,f,fm,best])=>{const vals=MODS.map(([k])=>f(DATA[YEAR][k]));const ok=vals.filter(v=>v!=null);
       const bv=best==='max'?Math.max(...ok):best==='min'?Math.min(...ok):null;
       h+=`<tr><td>${lab}</td>`+vals.map(v=>`<td class="n${best&&v===bv?' best':''}">${fm(v)}</td>`).join('')+'</tr>';});});
   $(id).innerHTML=h;
 }
 function renderCompare(){
-  const E=DATA.envolvente, C=DATA.combinado, S=DATA.start, O=DATA.solapamiento;
+  const E=DATA[YEAR].envolvente, C=DATA[YEAR].combinado, S=DATA[YEAR].start, O=DATA[YEAR].solapamiento;
   const kelly=E.wr/100-(1-E.wr/100)/E.payoff;
   $('#verdict').innerHTML=`<span class="eyebrow">Veredicto</span>
-    <div class="big">Operar solo el patrón envolvente. START queda fuera del capital real hasta que demuestre ventaja.</div>
-    <p>Con la misma muestra y las mismas reglas, <b>Envolvente sola gana ${sg(E.R_tot)}R</b> (${sg(E.R_week)}R por semana) con una caída máxima de −${fmt(E.mdd_pct)}%. <b>Sumarle START la empeora</b>: ${sg(C.R_tot)}R y −${fmt(C.mdd_pct)}%. <b>START sola pierde ${sg(S.R_tot)}R</b> y su caída de −${fmt(S.mdd_pct)}% sigue sin recuperarse. Envolvente es además el único de los tres con ventaja estadísticamente consistente: la expectativa sale positiva en ${fmt(E.p_exp_pos,1)}% de 5.000 simulaciones.</p>`;
+    <div class="big">${E.R_tot>C.R_tot&&E.R_tot>S.R_tot?'Operar solo el patrón envolvente. START queda fuera del capital real hasta que demuestre ventaja.':'En este año Envolvente no es el mejor modelo: revisar la vista 2025 vs 2026.'}</div>
+    <p>En ${YEAR}, con las mismas reglas, <b>Envolvente sola ${E.R_tot>=0?'gana':'pierde'} ${sg(E.R_tot)}R</b> (${sg(E.R_week)}R por semana) con una caída máxima de −${fmt(E.mdd_pct)}%. <b>Sumarle START ${C.R_tot<E.R_tot?'la empeora':'la mejora'}</b>: ${sg(C.R_tot)}R y −${fmt(C.mdd_pct)}%. <b>START sola ${S.R_tot>=0?'gana':'pierde'} ${sg(S.R_tot)}R</b>${S.mdd_rec?'':` y su caída de −${fmt(S.mdd_pct)}% sigue sin recuperarse`}. ${E.p_exp_pos>=95?`Envolvente es el único de los tres con ventaja estadísticamente consistente en este año: la expectativa sale positiva en ${fmt(E.p_exp_pos,1)}% de 5.000 simulaciones.`:`Ojo: en este año la ventaja de Envolvente no es estadísticamente firme (expectativa positiva en ${fmt(E.p_exp_pos,1)}% de 5.000 simulaciones). La conclusión de fondo está en la vista 2025 vs 2026.`}</p>`;
   const pct=v=>v==null?'—':sg(v)+'%', R=v=>`<span class="${cls(v)}">${sg(v)}R</span>`, usd=v=>`<span class="${cls(v)}">${sg(v)}</span>`, num=v=>v==null?'—':fmt(v), neg=v=>`−${fmt(v)}%`;
   cmpTable('#t-cmp',[
     ['Rendimiento',[
@@ -88,32 +88,24 @@ function renderCompare(){
     ['IC 95% del R promedio',d=>d.exp_ci,v=>`${sg(v[0],2)} a ${sg(v[1],2)}R`,null]]]]);
   drawCI('#c-ci');
   let hv='<tr><th>Modelo · variante</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">Factor</th><th class="n">R total</th><th class="n">R/op.</th><th class="n">R/semana</th><th class="n">Caída máx.</th></tr>';
-  MODS.forEach(([k,n])=>{hv+=`<tr class="grp"><td colspan="8">${n}</td></tr>`+DATA[k].variantes.map(v=>`<tr><td>${v.nombre}</td><td class="n">${v.n}</td><td class="n">${fmt(v.wr,1)}%</td><td class="n">${fmt(v.pf)}</td><td class="n ${cls(v.R)}">${sg(v.R)}</td><td class="n ${cls(v.R_avg)}">${sg(v.R_avg,3)}</td><td class="n ${cls(v.R_week)}">${sg(v.R_week)}</td><td class="n">−${fmt(v.mdd)}%</td></tr>`).join('')});
+  MODS.forEach(([k,n])=>{hv+=`<tr class="grp"><td colspan="8">${n}</td></tr>`+DATA[YEAR][k].variantes.map(v=>`<tr><td>${v.nombre}</td><td class="n">${v.n}</td><td class="n">${fmt(v.wr,1)}%</td><td class="n">${fmt(v.pf)}</td><td class="n ${cls(v.R)}">${sg(v.R)}</td><td class="n ${cls(v.R_avg)}">${sg(v.R_avg,3)}</td><td class="n ${cls(v.R_week)}">${sg(v.R_week)}</td><td class="n">−${fmt(v.mdd)}%</td></tr>`).join('')});
   $('#t-var').innerHTML=hv;
   const rk=[0.5,1,1.5,2];
   $('#t-risk').innerHTML='<tr><th>Riesgo por operación</th><th class="n">R en %</th><th class="n">Rend. semanal esperado</th><th class="n">Rend. del período</th><th class="n">Caída máx. histórica</th><th class="n">Caída máx. esperable (p95)</th></tr>'+
     rk.map(r=>`<tr${r===1?' class="best"':''}><td>${fmt(r,1)}%${r===1?' (actual)':''}</td><td class="n">${fmt(0.9*r,2)}%</td><td class="n pos">${sg(E.R_week*0.9*r)}%</td><td class="n pos">${sg(E.R_tot*0.9*r,1)}%</td><td class="n neg">−${fmt(E.mdd_pct*r,1)}%</td><td class="n neg">−${fmt(E.mc_dd95*r,1)}%</td></tr>`).join('');
-  $('#risk-note').textContent=`El criterio de Kelly calculado sobre este backtest daría ${fmt(kelly*100,1)}% de riesgo por operación. Es un techo teórico que supone que el win rate y el payoff medidos son exactos; las mesas profesionales usan entre 1/10 y 1/4 de Kelly y lo acotan por la caída máxima que toleran. El 1% actual equivale a 1/${fmt(kelly*100,0)} de Kelly: conservador y adecuado mientras el modelo no esté validado fuera de muestra. Proyección lineal, sin interés compuesto.`;
+  $('#risk-note').textContent=`El criterio de Kelly calculado sobre este backtest daría ${fmt(kelly*100,1)}% de riesgo por operación. Es un techo teórico que supone que el win rate y el payoff medidos son exactos; las mesas profesionales usan entre 1/10 y 1/4 de Kelly y lo acotan por la caída máxima que toleran. ${kelly>0?`El 1% actual equivale a 1/${fmt(kelly*100,0)} de Kelly.`:'Con Kelly negativo, este modelo no justifica ningún riesgo.'} El tamaño recomendado, con los dos años, está en la pestaña “2025 vs 2026”. Proyección lineal, sin interés compuesto.`;
   const eh=E.hours, ed=[...E.days].sort((a,b)=>a.R-b.R)[0], eMg=MGMT.reduce((a,k)=>[a[0]+(E.exits[k]?.[0]||0),a[1]+(E.exits[k]?.[1]||0)],[0,0]);
   const eReset=E.exits['Reset antes de nueva entrada']||[0,0];
-  const ukE=E.excl_cats.find(c=>c.cat==='Feriado Reino Unido');
   const sHw=S.hours.filter(h=>!h.franja.startsWith('09')).reduce((a,b)=>b.R<a.R?b:a);
-  const pceE=E.dias_parciales.find(p=>p.evento==='Core PCE'), pceOut=pceE.ops.filter(o=>o.h>='08:00');
+  const h2=eh.filter(h=>!h.franja.startsWith('09')), hb=h2.reduce((a,b)=>b.R>a.R?b:a), hw=h2.reduce((a,b)=>b.R<a.R?b:a), h9=eh.find(h=>h.franja.startsWith('09'));
   const RECO=[
-    ['g','MODELO',`<b>Operar solo Envolvente.</b> Es mejor en rendimiento, calidad y riesgo: ${sg(E.R_tot)}R contra ${sg(C.R_tot)}R del combinado, factor de ganancias ${fmt(E.pf)} contra ${fmt(C.pf)}, caída máxima −${fmt(E.mdd_pct)}% contra −${fmt(C.mdd_pct)}%, Sharpe ${fmt(E.sharpe)} contra ${fmt(C.sharpe)}. Opera menos (${fmt(E.trades_week)} operaciones por semana contra ${fmt(C.trades_week)}) y gana más: más eficiente por operación y por hora de pantalla.`],
-    ['r','START',`<b>Sacar START del capital real.</b> Win rate ${fmt(S.wr,1)}%, factor ${fmt(S.pf)}, ${sg(S.R_avg,3)}R por operación y la expectativa sale positiva solo en ${fmt(S.p_exp_pos,0)}% de las simulaciones. Pierde en las dos franjas; la peor es ${sHw.franja} (${sg(sHw.R)}R). Ninguna variante lo rescata. Si querés seguir desarrollándolo, registralo en demo sin capital hasta que muestre ventaja propia.`],
-    ['g','HORARIO',`<b>Mantener la ventana completa para Envolvente.</b> Las dos franjas son positivas: ${eh[0].franja} ${sg(eh[0].R)}R (win rate ${fmt(eh[0].wr,1)}%) y ${eh[1].franja} ${sg(eh[1].R)}R (${fmt(eh[1].wr,1)}%). Cortar la segunda hora dejaría afuera ${sg(eh[1].R)}R. Las entradas de 09:00 siguen en prueba (${eh[2]?eh[2].n+' operaciones, '+sg(eh[2].R)+'R':'sin operaciones'}).`],
-    ['y','DÍAS',`<b>No filtrar días todavía.</b> El día más flojo de Envolvente es ${ed.dia} (${sg(ed.R)}R, win rate ${fmt(ed.wr,1)}%), pero con ${ed.n} operaciones la diferencia puede ser azar y no hay una razón de mercado clara. Seguirlo en los próximos meses.`],
-    ['n','GESTIÓN',`<b>Mantener la gestión actual.</b> En Envolvente, las salidas por gestión (Reset, CHoCH en contra y cierre de fin de sesión) suman ${eMg[0]} operaciones y ${sg(eMg[1])} USD; el Reset solo, ${eReset[0]} operaciones y ${sg(eReset[1])} USD. Son parte del sistema y no se van a modificar por ahora.`],
-    ['y','CALENDARIO',`<b>Mismas recomendaciones de calendario, aplicadas a Envolvente.</b> Habilitar CPI (GBP) y operar CPI (USD) solo de 07:00 a 07:59 sumaría ${sg(E.escenarios[2].R-E.escenarios[0].R)}R. El feriado del Reino Unido${ukE?` (${sg(ukE.R)}R)`:''}, el NFP y el PIB final se mantienen excluidos. En días de Core PCE, ${pceE.n} operaciones válidas dieron ${sg(pceE.R)}R${pceOut.length?`; con la regla del BCE (solo entradas de 07:00 a 07:59) quedarían fuera ${pceOut.length} operaciones que sumaron ${sg(pceOut.reduce((a,o)=>a+o.R,0))}R`:''}. Validar antes con 2025.`],
-    ['y','RIESGO',`<b>Mantener 1% por operación.</b> Con Envolvente, la caída máxima esperable es −${fmt(E.mc_dd95)}% (percentil 95). Subir a 1,5% solo después de validar con 2025 y con al menos 100 operaciones en real que confirmen el win rate. Regla de corte: si la caída real supera −${fmt(Math.ceil(E.mc_dd95),0)}%, pausar y revisar.`],
+    ['g','MODELO',`<b>Operar solo Envolvente.</b> En ${YEAR}: ${sg(E.R_tot)}R contra ${sg(C.R_tot)}R del combinado, factor de ganancias ${fmt(E.pf)} contra ${fmt(C.pf)}, caída máxima −${fmt(E.mdd_pct)}% contra −${fmt(C.mdd_pct)}%, Sharpe ${fmt(E.sharpe)} contra ${fmt(C.sharpe)}. Opera menos (${fmt(E.trades_week)} operaciones por semana contra ${fmt(C.trades_week)}) y rinde más por operación.`],
+    ['r','START',`<b>Sacar START del capital real.</b> Win rate ${fmt(S.wr,1)}%, factor ${fmt(S.pf)}, ${sg(S.R_avg,3)}R por operación; la expectativa sale positiva en ${fmt(S.p_exp_pos,0)}% de las simulaciones. Su peor franja es ${sHw.franja} (${sg(sHw.R)}R). Si querés seguir desarrollándolo, registralo en demo sin capital.`],
+    [hw.R>=0?'g':'y','HORARIO',`<b>Mejor franja en ${YEAR}: ${hb.franja}</b> (${sg(hb.R)}R, win rate ${fmt(hb.wr,1)}%); la otra, ${hw.franja}, dio ${sg(hw.R)}R. Entre 2025 y 2026 la mejor franja cambia, así que no conviene recortar la ventana. Entradas de 09:00: ${h9?h9.n+' operaciones, '+sg(h9.R)+'R':'ninguna'} (siguen en prueba).`],
+    ['y','DÍAS',`<b>No filtrar días.</b> El día más flojo de Envolvente en ${YEAR} es ${ed.dia} (${sg(ed.R)}R, win rate ${fmt(ed.wr,1)}%), pero con ${ed.n} operaciones la diferencia puede ser azar y no se repite igual en los dos años.`],
+    ['n','GESTIÓN',`<b>Mantener la gestión actual.</b> En Envolvente, las salidas por gestión (Reset, CHoCH en contra y cierre de fin de sesión) suman ${eMg[0]} operaciones y ${sg(eMg[1])} USD; el Reset solo, ${eReset[0]} operaciones y ${sg(eReset[1])} USD. Son parte del sistema.`],
+    ['y','CALENDARIO Y RIESGO',`<b>Las decisiones de calendario, límites y tamaño de riesgo se toman con los dos años juntos.</b> Un solo año no alcanza para validar una regla. Ver la pestaña “2025 vs 2026”.`],
   ];
   $('#reco').innerHTML=RECO.map(([c,t,h])=>`<li><span class="tag ${c}">${t}</span><p>${h}</p></li>`).join('');
-  $('#plan').innerHTML=[
-    `<b>Desde la próxima sesión:</b> operar solo Envolvente, riesgo 1%, ventana de 07:00 a 09:01 y el calendario de restricciones actual.`,
-    `<b>START:</b> registrar sus señales en demo o en una planilla aparte, sin capital, durante 3 meses o 50 operaciones.`,
-    `<b>Validación fuera de muestra:</b> correr Envolvente sobre 2025 con el backtest profundo de TradingView y pasarme el CSV. Si la ventaja se mantiene (factor de ganancias mayor a 1,2 y R promedio positivo), el modelo queda validado.`,
-    `<b>Calendario:</b> registrar aparte los días de CPI (GBP), de CPI (USD) con ventana y de Core PCE con entradas solo de 07:00 a 07:59. Habilitarlos o ajustarlos si 2025 confirma el resultado.`,
-    `<b>Control:</b> revisión mensual con este mismo informe. Pausar si la caída supera −${fmt(Math.ceil(E.mc_dd95),0)}% o si 20 operaciones seguidas promedian menos de −0,2R.`,
-  ].map(x=>`<li>${x}</li>`).join('');
+  $('#plan').innerHTML=[`El plan de acción consolidado, validado con 2025 y 2026, está al final de la pestaña <b>“2025 vs 2026”</b>.`].map(x=>`<li>${x}</li>`).join('');
 }

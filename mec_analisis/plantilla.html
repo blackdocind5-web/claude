@@ -96,6 +96,13 @@ details summary{cursor:pointer;color:var(--fg2);font-size:14px}
 .seg button{font:500 12.5px var(--f-body);background:transparent;color:var(--fg2);border:0;padding:6px 12px;cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--gold-soft);color:var(--fg);box-shadow:inset 0 -2px 0 var(--gold)}
 .seg button:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+.yearbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.seg button{font:600 13px var(--f-mono);background:transparent;color:var(--fg2);border:0;padding:6px 14px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--gold-soft);color:var(--fg);box-shadow:inset 0 -2px 0 var(--gold)}
+.seg button:disabled{opacity:.45;cursor:default}
+.seg button:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+.y25{color:var(--s-start)} .y26{color:var(--s-env)}
 .plan{margin:0;padding-left:20px;display:grid;gap:8px;color:var(--fg2);max-width:84ch}
 .plan b{color:var(--fg)}
 @media (max-width:760px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -106,7 +113,7 @@ details summary{cursor:pointer;color:var(--fg2);font-size:14px}
 <div class="wrap">
 <header>
   <span class="eyebrow">XAUUSD · M1 · Sesión Pre NY 07:00–09:00 NY · Sistema MEC</span>
-  <h1>XAUUSD | Backtest 2026</h1>
+  <h1 id="h1">XAUUSD | Backtest 2026</h1>
   <div class="meta">
     <span>Período <b id="m-period"></b></span>
     <span>Capital inicial <b>1.000 USD</b></span>
@@ -116,18 +123,22 @@ details summary{cursor:pointer;color:var(--fg2);font-size:14px}
   <div class="meta"><span class="chip" id="m-sample"></span><span class="chip" id="m-file"></span></div>
 </header>
 
+<div class="yearbar" role="group" aria-label="Año de la muestra"><span class="eyebrow">Año</span>
+  <div class="seg"><button type="button" class="yr" data-y="2025" aria-pressed="false">2025</button><button type="button" class="yr" data-y="2026" aria-pressed="true">2026</button></div>
+  <span class="note" id="yr-note"></span></div>
 <nav class="tabs" role="tablist" aria-label="Modelo analizado">
   <button role="tab" id="tab-combinado" data-k="combinado" aria-controls="report">Sistema MEC (Envolvente + START)</button>
   <button role="tab" id="tab-envolvente" data-k="envolvente" aria-controls="report">Envolvente | Backtest 2026</button>
   <button role="tab" id="tab-start" data-k="start" aria-controls="report">START | Backtest 2026</button>
   <button role="tab" id="tab-comparativa" data-k="comparativa" aria-controls="compare">Comparativa y recomendación</button>
+  <button role="tab" id="tab-anual" data-k="anual" aria-controls="anual">2025 vs 2026</button>
 </nav>
 
 <div id="report" class="view" role="tabpanel">
 <div class="view-head"><span class="eyebrow" id="r-eyebrow"></span><h2 id="r-title"></h2><p id="r-desc"></p></div>
 
 <section aria-labelledby="s-res">
-  <div class="sec-head"><h2 id="s-res">Resumen de rendimiento</h2><p>Solo operaciones válidas según el calendario de restricciones 2026</p></div>
+  <div class="sec-head"><h2 id="s-res">Resumen de rendimiento</h2><p>Solo operaciones válidas según el calendario de restricciones del año</p></div>
   <div class="kpis" id="kpis"></div>
 </section>
 
@@ -211,7 +222,7 @@ details summary{cursor:pointer;color:var(--fg2);font-size:14px}
 </div>
 
 <div id="compare" class="view" role="tabpanel" hidden>
-<div class="view-head"><span class="eyebrow">Envolvente vs START vs los dos juntos</span><h2>Comparativa y recomendación</h2><p>La misma muestra (26/01–01/10/2026), el mismo calendario de restricciones y el mismo riesgo por operación, analizada con tres configuraciones: solo Envolvente, solo START y los dos modelos juntos (una operación a la vez).</p></div>
+<div class="view-head"><span class="eyebrow">Envolvente vs START vs los dos juntos</span><h2>Comparativa y recomendación</h2><p id="cmp-desc"></p></div>
 
 <div class="verdict" id="verdict"></div>
 
@@ -261,11 +272,13 @@ details summary{cursor:pointer;color:var(--fg2);font-size:14px}
 </section>
 </div>
 
+<div id="anual" class="view" role="tabpanel" hidden>__ANUAL_HTML__</div>
+
 <section aria-labelledby="s-met">
   <div class="sec-head"><h2 id="s-met">Metodología</h2></div>
   <div class="panel"><ul class="note" style="margin:0;padding-left:18px;display:grid;gap:4px">
-    <li>Fuente: listas de operaciones exportadas del Strategy Tester de TradingView (XAU_m1_2026_CORREGIDO_Envolvente_y_START, XAU_m1_2026_CORREGIDO_Envolvente y XAU_m1_2026_CORREGIDO_START, con el código corregido que identifica bien los dos patrones), horario de Nueva York.</li>
-    <li>Filtro: calendario de restricciones 2026 (feriados bancarios, NFP, CPI USD/GBP, discursos en Pre NY → día completo; PIB final trimestral → día completo; BCE → solo entradas 07:00–07:59; ADP → sin aperturas 08:05–08:18; Core PCE → sin aperturas 08:20–08:33).</li>
+    <li>Fuente: listas de operaciones exportadas del Strategy Tester de TradingView, horario de Nueva York. 2025: XAU_m1_2025_Envolvente_y_START, XAU_m1_2025_Envolvente y XAU_m1_2025_START. 2026: XAU_m1_2026_CORREGIDO_Envolvente_y_START, XAU_m1_2026_CORREGIDO_Envolvente y XAU_m1_2026_CORREGIDO_START. Cada año arranca con 1.000 USD.</li>
+    <li>Filtro: calendario de restricciones de cada año (feriados bancarios, NFP, CPI USD/GBP, discursos en Pre NY → día completo; PIB final trimestral → día completo; BCE → solo entradas 07:00–07:59; ADP → sin aperturas 08:05–08:18; Core PCE → sin aperturas 08:20–08:33).</li>
     <li>La curva de capital suma el PyG en USD de las operaciones válidas sobre 1.000 USD. Los tamaños vienen del backtest original, así que el PyG en USD de cada operación es el mismo que en TradingView.</li>
     <li>R = PyG / (0,9% del capital antes de la operación). Operación ganadora = PyG &gt; 0. R promedio semanal = R total / semanas del período.</li>
     <li>Sharpe y Sortino: retornos diarios en días hábiles (días sin operación = 0%), anualizados con √252, tasa libre de riesgo 0. Calmar = rendimiento anualizado / caída máxima.</li>
@@ -277,7 +290,7 @@ details summary{cursor:pointer;color:var(--fg2);font-size:14px}
 
 <script>
 const DATA = __DATA__;
-let D = DATA.combinado, VIEW = 'combinado';
+let YEAR = '2026', D = DATA[YEAR].combinado, VIEW = 'combinado';
 const $ = s => document.querySelector(s);
 const fmt = (v, d=2) => (v??0).toLocaleString('es-AR',{minimumFractionDigits:d,maximumFractionDigits:d});
 const sg = (v, d=2) => (v>0?'+':v<0?'−':'') + fmt(Math.abs(v), d);
@@ -298,7 +311,7 @@ function row(cells){return '<tr>'+cells.join('')+'</tr>'}
 /* ---------- Gráfico temporal (capital o drawdown) ---------- */
 let pts=[], t0=0, t1=1;
 function setPts(){pts=D.curve.map((c,i)=>({i,t:parseT(c.t),eq:c.eq,dd:D.dd[i],n:c.n}));t0=pts[0].t.getTime();t1=pts[pts.length-1].t.getTime()}
-function monthGrid(svg,X,M,H,a,b){for(let m=0;m<=11;m++){const d=new Date(2026,m,1).getTime();if(d<a||d>b)continue;const x=X(d);el('line',{x1:x,x2:x,y1:M.t,y2:H-M.b,class:'gl'},svg);el('text',{x:x,y:H-6,'text-anchor':'middle',class:'ax'},svg).textContent=MES[m]}}
+function monthGrid(svg,X,M,H,a,b){const y0=new Date(a).getFullYear();for(let m=0;m<=11;m++){const d=new Date(y0,m,1).getTime();if(d<a||d>b)continue;const x=X(d);el('line',{x1:x,x2:x,y1:M.t,y2:H-M.b,class:'gl'},svg);el('text',{x:x,y:H-6,'text-anchor':'middle',class:'ax'},svg).textContent=MES[m]}}
 function drawTimeChart(host,key,H,opts){
   const box=$(host); box.innerHTML='';
   const W=Math.max(320,box.clientWidth), M={l:52,r:14,t:10,b:24};
@@ -309,8 +322,8 @@ function drawTimeChart(host,key,H,opts){
   const X=t=>M.l+(t-t0)/(t1-t0)*(W-M.l-M.r), Y=v=>M.t+(mx-v)/(mx-mn)*(H-M.t-M.b);
   niceTicks(mn,mx,4).t.forEach(v=>{el('line',{x1:M.l,x2:W-M.r,y1:Y(v),y2:Y(v),class:'gl'},svg);el('text',{x:M.l-8,y:Y(v)+4,'text-anchor':'end',class:'ax'},svg).textContent=fmt(v,key==='eq'?0:1)});
   monthGrid(svg,X,M,H,t0,t1);
-  const [pd,pm]=D.mdd_peak.split('/').map(Number), [rd,rm]=(D.mdd_rec||D.last).split('/').map(Number);
-  const xa=X(new Date(2026,pm-1,pd).getTime()), xb=Math.min(X(new Date(2026,rm-1,rd,23).getTime()),W-M.r);
+  const [pd,pm,py]=D.mdd_peak.split('/').map(Number), [rd,rm,ry]=(D.mdd_rec||D.last).split('/').map(Number);
+  const xa=Math.max(M.l,X(new Date(py,pm-1,pd).getTime())), xb=Math.min(X(new Date(ry,rm-1,rd,23).getTime()),W-M.r);
   el('rect',{x:xa,y:M.t,width:Math.max(2,xb-xa),height:H-M.t-M.b,fill:css('--loss-soft')},svg);
   if(key==='dd'){
     el('line',{x1:M.l,x2:W-M.r,y1:Y(0),y2:Y(0),class:'zero'},svg);
@@ -365,7 +378,7 @@ function renderCharts(){
   drawBars('#c-weeks',D.weeks,{aria:'PyG por semana',H:230,val:w=>w.pnl,xlab:w=>w.sem,xEvery:narrow?6:3,
     tip:w=>`Semana del ${w.sem}<br><span class="${cls(w.pnl)}">${sg(w.pnl)} USD · ${sg(w.R)}R</span><br>${w.n} operaciones · win rate ${fmt(w.wr,1)}%`});
   drawBars('#c-months',D.months,{aria:'PyG por mes',H:240,val:m=>m.pct,tickFmt:v=>fmt(v,0)+'%',label:m=>sg(m.pct,1)+'%',xlab:m=>m.mes,
-    tip:m=>`${m.mes} 2026<br><span class="${cls(m.pnl)}">${sg(m.pnl)} USD (${sg(m.pct)}%)</span><br>${m.n} operaciones · win rate ${fmt(m.wr,1)}% · ${sg(m.R)}R`});
+    tip:m=>`${m.mes} ${D.anio}<br><span class="${cls(m.pnl)}">${sg(m.pnl)} USD (${sg(m.pct)}%)</span><br>${m.n} operaciones · win rate ${fmt(m.wr,1)}% · ${sg(m.R)}R`});
   drawBars('#c-days',D.days,{aria:'PyG por día',H:200,val:d=>d.pct,tickFmt:v=>fmt(v,0)+'%',label:d=>sg(d.pct,1)+'%',xlab:d=>d.dia.slice(0,3),
     tip:d=>`${d.dia}<br><span class="${cls(d.pnl)}">${sg(d.pnl)} USD (${sg(d.pct)}%)</span><br>Win rate ${fmt(d.wr,1)}% · ${d.n} operaciones · ${sg(d.R)}R`});
   drawBars('#c-hours',D.hours,{aria:'PyG por hora',H:200,val:h=>h.pct,tickFmt:v=>fmt(v,0)+'%',label:h=>sg(h.pct,1)+'%',xlab:h=>h.franja,
@@ -378,7 +391,7 @@ function renderCharts(){
 }
 
 /* ---------- Informe de un modelo ---------- */
-const TITLE={combinado:'Sistema MEC | Envolvente + START',envolvente:'Envolvente | Backtest 2026',start:'START | Backtest 2026'};
+const TITLE={combinado:'Sistema MEC | Envolvente + START',envolvente:'Envolvente | Backtest ',start:'START | Backtest '};
 const EYEBROW={combinado:'Los dos modelos de entrada',envolvente:'Modelo de entrada: patrón envolvente',start:'Modelo de entrada: patrón START'};
 const DESC={combinado:'Los dos modelos operando juntos, una operación a la vez. Es el análisis original del sistema MEC.',envolvente:'Solo el patrón envolvente, con la misma muestra, el mismo calendario de restricciones y el mismo riesgo.',start:'Solo el patrón START, con la misma muestra, el mismo calendario de restricciones y el mismo riesgo.'};
 const EXN={'TP':'Take Profit','SL':'Stop Loss','Reset antes de nueva entrada':'Reset antes de nueva entrada','CHoCH en contra (arrastre)':'CHoCH en contra (arrastre)','Cierre fin de sesión (estructura en contra)':'Cierre fin de sesión'};
@@ -393,14 +406,14 @@ const REC={
  'Feriado Reino Unido':c=>['r','MANTENER',`Con Londres cerrado, la sesión Pre NY pierde a su principal fuente de liquidez. En este modelo: ${st_(c)}.`],
  'Feriado solo Europa continental':c=>['n','MANTENER',`Londres abre normalmente y el impacto en el oro es bajo, pero no hay evidencia firme para habilitarlo. Revisar con más muestra. En este modelo: ${st_(c)}.`],
  'ADP: entrada 08:05–08:18':c=>['r','MANTENER',`La regla es barata: solo bloquea 14 minutos alrededor del dato. En este modelo: ${st_(c)}.`],
- 'PIB final (USD)':c=>['r','MANTENER',`Sale a las 08:30 NY. Suele ser la revisión final del PIB y por sí sola mueve poco, pero en 2026 los tres días con operaciones coincidieron con el Core PCE. En este modelo: ${st_(c)}. Mantener excluido mientras coincida con el PCE.`],
+ 'PIB final (USD)':c=>['r','MANTENER',`Sale a las 08:30 NY. Suele ser la revisión final del PIB y por sí sola mueve poco, pero en 2026 coincidió con el Core PCE. En este modelo: ${st_(c)}. En 2025 y 2026 juntos, Envolvente pierde esos días: mantener excluido.`],
  'Core PCE: entrada 08:20–08:33':c=>['r','MANTENER',`Bloqueo de 10 minutos antes a 3 minutos después del dato de las 08:30. En este modelo: ${st_(c)}.`],
  'NFP (USD)':c=>['r','MANTENER',`A las 08:30 hay saltos de precio y spreads que el backtest no simula; el riesgo real es mayor que el que muestra el dato. En este modelo: ${st_(c)}.`],
 };
 function statTable(id,head,rows,bestRow){$(id).innerHTML=row(head.map((h,i)=>`<th${i?' class="n"':''}>${h}</th>`))+rows.map((r,i)=>`<tr${i===bestRow?' class="best"':''}>${r}</tr>`).join('')}
 function renderReport(){
   setPts();
-  $('#r-eyebrow').textContent=EYEBROW[D.clave]; $('#r-title').textContent=TITLE[D.clave]; $('#r-desc').textContent=DESC[D.clave];
+  $('#r-eyebrow').textContent=EYEBROW[D.clave]; $('#r-title').textContent=TITLE[D.clave]+(D.clave==='combinado'?' · '+YEAR:YEAR); $('#r-desc').textContent=DESC[D.clave];
   $('#m-period').textContent=D.first+' – '+D.last;
   $('#m-sample').textContent=D.n+' operaciones válidas de '+D.n_total+' ('+D.n_excl+' excluidas por calendario)';
   $('#m-file').textContent='Archivo: '+D.archivo+'.csv';
@@ -467,7 +480,7 @@ function renderReport(){
     D.excl_cats.map(c=>{const r=(REC[c.cat]||(()=>['n','—','']))(c);return `<tr><td style="white-space:nowrap">${c.cat}</td><td><span class="tag ${r[0]}">${r[1]}</span></td><td style="min-width:260px;color:var(--fg2)">${r[2]}</td></tr>`}).join('');
   $('#t-esc').innerHTML='<tr><th>Escenario</th><th class="n">Ops.</th><th class="n">R total</th><th class="n">PyG USD</th></tr>'+
     D.escenarios.map(e=>`<tr><td>${e.nombre}</td><td class="n">${e.n}</td><td class="n ${cls(e.R)}">${sg(e.R)}</td><td class="n ${cls(e.pnl)}">${sg(e.pnl)}</td></tr>`).join('')+
-    `<tr><td colspan="4" class="note">CPI (GBP) suma ${D.esc_gbp.n} operaciones (${D.esc_gbp.w} ganadoras, ${sg(D.esc_gbp.R)}R). CPI (USD) con ventana suma ${D.esc_cpiu.n} (${D.esc_cpiu.w} ganadoras, ${sg(D.esc_cpiu.R)}R). El 14/07 sigue fuera porque ese día también es feriado en Francia.</td></tr>`;
+    `<tr><td colspan="4" class="note">CPI (GBP) suma ${D.esc_gbp.n} operaciones (${D.esc_gbp.w} ganadoras, ${sg(D.esc_gbp.R)}R). CPI (USD) con ventana suma ${D.esc_cpiu.n} (${D.esc_cpiu.w} ganadoras, ${sg(D.esc_cpiu.R)}R).</td></tr>`;
   // lectura
   const beWR=100/(1+D.payoff), edge=D.wr-beWR;
   const Hs=D.hours.filter(h=>!h.franja.startsWith('09')); const hB=Hs.reduce((a,b)=>b.R>a.R?b:a), hW=Hs.reduce((a,b)=>b.R<a.R?b:a);
@@ -489,25 +502,38 @@ function renderReport(){
 }
 
 __COMPARE__
+__ANUAL_JS__
 
 /* ---------- Pestañas ---------- */
-const TABS=['combinado','envolvente','start','comparativa'];
+const TABS=['combinado','envolvente','start','comparativa','anual'];
 function show(k,push){
   if(!TABS.includes(k)) k='combinado';
   VIEW=k;
   TABS.forEach(t=>$('#tab-'+t).setAttribute('aria-selected',String(t===k)));
-  const cmp=k==='comparativa';
-  $('#report').hidden=cmp; $('#compare').hidden=!cmp;
-  if(cmp){
-    $('#m-period').textContent=DATA.combinado.first+' – '+DATA.combinado.last;
-    $('#m-sample').textContent='3 configuraciones del sistema MEC';
+  const cmp=k==='comparativa', anu=k==='anual';
+  $('#report').hidden=cmp||anu; $('#compare').hidden=!cmp; $('#anual').hidden=!anu;
+  document.querySelectorAll('.yr').forEach(b=>{b.disabled=anu;b.setAttribute('aria-pressed',String(!anu&&b.dataset.y===YEAR))});
+  $('#yr-note').textContent=anu?'Esta vista compara los dos años':'';
+  $('#h1').textContent='XAUUSD | Backtest '+(anu?'2025 vs 2026':YEAR);
+  $('#tab-envolvente').textContent='Envolvente | Backtest '+YEAR; $('#tab-start').textContent='START | Backtest '+YEAR;
+  if(anu){
+    $('#m-period').textContent=DATA['2025'].envolvente.first+' – '+DATA['2026'].envolvente.last;
+    $('#m-sample').textContent='Validación fuera de muestra: 2025 contra 2026';
     $('#m-file').textContent='Envolvente · START · Envolvente + START';
+    renderAnual();
+  } else if(cmp){
+    const Y=DATA[YEAR].combinado;
+    $('#m-period').textContent=Y.first+' – '+Y.last;
+    $('#m-sample').textContent='3 configuraciones del sistema MEC · '+YEAR;
+    $('#m-file').textContent='Envolvente · START · Envolvente + START';
+    $('#cmp-desc').textContent=`La muestra de ${YEAR} (${Y.first} a ${Y.last}), con el mismo calendario de restricciones y el mismo riesgo por operación, analizada con tres configuraciones: solo Envolvente, solo START y los dos modelos juntos (una operación a la vez).`;
     renderCompare();
-  } else { D=DATA[k]; renderReport(); }
+  } else { D=DATA[YEAR][k]; renderReport(); }
   if(push){try{history.replaceState(null,'','#'+k)}catch(e){}}
 }
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>show(b.dataset.k,true)));
-function rerender(){ if(VIEW==='comparativa') renderCompare(); else renderCharts(); }
+document.querySelectorAll('.yr').forEach(b=>b.addEventListener('click',()=>{YEAR=b.dataset.y;show(VIEW,false)}));
+function rerender(){ if(VIEW==='comparativa') renderCompare(); else if(VIEW==='anual') renderAnual(); else renderCharts(); }
 show((location.hash||'').slice(1)||'combinado',false);
 let rz; window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(rerender,150)});
 if(window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',rerender);

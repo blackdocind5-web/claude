@@ -4,11 +4,11 @@ Criterios que pidió Fabián para cada análisis de un CSV de TradingView. Aplic
 
 ## Flujo
 1. Filtrar cada CSV con `../mec_filtros/filtrar_trades.py` y trabajar solo con `<nombre>_validos.csv`.
-2. `python metricas.py` (modelos definidos en `MODELOS`: combinado, envolvente, start) → `datos.json`.
+2. `python metricas.py` (modelos por año en `MODELOS`: 2025 y 2026 × combinado, envolvente, start) → `datos.json` con `datos[año][modelo]` y `datos["anual"]` (comparación entre años, filtros probados en los dos años, reglas de riesgo, eventos), calculado en `anual.py`. Un año nuevo = agregarlo a `MODELOS` y su `calendario_AAAA.csv`; una regla solo se recomienda si mejora todos los años.
    Muestra vigente: archivos `XAU_m1_2026_CORREGIDO_*` (código con la identificación de patrones corregida). Los archivos sin "CORREGIDO" son la muestra sesgada anterior; no usarlos.
    La gestión (Reset, CHoCH en contra, cierre de fin de sesión) no se estudia ni se modifica: decisión de Fabián.
-3. `python build.py` arma `XAUUSD_Backtest_2026.html` desde `plantilla.html` + `comparativa.js` + `datos.json`.
-4. Publicar en el mismo enlace de siempre: https://claude.ai/artifact/8vaF1wPne8ThugaGpN1BjE (título "XAUUSD | Backtest 2026"; pestañas "Sistema MEC (Envolvente + START)", "Envolvente | Backtest 2026", "START | Backtest 2026" y "Comparativa y recomendación").
+3. `python build.py` arma `XAUUSD_Backtest_2026.html` desde `plantilla.html` + `comparativa.js` + `anual.html` + `anual.js` + `datos.json`.
+4. Publicar en el mismo enlace de siempre: https://claude.ai/artifact/8vaF1wPne8ThugaGpN1BjE (título "XAUUSD | Backtest 2026"; selector de año y pestañas "Sistema MEC (Envolvente + START)", "Envolvente | Backtest AAAA", "START | Backtest AAAA", "Comparativa y recomendación" y "2025 vs 2026").
 5. Entregar todo por el chat (enlace a la presentación y archivos). Fabián no tiene acceso a GitHub.
 6. La comparativa final es un análisis imparcial de consultor: qué modelo operar, horario, días, gestión, calendario y tamaño de riesgo, siempre advirtiendo sobre sobreoptimización y validación fuera de muestra.
 

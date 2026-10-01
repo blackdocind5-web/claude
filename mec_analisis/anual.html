@@ -1,0 +1,48 @@
+
+<div class="view-head"><span class="eyebrow">Validación fuera de muestra</span><h2>2025 vs 2026</h2><p>2025 es un año que no se usó para diseñar ninguna regla: sirve para comprobar si lo que funcionó en 2026 se sostiene. Cada año arranca con 1.000 USD, 1% de riesgo por operación y su propio calendario de restricciones.</p></div>
+
+<div class="verdict" id="a-verdict"></div>
+
+<section aria-labelledby="a-s1">
+  <div class="sec-head"><h2 id="a-s1">Indicadores clave por año</h2><p>“2 años” = las operaciones de 2025 y 2026 juntas</p></div>
+  <div class="panel tbl"><table class="cmp" id="t-a-kpi"></table></div>
+</section>
+
+<section aria-labelledby="a-s2">
+  <div class="sec-head"><h2 id="a-s2">Envolvente: curva de capital por año</h2><p>Eje horizontal: número de operación, para comparar la forma de las dos curvas</p></div>
+  <div class="panel">
+    <div class="legend"><span><i style="background:var(--s-start)"></i>2025</span><span><i style="background:var(--s-env)"></i>2026</span></div>
+    <div class="chart" id="c-a-eq"></div>
+  </div>
+</section>
+
+<section aria-labelledby="a-s3">
+  <div class="sec-head"><h2 id="a-s3">Por qué 2025 rindió menos</h2><p>Envolvente, operaciones válidas</p></div>
+  <div class="panel tbl"><table id="t-a-causas"></table></div>
+  <div class="grid2">
+    <div class="panel"><h3>R por mes (Envolvente)</h3><div class="legend"><span><i style="background:var(--s-start)"></i>2025</span><span><i style="background:var(--s-env)"></i>2026</span></div><div class="chart" id="c-a-mes"></div></div>
+    <div class="panel"><ul class="findings" id="a-causas-txt"></ul></div>
+  </div>
+</section>
+
+<section aria-labelledby="a-s4">
+  <div class="sec-head"><h2 id="a-s4">Filtros de operativa probados en los dos años</h2><p>Solo un filtro que mejora los dos años es robusto</p></div>
+  <div class="panel tbl"><table class="cmp" id="t-a-filtros"></table><p class="note">Diferencia: R total del filtro menos R total de las reglas actuales, en cada año. La tendencia de 20 días se aproxima con el precio medio de entrada de las operaciones de los 20 días previos; es una medida tosca que habría que reemplazar por una media móvil diaria en Pine Script.</p></div>
+</section>
+
+<section aria-labelledby="a-s5">
+  <div class="sec-head"><h2 id="a-s5">Gestión del riesgo</h2><p>Envolvente, misma secuencia de operaciones con distintas reglas de tamaño</p></div>
+  <div class="panel tbl"><table class="cmp" id="t-a-riesgo"></table><p class="note">Rendimiento con interés compuesto sobre 1.000 USD. La regla por caída baja el riesgo a la mitad mientras el capital está 5% o más por debajo de su máximo, y lo vuelve a 1% cuando marca un nuevo máximo.</p></div>
+</section>
+
+<section aria-labelledby="a-s6">
+  <div class="sec-head"><h2 id="a-s6">Calendario de noticias con los dos años</h2><p>Envolvente: operaciones que el calendario excluyó, por evento</p></div>
+  <div class="panel tbl"><table class="cmp" id="t-a-ev"></table></div>
+  <div class="panel tbl"><h3>Días con regla parcial: operaciones que sí se tomaron</h3><table class="cmp" id="t-a-parc"></table></div>
+</section>
+
+<section aria-labelledby="a-s7">
+  <div class="sec-head"><h2 id="a-s7">Recomendación final</h2><p>Qué operar, con qué límites y qué esperar</p></div>
+  <ul class="findings" id="a-reco"></ul>
+  <div class="panel"><h3>Plan de acción</h3><ol class="plan" id="a-plan"></ol></div>
+</section>
