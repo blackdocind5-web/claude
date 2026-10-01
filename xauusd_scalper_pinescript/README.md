@@ -912,7 +912,7 @@ tocar los defaults ya validados en oro).
   backtesting -- **sigue siendo una prueba, no un cambio definitivo**, a la
   espera de que Fabián decida si lo deja así, lo revierte o lo integra.
 
-- [ ] **Fase 4 (backtesting) — color de la vela de indecisión del patrón
+- [x] **Fase 4 (backtesting) — color de la vela de indecisión del patrón
   Start (01/10)**: bug encontrado por Fabián al usar el filtro
   `habilitarEnvolvente`/`habilitarStart` del 29/09 -- caso SELL XAUUSD
   01/10 08:59 clasificado como patrón Start cuando en realidad era un
@@ -928,8 +928,31 @@ tocar los defaults ya validados en oro).
   (indecisión bajista), antes de evaluar la forma del cuerpo. El caso
   reportado (indecisión alcista en una entrada SELL) ahora se reclasifica
   correctamente como candidato a patrón Envolvente en vez de Start.
-  Implementado en `fase4_strategy_backtest.pine`. **Validación pendiente
-  por Fabián.**
+  Implementado en `fase4_strategy_backtest.pine`. Fabián verificó los casos
+  erróneos del patrón Start y confirmó que el código ya los identifica
+  correctamente.
+
+- [ ] **Fase 4 (backtesting) — prueba temporal: sin límite diario de
+  operaciones (01/10)**: Fabián quiere evaluar el rendimiento del sistema
+  si se ejecutan TODOS los trades que aparezcan en la sesión, frenando la
+  operativa por TIEMPO (fin de sesión) en vez de por RESULTADO -- hoy el
+  límite diario (regla 5 de `procesarSesionTrade`) corta la sesión apenas
+  se alcanza "1 TP" o "1 SL + 2do intento (1 TP o 2 SL)". Fix: nuevo toggle
+  `sinLimiteDiario` (grupo "Backtest — Prueba: sin límite diario de
+  operaciones (temporal)", Sección 6C, default `false`). Activado,
+  `cerradaOut` deja de fijarse en `true` por TP o por el 2do SL (regla 2),
+  y `puedeBuy`/`puedeSell` (regla 5) dejan de exigir `senalesOut < 2` --
+  cada señal MEC nueva abre un trade mientras no haya ya uno abierto en el
+  MISMO sentido (el Hedge sigue cerrando el anterior para abrir el nuevo
+  exactamente igual que hoy). El corte por tiempo ya era estructural y no
+  hizo falta tocarlo: las entradas nuevas siempre exigieron `enEstaSesion`,
+  así que al terminar la sesión (09:01 NY para Pre-NY/NY) la apertura deja
+  de cumplirse sola. Combinable con `dejarCorrerHastaSLTP` (30/09) -- son
+  dos mecanismos independientes (ese otro toggle decide qué pasa con un
+  trade que queda abierto al cierre de sesión). Apagado (default), el
+  comportamiento es idéntico al actual. Implementado en
+  `fase4_strategy_backtest.pine`. **Validación pendiente por Fabián --
+  prueba temporal, no definitiva.**
 
 ## Decisiones de diseño (confirmadas con Fabián)
 

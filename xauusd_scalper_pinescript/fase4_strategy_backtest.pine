@@ -225,6 +225,26 @@ strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=1
 // alcista en una entrada SELL) ahora se reclasifica correctamente como
 // candidato a patrón Envolvente en vez de Start.
 //
+// Prueba temporal: sin límite diario de operaciones (01/10, a pedido de
+// Fabián -- quiere evaluar el rendimiento del sistema si se ejecutan TODOS
+// los trades que aparezcan en la sesión, frenando la operativa por TIEMPO
+// en vez de por RESULTADO): nuevo toggle `sinLimiteDiario` (grupo "Backtest
+// — Prueba: sin límite diario de operaciones (temporal)", Sección 6C). Hoy
+// el límite diario (regla 5 de `procesarSesionTrade`, "1 TP" o "1 SL + 2do
+// intento (1 TP o 2 SL)") corta la sesión apenas se alcanza alguno de esos
+// resultados. Activado el toggle, `cerradaOut` deja de fijarse en true por
+// TP o por el 2do SL (regla 2) y `puedeBuy`/`puedeSell` (regla 5) dejan de
+// exigir `senalesOut < 2` -- cada señal MEC nueva abre un trade mientras no
+// haya ya uno abierto en el MISMO sentido (el Hedge sigue cerrando el
+// anterior para abrir el nuevo exactamente igual que hoy). El corte por
+// TIEMPO ya es estructural y no hizo falta tocarlo: las entradas nuevas
+// siempre exigieron `enEstaSesion`, así que en cuanto termina la sesión
+// (09:01 NY para Pre-NY/NY) la apertura deja de cumplirse sola. Combinable
+// con `dejarCorrerHastaSLTP` (si un trade queda abierto al cierre de
+// sesión, ese otro toggle decide si se cierra o se arrastra) -- son dos
+// mecanismos independientes. Apagado (default), el comportamiento es
+// idéntico al actual. Es una prueba, no un cambio permanente.
+//
 // Sesión "Wall Street" (09:30-11:00 EST, agregada 16/09 para backtestear
 // índices: Nasdaq, S&P 500, Dow Jones): a diferencia de Pre-NY/NY/Asia, que
 // son mutuamente excluyentes, esta se SUPERPONE con la sesión NY (09:00-
@@ -828,7 +848,7 @@ tpSell = not na(distanciaFinalSell) ? close - distanciaFinalSell * RR_TP * (1 - 
 //      (señal fantasma). Este fix resolvió el caso reportado en EURUSD; el
 //      cierre tardío en GBPUSD/AUDUSD tenía una causa distinta -- ver el
 //      fix del 18/09 en la regla 2.
-procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tpBuyIn, slSellIn, tpSellIn, tendenciaActual, esCambioEstrAlto, esCambioEstrBajo, senalesIn, cerradaIn, dirIn, slIn, tpIn, hedgeFlagIn, habilitadaEjecucion, qtyBuyDisponible, qtySellDisponible, dejarCorrerHastaSLTP) =>
+procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tpBuyIn, slSellIn, tpSellIn, tendenciaActual, esCambioEstrAlto, esCambioEstrBajo, senalesIn, cerradaIn, dirIn, slIn, tpIn, hedgeFlagIn, habilitadaEjecucion, qtyBuyDisponible, qtySellDisponible, dejarCorrerHastaSLTP, sinLimiteDiario) =>
     senalesOut = senalesIn
     cerradaOut = cerradaIn
     dirOut = dirIn
@@ -878,17 +898,18 @@ procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tp
         alcanzoTP = dirOut == "BUY" ? high >= tpOut : low <= tpOut
         alcanzoSL = dirOut == "BUY" ? low <= slOut  : high >= slOut
         if alcanzoTP
-            cerradaOut := true
             cerrarBroker := true
             motivoCierre := "TP alcanzado"
             dirOut := na
             hedgeFlagOut := false
+            if not sinLimiteDiario
+                cerradaOut := true
         else if alcanzoSL
             cerrarBroker := true
             motivoCierre := "SL alcanzado"
             dirOut := na
             hedgeFlagOut := false
-            if senalesOut >= 2
+            if senalesOut >= 2 and not sinLimiteDiario
                 cerradaOut := true
 
     // 3) fin de sesión con trade abierto -- arrastre o cierre según estructura
@@ -912,10 +933,13 @@ procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tp
             dirOut := na
 
     // 5) señal nueva -- límite diario + Hedge Position, igual que el indicador
+    // (el límite diario se suprime con `sinLimiteDiario`, ver comentario largo
+    // junto a ese input más abajo -- la excepción de "tercer hedge encadenado"
+    // deja de hacer falta en ese caso, ya no hay un conteo que desbordar)
     tercerHedgeBuyLocal  = senalesOut == 2 and not na(dirOut) and dirOut == "SELL" and hedgeFlagOut
     tercerHedgeSellLocal = senalesOut == 2 and not na(dirOut) and dirOut == "BUY"  and hedgeFlagOut
-    puedeBuy  = not cerradaOut and ((senalesOut < 2 and (na(dirOut) or dirOut == "SELL")) or tercerHedgeBuyLocal)
-    puedeSell = not cerradaOut and ((senalesOut < 2 and (na(dirOut) or dirOut == "BUY"))  or tercerHedgeSellLocal)
+    puedeBuy  = not cerradaOut and (sinLimiteDiario ? (na(dirOut) or dirOut == "SELL") : ((senalesOut < 2 and (na(dirOut) or dirOut == "SELL")) or tercerHedgeBuyLocal))
+    puedeSell = not cerradaOut and (sinLimiteDiario ? (na(dirOut) or dirOut == "BUY")  : ((senalesOut < 2 and (na(dirOut) or dirOut == "BUY"))  or tercerHedgeSellLocal))
 
     if enEstaSesion and habilitadaEjecucion and qtyBuyDisponible and mecBuy and puedeBuy
         esHedgeEsta = not na(dirOut) and dirOut == "SELL"
@@ -984,6 +1008,30 @@ habilitarStart = input.bool(true, "Habilitar señales por patrón Start", group=
 // idéntico al actual.
 grpCierreSesion = "Backtest — Prueba: arrastre sin cierre forzado (temporal)"
 dejarCorrerHastaSLTP = input.bool(false, "PRUEBA: no cerrar por fin de sesión ni por CHoCH en arrastre -- dejar correr todo trade abierto hasta SL o TP (no afecta Hedge Position)", group=grpCierreSesion)
+
+// -- prueba temporal (01/10, a pedido de Fabián -- quiere evaluar el
+// rendimiento del sistema si se ejecutan TODOS los trades que aparezcan en
+// la sesión, frenando la operativa por TIEMPO (fin de sesión) en vez de por
+// RESULTADO): hoy el límite diario (regla 5 de `procesarSesionTrade`, "1
+// TP" o "1 SL + 2do intento (1 TP o 2 SL)") corta la sesión apenas se
+// alcanza alguno de esos resultados -- `cerradaOut` queda en true y no se
+// abre nada más ese día, aunque sigan apareciendo señales MEC válidas y la
+// sesión siga activa. Con el toggle activado, `cerradaOut` deja de fijarse
+// en true por TP o por el 2do SL (Regla 2) y `puedeBuy`/`puedeSell` (Regla
+// 5) dejan de exigir `senalesOut < 2` -- cada señal MEC nueva abre un trade
+// mientras no haya ya uno abierto en el MISMO sentido (la condición
+// `na(dirOut) or dirOut == contrario` se mantiene igual, así que un Hedge
+// sigue cerrando el anterior para abrir el nuevo exactamente igual que
+// hoy). El corte por TIEMPO ya es estructural y no hace falta tocarlo: las
+// entradas nuevas siempre exigieron `enEstaSesion`, así que en cuanto
+// termina la sesión (09:01 NY para Pre-NY/NY) la condición de apertura dejó
+// de cumplirse sola -- nunca hizo falta un límite de resultado para eso.
+// Combinable con `dejarCorrerHastaSLTP` (si un trade queda abierto al
+// cierre de sesión, ese otro toggle decide si se cierra o se arrastra) --
+// son dos mecanismos independientes. Apagado (default), el comportamiento
+// es idéntico al actual.
+grpLimiteDiario = "Backtest — Prueba: sin límite diario de operaciones (temporal)"
+sinLimiteDiario = input.bool(false, "PRUEBA: quitar el límite diario de operaciones (1 TP, o 1 SL + 2do intento) -- ejecutar todos los trades de la sesión hasta que termine por tiempo", group=grpLimiteDiario)
 
 diaSemanaNY = dayofweek(time, "America/New_York")
 diaHabilitado = (diaSemanaNY == dayofweek.sunday and habilitarDomingo) or (diaSemanaNY == dayofweek.monday and habilitarLunes) or (diaSemanaNY == dayofweek.tuesday and habilitarMartes) or (diaSemanaNY == dayofweek.wednesday and habilitarMiercoles) or (diaSemanaNY == dayofweek.thursday and habilitarJueves) or (diaSemanaNY == dayofweek.friday and habilitarViernes)
@@ -1061,7 +1109,7 @@ var string idActualAsia = "Asia_0"
 var int contadorWallStreet = 0
 var string idActualWallStreet = "WallStreet_0"
 
-[senalesPreNYOut, cerradaPreNYOut, dirPreNYOut, slPreNYOut, tpPreNYOut, hedgePreNYOut, abrirBuyPreNY, abrirSellPreNY, cerrarBrokerPreNY, motivoPreNY] = procesarSesionTrade(enPreNY, inicioPreNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesPreNY, cerradaPreNY, dirPreNY, slPreNY, tpPreNY, hedgePreNY, habilitarPreNY, qtyBuyDisponible, qtySellDisponible, dejarCorrerHastaSLTP)
+[senalesPreNYOut, cerradaPreNYOut, dirPreNYOut, slPreNYOut, tpPreNYOut, hedgePreNYOut, abrirBuyPreNY, abrirSellPreNY, cerrarBrokerPreNY, motivoPreNY] = procesarSesionTrade(enPreNY, inicioPreNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesPreNY, cerradaPreNY, dirPreNY, slPreNY, tpPreNY, hedgePreNY, habilitarPreNY, qtyBuyDisponible, qtySellDisponible, dejarCorrerHastaSLTP, sinLimiteDiario)
 senalesPreNY := senalesPreNYOut
 cerradaPreNY := cerradaPreNYOut
 dirPreNY := dirPreNYOut
@@ -1069,7 +1117,7 @@ slPreNY := slPreNYOut
 tpPreNY := tpPreNYOut
 hedgePreNY := hedgePreNYOut
 
-[senalesNYOut, cerradaNYOut, dirNYOut, slNYOut, tpNYOut, hedgeNYOut, abrirBuyNY, abrirSellNY, cerrarBrokerNY, motivoNY] = procesarSesionTrade(enNY, inicioNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesNY, cerradaNY, dirNY, slNY, tpNY, hedgeNY, habilitarNY, qtyBuyDisponible, qtySellDisponible, dejarCorrerHastaSLTP)
+[senalesNYOut, cerradaNYOut, dirNYOut, slNYOut, tpNYOut, hedgeNYOut, abrirBuyNY, abrirSellNY, cerrarBrokerNY, motivoNY] = procesarSesionTrade(enNY, inicioNY, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesNY, cerradaNY, dirNY, slNY, tpNY, hedgeNY, habilitarNY, qtyBuyDisponible, qtySellDisponible, dejarCorrerHastaSLTP, sinLimiteDiario)
 senalesNY := senalesNYOut
 cerradaNY := cerradaNYOut
 dirNY := dirNYOut
@@ -1077,7 +1125,7 @@ slNY := slNYOut
 tpNY := tpNYOut
 hedgeNY := hedgeNYOut
 
-[senalesAsiaOut, cerradaAsiaOut, dirAsiaOut, slAsiaOut, tpAsiaOut, hedgeAsiaOut, abrirBuyAsia, abrirSellAsia, cerrarBrokerAsia, motivoAsia] = procesarSesionTrade(enAsia, inicioAsia, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesAsia, cerradaAsia, dirAsia, slAsia, tpAsia, hedgeAsia, habilitarAsia, qtyBuyDisponible, qtySellDisponible, dejarCorrerHastaSLTP)
+[senalesAsiaOut, cerradaAsiaOut, dirAsiaOut, slAsiaOut, tpAsiaOut, hedgeAsiaOut, abrirBuyAsia, abrirSellAsia, cerrarBrokerAsia, motivoAsia] = procesarSesionTrade(enAsia, inicioAsia, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesAsia, cerradaAsia, dirAsia, slAsia, tpAsia, hedgeAsia, habilitarAsia, qtyBuyDisponible, qtySellDisponible, dejarCorrerHastaSLTP, sinLimiteDiario)
 senalesAsia := senalesAsiaOut
 cerradaAsia := cerradaAsiaOut
 dirAsia := dirAsiaOut
@@ -1085,7 +1133,7 @@ slAsia := slAsiaOut
 tpAsia := tpAsiaOut
 hedgeAsia := hedgeAsiaOut
 
-[senalesWallStreetOut, cerradaWallStreetOut, dirWallStreetOut, slWallStreetOut, tpWallStreetOut, hedgeWallStreetOut, abrirBuyWallStreet, abrirSellWallStreet, cerrarBrokerWallStreet, motivoWallStreet] = procesarSesionTrade(enWallStreet, inicioWallStreet, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesWallStreet, cerradaWallStreet, dirWallStreet, slWallStreet, tpWallStreet, hedgeWallStreet, habilitarWallStreet, qtyBuyDisponible, qtySellDisponible, dejarCorrerHastaSLTP)
+[senalesWallStreetOut, cerradaWallStreetOut, dirWallStreetOut, slWallStreetOut, tpWallStreetOut, hedgeWallStreetOut, abrirBuyWallStreet, abrirSellWallStreet, cerrarBrokerWallStreet, motivoWallStreet] = procesarSesionTrade(enWallStreet, inicioWallStreet, mecBuyGate, mecSellGate, slBuy, tpBuy, slSell, tpSell, tendencia, esCambioEstructuraAlto, esCambioEstructuraBajo, senalesWallStreet, cerradaWallStreet, dirWallStreet, slWallStreet, tpWallStreet, hedgeWallStreet, habilitarWallStreet, qtyBuyDisponible, qtySellDisponible, dejarCorrerHastaSLTP, sinLimiteDiario)
 senalesWallStreet := senalesWallStreetOut
 cerradaWallStreet := cerradaWallStreetOut
 dirWallStreet := dirWallStreetOut
