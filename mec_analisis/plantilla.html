@@ -1,4 +1,4 @@
-<title>XAUUSD | Backtest 2026</title>
+<title>__TITULO__</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,500..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -112,7 +112,7 @@ details summary{cursor:pointer;color:var(--fg2);font-size:14px}
 
 <div class="wrap">
 <header>
-  <span class="eyebrow">XAUUSD · M1 · Sesión Pre NY 07:00–09:00 NY · Sistema MEC</span>
+  <span class="eyebrow">XAUUSD · M1 · Sesión Pre NY 07:00–09:00 NY · Sistema MEC__MUESTRA__</span>
   <h1 id="h1">XAUUSD | Backtest 2026</h1>
   <div class="meta">
     <span>Período <b id="m-period"></b></span>
@@ -131,7 +131,7 @@ details summary{cursor:pointer;color:var(--fg2);font-size:14px}
   <button role="tab" id="tab-envolvente" data-k="envolvente" aria-controls="report">Envolvente | Backtest 2026</button>
   <button role="tab" id="tab-start" data-k="start" aria-controls="report">START | Backtest 2026</button>
   <button role="tab" id="tab-comparativa" data-k="comparativa" aria-controls="compare">Comparativa y recomendación</button>
-  <button role="tab" id="tab-anual" data-k="anual" aria-controls="anual">2025 vs 2026</button>
+  <button role="tab" id="tab-anual" data-k="anual" aria-controls="anual">2025 vs 2026</button>__EXTRA_TAB__
 </nav>
 
 <div id="report" class="view" role="tabpanel">
@@ -273,11 +273,12 @@ details summary{cursor:pointer;color:var(--fg2);font-size:14px}
 </div>
 
 <div id="anual" class="view" role="tabpanel" hidden>__ANUAL_HTML__</div>
+__EXTRA_VIEW__
 
 <section aria-labelledby="s-met">
   <div class="sec-head"><h2 id="s-met">Metodología</h2></div>
   <div class="panel"><ul class="note" style="margin:0;padding-left:18px;display:grid;gap:4px">
-    <li>Fuente: listas de operaciones exportadas del Strategy Tester de TradingView, horario de Nueva York. 2025: XAU_m1_2025_Envolvente_y_START, XAU_m1_2025_Envolvente y XAU_m1_2025_START. 2026: XAU_m1_2026_CORREGIDO_Envolvente_y_START, XAU_m1_2026_CORREGIDO_Envolvente y XAU_m1_2026_CORREGIDO_START. Cada año arranca con 1.000 USD.</li>
+    <li>__FUENTES__</li>
     <li>Filtro: calendario de restricciones de cada año (feriados bancarios, NFP, CPI USD/GBP, discursos en Pre NY → día completo; PIB final trimestral → día completo; BCE → solo entradas 07:00–07:59; ADP → sin aperturas 08:05–08:18; Core PCE → sin aperturas 08:20–08:33).</li>
     <li>La curva de capital suma el PyG en USD de las operaciones válidas sobre 1.000 USD. Los tamaños vienen del backtest original, así que el PyG en USD de cada operación es el mismo que en TradingView.</li>
     <li>R = PyG / (0,9% del capital antes de la operación). Operación ganadora = PyG &gt; 0. R promedio semanal = R total / semanas del período.</li>
@@ -290,6 +291,8 @@ details summary{cursor:pointer;color:var(--fg2);font-size:14px}
 
 <script>
 const DATA = __DATA__;
+const H1BASE = '__H1BASE__';
+__EXTRA_JS__
 let YEAR = '2026', D = DATA[YEAR].combinado, VIEW = 'combinado';
 const $ = s => document.querySelector(s);
 const fmt = (v, d=2) => (v??0).toLocaleString('es-AR',{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -408,6 +411,7 @@ const REC={
  'ADP: entrada 08:05–08:18':c=>['r','MANTENER',`La regla es barata: solo bloquea 14 minutos alrededor del dato. En este modelo: ${st_(c)}.`],
  'PIB final (USD)':c=>['r','MANTENER',`Sale a las 08:30 NY. Suele ser la revisión final del PIB y por sí sola mueve poco, pero en 2026 coincidió con el Core PCE. En este modelo: ${st_(c)}. En 2025 y 2026 juntos, Envolvente pierde esos días: mantener excluido.`],
  'Core PCE: entrada 08:20–08:33':c=>['r','MANTENER',`Bloqueo de 10 minutos antes a 3 minutos después del dato de las 08:30. En este modelo: ${st_(c)}.`],
+ 'PPI (USD)':c=>['r','MANTENER',`PPI y Core PPI salen a las 08:30 NY, dentro de la sesión. En este modelo: ${st_(c)}.`],
  'NFP (USD)':c=>['r','MANTENER',`A las 08:30 hay saltos de precio y spreads que el backtest no simula; el riesgo real es mayor que el que muestra el dato. En este modelo: ${st_(c)}.`],
 };
 function statTable(id,head,rows,bestRow){$(id).innerHTML=row(head.map((h,i)=>`<th${i?' class="n"':''}>${h}</th>`))+rows.map((r,i)=>`<tr${i===bestRow?' class="best"':''}>${r}</tr>`).join('')}
@@ -505,16 +509,19 @@ __COMPARE__
 __ANUAL_JS__
 
 /* ---------- Pestañas ---------- */
-const TABS=['combinado','envolvente','start','comparativa','anual'];
+const EXTRA=window.EXTRA_VIEWS||{};
+const TABS=['combinado','envolvente','start','comparativa','anual',...Object.keys(EXTRA)];
 function show(k,push){
   if(!TABS.includes(k)) k='combinado';
   VIEW=k;
   TABS.forEach(t=>$('#tab-'+t).setAttribute('aria-selected',String(t===k)));
-  const cmp=k==='comparativa', anu=k==='anual';
-  $('#report').hidden=cmp||anu; $('#compare').hidden=!cmp; $('#anual').hidden=!anu;
+  const cmp=k==='comparativa', anu=k==='anual', ext=EXTRA[k];
+  $('#report').hidden=cmp||anu||!!ext; $('#compare').hidden=!cmp; $('#anual').hidden=!anu;
+  Object.keys(EXTRA).forEach(x=>{$('#'+x).hidden=x!==k});
+  if(ext){ document.querySelectorAll('.yr').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.y===YEAR))); $('#yr-note').textContent=ext.nota||''; $('#h1').textContent=ext.h1; ext.render(); if(push){try{history.replaceState(null,'','#'+k)}catch(e){}} return; }
   document.querySelectorAll('.yr').forEach(b=>{b.disabled=anu;b.setAttribute('aria-pressed',String(!anu&&b.dataset.y===YEAR))});
   $('#yr-note').textContent=anu?'Esta vista compara los dos años':'';
-  $('#h1').textContent='XAUUSD | Backtest '+(anu?'2025 vs 2026':YEAR);
+  $('#h1').textContent=H1BASE+(anu?'2025 vs 2026':YEAR);
   $('#tab-envolvente').textContent='Envolvente | Backtest '+YEAR; $('#tab-start').textContent='START | Backtest '+YEAR;
   if(anu){
     $('#m-period').textContent=DATA['2025'].envolvente.first+' – '+DATA['2026'].envolvente.last;
@@ -533,7 +540,7 @@ function show(k,push){
 }
 document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>show(b.dataset.k,true)));
 document.querySelectorAll('.yr').forEach(b=>b.addEventListener('click',()=>{YEAR=b.dataset.y;show(VIEW,false)}));
-function rerender(){ if(VIEW==='comparativa') renderCompare(); else if(VIEW==='anual') renderAnual(); else renderCharts(); }
+function rerender(){ if(EXTRA[VIEW]) EXTRA[VIEW].render(); else if(VIEW==='comparativa') renderCompare(); else if(VIEW==='anual') renderAnual(); else renderCharts(); }
 show((location.hash||'').slice(1)||'combinado',false);
 let rz; window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(rerender,150)});
 if(window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',rerender);

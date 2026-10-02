@@ -10,6 +10,7 @@ from collections import OrderedDict, defaultdict
 
 CAP = 1000.0
 TP_FRAC = 0.009  # 1R = 1 TP = 0,9% del capital antes de la operación
+MUESTRAS = {}
 MODELOS = {
     "2025": [("combinado", "Envolvente + START", "XAU_m1_2025_Envolvente_y_START"),
              ("envolvente", "Envolvente", "XAU_m1_2025_Envolvente"),
@@ -18,6 +19,11 @@ MODELOS = {
              ("envolvente", "Envolvente", "XAU_m1_2026_CORREGIDO_Envolvente"),
              ("start", "START", "XAU_m1_2026_CORREGIDO_START")],
 }
+MUESTRAS["limitada"] = (MODELOS, "datos.json")
+MUESTRAS["sin_limite"] = ({
+    a: [("combinado", "Envolvente + START", f"sin_limite/SL_Envolvente_y_START_{a}"),
+        ("envolvente", "Envolvente", f"sin_limite/SL_Envolvente_{a}"),
+        ("start", "START", f"sin_limite/SL_START_{a}")] for a in ("2025", "2026")}, "datos_sin_limite.json")
 MES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
 DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
 CAL = defaultdict(list)
@@ -74,6 +80,7 @@ def categorias(t):
             if "(GBP)" in e: out.append("CPI (GBP)")
             if "Discurso" in e: out.append("Discurso Trump / Warsh")
             if "Final GDP" in e: out.append("PIB final (USD)")
+            if "PPI" in e: out.append("PPI (USD)")
             if "Feriado" in e:
                 fer = e[e.index("Feriado"):]
                 if "EE. UU." in fer: out.append("Feriado EE. UU.")
@@ -288,9 +295,12 @@ def procesar_anio(anio):
 
 
 if __name__ == "__main__":
-    import anual
+    import anual, sys
+    muestra = sys.argv[1] if len(sys.argv) > 1 else "limitada"
+    MODELOS, SALIDA = MUESTRAS[muestra]
     datos = {}; OPS = {}
     for anio in MODELOS:
         datos[anio], OPS[anio] = procesar_anio(anio)
     datos["anual"] = anual.comparar(datos, OPS)
-    json.dump(datos, open("datos.json", "w"), ensure_ascii=False)
+    datos["muestra"] = muestra
+    json.dump(datos, open(SALIDA, "w"), ensure_ascii=False)

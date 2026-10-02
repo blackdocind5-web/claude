@@ -1,0 +1,55 @@
+
+<div class="view-head"><span class="eyebrow">Gestión de riesgo propuesta</span><h2>Escalera de riesgo</h2><p>Después de cada operación perdedora, la siguiente se opera con el doble de riesgo. Cuando el resultado acumulado de la escalera vuelve a ser positivo, se reinicia al riesgo base. Se deja de operar en el día al alcanzar el objetivo diario (1% o 2%). Tres perfiles: conservador (base 0,25%), moderado (0,5%) y agresivo (1%).</p></div>
+
+<div class="verdict" id="e-verdict"></div>
+
+<section aria-labelledby="e-s0">
+  <div class="sec-head"><h2 id="e-s0">Cómo se comporta la escalera con R:R 1:0,9</h2><p>En múltiplos del riesgo base</p></div>
+  <div class="grid2">
+    <div class="panel tbl"><table class="cmp" id="t-e-pasos"></table></div>
+    <div class="panel"><ul class="findings" id="e-pasos-txt"></ul></div>
+  </div>
+</section>
+
+<div class="yearbar"><span class="eyebrow">Modelo</span><div class="seg" id="e-mod"></div><span class="eyebrow">Período</span><div class="seg" id="e-per"></div></div>
+
+<section aria-labelledby="e-s1">
+  <div class="sec-head"><h2 id="e-s1">Resultados por perfil y objetivo diario</h2><p id="e-s1p"></p></div>
+  <div class="panel tbl"><table class="cmp" id="t-e-main"></table><p class="note">“Histórico”: las operaciones en el orden en que ocurrieron. “Simulaciones”: las mismas operaciones reordenadas al azar (manteniendo los días), para ver qué pasa si las rachas perdedoras llegan en otro momento. Ruina: la cuenta llega a cero. Riesgo fijo: el mismo riesgo base sin escalera y con el mismo objetivo diario.</p></div>
+</section>
+
+<section aria-labelledby="e-s2">
+  <div class="sec-head"><h2 id="e-s2">Curva de capital (Envolvente)</h2><p>Escala logarítmica · 1.000 USD iniciales</p></div>
+  <div class="panel">
+    <div class="yearbar"><span class="eyebrow">Objetivo diario</span><div class="seg" id="e-obj"></div></div>
+    <div class="legend"><span><i style="background:var(--s-comb)"></i>Conservador</span><span><i style="background:var(--s-env)"></i>Moderado</span><span><i style="background:var(--s-start)"></i>Agresivo</span></div>
+    <div class="chart" id="c-e-eq"></div>
+  </div>
+</section>
+
+<section aria-labelledby="e-s3">
+  <div class="sec-head"><h2 id="e-s3">Flujo de caja mensual (Envolvente)</h2><p id="e-s3p"></p></div>
+  <div class="panel">
+    <div class="yearbar"><span class="eyebrow">Perfil</span><div class="seg" id="e-perf"></div></div>
+    <div class="chart" id="c-e-mes"></div>
+  </div>
+</section>
+
+<section aria-labelledby="e-s4">
+  <div class="sec-head"><h2 id="e-s4">Rachas perdedoras: el riesgo real de la escalera</h2><p id="e-s4p"></p></div>
+  <div class="grid2">
+    <div class="panel tbl"><h3>Rachas observadas</h3><table class="cmp" id="t-e-rachas"></table></div>
+    <div class="panel tbl"><h3>Qué implica cada racha</h3><table class="cmp" id="t-e-impl"></table></div>
+  </div>
+  <div class="panel tbl"><h3>Las operaciones con más riesgo del período (Envolvente, objetivo 1%)</h3><table id="t-e-ops"></table></div>
+</section>
+
+<section aria-labelledby="e-s5">
+  <div class="sec-head"><h2 id="e-s5">Alternativa: escalera con tope (Envolvente)</h2><p>Si después del último escalón permitido se vuelve a perder, se acepta la pérdida y se reinicia al riesgo base</p></div>
+  <div class="panel tbl"><table class="cmp" id="t-e-tope"></table></div>
+</section>
+
+<section aria-labelledby="e-s6">
+  <div class="sec-head"><h2 id="e-s6">Recomendación</h2><p>Flujo de caja mensual con riesgo controlado</p></div>
+  <ul class="findings" id="e-reco"></ul>
+</section>

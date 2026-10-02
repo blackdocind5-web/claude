@@ -19,3 +19,9 @@ Criterios que pidió Fabián para cada análisis de un CSV de TradingView. Aplic
 - Patrones temporales: win rate y % ganado por día (lunes a viernes) y por franja de entrada (07:00–07:59, 08:00–08:59, 09:00+); mejor mes, mejor semana, duración promedio.
 - Operaciones excluidas: analizarlas por tipo de evento (NFP, CPI USD, CPI GBP, BCE, ADP, discursos, feriados EE. UU., Reino Unido, Europa continental) con recomendación. Advertir siempre que las muestras por evento son chicas y que habilitar un evento solo por su resultado es sobreoptimizar.
 - Idioma español, números con coma decimal y punto de miles, fechas DD/MM/AAAA, horario de Nueva York.
+
+## Segundo artefacto: escalera de riesgo
+- Muestra sin límite de operaciones por sesión: `sin_limite/SL_*_AAAA.csv` (separados por año desde los CSV `XAU_m1_2025-2026_SIN_LIMITE_OPERATIVA_*`).
+- `python metricas.py sin_limite` → `datos_sin_limite.json`; `python escalera.py` agrega la simulación de la escalera; `python build.py escalera` → `XAUUSD_Escalera_de_riesgo.html`.
+- Enlace: https://claude.ai/artifact/WgHcM8Ccd8tkD4K3TE1TAb (pestañas iguales al primero + "Escalera de riesgo").
+- Escalera: duplicar el riesgo tras cada pérdida, reiniciar al volver a positivo; una ganadora que no recupera mantiene el escalón; objetivo diario 1% o 2%; perfiles base 0,25%, 0,5% y 1%. Siempre informar el riesgo de ruina con simulaciones.

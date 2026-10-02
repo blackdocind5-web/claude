@@ -42,6 +42,19 @@ def stop_perdidas_dia(ts, k):
     return out
 
 
+def limite_sesion(ts):
+    """Límite de la estrategia original: se deja de operar en la sesión tras 1 ganadora o 2 perdedoras."""
+    out = []
+    for v in por_dia(ts).values():
+        g = p = 0
+        for t in v:
+            if g >= 1 or p >= 2: break
+            out.append(t)
+            if t["pnl"] > 0: g += 1
+            else: p += 1
+    return out
+
+
 def stop_semanal(ts, limite):
     out = []; wk = defaultdict(list)
     for t in sorted(ts, key=lambda t: t["ent"]): wk[t["ent"].isocalendar()[:2]].append(t)
@@ -79,6 +92,7 @@ def comparar(datos, OPS):
             ("viernes", "Sin operar los viernes", [t for t in E if t["ent"].weekday() != 4]),
             ("h7", "Solo entradas 07:00–07:59", [t for t in E if t["ent"].hour == 7]),
             ("h8", "Solo entradas 08:00–08:59", [t for t in E if t["ent"].hour == 8]),
+            ("sesion", "Límite por sesión: 1 TP o 2 SL", limite_sesion(E)),
             ("max1", "Máximo 1 operación por día", max_por_dia(E, 1)),
             ("stop1", "Cortar el día tras la 1.ª pérdida", stop_perdidas_dia(E, 1)),
             ("sem2", "Cortar la semana al llegar a −2R", stop_semanal(E, 2)),
@@ -124,7 +138,7 @@ def comparar(datos, OPS):
             dir={"Compras": g([t for t in E if t["dir"] == "BUY"]), "Ventas": g([t for t in E if t["dir"] == "SELL"])},
             hora={h: g([t for t in E if t["ent"].hour == hh]) for h, hh in (("07:00–07:59", 7), ("08:00–08:59", 8), ("09:00", 9))},
             dia={n: g([t for t in E if t["ent"].weekday() == i]) for i, n in enumerate(M.DIAS)},
-            orden={"1.ª del día": g([v[0] for v in dd.values()]), "2.ª o más (después de una pérdida)": g([x for v in dd.values() for x in v[1:]])},
+            orden={"1.ª del día": g([v[0] for v in dd.values()]), "2.ª o más del día": g([x for v in dd.values() for x in v[1:]])},
             dur={"Hasta 10 min": g([t for t in E if t["bars"] <= 10]), "11 a 30 min": g([t for t in E if 10 < t["bars"] <= 30]), "Más de 30 min": g([t for t in E if t["bars"] > 30])},
             precio=dict(ini=round(min(E, key=lambda t: t["ent"])["px"]), fin=round(max(E, key=lambda t: t["ent"])["px"]),
                         mn=round(min(t["px"] for t in E)), mx=round(max(t["px"] for t in E))),
