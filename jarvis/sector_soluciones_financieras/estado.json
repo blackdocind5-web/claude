@@ -1,0 +1,23 @@
+{
+  "sector": "Soluciones Financieras",
+  "reporta_a": "Dirección — Jarvis",
+  "ultima_actualizacion": "02/10/2026",
+  "fase_actual": "Fase 0 — Oficina (completa) → Fase 1 — Datos base",
+  "areas": {
+    "finanzas_personales": {
+      "responsable": "Jefe de sector",
+      "estado": "operativa con herramientas; faltan datos del usuario",
+      "onboarding_completado": false,
+      "posiciones_cargadas": 0
+    },
+    "trading": {
+      "responsable": "Fabi",
+      "estado": "por definir alcance, capital y reglas",
+      "capital_asignado": null,
+      "reglas_validadas": false
+    }
+  },
+  "pendientes_abiertos": 8,
+  "ideas_cargadas": 0,
+  "ultimo_control": {"diario": null, "semanal": null, "mensual": null}
+}
