@@ -19,7 +19,7 @@ def unidades(ts):
     return [dict(ent=t["ent"], sal=t["sal"], dia=t["ent"].date(), u=t["pnl"] / (0.01 * t["eq_bt"])) for t in sorted(ts, key=lambda t: t["ent"])]
 
 
-def simular(trades, base, objetivo, escalera=True, detalle=False, tope=None):
+def simular(trades, base, objetivo, escalera=True, detalle=False, tope=None, protocolo=False):
     E = 1000.0; pk = E; mdd = 0; k = 0; L = 0.0; ruina = False
     dia_actual = None; e_dia = E; parado = False
     max_k = 0; max_riesgo = 0; n = 0; w = 0; lvl_hist = defaultdict(int)
@@ -46,10 +46,12 @@ def simular(trades, base, objetivo, escalera=True, detalle=False, tope=None):
         curve.append((t["sal"], E))
         if escalera:
             L += pnl
-            if L > 0: k = 0; L = 0.0
+            if L > 0 or (protocolo and k == tope and L >= 0): k = 0; L = 0.0
             elif pnl < 0:
                 k += 1
-                if tope is not None and k > tope: k = 0; L = 0.0  # tope: se acepta la pérdida y se reinicia
+                if tope is not None and k > tope:
+                    if protocolo: k = tope            # protocolo: se mantiene el último escalón hasta recuperar todo
+                    else: k = 0; L = 0.0              # tope: se acepta la pérdida y se reinicia
         if (E - e_dia) / e_dia * 100 >= objetivo - 1e-9:
             parado = True
     if dia_actual is not None and e_dia > 0: dias[dia_actual] = (E - e_dia) / e_dia * 100
@@ -71,19 +73,61 @@ def simular(trades, base, objetivo, escalera=True, detalle=False, tope=None):
     return res
 
 
-def montecarlo(trades, base, objetivo, escalera=True, sims=3000, seed=11, tope=None):
+def montecarlo(trades, base, objetivo, escalera=True, sims=3000, seed=11, tope=None, protocolo=False, recup=False):
     """Reordena al azar los resultados (manteniendo la estructura de días) para medir el riesgo de ruina."""
     rnd = random.Random(seed); us = [t["u"] for t in trades]; out = []
     for _ in range(sims):
         rnd.shuffle(us)
         ts = [dict(t, u=u) for t, u in zip(trades, us)]
-        r = simular(ts, base, objetivo, escalera, tope=tope)
-        out.append((r["ret"], r["mdd"], r["ruina"], r["max_riesgo"]))
+        r = simular(ts, base, objetivo, escalera, tope=tope, protocolo=protocolo, detalle=recup)
+        if recup:
+            rc = recuperacion(r["curve"], ts)
+            out.append((r["ret"], r["mdd"], r["ruina"], r["max_riesgo"], rc["max_dias_bajo_agua"], rc["max_ops_bajo_agua"]))
+        else:
+            out.append((r["ret"], r["mdd"], r["ruina"], r["max_riesgo"]))
     rets = sorted(o[0] for o in out); dds = sorted(o[1] for o in out)
-    return dict(p_ruina=round(100 * sum(o[2] for o in out) / sims, 1), p_dd50=round(100 * sum(o[1] >= 50 for o in out) / sims, 1),
+    extra = {}
+    if recup:
+        dd_d = sorted(o[4] for o in out); dd_o = sorted(o[5] for o in out)
+        extra = dict(bajo_agua_dias_med=dd_d[sims // 2], bajo_agua_dias_p95=dd_d[sims * 19 // 20], bajo_agua_ops_med=dd_o[sims // 2], bajo_agua_ops_p95=dd_o[sims * 19 // 20])
+    return dict(**extra,p_ruina=round(100 * sum(o[2] for o in out) / sims, 1), p_dd50=round(100 * sum(o[1] >= 50 for o in out) / sims, 1),
                 p_dd30=round(100 * sum(o[1] >= 30 for o in out) / sims, 1), p_perdida=round(100 * sum(o[0] < 0 for o in out) / sims, 1),
                 ret_med=round(rets[sims // 2], 1), ret_p5=round(rets[sims // 20], 1), dd_med=round(dds[sims // 2], 1), dd_p95=round(dds[sims * 19 // 20], 1),
                 riesgo_max_p95=round(sorted(o[3] for o in out)[sims * 19 // 20], 1))
+
+
+def recuperacion(curve, trades=None):
+    """Tiempo para recuperar la caída máxima y el período más largo bajo el agua.
+    curve: [{t, eq}] tras cada operación. Días = días hábiles con operaciones del archivo entre pico y recuperación."""
+    pts = [(dt.datetime.strptime(c["t"], "%Y-%m-%d %H:%M"), c["eq"]) for c in curve]
+    pk = 1000.0; pk_i = -1; mdd = 0; ep = None; best_uw = (0, 0, None, None); cur_start = None
+    for i, (t, e) in enumerate(pts):
+        if e >= pk - 1e-9:
+            if cur_start is not None:
+                d0 = pts[cur_start][0] if cur_start >= 0 else pts[0][0]
+                uw = ((t.date() - d0.date()).days, i - cur_start)
+                if uw[0] > best_uw[0]: best_uw = (uw[0], uw[1], d0, t)
+                cur_start = None
+            pk = e; pk_i = i
+        else:
+            if cur_start is None: cur_start = pk_i
+            dd = (pk - e) / pk
+            if dd > mdd: mdd = dd; ep = dict(pico_i=pk_i, valle_i=i, pk=pk)
+    abierto = cur_start is not None
+    if abierto:
+        d0 = pts[cur_start][0] if cur_start >= 0 else pts[0][0]
+        uw = ((pts[-1][0].date() - d0.date()).days, len(pts) - 1 - cur_start)
+        if uw[0] > best_uw[0]: best_uw = (uw[0], uw[1], d0, None)
+    res = dict(max_dias_bajo_agua=best_uw[0], max_ops_bajo_agua=best_uw[1], bajo_agua_abierto=best_uw[3] is None and abierto)
+    if ep:
+        p = pts[ep["pico_i"]][0] if ep["pico_i"] >= 0 else pts[0][0]; v = pts[ep["valle_i"]][0]
+        rec = next(((t, i) for i, (t, e) in enumerate(pts) if i > ep["valle_i"] and e >= ep["pk"] - 1e-9), None)
+        res.update(mdd=round(mdd * 100, 2), pico=p.strftime("%d/%m/%Y"), valle=v.strftime("%d/%m/%Y"),
+                   recupera=rec[0].strftime("%d/%m/%Y") if rec else None,
+                   dias_pico_valle=(v.date() - p.date()).days, dias_valle_rec=(rec[0].date() - v.date()).days if rec else None,
+                   dias_total=(rec[0].date() - p.date()).days if rec else None,
+                   ops_total=(rec[1] - ep["pico_i"]) if rec else None)
+    return res
 
 
 def rachas(trades):

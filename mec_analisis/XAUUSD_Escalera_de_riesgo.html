@@ -876,6 +876,7 @@ function drawMonths(host){
 }
 function renderAnual(){
   const A=DATA.anual, E5=DATA['2025'].envolvente, E6=DATA['2026'].envolvente, T=A.dos_anios.envolvente;
+  const LIM=DATA.muestra!=='sin_limite', FL=A.filtros.filter(f=>!(LIM&&f.key==='sesion'));
   const Fk=k=>A.filtros.find(f=>f.key===k), d5=A.detalle['2025'], d6=A.detalle['2026'];
   const chg=(a,b)=>((b-a)/a*100);
   const sgn=v=>v>0?1:v<0?-1:0;
@@ -928,11 +929,11 @@ function renderAnual(){
   ].map(([c,t,x])=>`<li><span class="tag ${c}">${t}</span><p>${x}</p></li>`).join('');
   // filtros
   let hf='<tr><th>Filtro (Envolvente)</th><th class="n">2025 R</th><th class="n">Dif.</th><th class="n">2026 R</th><th class="n">Dif.</th><th class="n">R/op. 25 · 26</th><th class="n">Caída máx. 25 · 26</th><th>Veredicto</th></tr>';
-  A.filtros.forEach(x=>{const a=x['2025'], b=x['2026'], base=x.key==='base';
+  FL.forEach(x=>{const a=x['2025'], b=x['2026'], base=x.key==='base';
     const ver=base?'<span class="tag n">REFERENCIA</span>':x.robusto?'<span class="tag g">MEJORA LOS DOS AÑOS</span>':(x.dR[0]>0||x.dR[1]>0)?'<span class="tag y">SOLO UN AÑO</span>':'<span class="tag r">EMPEORA</span>';
     hf+=`<tr${base?' class="best"':''}><td>${x.nombre}</td><td class="n ${cls(a.R)}">${sg(a.R)}</td><td class="n ${cls(base?0:x.dR[0])}">${base?'':sg(x.dR[0])}</td><td class="n ${cls(b.R)}">${sg(b.R)}</td><td class="n ${cls(base?0:x.dR[1])}">${base?'':sg(x.dR[1])}</td><td class="n">${sg(a.R_avg,3)} · ${sg(b.R_avg,3)}</td><td class="n">−${fmt(a.mdd,1)}% · −${fmt(b.mdd,1)}%</td><td>${ver}</td></tr>`});
   $('#t-a-filtros').innerHTML=hf;
-  const rob=A.filtros.filter(x=>x.robusto);
+  const rob=FL.filter(x=>x.robusto);
   // riesgo: la regla con mejor relación rendimiento/caída en el peor de los dos años
   const ratio=r=>Math.min(r['2025'].ret/Math.max(r['2025'].mdd,0.1),r['2026'].ret/Math.max(r['2026'].mdd,0.1));
   const base0=A.riesgo[0], best=[...A.riesgo].sort((a,b)=>ratio(b)-ratio(a))[0];
@@ -957,8 +958,8 @@ function renderAnual(){
   const riesgoTxt=mejoraAmbos.length?`<b>${mejoraAmbos[0].nombre}.</b> Es la única regla probada que mejora el rendimiento de los dos años.`:`<b>Ninguna regla de tamaño mejora el rendimiento de los dos años.</b> La que mejor relación rendimiento/caída da en el peor año es “${best.nombre}” (2025: ${sg(best['2025'].ret)}% con −${fmt(best['2025'].mdd)}%; 2026: ${sg(best['2026'].ret)}% con −${fmt(best['2026'].mdd)}%). Si la caída de −${fmt(base0['2025'].mdd)}% del 1% fijo es tolerable, el 1% fijo rinde más.`;
   $('#a-reco').innerHTML=[
     [envBest?'g':'y','MODELO',envBest?`<b>Operar solo Envolvente.</b> Es el mejor de los tres en los dos años. START da ${sg(A.dos_anios.start.R)}R con los dos años juntos y el combinado rinde menos que Envolvente sola.`:'<b>Revisar el modelo:</b> Envolvente no es el mejor los dos años.'],
-    ['g','REGLAS',rob.length?`<b>Solo ${rob.length===1?'un filtro mejora':rob.length+' filtros mejoran'} los dos años:</b> ${rob.map(x=>`${x.nombre} (${sg(x.dR[0])}R y ${sg(x.dR[1])}R)`).join('; ')}. El resto de los ${A.filtros.length-1} filtros probados no se sostiene. Aplicar solo lo que mejore los dos años y tenga una razón de mercado.`:`<b>No cambiar reglas de entrada, horario, días ni calendario.</b> De los ${A.filtros.length-1} filtros probados, ninguno mejora los dos años.`],
-    ['y','LÍMITE POR SESIÓN',`<b>Límite de 1 TP o 2 SL por sesión:</b> ${sg(ses.dR[0])}R en 2025 y ${sg(ses.dR[1])}R en 2026 contra operar todo. ${ses.robusto?'Mejora los dos años: mantenerlo.':`${ses.dR[0]+ses.dR[1]>0?`Con los dos años juntos suma ${sg(ses.dR[0]+ses.dR[1])}R, pero no mejora los dos años.`:'No mejora.'}`} Cortar el día tras la primera pérdida: ${sg(stop1.dR[0])}R y ${sg(stop1.dR[1])}R.`],
+    ['g','REGLAS',rob.length?`<b>Solo ${rob.length===1?'un filtro mejora':rob.length+' filtros mejoran'} los dos años:</b> ${rob.map(x=>`${x.nombre} (${sg(x.dR[0])}R y ${sg(x.dR[1])}R)`).join('; ')}. El resto de los ${FL.length-1} filtros probados no se sostiene. Aplicar solo lo que mejore los dos años y tenga una razón de mercado.`:`<b>No cambiar reglas de entrada, horario, días ni calendario.</b> De los ${FL.length-1} filtros probados, ninguno mejora los dos años.`],
+    LIM?['g','LÍMITE POR SESIÓN',`<b>El límite de 1 TP o 2 SL por sesión ya está en esta muestra.</b> Cortar el día tras la primera pérdida: ${sg(stop1.dR[0])}R y ${sg(stop1.dR[1])}R contra las reglas actuales.`]:['y','LÍMITE POR SESIÓN',`<b>Límite de 1 TP o 2 SL por sesión:</b> ${sg(ses.dR[0])}R en 2025 y ${sg(ses.dR[1])}R en 2026 contra operar todo. ${ses.robusto?'Mejora los dos años: mantenerlo.':`${ses.dR[0]+ses.dR[1]>0?`Con los dos años juntos suma ${sg(ses.dR[0]+ses.dR[1])}R, pero no mejora los dos años.`:'No mejora.'}`} Cortar el día tras la primera pérdida: ${sg(stop1.dR[0])}R y ${sg(stop1.dR[1])}R.`],
     ['y','RIESGO',riesgoTxt+` Pausar y revisar si la caída llega a −${fmt(Math.ceil(T.mc95),0)}% (percentil 95 de los dos años).`],
     ['y','A DESARROLLAR',`<b>Filtro de tendencia.</b> Solo a favor de la tendencia de 20 días: ${sg(tend['2025'].R_avg,2)}R y ${sg(tend['2026'].R_avg,2)}R por operación, caída máxima −${fmt(tend['2025'].mdd,1)}% y −${fmt(tend['2026'].mdd,1)}%; cambia el R total en ${sg(tend.dR[0])}R y ${sg(tend.dR[1])}R. Vale la pena programarlo bien en Pine Script (media de 20 días en diario) y probarlo antes de aplicarlo.`],
     ['y','EXPECTATIVA',`<b>Qué esperar.</b> Con los dos años juntos: ${sg(T.R_avg,2)}R por operación y ${sg(T.R_week,2)}R por semana. Con 1% de riesgo son ≈${fmt(semP,2)}% por semana, alrededor de ${fmt(semP*52,0)}% al año, con caídas que pueden llegar a −${fmt(T.mc95,0)}%. Kelly con los dos años: ${fmt(k2*100,1)}%; el 1% equivale a 1/${fmt(k2*100,0)} de Kelly.`],
@@ -966,7 +967,7 @@ function renderAnual(){
   $('#a-plan').innerHTML=[
     `<b>Modelo y reglas:</b> ${envBest?'operar solo Envolvente':'revisar el modelo'}, ventana de 07:00 a 09:01 y los calendarios de restricciones tal como están${rob.length?`; evaluar ${rob.map(x=>x.nombre.toLowerCase()).join(' y ')}`:''}.`,
     `<b>Tamaño:</b> ${mejoraAmbos.length?mejoraAmbos[0].nombre:'1% por operación'}.`,
-    `<b>Límites:</b> ${ses.robusto?'mantener 1 TP o 2 SL por sesión':'decidir el límite por sesión según la tabla de filtros'}. Pausa y revisión si la caída llega a −${fmt(Math.ceil(T.mc95),0)}%.`,
+    `<b>Límites:</b> ${LIM?'mantener el límite de 1 TP o 2 SL por sesión':ses.robusto?'mantener 1 TP o 2 SL por sesión':'decidir el límite por sesión según la tabla de filtros'}. Pausa y revisión si la caída llega a −${fmt(Math.ceil(T.mc95),0)}%.`,
     `<b>START:</b> fuera del capital real; registrar sus señales en demo si querés seguir desarrollándolo.`,
     `<b>Próximo estudio:</b> programar en Pine Script un filtro de tendencia diario y correrlo sobre 2025 y 2026.`,
     `<b>Seguimiento:</b> actualizar este informe cada mes y comparar contra la expectativa de los dos años (${sg(T.R_avg,2)}R por operación).`,
