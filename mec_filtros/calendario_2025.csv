@@ -105,7 +105,15 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 16/12/2025;SIN_OPERAR;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP 2025
 17/12/2025;SIN_OPERAR;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025
 18/12/2025;SOLO_ENTRADA;07:00-08:00;EUR;BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference;confirmado;Captura FF BCE 2025
+22/12/2025;SIN_OPERAR;;USD/GBP/EUR;Receso de fin de año (22/12/2025 al 16/01/2026, sin operar);confirmado;Decisión de Fabián
+23/12/2025;SIN_OPERAR;;USD/GBP/EUR;Receso de fin de año (22/12/2025 al 16/01/2026, sin operar);confirmado;Decisión de Fabián
 24/12/2025;SIN_OPERAR;;EUR;Feriado bancario Alemania (Nochebuena);confirmado;Capturas FF feriados 2025
+24/12/2025;SIN_OPERAR;;USD/GBP/EUR;Receso de fin de año (22/12/2025 al 16/01/2026, sin operar);confirmado;Decisión de Fabián
 25/12/2025;SIN_OPERAR;;USD/GBP/EUR;Feriado bancario EE. UU., Reino Unido, Alemania, Francia y Italia (Navidad);confirmado;Capturas FF feriados 2025
+25/12/2025;SIN_OPERAR;;USD/GBP/EUR;Receso de fin de año (22/12/2025 al 16/01/2026, sin operar);confirmado;Decisión de Fabián
 26/12/2025;SIN_OPERAR;;GBP/EUR;Feriado bancario Reino Unido, Alemania y Italia (Boxing Day / San Esteban);confirmado;Capturas FF feriados 2025
+26/12/2025;SIN_OPERAR;;USD/GBP/EUR;Receso de fin de año (22/12/2025 al 16/01/2026, sin operar);confirmado;Decisión de Fabián
+29/12/2025;SIN_OPERAR;;USD/GBP/EUR;Receso de fin de año (22/12/2025 al 16/01/2026, sin operar);confirmado;Decisión de Fabián
+30/12/2025;SIN_OPERAR;;USD/GBP/EUR;Receso de fin de año (22/12/2025 al 16/01/2026, sin operar);confirmado;Decisión de Fabián
 31/12/2025;SIN_OPERAR;;EUR;Feriado bancario Alemania (Fin de año);confirmado;Capturas FF feriados 2025
+31/12/2025;SIN_OPERAR;;USD/GBP/EUR;Receso de fin de año (22/12/2025 al 16/01/2026, sin operar);confirmado;Decisión de Fabián

@@ -25,3 +25,7 @@ Criterios que pidió Fabián para cada análisis de un CSV de TradingView. Aplic
 - `python metricas.py sin_limite` → `datos_sin_limite.json`; `python escalera.py` agrega la simulación de la escalera; `python build.py escalera` → `XAUUSD_Escalera_de_riesgo.html`.
 - Enlace: https://claude.ai/artifact/WgHcM8Ccd8tkD4K3TE1TAb (pestañas iguales al primero + "Escalera de riesgo").
 - Escalera: duplicar el riesgo tras cada pérdida, reiniciar al volver a positivo; una ganadora que no recupera mantiene el escalón; objetivo diario 1% o 2%; perfiles base 0,25%, 0,5% y 1%. Siempre informar el riesgo de ruina con simulaciones.
+
+## Decisiones vigentes de Fabián
+- Receso de fin de año sin operar: 22/12/2025 al 16/01/2026 (cargado como SIN_OPERAR en los calendarios). Repetirlo cada año salvo que diga otra cosa.
+- Operativa elegida: Envolvente, límite de 1 TP o 2 SL por sesión (muestra limitada), sin viernes, CPI no habilitado, escalera moderada con tope de 3 escalones (0,5% → 1% → 2% → 4%); si se pierde en el 4.º escalón se acepta la pérdida y se vuelve a 0,5%. El "protocolo" (mantener 4% hasta recuperar) quedó descartado.

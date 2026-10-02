@@ -1,14 +1,40 @@
 ﻿Motivo de exclusión,Número de operación,Tipo,Fecha y hora,Señal,Precio USD,Tamaño (cant.),Tamaño de la posición (valor),PyG netas USD,Rentabilidad %,Comisión USD,Desviación favorable USD,Desviación favorable %,Desviación adversa USD,Desviación adversa %,PyG acumuladas USD,PyG acumuladas %,Duración (barras)
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",237,Salida en corto,2026-01-02 07:41,Salida PreNY_237,4387.903,2.98,13085.4631,9.51,0.07,0,9.51,0.07,-0.37,0.00,90.64,9.06,0
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",237,Entrada en corto,2026-01-02 07:41,SELL PreNY,4391.095,2.98,13085.4631,9.51,0.07,0,9.51,0.07,-0.37,0.00,90.64,9.06,0
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",238,Salida en corto,2026-01-02 07:59,Salida PreNY_238,4394.775,1.16,5087.0524,-10.89,-0.21,0,0.1,0.00,-10.89,-0.21,79.75,7.98,15
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",238,Entrada en corto,2026-01-02 07:44,SELL PreNY,4385.39,1.16,5087.0524,-10.89,-0.21,0,0.1,0.00,-10.89,-0.21,79.75,7.98,15
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",239,Salida en corto,2026-01-02 08:32,Salida PreNY_239,4371.009,0.65,2850.75375,9.6,0.34,0,9.6,0.34,-0.003,0.00,89.35,8.93,8
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",239,Entrada en corto,2026-01-02 08:24,SELL PreNY,4385.775,0.65,2850.75375,9.6,0.34,0,9.6,0.34,-0.003,0.00,89.35,8.93,8
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",240,Salida en largo,2026-01-05 08:09,Salida PreNY_240,4407.625,1.4,6181.539,-10.86,-0.18,0,5.05,0.08,-10.86,-0.18,78.48,7.85,5
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",240,Entrada en largo,2026-01-05 08:04,BUY PreNY,4415.385,1.4,6181.539,-10.86,-0.18,0,5.05,0.08,-10.86,-0.18,78.48,7.85,5
 Día sin operar: Feriado bancario Italia (Epifanía),241,Salida en largo,2026-01-06 08:50,Salida PreNY_241,4455.76,1.44,6427.044,-10.75,-0.17,0,1.04,0.02,-10.75,-0.17,67.73,6.77,4
 Día sin operar: Feriado bancario Italia (Epifanía),241,Entrada en largo,2026-01-06 08:46,BUY PreNY,4463.225,1.44,6427.044,-10.75,-0.17,0,1.04,0.02,-10.75,-0.17,67.73,6.77,4
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",242,Salida en corto,2026-01-07 08:08,Salida PreNY_242,4437.24,1.22,5422.9366,9.5,0.18,0,9.5,0.18,-6.14,-0.11,77.24,7.72,8
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",242,Entrada en corto,2026-01-07 08:00,SELL PreNY,4445.03,1.22,5422.9366,9.5,0.18,0,9.5,0.18,-6.14,-0.11,77.24,7.72,8
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",243,Salida en largo,2026-01-07 09:10,CHoCH en contra (arrastre),4448.74,1.33,5922.08435,-5.26,-0.09,0,2.43,0.04,-5.52,-0.09,71.98,7.20,13
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",243,Entrada en largo,2026-01-07 08:57,BUY PreNY,4452.695,1.33,5922.08435,-5.26,-0.09,0,2.43,0.04,-5.52,-0.09,71.98,7.20,13
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",244,Salida en largo,2026-01-08 08:05,Salida PreNY_244,4422.28,1.36,6024.9156,-10.61,-0.18,0,1.84,0.03,-10.61,-0.18,61.36,6.14,23
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",244,Entrada en largo,2026-01-08 07:42,BUY PreNY,4430.085,1.36,6024.9156,-10.61,-0.18,0,1.84,0.03,-10.61,-0.18,61.36,6.14,23
 Día sin operar: NFP - Non-Farm Payrolls (USD),245,Salida en largo,2026-01-09 07:20,Salida PreNY_245,4471.64,1.52,6807.434,-10.54,-0.15,0,3.1,0.05,-10.54,-0.15,50.82,5.08,19
 Día sin operar: NFP - Non-Farm Payrolls (USD),245,Entrada en largo,2026-01-09 07:01,BUY PreNY,4478.575,1.52,6807.434,-10.54,-0.15,0,3.1,0.05,-10.54,-0.15,50.82,5.08,19
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",246,Salida en largo,2026-01-12 08:01,Salida PreNY_246,4592.189,2.57,11792.50925,9.42,0.08,0,9.42,0.08,-2.26,-0.02,60.24,6.02,10
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",246,Entrada en largo,2026-01-12 07:51,BUY PreNY,4588.525,2.57,11792.50925,9.42,0.08,0,9.42,0.08,-2.26,-0.02,60.24,6.02,10
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",247,Salida en largo,2026-01-12 08:12,Salida PreNY_247,4605.144,0.97,4457.4604,9.53,0.21,0,9.53,0.21,-1.94,-0.04,69.77,6.98,8
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",247,Entrada en largo,2026-01-12 08:04,BUY PreNY,4595.32,0.97,4457.4604,9.53,0.21,0,9.53,0.21,-1.94,-0.04,69.77,6.98,8
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",248,Salida en largo,2026-01-12 09:04,CHoCH en contra (arrastre),4599.3,0.69,3180.93105,-7.41,-0.23,0,7.13,0.22,-7.48,-0.24,62.35,6.24,48
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",248,Entrada en largo,2026-01-12 08:16,BUY PreNY,4610.045,0.69,3180.93105,-7.41,-0.23,0,7.13,0.22,-7.48,-0.24,62.35,6.24,48
 Día sin operar: CPI m/m (USD),249,Salida en largo,2026-01-13 07:52,Salida PreNY_249,4591.845,1.6,7337.496,9.46,0.13,0,9.46,0.13,-0.59,-0.01,71.81,7.18,8
 Día sin operar: CPI m/m (USD),249,Entrada en largo,2026-01-13 07:44,BUY PreNY,4585.935,1.6,7337.496,9.46,0.13,0,9.46,0.13,-0.59,-0.01,71.81,7.18,8
 Día sin operar: CPI m/m (USD),250,Salida en largo,2026-01-13 08:30,Salida PreNY_250,4608.966,1.2,5521.188,9.57,0.17,0,9.57,0.17,-1.78,-0.03,81.38,8.14,18
 Día sin operar: CPI m/m (USD),250,Entrada en largo,2026-01-13 08:12,BUY PreNY,4600.99,1.2,5521.188,9.57,0.17,0,9.57,0.17,-1.78,-0.03,81.38,8.14,18
 Día sin operar: CPI m/m (USD),251,Salida en largo,2026-01-13 08:56,Salida PreNY_251,4609.47,1.31,6049.1477,-10.74,-0.18,0,4.4,0.07,-10.74,-0.18,70.64,7.06,14
 Día sin operar: CPI m/m (USD),251,Entrada en largo,2026-01-13 08:42,BUY PreNY,4617.67,1.31,6049.1477,-10.74,-0.18,0,4.4,0.07,-10.74,-0.18,70.64,7.06,14
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",252,Salida en largo,2026-01-15 07:48,Salida PreNY_252,4614.11,2.41,11130.86215,-10.86,-0.10,0,0.6,0.01,-10.86,-0.10,59.78,5.98,22
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",252,Entrada en largo,2026-01-15 07:26,BUY PreNY,4618.615,2.41,11130.86215,-10.86,-0.10,0,0.6,0.01,-10.86,-0.10,59.78,5.98,22
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",253,Salida en corto,2026-01-15 08:41,Salida PreNY_253,4590.974,1.06,4875.8622,9.43,0.19,0,9.43,0.19,-3.11,-0.06,69.21,6.92,10
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",253,Entrada en corto,2026-01-15 08:31,SELL PreNY,4599.87,1.06,4875.8622,9.43,0.19,0,9.43,0.19,-3.11,-0.06,69.21,6.92,10
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",254,Salida en corto,2026-01-15 09:10,CHoCH en contra (arrastre),4596.005,1.01,4632.4963,-9.47,-0.20,0,5.06,0.11,-10.3,-0.22,59.74,5.97,24
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",254,Entrada en corto,2026-01-15 08:46,SELL PreNY,4586.63,1.01,4632.4963,-9.47,-0.20,0,5.06,0.11,-10.3,-0.22,59.74,5.97,24
 Día sin operar: Feriado bancario EE. UU. (Martin Luther King Jr.),255,Salida en largo,2026-01-19 09:02,Cierre fin de sesión (estructura en contra),4665.975,1.35,6301.1925,-2.13,-0.03,0,8.51,0.13,-4.07,-0.06,57.62,5.76,106
 Día sin operar: Feriado bancario EE. UU. (Martin Luther King Jr.),255,Entrada en largo,2026-01-19 07:16,BUY PreNY,4667.55,1.35,6301.1925,-2.13,-0.03,0,8.51,0.13,-4.07,-0.06,57.62,5.76,106
 Día sin operar: CPI y/y (GBP),256,Salida en largo,2026-01-21 08:38,Salida PreNY_256,4878.524,0.85,4137.409,9.34,0.23,0,9.34,0.23,-10.22,-0.25,66.95,6.70,96

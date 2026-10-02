@@ -155,12 +155,20 @@ Entrada fuera de la ventana 07:00-08:00: BCE: Main Refinancing Rate + Monetary P
 Entrada fuera de la ventana 07:00-08:00: BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference,225,Entrada en largo,2025-12-18 08:22,BUY PreNY,4323.865,1.25,5404.83125,9.56,0.18,0,9.56,0.18,-5.98,-0.11,70.91,7.09,8
 Entrada fuera de la ventana 07:00-08:00: BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference,226,Salida en largo,2025-12-18 09:00,Salida PreNY_226,4333.43,1.98,8590.7151,-10.52,-0.12,0,8.79,0.10,-10.52,-0.12,60.38,6.04,12
 Entrada fuera de la ventana 07:00-08:00: BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference,226,Entrada en largo,2025-12-18 08:48,BUY PreNY,4338.745,1.98,8590.7151,-10.52,-0.12,0,8.79,0.10,-10.52,-0.12,60.38,6.04,12
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",228,Salida en largo,2025-12-23 08:31,Salida PreNY_228,4486.06,1.47,6604.99665,-10.49,-0.16,0,6.53,0.10,-10.49,-0.16,39.24,3.92,26
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",228,Entrada en largo,2025-12-23 08:05,BUY PreNY,4493.195,1.47,6604.99665,-10.49,-0.16,0,6.53,0.10,-10.49,-0.16,39.24,3.92,26
 Día sin operar: Feriado bancario Alemania (Nochebuena),229,Salida en corto,2025-12-24 08:20,Salida PreNY_229,4476.538,1.15,5157.2095,9.19,0.18,0,9.19,0.18,-4.46,-0.09,48.43,4.84,11
 Día sin operar: Feriado bancario Alemania (Nochebuena),229,Entrada en corto,2025-12-24 08:09,SELL PreNY,4484.53,1.15,5157.2095,9.19,0.18,0,9.19,0.18,-4.46,-0.09,48.43,4.84,11
 Día sin operar: Feriado bancario Alemania (Nochebuena),230,Salida en largo,2025-12-24 09:12,Salida PreNY_230,4484.285,2.26,10144.9818,-10.5,-0.10,0,1.93,0.02,-10.5,-0.10,37.93,3.79,16
 Día sin operar: Feriado bancario Alemania (Nochebuena),230,Entrada en largo,2025-12-24 08:56,BUY PreNY,4488.93,2.26,10144.9818,-10.5,-0.10,0,1.93,0.02,-10.5,-0.10,37.93,3.79,16
 "Día sin operar: Feriado bancario Reino Unido, Alemania y Italia (Boxing Day / San Esteban)",231,Salida en largo,2025-12-26 08:38,Salida PreNY_231,4523.814,1.78,8042.9745,9.41,0.12,0,9.41,0.12,-4.55,-0.06,47.34,4.73,13
 "Día sin operar: Feriado bancario Reino Unido, Alemania y Italia (Boxing Day / San Esteban)",231,Entrada en largo,2025-12-26 08:25,BUY PreNY,4518.525,1.78,8042.9745,9.41,0.12,0,9.41,0.12,-4.55,-0.06,47.34,4.73,13
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",232,Salida en corto,2025-12-29 08:42,Salida PreNY_232,4439.425,0.96,4271.2992,9.45,0.22,0,9.45,0.22,-5.55,-0.13,56.79,5.68,14
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",232,Entrada en corto,2025-12-29 08:28,SELL PreNY,4449.27,0.96,4271.2992,9.45,0.22,0,9.45,0.22,-5.55,-0.13,56.79,5.68,14
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",233,Salida en largo,2025-12-30 08:20,Reset antes de nueva entrada,4392.04,0.59,2595.43655,-4.13,-0.16,0,3.14,0.12,-4.68,-0.18,52.66,5.27,60
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",233,Entrada en largo,2025-12-30 07:20,BUY PreNY,4399.045,0.59,2595.43655,-4.13,-0.16,0,3.14,0.12,-4.68,-0.18,52.66,5.27,60
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",234,Salida en corto,2025-12-30 08:32,Salida PreNY_234,4380.984,0.85,3733.234,9.4,0.25,0,9.4,0.25,-4.8,-0.13,62.06,6.21,12
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",234,Entrada en corto,2025-12-30 08:20,SELL PreNY,4392.04,0.85,3733.234,9.4,0.25,0,9.4,0.25,-4.8,-0.13,62.06,6.21,12
 Día sin operar: Feriado bancario Alemania (Fin de año),235,Salida en largo,2025-12-31 08:37,Salida PreNY_235,4330.854,0.72,3108.708,9.51,0.31,0,9.51,0.31,-6.8,-0.22,71.57,7.16,53
 Día sin operar: Feriado bancario Alemania (Fin de año),235,Entrada en largo,2025-12-31 07:44,BUY PreNY,4317.65,0.72,3108.708,9.51,0.31,0,9.51,0.31,-6.8,-0.22,71.57,7.16,53
 Día sin operar: Feriado bancario Alemania (Fin de año),236,Salida en largo,2025-12-31 08:50,Salida PreNY_236,4341.438,1.3,5634.3105,9.56,0.17,0,9.56,0.17,-4.1,-0.07,81.12,8.11,9

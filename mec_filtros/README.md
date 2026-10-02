@@ -34,18 +34,30 @@ una fila por evento; un día puede tener varias). El script lee todos los `calen
 
 ---
 
-## Calendario 2026 (75 días · 83 eventos: 58 ⛔ · 6 ⚠️ · 19 ⏸️)
+## Calendario 2026 (81 días · 95 eventos: 70 ⛔ · 6 ⚠️ · 19 ⏸️)
 
 ### Enero
 
 | Fecha | Día | Regla | Divisa | Evento |
 |---|---|---|---|---|
 | 01/01/2026 | Jue | ⛔ No operar | EUR | Feriado bancario Francia e Italia (Año Nuevo) |
+| 01/01/2026 | Jue | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
+| 02/01/2026 | Vie | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
+| 05/01/2026 | Lun | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
 | 06/01/2026 | Mar | ⛔ No operar | EUR | Feriado bancario Italia (Epifanía) |
+| 06/01/2026 | Mar | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
 | 07/01/2026 | Mié | ⏸️ Sin abrir 08:05–08:18 | USD | ADP Non-Farm Employment Change (dato 08:15) |
+| 07/01/2026 | Mié | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
+| 08/01/2026 | Jue | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
 | 09/01/2026 | Vie | ⛔ No operar | USD | NFP - Non-Farm Payrolls (USD) |
+| 09/01/2026 | Vie | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
+| 12/01/2026 | Lun | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
 | 13/01/2026 | Mar | ⛔ No operar | USD | CPI m/m (USD) |
+| 13/01/2026 | Mar | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
 | 14/01/2026 | Mié | ⛔ No operar | USD | PPI m/m y Core PPI m/m (USD) |
+| 14/01/2026 | Mié | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
+| 15/01/2026 | Jue | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
+| 16/01/2026 | Vie | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
 | 19/01/2026 | Lun | ⛔ No operar | USD | Feriado bancario EE. UU. (Martin Luther King Jr.) |
 | 21/01/2026 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
 | 22/01/2026 | Jue | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
@@ -164,7 +176,7 @@ una fila por evento; un día puede tener varias). El script lee todos los `calen
 | 30/09/2026 | Mié | ⏸️ Sin abrir 08:20–08:33 | USD | Core PCE Price Index m/m (dato 08:30) |
 | 30/09/2026 | Mié | ⛔ No operar | USD | PIB final trimestral - Final GDP q/q (USD) |
 
-## Calendario 2025 (105 días · 110 eventos: 80 ⛔ · 8 ⚠️ · 22 ⏸️)
+## Calendario 2025 (109 días · 118 eventos: 88 ⛔ · 8 ⚠️ · 22 ⏸️)
 
 ### Enero
 
@@ -331,7 +343,15 @@ una fila por evento; un día puede tener varias). El script lee todos los `calen
 | 16/12/2025 | Mar | ⛔ No operar | USD | NFP - Non-Farm Payrolls (USD) |
 | 17/12/2025 | Mié | ⛔ No operar | GBP | CPI y/y (GBP) |
 | 18/12/2025 | Jue | ⚠️ Solo entradas 07:00–08:00 | EUR | BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference |
+| 22/12/2025 | Lun | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
+| 23/12/2025 | Mar | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
 | 24/12/2025 | Mié | ⛔ No operar | EUR | Feriado bancario Alemania (Nochebuena) |
+| 24/12/2025 | Mié | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
 | 25/12/2025 | Jue | ⛔ No operar | USD/GBP/EUR | Feriado bancario EE. UU., Reino Unido, Alemania, Francia y Italia (Navidad) |
+| 25/12/2025 | Jue | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
 | 26/12/2025 | Vie | ⛔ No operar | GBP/EUR | Feriado bancario Reino Unido, Alemania y Italia (Boxing Day / San Esteban) |
+| 26/12/2025 | Vie | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
+| 29/12/2025 | Lun | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
+| 30/12/2025 | Mar | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |
 | 31/12/2025 | Mié | ⛔ No operar | EUR | Feriado bancario Alemania (Fin de año) |
+| 31/12/2025 | Mié | ⛔ No operar | USD/GBP/EUR | Receso de fin de año (22/12/2025 al 16/01/2026, sin operar) |

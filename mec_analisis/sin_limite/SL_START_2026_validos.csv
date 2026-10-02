@@ -1,10 +1,4 @@
 ﻿Número de operación,Tipo,Fecha y hora,Señal,Precio USD,Tamaño (cant.),Tamaño de la posición (valor),PyG netas USD,Rentabilidad %,Comisión USD,Desviación favorable USD,Desviación favorable %,Desviación adversa USD,Desviación adversa %,PyG acumuladas USD,PyG acumuladas %,Duración (barras)
-77,Salida en corto,2026-01-08 09:25,CHoCH en contra (arrastre),4429.065,1.04,4599.3064,-6.92,-0.15,0,3.62,0.08,-7.09,-0.15,-40.71,-4.07,26
-77,Entrada en corto,2026-01-08 08:59,SELL PreNY,4422.41,1.04,4599.3064,-6.92,-0.15,0,3.62,0.08,-7.09,-0.15,-40.71,-4.07,26
-80,Salida en corto,2026-01-15 08:28,Salida PreNY_80,4603.324,1.16,5348.2612,8.41,0.16,0,8.41,0.16,-6.67,-0.12,-46.06,-4.61,26
-80,Entrada en corto,2026-01-15 08:02,SELL PreNY,4610.57,1.16,5348.2612,8.41,0.16,0,8.41,0.16,-6.67,-0.12,-46.06,-4.61,26
-81,Salida en corto,2026-01-16 09:00,Salida PreNY_81,4603.415,0.56,2568.482,-9.43,-0.37,0,2.19,0.09,-9.43,-0.37,-55.49,-5.55,43
-81,Entrada en corto,2026-01-16 08:17,SELL PreNY,4586.575,0.56,2568.482,-9.43,-0.37,0,2.19,0.09,-9.43,-0.37,-55.49,-5.55,43
 82,Salida en largo,2026-01-20 09:02,Salida PreNY_82,4743.25,0.63,2979.85275,8.39,0.28,0,8.39,0.28,-1.59,-0.05,-47.1,-4.71,17
 82,Entrada en largo,2026-01-20 08:45,BUY PreNY,4729.925,0.63,2979.85275,8.39,0.28,0,8.39,0.28,-1.59,-0.05,-47.1,-4.71,17
 83,Salida en largo,2026-01-27 08:35,Salida PreNY_83,5074.69,0.64,3257.296,-9.49,-0.29,0,2.32,0.07,-9.49,-0.29,-56.59,-5.66,58

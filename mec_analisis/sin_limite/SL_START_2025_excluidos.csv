@@ -45,5 +45,7 @@ Día sin operar: CPI y/y (GBP),73,Salida en largo,2025-12-17 08:42,Salida PreNY_
 Día sin operar: CPI y/y (GBP),73,Entrada en largo,2025-12-17 08:21,BUY PreNY,4331.26,1.1,4764.386,8.58,0.18,0,8.58,0.18,-4.13,-0.09,-44.56,-4.46,21
 Día sin operar: CPI y/y (GBP),74,Salida en largo,2025-12-17 09:14,CHoCH en contra (arrastre),4331.665,0.76,3298.3696,-6.3,-0.19,0,4.66,0.14,-6.65,-0.20,-50.86,-5.09,28
 Día sin operar: CPI y/y (GBP),74,Entrada en largo,2025-12-17 08:46,BUY PreNY,4339.96,0.76,3298.3696,-6.3,-0.19,0,4.66,0.14,-6.65,-0.20,-50.86,-5.09,28
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",75,Salida en corto,2025-12-30 08:32,Salida PreNY_75,4381.265,1.09,4784.0863,8.51,0.18,0,8.51,0.18,-0.34,-0.01,-42.35,-4.24,1
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",75,Entrada en corto,2025-12-30 08:31,SELL PreNY,4389.07,1.09,4784.0863,8.51,0.18,0,8.51,0.18,-0.34,-0.01,-42.35,-4.24,1
 Día sin operar: Feriado bancario Alemania (Fin de año),76,Salida en largo,2025-12-31 08:53,Salida PreNY_76,4343.152,0.73,3161.9366,8.56,0.27,0,8.56,0.27,-1.2,-0.04,-33.79,-3.38,15
 Día sin operar: Feriado bancario Alemania (Fin de año),76,Entrada en largo,2025-12-31 08:38,BUY PreNY,4331.42,0.73,3161.9366,8.56,0.27,0,8.56,0.27,-1.2,-0.04,-33.79,-3.38,15
