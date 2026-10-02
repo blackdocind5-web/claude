@@ -954,6 +954,46 @@ tocar los defaults ya validados en oro).
   `fase4_strategy_backtest.pine`. **Validación pendiente por Fabián --
   prueba temporal, no definitiva.**
 
+- [ ] **Fase 4 (backtesting) — archivo nuevo experimental: motor de
+  detección exclusivo para velas M3 (02/10)**: Fabián notó que el
+  indicador, al mirarlo con el gráfico en resolución M3, marca señales
+  BUY/SELL basadas en velas M3 -- quiere poder probar lo mismo en el
+  backtest, es decir, que Envolvente/Start/MEC se detecten sobre velas M3
+  en vez de M1. Se evaluó primero como un toggle más dentro de
+  `fase4_strategy_backtest.pine` (como los anteriores), pero Fabián
+  prefirió un **archivo nuevo y separado** para esta prueba puntual, para
+  no sumar más ramas condicionales al archivo que ya funciona bien, y
+  para no dejar ningún rastro si se termina descartando. Nuevo archivo:
+  `fase4_strategy_backtest_m3.pine` -- copia completa del original, con
+  las Secciones 3 (Envolvente), 4 (Start) y 6 (MEC) reescritas para usar
+  velas M3 en vez de M1:
+  - Sección 2 (estructura M3): sin cambios de lógica -- ya era nativa de
+    M3 (Opción A, 29/09). Se le agregó únicamente el rastreo de las 2-3
+    velas M3 anteriores (`m3OpenPrev1/m3ClosePrev1/m3HighPrev1/
+    m3LowPrev1`, `m3OpenPrev2/m3ClosePrev2`, `m3HighPrev3/m3LowPrev3`),
+    que las Secciones 3/4/6 necesitan para reemplazar los `open[1]`,
+    `close[2]`, etc. que usaban contra velas M1.
+  - Secciones 3 y 4: mismas fórmulas exactas del original, con
+    `high/low/open/close` (vela M1 actual) → `m3High/m3Low/m3Open/
+    m3Close` (vela M3 en curso/recién cerrada), y `open[1]/close[1]/
+    close[2]/open[2]` (velas M1 anteriores) → `m3OpenPrev1/m3ClosePrev1/
+    m3OpenPrev2/m3ClosePrev2` (velas M3 anteriores). Ningún umbral ni
+    tolerancia se modificó.
+  - Sección 6 (MEC): la secuencia de pullback-y-continuación se evalúa
+    con `m3Close`/`m3Open` y solo se actualiza cuando `finalVelaM3` es
+    true (antes se reevaluaba en cada vela M1) -- confirmado por Fabián:
+    "estoy de acuerdo con la señal de entrada solo en el cierre de cada
+    vela M3". La ventana de `extremoQuiebre` pasó de 4 velas M1 a 4
+    velas M3.
+  - Sin cambios: Sección 1 (sesiones), Sección 6B (SL/TP -- ya calculaba
+    niveles M3 nativos) y Sección 6C (ejecución/Hedge/límite diario/
+    arrastre -- solo se agregó `and finalVelaM3` explícito en
+    `mecBuyGate`/`mecSellGate`, aunque ya quedaba implícito).
+  Implementado en `fase4_strategy_backtest_m3.pine`. **Validación
+  pendiente por Fabián** -- si el resultado convence, decide si lo
+  mantiene como variante separada; si no, se descarta sin tocar
+  `fase4_strategy_backtest.pine`.
+
 ## Decisiones de diseño (confirmadas con Fabián)
 
 - **Estética minimalista, solo la señal final**: los triángulos/etiquetas de
