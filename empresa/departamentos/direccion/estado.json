@@ -1,0 +1,12 @@
+{
+  "id": "direccion",
+  "nombre": "Dirección",
+  "agente": "Jarvis Central",
+  "estado": "activo",
+  "fase": 0,
+  "actualizado": "03/10/2026",
+  "fuentes": [],
+  "kpis": [
+    "Departamentos con informe al día"
+  ]
+}

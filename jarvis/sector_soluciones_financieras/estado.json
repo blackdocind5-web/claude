@@ -1,0 +1,45 @@
+{
+  "sector": "Soluciones Financieras",
+  "reporta_a": "Dirección — Jarvis",
+  "ultima_actualizacion": "03/10/2026",
+  "fase_actual": "Fase 0 — Oficina (completa) → Fase 1 — Datos base",
+  "areas": {
+    "finanzas_personales": {
+      "responsable": "Jefe de sector",
+      "estado": "operativa con herramientas; faltan datos del usuario",
+      "onboarding_completado": false,
+      "posiciones_cargadas": 0,
+      "nota": "El perfil de Diego (onboarding completo) y sus 12 CEDEARs están en ramas anteriores, falta unificarlos en main"
+    },
+    "trading": {
+      "responsable": "Fabi",
+      "estado": "estrategia XAU MEC/MER definida; Bot Oro v0.1 creado, falta validar con datos reales",
+      "capital_asignado": null,
+      "reglas_validadas": false,
+      "bot": {
+        "nombre": "Bot Oro",
+        "script": "jarvis/scripts/bot_oro.py",
+        "agente": ".claude/agents/bot-oro.md",
+        "version": "0.1",
+        "validado_vs_pine": false
+      }
+    },
+    "futuros": {
+      "responsable": "Jefe de sector + Diego",
+      "estado": "en investigación",
+      "instrumento_inicial": "MGC",
+      "plataforma": "Interactive Brokers (paper)",
+      "investigaciones": [
+        "PrimeroTrader / Polo AI"
+      ]
+    }
+  },
+  "pendientes_abiertos": 8,
+  "ideas_cargadas": 3,
+  "ultimo_control": {
+    "diario": null,
+    "semanal": null,
+    "mensual": null
+  },
+  "tareas_abiertas": 9
+}

@@ -1,0 +1,32 @@
+{
+  "id": "manychat",
+  "nombre": "ManyChat y Captación",
+  "agente": "Mini-Jarvis ManyChat",
+  "estado": "por_conectar",
+  "fase": 1,
+  "actualizado": "03/10/2026",
+  "fuentes": [
+    {
+      "nombre": "Export de contactos ManyChat",
+      "estado": "pendiente"
+    },
+    {
+      "nombre": "Export de conversaciones",
+      "estado": "pendiente"
+    },
+    {
+      "nombre": "Workflows n8n",
+      "estado": "pendiente"
+    },
+    {
+      "nombre": "Conector ManyChat",
+      "estado": "bloqueada"
+    }
+  ],
+  "kpis": [
+    "Tiempo de 1.ª respuesta",
+    "% calificados",
+    "% con turno",
+    "% cierre"
+  ]
+}

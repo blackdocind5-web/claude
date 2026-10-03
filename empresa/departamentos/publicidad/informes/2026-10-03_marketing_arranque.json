@@ -1,0 +1,208 @@
+{
+  "titulo": "Marketing y Publicidad — Informe de arranque",
+  "subtitulo": "Base del sector: Publicidad y Meta Ads + ManyChat y Captación. Qué hay armado, qué datos faltan y qué viene",
+  "departamento": "Marketing y Publicidad",
+  "fecha": "03/10/2026",
+  "autor": "Jarvis Central",
+  "periodo": "Apertura de oficina",
+  "kpis": [
+    {
+      "label": "Departamentos del sector abiertos",
+      "valor": "2",
+      "detalle": "Publicidad · ManyChat"
+    },
+    {
+      "label": "Fases de auditoría planificadas",
+      "valor": "7",
+      "detalle": "ManyChat, n8n, remarketing, Meta Ads"
+    },
+    {
+      "label": "Errores ya detectados en chats",
+      "valor": "7",
+      "detalle": "catálogo inicial"
+    },
+    {
+      "label": "Fuentes de datos conectadas",
+      "valor": "0 de 8",
+      "detalle": "todas pendientes"
+    }
+  ],
+  "resumen_ejecutivo": [
+    "El sector quedó estructurado con dos oficinas: Publicidad y Meta Ads (cuánto cuesta y qué rinde cada anuncio) y ManyChat y Captación (qué pasa con ese lead en la conversación).",
+    "Juntas responden la pregunta central: costo por turno y por venta por anuncio, no solo por lead.",
+    "Todavía no hay métricas propias: ninguna fuente está conectada. Este informe no estima rendimiento; muestra el estado real del trabajo y lo que hace falta para el primer diagnóstico."
+  ],
+  "secciones": [
+    {
+      "titulo": "Cómo se reparte el trabajo planificado",
+      "texto": [
+        "El plan combina la auditoría integral (ManyChat, n8n, remarketing) y el proyecto Meta Ads. Las fases 2 a 5 concentran el análisis de datos."
+      ],
+      "graficos": [
+        {
+          "tipo": "torta",
+          "titulo": "Tareas abiertas por departamento del sector",
+          "unidad": " tareas",
+          "fuente": "tareas.md de Publicidad y ManyChat, 03/10/2026",
+          "datos": [
+            {
+              "etiqueta": "Publicidad y Meta Ads",
+              "valor": 6
+            },
+            {
+              "etiqueta": "ManyChat y Captación",
+              "valor": 6
+            }
+          ]
+        },
+        {
+          "tipo": "barras_h",
+          "titulo": "Entregables por fase del plan de auditoría",
+          "fuente": "auditoria/PLAN_AUDITORIA.md",
+          "datos": [
+            {
+              "etiqueta": "F0 Acceso y datos",
+              "valor": 5
+            },
+            {
+              "etiqueta": "F1 Organigrama",
+              "valor": 4
+            },
+            {
+              "etiqueta": "F2 ManyChat",
+              "valor": 6
+            },
+            {
+              "etiqueta": "F3 Bot en n8n",
+              "valor": 6
+            },
+            {
+              "etiqueta": "F4 Agenda estética",
+              "valor": 4
+            },
+            {
+              "etiqueta": "F5 Remarketing",
+              "valor": 4
+            },
+            {
+              "etiqueta": "F6 Informe final",
+              "valor": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "titulo": "Embudo que vamos a medir",
+      "texto": [
+        "Cada etapa es una pregunta que hoy no podemos responder con números. Se completa con el export de Ads Manager y el de ManyChat de la misma semana."
+      ],
+      "tabla": {
+        "columnas": [
+          "Etapa",
+          "Departamento",
+          "Dato necesario",
+          "Estado"
+        ],
+        "filas": [
+          [
+            "Impresiones → clic",
+            "Publicidad",
+            "Export Ads Manager (anuncios)",
+            "Pendiente"
+          ],
+          [
+            "Clic → conversación iniciada",
+            "Publicidad",
+            "Export Ads Manager",
+            "Pendiente"
+          ],
+          [
+            "Conversación → calificado",
+            "ManyChat",
+            "Export de conversaciones",
+            "Pendiente"
+          ],
+          [
+            "Calificado → precio → turno",
+            "ManyChat",
+            "Export de conversaciones + agenda",
+            "Pendiente"
+          ],
+          [
+            "Turno → asistió → cerró",
+            "Ventas",
+            "Agenda / planilla de pacientes",
+            "Pendiente"
+          ]
+        ]
+      },
+      "callout": "Punto crítico: unir cada lead con su anuncio de origen. Es lo que permite calcular el costo por turno por anuncio."
+    },
+    {
+      "titulo": "Errores ya detectados en las conversaciones",
+      "texto": [
+        "Hallazgos de revisiones anteriores (sin cifras de frecuencia hasta leer la muestra completa):"
+      ],
+      "viñetas": [
+        "Cierre con pregunta de sí/no",
+        "Precio enviado demasiado temprano",
+        "Uso de la palabra «recargo»",
+        "Promesa de resultado (riesgo con las políticas de Meta)",
+        "Sin seguimiento tras «después te escribo»",
+        "Mensajes duplicados",
+        "Nombre «Saira» mal asignado"
+      ]
+    },
+    {
+      "titulo": "Estado de las fuentes de datos",
+      "graficos": [
+        {
+          "tipo": "torta",
+          "titulo": "Fuentes del sector por estado",
+          "fuente": "estado.json de Publicidad y ManyChat",
+          "datos": [
+            {
+              "etiqueta": "Pendientes",
+              "valor": 6
+            },
+            {
+              "etiqueta": "Bloqueadas (sin conector)",
+              "valor": 1
+            },
+            {
+              "etiqueta": "Sin instalar",
+              "valor": 1
+            }
+          ]
+        }
+      ],
+      "callout": "La sesión en la nube no accede a Meta ni a ManyChat (verificado el 30/09/2026). Caminos: export manual, sesión Local con Claude in Chrome, o conector (Supermetrics / Adspirer para Meta)."
+    }
+  ],
+  "decisiones": [
+    "Elegir la vía de acceso a datos: export manual (más rápido), Chrome local (más completo) o conector.",
+    "Definir la semana exacta a auditar (la misma en Meta y en ManyChat).",
+    "Confirmar si los nombres de pacientes se anonimizan."
+  ],
+  "proximos_pasos": [
+    "Exportar Ads Manager (7 días, anuncios + desgloses) — CEO — alta",
+    "Exportar contactos y conversaciones de ManyChat — CEO — alta",
+    "Pasar los informes que se pidieron hoy a la nube para volcarlos a la bitácora — CEO — alta",
+    "Diagnóstico de la última semana — Mini-Jarvis Ads — se desbloquea con los exports",
+    "Primer informe «Cómo anduvo la publicidad» — Mini-Jarvis ManyChat — se desbloquea con los exports"
+  ],
+  "pendientes_datos": [
+    "Inversión, alcance, CTR, CPM, frecuencia y costo por conversación por anuncio (Ads Manager)",
+    "Conversaciones por fuente, calificados, turnos y ventas (ManyChat + agenda)",
+    "Presupuesto diario y meta de turnos/semana y costo máximo por turno",
+    "Nombre de la clínica, cirujanos y procedimientos prioritarios con su margen",
+    "Workflows de n8n (JSON sin credenciales)"
+  ],
+  "fuentes": [
+    "empresa/bitacora.md (30/09/2026 y 03/10/2026)",
+    "auditoria/PLAN_AUDITORIA.md",
+    "auditoria/PROYECTO_META_ADS.md",
+    "empresa/departamentos/publicidad y manychat"
+  ]
+}

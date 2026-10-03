@@ -1,0 +1,225 @@
+{
+  "titulo": "Informe consolidado de Dirección",
+  "subtitulo": "Estado de todos los departamentos a partir de sus bitácoras, tareas e ideas",
+  "departamento": "Dirección — Jarvis Central",
+  "fecha": "03/10/2026",
+  "autor": "Jarvis Central",
+  "kpis": [
+    {
+      "label": "Departamentos con oficina abierta",
+      "valor": "5"
+    },
+    {
+      "label": "Tareas abiertas",
+      "valor": "28",
+      "detalle": "4 bloqueadas"
+    },
+    {
+      "label": "Ideas en el banco",
+      "valor": "5",
+      "detalle": "1 nuevas"
+    },
+    {
+      "label": "Fuentes de datos conectadas",
+      "valor": "0 de 7"
+    }
+  ],
+  "resumen_ejecutivo": [
+    "Hay 5 departamentos con oficina abierta. Todos tienen bitácora.",
+    "Fuentes de datos: 0 conectadas, 6 pendientes, 1 bloqueadas. Hasta conectarlas, los informes de rendimiento reportan el dato como pendiente en vez de estimarlo."
+  ],
+  "secciones": [
+    {
+      "titulo": "Estado de los departamentos",
+      "graficos": [
+        {
+          "tipo": "torta",
+          "titulo": "Departamentos por estado",
+          "unidad": " deptos.",
+          "datos": [
+            {
+              "etiqueta": "Activo",
+              "valor": 2
+            },
+            {
+              "etiqueta": "Por conectar",
+              "valor": 2
+            },
+            {
+              "etiqueta": "En construcción",
+              "valor": 1
+            }
+          ]
+        },
+        {
+          "tipo": "barras_h",
+          "titulo": "Tareas abiertas por departamento",
+          "datos": [
+            {
+              "etiqueta": "Dirección",
+              "valor": 3
+            },
+            {
+              "etiqueta": "ManyChat y Captación",
+              "valor": 6
+            },
+            {
+              "etiqueta": "Ingeniería de Prompts",
+              "valor": 4
+            },
+            {
+              "etiqueta": "Publicidad y Meta Ads",
+              "valor": 6
+            },
+            {
+              "etiqueta": "Soluciones Financieras",
+              "valor": 9
+            }
+          ],
+          "fuente": "tareas.md de cada departamento"
+        }
+      ],
+      "tabla": {
+        "columnas": [
+          "Departamento",
+          "Agente",
+          "Estado",
+          "Fase",
+          "Tareas abiertas",
+          "Ideas",
+          "Última bitácora",
+          "Último registro"
+        ],
+        "filas": [
+          [
+            "Dirección",
+            "Jarvis Central",
+            "Activo",
+            "0",
+            "3",
+            "0",
+            "03/10/2026",
+            "Oficina abierta. Se leyó toda la sincronización (ramas con organigrama, sector financiero,…"
+          ],
+          [
+            "ManyChat y Captación",
+            "Mini-Jarvis ManyChat",
+            "Por conectar",
+            "1",
+            "6",
+            "0",
+            "03/10/2026",
+            "Oficina abierta. El CEO pidió que este sector esté preparado para los informes de cómo and…"
+          ],
+          [
+            "Ingeniería de Prompts",
+            "Mini-Jarvis Prompts",
+            "Activo",
+            "0",
+            "4",
+            "0",
+            "03/10/2026",
+            "Oficina abierta por pedido del CEO: «un sector especialista en prompts para que todo empie…"
+          ],
+          [
+            "Publicidad y Meta Ads",
+            "Mini-Jarvis Ads",
+            "Por conectar",
+            "1",
+            "6",
+            "2",
+            "03/10/2026",
+            "Oficina abierta. Plan y skill creados a partir de `auditoria/PROYECTO_META_ADS.md`."
+          ],
+          [
+            "Soluciones Financieras",
+            "Dirección — Jarvis",
+            "En construcción",
+            "Fase 0 — Oficina (comp",
+            "9",
+            "3",
+            "03/10/2026",
+            "Se abre el Área 3 — Futuros (en investigación). Primer relevamiento de PrimeroTrader / Pol…"
+          ]
+        ]
+      }
+    },
+    {
+      "titulo": "Trabajo y creatividad",
+      "graficos": [
+        {
+          "tipo": "torta",
+          "titulo": "Tareas por estado",
+          "datos": [
+            {
+              "etiqueta": "Pendiente",
+              "valor": 24
+            },
+            {
+              "etiqueta": "Hecha",
+              "valor": 5
+            },
+            {
+              "etiqueta": "Bloqueada",
+              "valor": 4
+            }
+          ]
+        },
+        {
+          "tipo": "torta",
+          "titulo": "Banco de ideas por estado",
+          "datos": [
+            {
+              "etiqueta": "Nueva",
+              "valor": 1
+            },
+            {
+              "etiqueta": "En evaluación",
+              "valor": 3
+            },
+            {
+              "etiqueta": "En implementación",
+              "valor": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "titulo": "Conexión de datos",
+      "graficos": [
+        {
+          "tipo": "torta",
+          "titulo": "Fuentes de datos",
+          "datos": [
+            {
+              "etiqueta": "Pendiente",
+              "valor": 6
+            },
+            {
+              "etiqueta": "Bloqueada",
+              "valor": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "pendientes_datos": [
+    "ManyChat y Captación: conectar «Export de contactos ManyChat» (pendiente)",
+    "ManyChat y Captación: conectar «Export de conversaciones» (pendiente)",
+    "ManyChat y Captación: conectar «Workflows n8n» (pendiente)",
+    "ManyChat y Captación: conectar «Conector ManyChat» (bloqueada)",
+    "Publicidad y Meta Ads: conectar «Export Ads Manager (.csv)» (pendiente)",
+    "Publicidad y Meta Ads: conectar «Chrome local / conector Meta» (pendiente)",
+    "Publicidad y Meta Ads: conectar «Pixel / API de Conversiones» (pendiente)"
+  ],
+  "proximos_pasos": [
+    "Revisar los departamentos en estado «Por conectar» y elegir la vía de acceso a sus datos.",
+    "Completar la bitácora de los departamentos sin registro."
+  ],
+  "fuentes": [
+    "empresa/departamentos/*/estado.json, tareas.md, ideas.md, bitacora.md",
+    "jarvis/sector_soluciones_financieras/*"
+  ]
+}

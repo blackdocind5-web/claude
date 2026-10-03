@@ -1,0 +1,29 @@
+{
+  "id": "publicidad",
+  "nombre": "Publicidad y Meta Ads",
+  "agente": "Mini-Jarvis Ads",
+  "estado": "por_conectar",
+  "fase": 1,
+  "actualizado": "03/10/2026",
+  "fuentes": [
+    {
+      "nombre": "Export Ads Manager (.csv)",
+      "estado": "pendiente"
+    },
+    {
+      "nombre": "Chrome local / conector Meta",
+      "estado": "pendiente"
+    },
+    {
+      "nombre": "Pixel / API de Conversiones",
+      "estado": "pendiente"
+    }
+  ],
+  "kpis": [
+    "Costo por conversación",
+    "CTR de enlace",
+    "Frecuencia",
+    "Costo por turno",
+    "Costo por venta"
+  ]
+}

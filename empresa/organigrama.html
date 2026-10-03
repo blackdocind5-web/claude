@@ -1,0 +1,237 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Organigrama Jarvis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: cabecera con resumen, pestañas, árbol de tres áreas bajo Dirección y panel de detalle del departamento elegido. */
+:root {
+  --bg: #eceff3;
+  --surface: #f8f9fb;
+  --surface-2: #e2e7ed;
+  --ink: #141c26;
+  --ink-2: #4a5666;
+  --line: #c3ccd7;
+  --accent: #2f5d8a;
+  --accent-soft: #d5e1ee;
+  --ok: #2e6b4f;
+  --warn: #8a6a1f;
+  --idle: #5c6877;
+  --box: #1a2533; --box-ink: #eef2f6; --box-ink-2: #a9b6c6; --rail: #55677c;
+  --ok-box: #7cc9a0; --warn-box: #dcb96a; --idle-box: #9aa7b7;
+  --font-display: "IBM Plex Serif", Georgia, serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e141b; --surface: #151d27; --surface-2: #1c2632; --ink: #e6ebf1; --ink-2: #9aa7b7;
+    --line: #2b3746; --accent: #7fa6cf; --accent-soft: #1d2f43; --box: #1f2b3a; --box-ink: #e9eef4; --box-ink-2: #9fb0c3; --rail: #53657a; --ok: #6fbf95; --warn: #d3b064; --idle: #8b97a7;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e141b; --surface: #151d27; --surface-2: #1c2632; --ink: #e6ebf1; --ink-2: #9aa7b7;
+  --line: #2b3746; --accent: #7fa6cf; --accent-soft: #1d2f43; --box: #1f2b3a; --box-ink: #e9eef4; --box-ink-2: #9fb0c3; --rail: #53657a; --ok: #6fbf95; --warn: #d3b064; --idle: #8b97a7;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1120px; margin-inline: auto; padding-inline: 20px; padding-block: 28px 56px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: -0.005em; }
+h1 { font-size: 2rem; line-height: 1.15; }
+h2 { font-size: 1.25rem; }
+h3 { font-size: 1.05rem; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); }
+header { display: flex; flex-wrap: wrap; gap: 20px 40px; justify-content: space-between; align-items: end; padding-bottom: 22px; border-bottom: 1px solid var(--line); }
+header p { margin: 8px 0 0; color: var(--ink-2); max-width: 52ch; }
+.counts { display: flex; flex-wrap: wrap; gap: 8px 22px; font-variant-numeric: tabular-nums; }
+.counts div { min-width: 0; }
+.counts b { display: block; font-family: var(--font-display); font-size: 1.6rem; line-height: 1.1; font-weight: 600; }
+.counts span { font-size: 0.78rem; color: var(--ink-2); }
+nav { display: flex; flex-wrap: wrap; gap: 4px; margin-block: 22px 26px; border-bottom: 1px solid var(--line); }
+nav button { font: inherit; font-weight: 500; color: var(--ink-2); background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 14px; cursor: pointer; margin-bottom: -1px; }
+nav button:hover { color: var(--ink); }
+nav button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.8rem; color: var(--ink-2); margin-bottom: 22px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 500; white-space: nowrap; }
+.pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.s-activo { color: var(--ok); } .s-por_conectar { color: var(--warn); } .s-planificado { color: var(--idle); }
+
+/* árbol */
+.tree { display: flex; flex-direction: column; align-items: center; }
+.ceo { width: min(300px, 100%); text-align: center; background: var(--box); color: var(--box-ink); border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 2px; }
+.ceo .nm { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; letter-spacing: 0.08em; }
+.ceo .ag { font-family: var(--font-mono); font-size: 0.74rem; color: var(--box-ink-2); }
+.stem { width: 2px; height: 28px; background: var(--rail); }
+.top { width: min(300px, 100%); }
+.node { text-align: center; font: inherit; color: var(--box-ink); width: 100%; background: var(--box); border: 1px solid transparent; border-radius: 10px; padding: 12px 14px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; align-items: center; }
+.node:hover { border-color: var(--accent); }
+.node[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent); }
+.node .nm { font-weight: 600; }
+.node .ag { font-family: var(--font-mono); font-size: 0.72rem; color: var(--box-ink-2); }
+.node .row { display: flex; justify-content: center; gap: 12px; align-items: center; margin-top: 4px; }
+.node .fs { font-size: 0.72rem; color: var(--box-ink-2); font-variant-numeric: tabular-nums; }
+.node .s-activo { color: var(--ok-box); } .node .s-por_conectar { color: var(--warn-box); } .node .s-planificado { color: var(--idle-box); }
+.areas { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; width: 100%; padding-top: 30px; }
+.areas::before { content: ""; position: absolute; top: 0; left: calc(100% / 6); right: calc(100% / 6); height: 2px; background: var(--rail); }
+.area { position: relative; display: flex; flex-direction: column; gap: 10px; min-width: 0; align-items: stretch; }
+.area::before { content: ""; position: absolute; top: -30px; left: calc(50% - 1px); width: 2px; height: 30px; background: var(--rail); }
+.area .label { text-align: center; }
+.area .label b { display: block; font-family: var(--font-display); font-size: 1.1rem; font-weight: 600; }
+.area .drop { width: 2px; height: 18px; background: var(--rail); margin-inline: auto; }
+
+/* detalle */
+.detail { margin-top: 34px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 24px; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 26px 40px; }
+.detail .head { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: baseline; justify-content: space-between; }
+.detail p { margin: 6px 0 0; max-width: 62ch; }
+.detail h4 { margin: 0 0 6px; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); }
+.detail ul { margin: 0; padding-left: 18px; }
+.detail li { margin-bottom: 3px; }
+.detail .col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; list-style: none; }
+.tags li { margin: 0; padding: 3px 9px; border: 1px solid var(--line); border-radius: 999px; font-size: 0.8rem; }
+
+/* rutina, plan, bitácora */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; max-width: 760px; }
+.steps li { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.steps .t { font-family: var(--font-mono); color: var(--accent); font-weight: 500; }
+.steps b { display: block; }
+.steps span { color: var(--ink-2); }
+.phases { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; }
+.phase { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.phase ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 0.9rem; }
+.phase.now { border-color: var(--accent); }
+.log { max-width: 760px; display: grid; gap: 22px; }
+.log h4 { margin: 0 0 6px; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-2); }
+.log ul { margin: 0; padding-left: 18px; }
+.note { margin-top: 28px; padding: 14px 16px; border-left: 3px solid var(--warn); background: var(--surface); font-size: 0.9rem; color: var(--ink-2); max-width: 760px; }
+.theme { font: inherit; font-size: 0.8rem; color: var(--ink-2); background: none; border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+
+@media (max-width: 820px) {
+  .areas { grid-template-columns: minmax(0, 1fr); padding-top: 0; }
+  .areas::before, .area::before { display: none; }
+  .detail { grid-template-columns: minmax(0, 1fr); padding: 18px; }
+  h1 { font-size: 1.6rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Estructura de la empresa · <span id="fecha"></span></div>
+      <h1>Organigrama de departamentos</h1>
+      <p>Cada departamento es un mini-Jarvis con su propia misión, sus fuentes de datos y su informe diario. Dirección los reúne cada mañana.</p>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px; align-items:flex-end">
+      <div class="counts" id="counts"></div>
+      <button class="theme" id="theme" type="button">Cambiar tema</button>
+    </div>
+  </header>
+
+  <nav role="tablist" aria-label="Secciones">
+    <button role="tab" id="t-org" aria-selected="true" data-tab="org">Organigrama</button>
+    <button role="tab" id="t-rutina" aria-selected="false" data-tab="rutina">Rutina de la mañana</button>
+    <button role="tab" id="t-plan" aria-selected="false" data-tab="plan">Plan por fases</button>
+    <button role="tab" id="t-bitacora" aria-selected="false" data-tab="bitacora">Bitácora</button>
+  </nav>
+
+  <section id="p-org">
+    <div class="legend">
+      <span class="pill s-activo">Activo: ya funciona</span>
+      <span class="pill s-por_conectar">Por conectar: falta traer los datos</span>
+      <span class="pill s-planificado">Planificado: definido, sin construir</span>
+    </div>
+    <div class="tree">
+      <div class="ceo"><div class="eyebrow" style="color:var(--box-ink-2)">Dirección general</div><div class="nm">CEO</div><div class="ag">Vos · decisión final</div></div>
+      <div class="stem"></div>
+      <div class="top" id="top"></div>
+      <div class="stem"></div>
+      <div class="areas" id="areas"></div>
+    </div>
+    <div class="detail" id="detail" aria-live="polite"></div>
+  </section>
+
+  <section id="p-rutina" hidden>
+    <h2 style="margin-bottom:6px">Cómo empieza cada mañana</h2>
+    <p style="color:var(--ink-2); margin:0 0 18px; max-width:62ch">Se dispara con el comando <span style="font-family:var(--font-mono)">/manana</span> al abrir la sesión. Las horas son la referencia del plan.</p>
+    <ol class="steps">
+      <li><span class="t">08:00</span><div><b>Estructura y pendientes</b><span>Jarvis Central muestra este organigrama y lista lo que quedó abierto en la bitácora.</span></div></li>
+      <li><span class="t">08:05</span><div><b>Informes por departamento</b><span>Cada mini-Jarvis con datos disponibles prepara su informe y lo guarda en empresa/informes.</span></div></li>
+      <li><span class="t">08:20</span><div><b>Briefing de Dirección</b><span>Cinco cifras clave, tres alertas y tres decisiones pendientes, todo en una página.</span></div></li>
+      <li><span class="t">08:30</span><div><b>Decisiones y bitácora</b><span>Lo que se decide queda anotado con fecha para no perderlo.</span></div></li>
+    </ol>
+  </section>
+
+  <section id="p-plan" hidden>
+    <h2 style="margin-bottom:16px">Plan de construcción</h2>
+    <div class="phases" id="phases"></div>
+    <div class="note"><b>Dato clave de la fase 1.</b> Las sesiones en la nube no ven Chrome ni Meta Ads Manager. Las métricas llegan de dos formas: subir cada día el export de Ads Manager, o trabajar en una sesión Local en la Mac con la extensión Claude in Chrome. La conexión directa por API de Meta queda para después.</div>
+  </section>
+
+  <section id="p-bitacora" hidden>
+    <h2 style="margin-bottom:6px">Bitácora</h2>
+    <p style="color:var(--ink-2); margin:0 0 20px">Resumen de lo hablado. El registro completo está en empresa/bitacora.md.</p>
+    <div class="log">
+      <div><div class="eyebrow" style="margin-bottom:10px">30/09/2026</div>
+        <h4>Contexto</h4>
+        <ul><li>Publicidad en Meta para cirugías estéticas, con ManyChat.</li><li>Comparar las métricas de la última semana con los mejores cirujanos de Brasil, Argentina, Chile, Colombia, Miami, París y Turquía.</li><li>Enfoque de publicista con neuromarketing y cierre de ventas.</li></ul></div>
+      <div><h4>Decisiones</h4>
+        <ul><li>Crear departamentos, cada uno con un mini-Jarvis y un informe diario.</li><li>Abrir cada mañana con la estructura y los informes del día.</li><li>Guardar todo lo conversado en la bitácora.</li></ul></div>
+      <div><h4>Pendiente</h4>
+        <ul><li>Nombre de la empresa, clientes y procedimientos a promocionar.</li><li>Export de Ads Manager de los últimos 7 días.</li><li>Confirmar qué departamentos faltan o sobran.</li></ul></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const D = {"empresa": "Por definir (clínica / agencia de cirugía estética)", "actualizado": "03/10/2026", "nota": "Borrador inicial armado en la sesión del 30/09/2026. Los supuestos están marcados y se corrigen con el usuario.", "direccion": {"id": "direccion", "nombre": "Dirección", "agente": "Jarvis Central", "mision": "Consolida los informes de todos los departamentos, prioriza las decisiones del día y abre cada mañana con el estado de la empresa. Recopila las bitácoras de todos los departamentos (consolidar.py).", "informe_diario": "Briefing matutino: 5 cifras clave, 3 alertas, 3 decisiones pendientes.", "fuentes": ["Informes de los demás departamentos", "empresa/bitacora.md"], "kpis": ["Decisiones tomadas vs. pendientes", "Departamentos con informe al día"], "estado": "activo", "fase": 0}, "areas": [{"id": "metodo", "nombre": "Método y Calidad", "departamentos": [{"id": "prompts", "nombre": "Ingeniería de Prompts", "agente": "Mini-Jarvis Prompts", "mision": "Todo empieza por un buen prompt: claro, didáctico y actualizado, con ejemplos, esquemas y gráficos. Diseña, prueba y versiona los prompts de todos los departamentos y bots.", "informe_diario": "Prompts nuevos o mejorados, resultados de pruebas y pendientes de la biblioteca.", "fuentes": ["empresa/departamentos/prompts/datos/biblioteca", "Documentación oficial de modelos y plataformas"], "kpis": ["Prompts en biblioteca", "Prompts probados"], "estado": "activo", "fase": 0}]}, {"id": "mercado", "nombre": "Marketing y Publicidad", "departamentos": [{"id": "publicidad", "nombre": "Publicidad y Meta Ads", "agente": "Mini-Jarvis Ads", "mision": "Mide qué anuncios, conjuntos y campañas rinden, detecta fugas de presupuesto y propone qué pausar, escalar o duplicar.", "informe_diario": "Últimas 24 h y 7 días: gasto, alcance, frecuencia, CPM, CTR, costo por conversación o lead, mejor y peor anuncio.", "fuentes": ["Export de Ads Manager (.csv) en empresa/datos/meta/", "Sesión local con Claude in Chrome", "API de Marketing de Meta (a futuro)"], "kpis": ["Costo por conversación", "CTR de enlace", "Frecuencia", "Gasto diario"], "estado": "por_conectar", "fase": 1}, {"id": "manychat", "nombre": "ManyChat y Captación", "agente": "Mini-Jarvis ManyChat", "mision": "Explica cómo rindió la publicidad desde las conversaciones (fuente → calificado → turno → venta) y audita el bot de ManyChat/n8n y el remarketing.", "informe_diario": "Leads por fuente, tiempo de primera respuesta, calificados, turnos, errores detectados y leads sin atender.", "fuentes": ["Export de ManyChat (contactos y conversaciones)", "Workflows de n8n", "Sesión local con Claude in Chrome"], "kpis": ["Tiempo de 1.ª respuesta", "% calificados", "% con turno", "% cierre"], "estado": "por_conectar", "fase": 1}, {"id": "inteligencia", "nombre": "Inteligencia Competitiva", "agente": "Mini-Jarvis Mercado", "mision": "Vigila los anuncios de los mejores cirujanos de Brasil, Argentina, Chile, Colombia, Miami, París y Turquía y extrae ángulos, ofertas y formatos que funcionan.", "informe_diario": "Alertas de anuncios nuevos o de larga duración en la Biblioteca de anuncios de Meta. Informe completo cada semana.", "fuentes": ["Biblioteca de anuncios de Meta", "Instagram público", "Búsqueda web"], "kpis": ["Anuncios nuevos detectados", "Ángulos repetidos entre competidores"], "estado": "planificado", "fase": 2}, {"id": "redes", "nombre": "Redes Sociales", "agente": "Mini-Jarvis Redes", "mision": "Mide el movimiento de las redes (alcance, crecimiento, interacción, mejores publicaciones) y lo conecta con Publicidad y ManyChat.", "informe_diario": "Seguidores, alcance, interacción y mejores publicaciones del período.", "fuentes": ["Instagram / Facebook Insights (a definir)"], "kpis": ["Crecimiento de seguidores", "Tasa de interacción"], "estado": "planificado", "fase": 2}]}, {"id": "creativo_ventas", "nombre": "Creatividad y Ventas", "departamentos": [{"id": "creativos", "nombre": "Neuromarketing y Creativos", "agente": "Mini-Jarvis Creativo", "mision": "Convierte los hallazgos de datos y competencia en ganchos, guiones, copys y tests A/B, respetando las políticas de Meta para cirugía estética.", "informe_diario": "3 ideas de anuncio nuevas con hipótesis de neuromarketing y el test A/B recomendado.", "fuentes": ["Informes de Publicidad e Inteligencia", "Banco de creativos ganadores"], "kpis": ["Creativos probados por semana", "Tasa de creativos ganadores"], "estado": "planificado", "fase": 2}, {"id": "ventas", "nombre": "Ventas y Cierre", "agente": "Mini-Jarvis Closer", "mision": "Sigue cada lead desde la primera conversación hasta la consulta pagada: tiempos de respuesta, objeciones, guiones de WhatsApp y seguimiento.", "informe_diario": "Leads nuevos, sin responder, consultas agendadas, objeciones más frecuentes y mensajes de seguimiento sugeridos.", "fuentes": ["ManyChat", "WhatsApp Business", "Agenda de consultas"], "kpis": ["Tiempo de primera respuesta", "Lead a consulta", "Consulta a cirugía"], "estado": "por_conectar", "fase": 2}]}, {"id": "soporte", "nombre": "Soporte", "departamentos": [{"id": "datos", "nombre": "Datos y Analítica", "agente": "Mini-Jarvis Datos", "mision": "Une publicidad, ventas y resultados para medir el costo real por paciente y segmentar por calidad de lead, gustos y procedimiento.", "informe_diario": "Embudo completo del día y de la semana, con el punto donde se pierde más gente.", "fuentes": ["Informes de Publicidad y Ventas", "Planilla de pacientes (a definir)"], "kpis": ["Costo por paciente", "Valor por lead", "Calidad de lead por segmento"], "estado": "planificado", "fase": 3}, {"id": "compliance", "nombre": "Normativa y Reputación", "agente": "Mini-Jarvis Compliance", "mision": "Revisa cada anuncio contra las políticas de Meta y la normativa publicitaria de cada país, y monitorea reseñas y menciones.", "informe_diario": "Anuncios en riesgo de rechazo, cambios de políticas y nuevas reseñas.", "fuentes": ["Políticas de publicidad de Meta", "Normativa local", "Reseñas públicas"], "kpis": ["Anuncios rechazados", "Puntaje de reseñas"], "estado": "planificado", "fase": 3}, {"id": "finanzas", "nombre": "Finanzas", "agente": "Jarvis Finanzas (ya existe)", "mision": "Hoy sigue el portfolio y el mercado. Más adelante suma rentabilidad de campañas: retorno de inversión publicitaria y margen por procedimiento.", "informe_diario": "Briefing de mercado y estado del portfolio con los scripts de jarvis/scripts.", "fuentes": ["Yahoo Finance", "jarvis/portfolio/active_positions.json"], "kpis": ["P&L del portfolio", "ROAS (a futuro)"], "estado": "activo", "fase": 0}]}], "fases": [{"n": 0, "nombre": "Cimientos", "cuando": "Hoy", "items": ["Organigrama y bitácora guardados en el repositorio", "Un mini-agente definido por departamento", "Comando /manana para abrir cada día", "Protocolo de empresa (lista de ideas sueltas, informe nivel accionistas)", "Oficinas abiertas: Dirección, Prompts, Publicidad, ManyChat"]}, {"n": 1, "nombre": "Datos de Meta", "cuando": "Semana 1", "items": ["Conectar las métricas (export diario o sesión local con Chrome)", "Primer informe diario de Publicidad", "Diagnóstico de la última semana"]}, {"n": 2, "nombre": "Mercado y creatividad", "cuando": "Semanas 2 y 3", "items": ["Benchmark de los 7 mercados", "Banco de creativos y tests A/B", "Seguimiento de leads y guiones de cierre"]}, {"n": 3, "nombre": "Análisis cruzado", "cuando": "Semana 4", "items": ["Embudo completo y costo por paciente", "Revisión de normativa por país", "Segmentación por gustos y calidad"]}, {"n": 4, "nombre": "Automatización", "cuando": "Mes 2", "items": ["Informes programados cada mañana", "Envío por email", "Alertas cuando una métrica sale de rango"]}]};
+const EST = { activo: "Activo", por_conectar: "Por conectar", planificado: "Planificado" };
+const $ = (id) => document.getElementById(id);
+const todos = [D.direccion, ...D.areas.flatMap(a => a.departamentos)];
+let sel = "publicidad";
+
+function nodo(x, top) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "node"; b.dataset.id = x.id;
+  b.setAttribute("aria-pressed", x.id === sel);
+  b.innerHTML = `<span class="nm">${x.nombre}</span><span class="ag">${x.agente}</span>
+    <span class="row"><span class="pill s-${x.estado}">${EST[x.estado]}</span><span class="fs">Fase ${x.fase}</span></span>`;
+  b.addEventListener("click", () => { sel = x.id; render(); });
+  return b;
+}
+function lista(a) { return a.map(i => `<li>${i}</li>`).join(""); }
+function render() {
+  $("top").replaceChildren(nodo(D.direccion, true));
+  $("areas").replaceChildren(...D.areas.map(a => {
+    const c = document.createElement("div"); c.className = "area";
+    c.innerHTML = `<div class="label"><span class="eyebrow">Área</span><b>${a.nombre}</b></div><div class="drop"></div>`;
+    a.departamentos.forEach(d => c.appendChild(nodo(d)));
+    return c;
+  }));
+  const x = todos.find(t => t.id === sel);
+  $("detail").innerHTML = `
+    <div class="head"><div><div class="eyebrow">${x.agente}</div><h2>${x.nombre}</h2></div>
+      <span class="pill s-${x.estado}">${EST[x.estado]} · fase ${x.fase}</span></div>
+    <div class="col"><div><h4>Misión</h4><p>${x.mision}</p></div>
+      <div><h4>Informe diario</h4><p>${x.informe_diario}</p></div></div>
+    <div class="col"><div><h4>Fuentes de datos</h4><ul>${lista(x.fuentes)}</ul></div>
+      <div><h4>KPIs</h4><ul class="tags">${lista(x.kpis)}</ul></div></div>`;
+}
+const n = (e) => todos.filter(t => t.estado === e).length;
+$("counts").innerHTML = `<div><b>${todos.length}</b><span>departamentos</span></div><div><b>${n("activo")}</b><span>activos</span></div><div><b>${n("por_conectar")}</b><span>por conectar</span></div><div><b>${n("planificado")}</b><span>planificados</span></div>`;
+$("fecha").textContent = D.actualizado;
+$("phases").innerHTML = D.fases.map(f => `<div class="phase${f.n === 0 ? " now" : ""}"><div><div class="eyebrow">Fase ${f.n} · ${f.cuando}</div><h3>${f.nombre}</h3></div><ul>${lista(f.items)}</ul></div>`).join("");
+
+document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("nav button").forEach(o => o.setAttribute("aria-selected", o === b));
+  ["org", "rutina", "plan", "bitacora"].forEach(k => $("p-" + k).hidden = k !== b.dataset.tab);
+}));
+$("theme").addEventListener("click", () => {
+  const r = document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = dark ? "light" : "dark";
+});
+render();
+</script>

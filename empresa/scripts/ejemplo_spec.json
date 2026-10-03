@@ -1,0 +1,25 @@
+{
+  "titulo": "Título del informe",
+  "subtitulo": "Qué responde este informe",
+  "departamento": "Nombre del departamento",
+  "fecha": "03/10/2026",
+  "autor": "Mini-Jarvis X",
+  "periodo": "Semana del 26/09/2026 al 02/10/2026",
+  "kpis": [{"label": "Métrica", "valor": "1.250", "detalle": "dato opcional"}],
+  "resumen_ejecutivo": ["Hasta 5 líneas con lo más importante."],
+  "secciones": [
+    {"titulo": "Sección con dos gráficos",
+     "texto": ["Párrafo opcional."],
+     "viñetas": ["Punto opcional"],
+     "graficos": [
+       {"tipo": "torta", "titulo": "Reparto", "unidad": "", "fuente": "export del 03/10/2026", "datos": [{"etiqueta": "A", "valor": 60}, {"etiqueta": "B", "valor": 40}]},
+       {"tipo": "barras_h", "titulo": "Ranking", "datos": [{"etiqueta": "A", "valor": 12}, {"etiqueta": "B", "valor": 7}]}
+     ],
+     "tabla": {"columnas": ["Col 1", "Col 2"], "filas": [["a", "b"]]},
+     "callout": "Conclusión destacada."}
+  ],
+  "decisiones": ["Decisión que necesita el CEO"],
+  "proximos_pasos": ["Acción — responsable — prioridad"],
+  "pendientes_datos": ["Dato que falta y cómo conseguirlo"],
+  "fuentes": ["Fuente (DD/MM/YYYY)"]
+}
