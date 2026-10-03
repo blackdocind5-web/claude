@@ -1,0 +1,79 @@
+//@version=5
+// ============================================================================
+// 07 - Ruptura del rango de apertura (Opening Range)
+// Marca el rango de los primeros minutos de la sesión y opera la ruptura (una operación por día).
+// Timeframe sugerido: M1 / M5
+//
+// Paquete de prueba Jarvis -- modelo de riesgo idéntico en todas las
+// estrategias (riesgo fijo en % del equity, stop por ATR, TP por R:R) para
+// poder compararlas de igual a igual. Sin garantías: es una herramienta de
+// investigación, no una recomendación de inversión.
+// ============================================================================
+strategy("Jarvis | 07 - Ruptura del rango de apertura (Opening Range)", shorttitle="TV07 ORB", overlay=true,
+     initial_capital=10000, pyramiding=1, calc_on_every_tick=false,
+     process_orders_on_close=false, margin_long=0, margin_short=0,
+     commission_type=strategy.commission.percent, commission_value=0.01,
+     slippage=2)
+
+// --- Gestión de riesgo (común a todo el paquete) ----------------------------
+grpR = "Gestión de riesgo"
+riesgoPct = input.float(1.0, "Riesgo por operación (% del equity)", minval=0.1, step=0.1, group=grpR)
+atrLen    = input.int(14, "ATR período", minval=1, group=grpR)
+slMult    = input.float(1.5, "Stop = ATR ×", minval=0.1, step=0.1, group=grpR)
+rr        = input.float(1.5, "Ratio R:R (TP = distancia del stop × R:R)", minval=0.1, step=0.1, group=grpR)
+permitirLargos = input.bool(true, "Permitir largos", group=grpR)
+permitirCortos = input.bool(true, "Permitir cortos", group=grpR)
+
+// --- Filtro horario (común) --------------------------------------------------
+grpS = "Filtro horario"
+usarSesion = input.bool(false, "Operar solo dentro de la sesión", group=grpS)
+sesion     = input.session("0700-1100", "Sesión (hora de Nueva York)", group=grpS)
+enSesionNY = not na(time(timeframe.period, sesion, "America/New_York"))
+dentroSesion = not usarSesion or enSesionNY
+
+atr = ta.atr(atrLen)
+
+// --- Parámetros propios de la estrategia -------------------------------------
+grpE = "Rango de apertura"
+tzOR       = input.string("America/New_York", "Zona horaria", group=grpE)
+rangoOR    = input.session("0800-0830", "Ventana que define el rango", group=grpE)
+ventanaOp  = input.session("0830-1100", "Ventana para operar la ruptura", group=grpE)
+
+// --- Señales ----------------------------------------------------------------
+inOR = not na(time(timeframe.period, rangoOR, tzOR))
+inOp = not na(time(timeframe.period, ventanaOp, tzOR))
+var float orAlto = na
+var float orBajo = na
+var bool operoHoy = false
+if inOR and not inOR[1]
+    orAlto := high
+    orBajo := low
+    operoHoy := false
+else if inOR
+    orAlto := math.max(orAlto, high)
+    orBajo := math.min(orBajo, low)
+senalLarga = inOp and not operoHoy and not na(orAlto) and close > orAlto
+senalCorta = inOp and not operoHoy and not na(orBajo) and close < orBajo
+if (senalLarga or senalCorta) and strategy.position_size == 0
+    operoHoy := true
+
+// --- Ejecución (idéntica en todo el paquete) ------------------------------------
+sinPosicion = strategy.position_size == 0
+if senalLarga and sinPosicion and dentroSesion and permitirLargos and not na(atr)
+    distancia = atr * slMult
+    cantidad = (strategy.equity * riesgoPct / 100) / distancia
+    if cantidad > 0
+        strategy.entry("Largo", strategy.long, qty=cantidad)
+        strategy.exit("Largo SL/TP", "Largo", stop=close - distancia, limit=close + distancia * rr)
+
+if senalCorta and sinPosicion and dentroSesion and permitirCortos and not na(atr)
+    distancia = atr * slMult
+    cantidad = (strategy.equity * riesgoPct / 100) / distancia
+    if cantidad > 0
+        strategy.entry("Corto", strategy.short, qty=cantidad)
+        strategy.exit("Corto SL/TP", "Corto", stop=close + distancia, limit=close - distancia * rr)
+
+// --- Visualización ---------------------------------------------------------------
+plot(inOp ? orAlto : na, "Máximo del rango", color=color.new(color.green, 0), style=plot.style_linebr)
+plot(inOp ? orBajo : na, "Mínimo del rango", color=color.new(color.red, 0), style=plot.style_linebr)
+bgcolor(inOR ? color.new(color.gray, 85) : na)

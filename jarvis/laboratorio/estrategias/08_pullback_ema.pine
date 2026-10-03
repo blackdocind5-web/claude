@@ -1,0 +1,68 @@
+//@version=5
+// ============================================================================
+// 08 - Pullback a la EMA en tendencia
+// En tendencia (EMA50 vs EMA200) entra cuando el precio recupera la EMA20 tras un retroceso.
+// Timeframe sugerido: M5 / M15
+//
+// Paquete de prueba Jarvis -- modelo de riesgo idéntico en todas las
+// estrategias (riesgo fijo en % del equity, stop por ATR, TP por R:R) para
+// poder compararlas de igual a igual. Sin garantías: es una herramienta de
+// investigación, no una recomendación de inversión.
+// ============================================================================
+strategy("Jarvis | 08 - Pullback a la EMA en tendencia", shorttitle="TV08 Pullback", overlay=true,
+     initial_capital=10000, pyramiding=1, calc_on_every_tick=false,
+     process_orders_on_close=false, margin_long=0, margin_short=0,
+     commission_type=strategy.commission.percent, commission_value=0.01,
+     slippage=2)
+
+// --- Gestión de riesgo (común a todo el paquete) ----------------------------
+grpR = "Gestión de riesgo"
+riesgoPct = input.float(1.0, "Riesgo por operación (% del equity)", minval=0.1, step=0.1, group=grpR)
+atrLen    = input.int(14, "ATR período", minval=1, group=grpR)
+slMult    = input.float(1.5, "Stop = ATR ×", minval=0.1, step=0.1, group=grpR)
+rr        = input.float(1.5, "Ratio R:R (TP = distancia del stop × R:R)", minval=0.1, step=0.1, group=grpR)
+permitirLargos = input.bool(true, "Permitir largos", group=grpR)
+permitirCortos = input.bool(true, "Permitir cortos", group=grpR)
+
+// --- Filtro horario (común) --------------------------------------------------
+grpS = "Filtro horario"
+usarSesion = input.bool(false, "Operar solo dentro de la sesión", group=grpS)
+sesion     = input.session("0700-1100", "Sesión (hora de Nueva York)", group=grpS)
+enSesionNY = not na(time(timeframe.period, sesion, "America/New_York"))
+dentroSesion = not usarSesion or enSesionNY
+
+atr = ta.atr(atrLen)
+
+// --- Parámetros propios de la estrategia -------------------------------------
+grpE = "Pullback a EMA"
+emaPullLen = input.int(20, "EMA de pullback", minval=1, group=grpE)
+emaMediaLen = input.int(50, "EMA media", minval=2, group=grpE)
+emaTendLen  = input.int(200, "EMA de tendencia", minval=3, group=grpE)
+
+// --- Señales ----------------------------------------------------------------
+emaPull  = ta.ema(close, emaPullLen)
+emaMedia = ta.ema(close, emaMediaLen)
+emaTend  = ta.ema(close, emaTendLen)
+senalLarga = emaMedia > emaTend and close[1] < emaPull[1] and close > emaPull
+senalCorta = emaMedia < emaTend and close[1] > emaPull[1] and close < emaPull
+
+// --- Ejecución (idéntica en todo el paquete) ------------------------------------
+sinPosicion = strategy.position_size == 0
+if senalLarga and sinPosicion and dentroSesion and permitirLargos and not na(atr)
+    distancia = atr * slMult
+    cantidad = (strategy.equity * riesgoPct / 100) / distancia
+    if cantidad > 0
+        strategy.entry("Largo", strategy.long, qty=cantidad)
+        strategy.exit("Largo SL/TP", "Largo", stop=close - distancia, limit=close + distancia * rr)
+
+if senalCorta and sinPosicion and dentroSesion and permitirCortos and not na(atr)
+    distancia = atr * slMult
+    cantidad = (strategy.equity * riesgoPct / 100) / distancia
+    if cantidad > 0
+        strategy.entry("Corto", strategy.short, qty=cantidad)
+        strategy.exit("Corto SL/TP", "Corto", stop=close + distancia, limit=close - distancia * rr)
+
+// --- Visualización ---------------------------------------------------------------
+plot(emaPull, "EMA pullback", color=color.new(color.blue, 0))
+plot(emaMedia, "EMA media", color=color.new(color.orange, 0))
+plot(emaTend, "EMA tendencia", color=color.new(color.gray, 0), linewidth=2)
