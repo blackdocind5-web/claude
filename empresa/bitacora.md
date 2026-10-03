@@ -52,3 +52,6 @@ Registro de todo lo que se decide y se conversa. Se actualiza en cada sesión. F
 **Pendiente de la sesión del 30/09 que sigue abierto**
 - Export de Ads Manager (últimos 7 días), nombre de la empresa/clínica, conexión a ManyChat/n8n/Meta (la nube no los ve).
 - Ramas sueltas con perfil de Diego (onboarding) y trabajo de trading (Pine, mec_filtros) sin integrar a `main`.
+
+### Aclaración (03/10/2026, tarde)
+- El CEO preguntó por qué los informes del día no estaban en las bitácoras. Hallazgos: (1) mis dos informes (`marketing_arranque` y `direccion_consolidado`) existían como archivos pero no estaban anotados en ninguna bitácora → corregido y automatizado (`informe.py` registra solo; regla de cierre en PROTOCOLO §4). (2) Los informes que pidió en las otras sesiones del día (Meta Ads, auditoría ManyChat, supervisión) no están en este repo: viven en `diegodarpa-netizen/jarvis` (carpeta `oficina/sectores/`), al que esta sesión no tiene acceso. Esta estructura `empresa/` duplica lo que ya existe allá; pendiente decidir cuál es la fuente de verdad.

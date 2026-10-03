@@ -152,6 +152,8 @@ def main():
     (dest / f"{iso}_direccion_consolidado.json").write_text(json.dumps(spec, ensure_ascii=False, indent=2), encoding="utf-8")
     out = dest / f"{iso}_direccion_consolidado.html"
     out.write_text(informe.construir(spec), encoding="utf-8")
+    spec["bitacora"] = "empresa/departamentos/direccion/bitacora.md"
+    informe.registrar_bitacora(spec, out)
     print(f"Informe consolidado: {out}")
 
 

@@ -276,6 +276,36 @@ def construir(spec):
 </div></body></html>"""
 
 
+def registrar_bitacora(spec, salida):
+    """Anota el informe en la bitácora del departamento (clave «bitacora» del spec). Idempotente."""
+    destino = spec.get("bitacora")
+    if not destino:
+        return None
+    raiz = Path(__file__).resolve().parents[2]
+    b = raiz / destino
+    try:
+        ruta = str(Path(salida).resolve().relative_to(raiz))
+    except ValueError:
+        ruta = str(salida)
+    texto = b.read_text(encoding="utf-8") if b.exists() else "# Bitácora\n"
+    if ruta in texto:
+        return b
+    fecha = spec.get("fecha", "")
+    resumen = (spec.get("resumen_ejecutivo") or [""])[0]
+    linea = (f"- Informe generado: `{ruta}` — {spec['titulo']}. {resumen} "
+             f"Decisiones para el CEO: {len(spec.get('decisiones', []))}. "
+             f"Datos que faltan: {len(spec.get('pendientes_datos', []))}.\n")
+    if fecha and f"## {fecha}" in texto:
+        i = texto.index(f"## {fecha}")
+        j = texto.find("\n## ", i + 1)
+        j = len(texto) if j == -1 else j
+        texto = texto[:j].rstrip("\n") + "\n" + linea + texto[j:]
+    else:
+        texto = texto.rstrip("\n") + f"\n\n## {fecha}\n" + linea
+    b.write_text(texto, encoding="utf-8")
+    return b
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("spec")
@@ -286,6 +316,11 @@ def main():
     salida.parent.mkdir(parents=True, exist_ok=True)
     salida.write_text(construir(spec), encoding="utf-8")
     print(f"Informe generado: {salida}")
+    b = registrar_bitacora(spec, salida)
+    if b:
+        print(f"Registrado en la bitácora: {b}")
+    else:
+        print("AVISO: el spec no tiene la clave «bitacora»; el informe NO quedó anotado en ninguna bitácora.")
 
 
 if __name__ == "__main__":

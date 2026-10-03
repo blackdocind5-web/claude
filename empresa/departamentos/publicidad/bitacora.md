@@ -9,3 +9,4 @@ Dirección consolida este archivo en el informe consolidado. Una entrada por fec
 ## 03/10/2026
 - Oficina abierta. Plan y skill creados a partir de `auditoria/PROYECTO_META_ADS.md`.
 - El CEO pidió empezar por Marketing y Publicidad y recopilar los datos de los informes pedidos hoy. Pendiente: que esos informes/exports lleguen al repo.
+- Informe generado: `empresa/departamentos/publicidad/informes/2026-10-03_marketing_arranque.html` — Marketing y Publicidad — Informe de arranque. El sector quedó estructurado con dos oficinas: Publicidad y Meta Ads (cuánto cuesta y qué rinde cada anuncio) y ManyChat y Captación (qué pasa con ese lead en la conversación). Decisiones para el CEO: 3. Datos que faltan: 5.

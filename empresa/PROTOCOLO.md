@@ -49,6 +49,8 @@ Todo informe de departamento es profesional, presentable a accionistas, **aunque
 8. Fuentes con fecha.
 Cuando no hay métricas de rendimiento todavía, los gráficos muestran lo que sí es real: avance del plan, estado de fuentes, tareas, ideas y distribución de trabajo. Se guardan en `empresa/departamentos/<id>/informes/AAAA-MM-DD_<id>.html` y se abren en el navegador.
 
+**Regla de cierre:** un informe no está terminado hasta que (1) está anotado en la bitácora del departamento con su ruta (`informe.py` lo hace solo si el spec trae la clave `bitacora`), (2) las tareas y el `estado.json` están al día y (3) todo está commiteado y subido. Si algo de eso falla, se dice en el momento.
+
 ## 5. Dirección consolida
 Jarvis Central **recopila las bitácoras** de todos los departamentos y arma el informe completo:
 `python empresa/scripts/consolidar.py` → `empresa/informes/AAAA-MM-DD_direccion_consolidado.html`.

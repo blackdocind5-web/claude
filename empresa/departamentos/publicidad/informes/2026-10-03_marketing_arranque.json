@@ -204,5 +204,6 @@
     "auditoria/PLAN_AUDITORIA.md",
     "auditoria/PROYECTO_META_ADS.md",
     "empresa/departamentos/publicidad y manychat"
-  ]
+  ],
+  "bitacora": "empresa/departamentos/publicidad/bitacora.md"
 }
