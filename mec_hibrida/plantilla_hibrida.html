@@ -52,7 +52,7 @@ th.sort{cursor:pointer;user-select:none} th.sort:hover{color:var(--fg)} th.sort[
 
 <!-- ============ RECOMENDACIÓN ============ -->
 <div id="resumen" class="view" role="tabpanel">
-  <div class="view-head"><span class="eyebrow">Gestión Híbrida · cartera recomendada</span><h2 id="r-titulo"></h2><p id="r-sub"></p></div>
+  <div class="view-head"><span class="eyebrow">Gestión ganadora · la mejor de todas las combinaciones testeadas</span><h2 id="r-titulo"></h2><p id="r-sub"></p></div>
   <div class="verdict" id="r-verdict"></div>
   <div class="kpis" id="r-kpis"></div>
   <section aria-labelledby="r-s1">
@@ -63,13 +63,29 @@ th.sort{cursor:pointer;user-select:none} th.sort:hover{color:var(--fg)} th.sort[
     <div class="sec-head"><h2 id="r-s2">Flujo de caja mensual</h2><p id="r-s2p"></p></div>
     <div class="panel"><div class="chart" id="c-mes"></div></div>
   </section>
+  <section aria-labelledby="r-s6">
+    <div class="sec-head"><h2 id="r-s6">Ratios de la gestión</h2><p>Del 13/01/2025 al 02/10/2026 · semanales anualizados con √52</p></div>
+    <div class="kpis" id="r-ratios"></div>
+  </section>
+  <section aria-labelledby="r-s7">
+    <div class="sec-head"><h2 id="r-s7">Por año y por activo</h2><p>Cada año simulado por separado desde 1.000 USD</p></div>
+    <div class="grid2">
+      <div class="panel tbl"><h3>Por año</h3><table class="cmp" id="t-anio"></table></div>
+      <div class="panel tbl"><h3>Aporte de cada activo</h3><table class="cmp" id="t-aporte"></table></div>
+    </div>
+  </section>
+  <section aria-labelledby="r-s8">
+    <div class="sec-head"><h2 id="r-s8">Por qué sin viernes</h2><p>Todas las variantes con el freno de pérdida semanal de −3R</p></div>
+    <div class="panel tbl"><table class="cmp" id="t-vie"></table><p class="note" id="vie-note"></p></div>
+    <div class="panel tbl"><h3>Los viernes de cada activo</h3><table class="cmp" id="t-vie-act"></table></div>
+  </section>
   <section aria-labelledby="r-s3">
     <div class="sec-head"><h2 id="r-s3">Cómo se eligió</h2><p>Reglas fijadas antes de mirar el resultado de la cartera, para no sobreoptimizar</p></div>
     <div class="grid2">
       <div class="panel tbl"><h3>1. Qué activo y patrón entra</h3><p class="note">Entra solo si gana en 2025 y en 2026 por separado. Por activo, el patrón con más R.</p><table class="cmp" id="t-califica"></table></div>
       <div class="panel tbl"><h3>2. ¿Cada activo suma dentro de la cartera?</h3><p class="note">Rendimiento de la cartera con y sin cada activo (sin reglas de gestión).</p><table class="cmp" id="t-marginal"></table></div>
     </div>
-    <div class="panel tbl"><h3>3. Reglas de gestión</h3><p class="note">Una regla se acepta solo si mejora el rendimiento de 2025 y de 2026 sin aumentar la caída máxima. Base: los tres activos con todos los días, sin objetivo ni freno semanal.</p><table class="cmp" id="t-decis"></table></div>
+    <div class="panel tbl"><h3>3. Reglas de gestión</h3><p class="note">Una regla se acepta solo si mejora el rendimiento de 2025 y de 2026 sin aumentar la caída máxima. Base: los tres activos con todos los días, sin objetivo ni freno semanal. Sin el freno, sacar los viernes empeoraba 2025; con el freno de −3R aplicado mejora los dos años (ver “Por qué sin viernes”) y se adoptó por decisión de Fabián.</p><table class="cmp" id="t-decis"></table></div>
   </section>
   <section aria-labelledby="r-s4">
     <div class="sec-head"><h2 id="r-s4">Riesgo con simulaciones</h2><p id="r-s4p"></p></div>
@@ -251,13 +267,14 @@ const final=R.final, finTxt=[final.vie===false?'sin viernes':null,final.obj?`obj
 const mc=F.mc, Bx=R.base, XAU=D.referencias.xau.detalle, CU=D.referencias.cuatro.detalle;
 function renderResumen(){
   $('#r-titulo').textContent=R.combo.map(([a,p])=>`${a} ${PAT[p]}`).join(' · ');
-  $('#r-sub').textContent=`Tres activos, cada uno con el patrón que ganó en los dos años. Riesgo fijo de 1%, límite de 1 TP o 2 SL por sesión, todos los días de la semana y ${finTxt.join(', ')||'sin reglas adicionales'}. AUDUSD queda afuera: perdió en 2025 con todos los patrones.`;
+  $('#r-sub').textContent=`Tres activos, cada uno con el patrón que ganó en los dos años. Riesgo fijo de 1%, límite de 1 TP o 2 SL por sesión, de lunes a jueves y freno de pérdida semanal de −${final.stop}R. Es la gestión ganadora entre las ${D.meta.combinaciones} combinaciones de activos y patrones y las ${fmt(D.meta.simulaciones,0)} simulaciones testeadas. AUDUSD queda afuera: no gana en los dos años con ningún patrón.`;
   $('#r-verdict').innerHTML=`<div class="big">${pc(F.cagr)} anual compuesto con caída máxima de −${fmt(F.mdd)}%: ${fmt(F.cagr/XAU.cagr,1)} veces lo que rinde XAUUSD solo, con una caída ${F.mdd>XAU.mdd?'algo mayor':'menor'}.</div>
-  <p>Del ${D.meta.ini} al ${D.meta.fin} la cartera ganó <b>${pc(F.ret)}</b> (${pc(F.anios['2025'])} en 2025 y ${pc(F.anios['2026'])} en 2026), con <b>${fmt(F.wr)}% de operaciones ganadoras</b>, ${fmt(F.sem_pos,0)}% de semanas positivas y una racha perdedora máxima de ${F.racha} operaciones. Equivale a <b>${pc(F.mes_geo,2)} mensual</b> y <b>${pc(F.sem_geo,2)} semanal</b> compuesto, lejos de la meta de ${MU.mensual}% mensual (ver la pestaña “Meta”). En el 5% de simulaciones más desfavorables rinde ${pc(mc.cagr_p5)} anual: la cartera gana incluso con una ventaja más chica que la observada, que es lo que pide una gestión para diez años.</p>`;
+  <p><b>Gestión ganadora</b>: XAUUSD Envolvente, EURUSD Envolvente + START y GBPUSD START, de lunes a jueves, riesgo fijo 1% y freno de pérdida semanal de −${final.stop}R. Del ${D.meta.ini} al ${D.meta.fin} la cartera ganó <b>${pc(F.ret)}</b> (${pc(F.anios['2025'])} en 2025 y ${pc(F.anios['2026'])} en 2026), con <b>${fmt(F.wr)}% de operaciones ganadoras</b>, ${fmt(F.sem_pos,0)}% de semanas positivas y una racha perdedora máxima de ${F.racha} operaciones. Equivale a <b>${pc(F.mes_geo,2)} mensual</b> y <b>${pc(F.sem_geo,2)} semanal</b> compuesto, lejos de la meta de ${MU.mensual}% mensual (ver la pestaña “Meta”). En el 5% de simulaciones más desfavorables rinde ${pc(mc.cagr_p5)} anual y la probabilidad de cerrar un año en pérdida es ${fmt(mc.p_anio_neg)}%: la cartera gana incluso con una ventaja más chica que la observada, que es lo que pide una gestión para diez años.</p>`;
+  renderGanadora();
   const k=(l,v,s,c='',h='')=>`<div class="kpi${h}"><span class="l">${l}</span><span class="v ${c}">${v}</span><span class="s">${s}</span></div>`;
   $('#r-kpis').innerHTML=k('Rendimiento anual compuesto',pc(F.cagr),`total ${pc(F.ret)} en ${fmt((new Date(2026,9,2)-new Date(2025,0,13))/864e5/30.44,0)} meses`,'pos',' hero')+k('Mensual compuesto',pc(F.mes_geo,2),`semanal ${pc(F.sem_geo,2)}`,'pos')+k('Caída máxima','−'+fmt(F.mdd)+'%',`${F.dd_ini} al ${F.dd_fin}`,'neg')+k('Win rate',fmt(F.wr)+'%',`${F.n} operaciones · racha máx. ${F.racha}`)
     +k('Meses positivos',fmt(F.mes_pos,0)+'%',`peor mes ${pc(F.peor_mes)}`)+k('Semanas positivas',fmt(F.sem_pos,0)+'%',`peor semana ${pc(F.peor_sem,2)}`)+k('Más tiempo bajo el máximo',F.bajo_agua+' días','desde un pico hasta superarlo')+k('Posiciones abiertas a la vez',`hasta ${F.max_conc}`,`riesgo simultáneo máx. ${F.max_conc}%`);
-  const ser=[{name:'Recomendada',color:'--gain',pts:F.curve,w:2.4},{name:'4 activos con Envolvente',color:'--a-eur',pts:CU.curve,w:1.6,op:.8},{name:'XAUUSD solo (Envolvente)',color:'--a-xau',pts:XAU.curve,w:1.6,op:.8}];
+  const ser=[{name:'Gestión ganadora',color:'--gain',pts:F.curve,w:2.4},{name:'4 activos con Envolvente (misma gestión)',color:'--a-eur',pts:CU.curve,w:1.6,op:.8},{name:'XAUUSD solo (misma gestión)',color:'--a-xau',pts:XAU.curve,w:1.6,op:.8}];
   $('#r-leg').innerHTML=ser.map(s=>`<span><i style="background:var(${s.color})"></i>${s.name} · ${pc(s===ser[0]?F.ret:s===ser[1]?CU.ret:XAU.ret)}</span>`).join('');
   lineChart($('#c-eq'),ser);
   const ms=F.meses.filter(m=>m.m!=='2026-10');
@@ -271,21 +288,37 @@ function renderResumen(){
     `<tr class="grp"><td colspan="9">Base</td></tr><tr><td>Sin reglas</td>${yrs(B)}${tdp(B.cagr)}${td('−'+fmt(B.mdd)+'%')}${td(fmt(B.wr)+'%')}${td(B.racha)}${tdp(B.peor_mes)}<td></td></tr>`+
     R.decisiones.map((d,i)=>{const grp=i===0?'Días':d.regla.startsWith('Objetivo')&&!R.decisiones[i-1].regla.startsWith('Objetivo')?'Objetivo semanal':d.regla.startsWith('Freno')&&!R.decisiones[i-1].regla.startsWith('Freno')?'Freno de pérdida semanal':d.regla.startsWith('Cortar')&&!R.decisiones[i-1].regla.startsWith('Cortar')?'Tras perder la primera operación del activo':null;
       const elegido=Object.entries(d.kw).every(([k,v])=>final[k]===v);
-      return (grp?`<tr class="grp"><td colspan="9">${grp}</td></tr>`:'')+`<tr${elegido?' class="best"':''}><td>${d.regla}${elegido?' <span class="pill g">aplicada</span>':''}</td>${['2025','2026'].map(y=>td(pc(d.anios[y]),d.anios[y]>B.anios[y]?'pos':'neg')).join('')}${tdp(d.cagr)}${td('−'+fmt(d.mdd)+'%',d.mdd<B.mdd?'pos':d.mdd>B.mdd?'neg':'')}${td(fmt(d.wr)+'%')}${td(d.racha,d.racha<B.racha?'pos':d.racha>B.racha?'neg':'')}${tdp(d.peor_mes)}<td class="n">${pill(d.ok)}</td></tr>`}).join('');
+      return (grp?`<tr class="grp"><td colspan="9">${grp}</td></tr>`:'')+`<tr${elegido?' class="best"':''}><td>${d.regla}${elegido?' <span class="pill g">aplicada</span>':''}</td>${['2025','2026'].map(y=>td(pc(d.anios[y]),d.anios[y]>B.anios[y]?'pos':'neg')).join('')}${tdp(d.cagr)}${td('−'+fmt(d.mdd)+'%',d.mdd<B.mdd?'pos':d.mdd>B.mdd?'neg':'')}${td(fmt(d.wr)+'%')}${td(d.racha,d.racha<B.racha?'pos':d.racha>B.racha?'neg':'')}${tdp(d.peor_mes)}<td class="n">${elegido&&!d.ok?'<span class="pill n">decisión de Fabián</span>':pill(d.ok)}</td></tr>`}).join('');
   $('#r-s4p').textContent=`${mc.sims} simulaciones por cartera`;
   const U=R.usuario.mc, X=D.referencias.xau.detalle.mc, C4=D.referencias.cuatro.detalle.mc;
   const mrow=(n,m,b=false)=>`<tr${b?' class="best"':''}><td>${n}</td>${tdp(m.cagr_med)}${tdp(m.cagr_p5)}${td(pc(m.mes_med,2),cls(m.mes_med))}${td('−'+fmt(m.dd_med)+'%')}${td('−'+fmt(m.dd_p95)+'%')}${td(fmt(m.p_anio_neg)+'%')}${td(fmt(m.p_dd20)+'%')}${td(m.racha_p95)}${td(m.bajo_agua_p95+' d')}</tr>`;
   $('#t-mc').innerHTML=`<thead><tr><th>Cartera</th><th class="n">Anual mediana</th><th class="n">Anual peor 5%</th><th class="n">Mensual mediana</th><th class="n">Caída mediana</th><th class="n">Caída peor 5%</th><th class="n">Año negativo</th><th class="n">Caída &gt;20%</th><th class="n">Racha peor 5%</th><th class="n">Bajo el máximo peor 5%</th></tr></thead>`+
-    mrow('Recomendada ('+finTxt.join(', ')+')',mc,true)+mrow('Mismos activos con objetivo +5R, sin freno',U)+mrow('4 activos con Envolvente',C4)+mrow('XAUUSD solo (Envolvente)',X);
+    mrow('Gestión ganadora ('+finTxt.join(', ')+')',mc,true)+mrow('Mismos activos, todos los días, objetivo +5R, sin freno',U)+mrow('4 activos con Envolvente (misma gestión)',C4)+mrow('XAUUSD solo (misma gestión)',X);
   const pa=F.por_activo;
   $('#r-plan').innerHTML=[
     `<b>Activos y patrones</b>: ${R.combo.map(([a,p])=>`${a} solo con ${PAT[p]}`).join('; ')}. Las operaciones de los tres se toman en el orden en que aparecen, como en la simulación.`,
     `<b>Riesgo</b>: 1% fijo del capital al momento de entrar, sin escalera. Hubo hasta ${F.max_conc} posiciones abiertas a la vez (${F.max_conc}% de riesgo simultáneo).`,
+    `<b>Días</b>: de lunes a jueves en los tres activos. Los viernes no se opera.`,
     `<b>Sesión</b>: límite de 1 TP o 2 SL por activo, como en los datos. ${final.regla&&final.regla!=='cont'?'Cortar el activo tras perder la primera operación.':'Después de un primer SL se sigue operando: cortar la sesión empeoró los dos años (ver “Primer SL”).'}`,
     final.stop?`<b>Freno de pérdida semanal</b>: si la semana llega a −${final.stop}R (−${fmt(final.stop*0.9)}% del capital del lunes), no se abren más operaciones hasta el lunes siguiente.`:null,
     `<b>Objetivo semanal</b>: ${final.obj?`al llegar a +${final.obj}R se deja de operar hasta el lunes.`:`no hace falta. Con +5R la cartera solo frena ${fmt(R.objetivos.find(o=>o.obj===5).obj_hit)}% de las semanas y ningún objetivo mejoró los dos años; si lo querés por disciplina, +5R o más no cambia el resultado.`}`,
     `<b>Calendario</b>: el mismo de siempre (feriados, NFP, CPI, PPI, PCE, BCE, discursos) y el receso del ${D.meta.receso}. Aporte por activo: ${Object.entries(pa).map(([a,x])=>`${a} ${sg(x.R)}R en ${x.n} operaciones`).join(', ')}.`,
     `<b>Revisión</b>: cada trimestre, volver a correr este análisis con los datos nuevos. Si un activo pasa a perder en el año móvil, se saca; si AUDUSD empieza a ganar de forma sostenida, se evalúa sumarlo.`].filter(Boolean).map(x=>`<li>${x}</li>`).join('');
+}
+
+function renderGanadora(){
+  const k=(l,v,s,c='')=>`<div class="kpi"><span class="l">${l}</span><span class="v ${c}">${v}</span><span class="s">${s}</span></div>`;
+  $('#r-ratios').innerHTML=k('Sharpe',fmt(F.sharpe,2),'rendimiento semanal / volatilidad')+k('Sortino',fmt(F.sortino,2),'solo cuenta la volatilidad a la baja')+k('Calmar',fmt(F.calmar,2),'anual compuesto / caída máxima')+k('Factor de recuperación',fmt(F.rec,2),'ganancia total / caída máxima')
+    +k('Profit factor',fmt(F.pf,2),'ganancias / pérdidas brutas')+k('Esperanza por operación',sg(F.R_op,3)+'R',`ganadora media ${sg(F.prom_gan,2)}R · perdedora ${sg(F.prom_per,2)}R`,'pos')+k('Mejor y peor mes',`${pc(F.mejor_mes)} / ${pc(F.peor_mes)}`,`${fmt(F.mes_pos,0)}% de meses positivos`)+k('Semanas negativas seguidas',`hasta ${F.sem_neg_seg}`,`peor semana ${pc(F.peor_sem,2)}`);
+  const PA=R.por_anio;
+  $('#t-anio').innerHTML=`<thead><tr><th>Año</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">R</th><th class="n">Rendimiento</th><th class="n">Caída máx.</th><th class="n">Racha</th><th class="n">Profit factor</th><th class="n">Peor mes</th></tr></thead>`+Object.entries(PA).map(([y,x])=>`<tr><td>${y}${y==='2026'?' <span class="muted">(hasta 02/10)</span>':''}</td>${td(x.n)}${td(fmt(x.wr)+'%')}${td(sg(x.R),cls(x.R))}${tdp(x.ret)}${td('−'+fmt(x.mdd)+'%')}${td(x.racha)}${td(fmt(x.pf,2))}${tdp(x.peor_mes)}</tr>`).join('');
+  const pa=F.por_activo;
+  $('#t-aporte').innerHTML=`<thead><tr><th>Activo</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">R 2025</th><th class="n">R 2026</th><th class="n">R total</th><th class="n">USD</th></tr></thead>`+Object.entries(pa).map(([a,x])=>`<tr><td>${a} · ${PATC[R.combo.find(c=>c[0]===a)[1]]}</td>${td(x.n)}${td(fmt(x.wr)+'%')}${td(sg(x.R2025),cls(x.R2025))}${td(sg(x.R2026),cls(x.R2026))}${td(sg(x.R),cls(x.R))}${td(sg(x.usd,0),cls(x.usd))}</tr>`).join('');
+  const V=R.viernes, g=V.find(v=>v.sinv.length===3), c0=V.find(v=>!v.sinv.length), e=V.find(v=>v.sinv.length===1&&v.sinv[0]==='EURUSD');
+  $('#t-vie').innerHTML=`<thead><tr><th>Variante</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">2025</th><th class="n">2026</th><th class="n">Anual comp.</th><th class="n">Caída máx.</th><th class="n">Profit factor</th><th class="n">Peor 5% sim.</th><th class="n">Año negativo</th></tr></thead>`+V.map(v=>`<tr${v===g?' class="best"':''}><td>${v.variante}${v===g?' <span class="pill g">elegida</span>':''}</td>${td(v.n)}${td(fmt(v.wr)+'%')}${yrs(v)}${tdp(v.cagr)}${td('−'+fmt(v.mdd)+'%')}${td(fmt(v.pf,2))}${tdp(v.mc_cagr_p5)}${td(fmt(v.mc_anio_neg)+'%')}</tr>`).join('');
+  $('#vie-note').textContent=`Frente a operar todos los días, no operar los viernes mejora los dos años (${pc(g.anios['2025'])} y ${pc(g.anios['2026'])} contra ${pc(c0.anios['2025'])} y ${pc(c0.anios['2026'])}), baja la caída máxima de −${fmt(c0.mdd)}% a −${fmt(g.mdd)}% y eleva el peor 5% de las simulaciones de ${pc(c0.mc_cagr_p5)} a ${pc(g.mc_cagr_p5)} anual, con ${c0.n-g.n} operaciones menos. Sacarlo solo en EURUSD rinde algo más en la historia (${pc(e.cagr)} anual), pero exige operar XAUUSD y GBPUSD dos horas más cada viernes por una diferencia marginal: se elige no operar los viernes en ningún activo.`;
+  const VA=R.viernes_activo;
+  $('#t-vie-act').innerHTML=`<thead><tr><th>Activo</th><th class="n">Ops. 2025</th><th class="n">Win rate 2025</th><th class="n">R 2025</th><th class="n">Ops. 2026</th><th class="n">Win rate 2026</th><th class="n">R 2026</th></tr></thead>`+Object.entries(VA).map(([a,x])=>`<tr><td>${a}</td>${td(x['2025'].n)}${td(fmt(x['2025'].wr)+'%')}${td(sg(x['2025'].R),cls(x['2025'].R))}${td(x['2026'].n)}${td(fmt(x['2026'].wr)+'%')}${td(sg(x['2026'].R),cls(x['2026'].R))}</tr>`).join('');
 }
 
 /* ================= ACTIVOS ================= */
@@ -301,7 +334,7 @@ function renderActivos(){
   $('#t-act').innerHTML=h;
   const pick={XAUUSD:R.califica.XAUUSD.elegido||'E',AUDUSD:'ES',EURUSD:R.califica.EURUSD.elegido||'E',GBPUSD:R.califica.GBPUSD.elegido||'E'};
   const DIA=['Lunes','Martes','Miércoles','Jueves','Viernes'];
-  $('#t-dias').innerHTML=`<thead><tr><th>Activo · patrón</th>${DIA.map(d=>`<th class="n">${d}</th>`).join('')}</tr></thead>`+Object.entries(pick).map(([a,p])=>`<tr><td>${a} · ${PATC[p]}</td>${A[a][p].dias.map(x=>td(sg(x.R)+`<span class="muted"> · ${x.n}</span>`,cls(x.R))).join('')}</tr>`).join('')+`<tr><td colspan="6" class="note">Cada celda: R del día · cantidad de operaciones. Los viernes de EURUSD pierden, pero sacar los viernes de toda la cartera empeoró 2025 y no se aplica.</td></tr>`;
+  $('#t-dias').innerHTML=`<thead><tr><th>Activo · patrón</th>${DIA.map(d=>`<th class="n">${d}</th>`).join('')}</tr></thead>`+Object.entries(pick).map(([a,p])=>`<tr><td>${a} · ${PATC[p]}</td>${A[a][p].dias.map(x=>td(sg(x.R)+`<span class="muted"> · ${x.n}</span>`,cls(x.R))).join('')}</tr>`).join('')+`<tr><td colspan="6" class="note">Cada celda: R del día · cantidad de operaciones. EURUSD pierde los viernes en los dos años; en XAUUSD y GBPUSD el aporte del viernes es marginal. La gestión ganadora no opera los viernes.</td></tr>`;
   const C=D.correlaciones.ES;
   $('#t-corr').innerHTML=`<thead><tr><th>Par de activos</th><th class="n">Días en común</th><th class="n">Correlación</th><th class="n">Pierden los dos el mismo día</th></tr></thead>`+Object.entries(C).map(([k,v])=>`<tr><td>${k.replace('-',' y ')}</td>${td(v.dias)}${td(sg(v.r,2))}${td(fmt(v.ambos_pierden)+'%')}</tr>`).join('');
   const rs=Object.values(C).map(v=>v.r);$('#corr-note').textContent=`Correlaciones entre ${sg(Math.min(...rs),2)} y ${sg(Math.max(...rs),2)} (patrón Envolvente + START): los resultados diarios son prácticamente independientes, aun entre pares contra el dólar. Por eso sumar activos con ventaja propia baja la caída en lugar de multiplicarla.`;
@@ -314,9 +347,9 @@ function renderCombos(){
   const H=`<thead><tr><th>Combinación</th><th>Variante</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">2025</th><th class="n">2026</th><th class="n">Anual comp.</th><th class="n">Mensual comp.</th><th class="n">Caída máx.</th><th class="n">Racha</th><th class="n">Calmar</th><th class="n">Anual peor 5%</th><th class="n">Año negativo</th></tr></thead>`;
   const row=(g,v,m)=>`<tr><td>${combo(g.c)}</td><td>${v}</td>${td(g.n)}${td(fmt(g.wr)+'%')}${yrs(g)}${tdp(g.cagr)}${td(pc(g.mes_geo,2),cls(g.mes_geo))}${td('−'+fmt(g.mdd)+'%')}${td(g.racha)}${td(fmt(g.calmar,2))}${m?tdp(m.cagr_p5)+td(fmt(m.p_anio_neg)+'%'):td('—')+td('—')}</tr>`;
   $('#t-pedidas').innerHTML=H+D.pedidas.map(p=>`<tr class="grp"><td colspan="13">${p.activos.join(' + ')}</td></tr>`+row(p.mejor,'Mejor patrón por activo',p.mc)+(p.activos.length>1?row(p.solo_e,'Todos Envolvente')+(p.solo_es?row(p.solo_es,'Todos Envolvente + START'):''):'')).join('')+
-    `<tr class="grp"><td colspan="13">Recomendada (mismas condiciones: objetivo +5R, sin freno)</td></tr>`+row({...R.usuario,c:R.combo},'XAU Env · EUR Env + START · GBP START',R.usuario.mc);
+    `<tr class="grp"><td colspan="13">Activos de la gestión ganadora con las condiciones planteadas (con viernes, objetivo +5R, sin freno)</td></tr>`+row({...R.usuario,c:R.combo},'XAU Env · EUR Env + START · GBP START',R.usuario.mc);
   const cols=['--a-aud','--a-eur','--a-gbp','--meta','--a-xau'];
-  const ser=D.pedidas.map((p,i)=>({name:p.activos.map(a=>a.slice(0,3)).join(' + '),color:cols[i],pts:p.curve,w:p.activos.length===4?2.2:1.6})).concat([{name:'Recomendada',color:'--gain',pts:R.usuario.curve,w:2.4}]);
+  const ser=D.pedidas.map((p,i)=>({name:p.activos.map(a=>a.slice(0,3)).join(' + '),color:cols[i],pts:p.curve,w:p.activos.length===4?2.2:1.6})).concat([{name:'Activos de la gestión ganadora',color:'--gain',pts:R.usuario.curve,w:2.4}]);
   $('#p-leg').innerHTML=ser.map(s=>`<span><i style="background:var(${s.color})"></i>${s.name}</span>`).join('');
   lineChart($('#c-ped'),ser,300);
   $('#t-valid').innerHTML=`<thead><tr><th>Elegida con</th><th>Combinación elegida</th><th class="n">Resultado en ese año</th><th class="n">Resultado en el otro año</th></tr></thead>`+D.validacion.map(v=>`<tr><td>${v.elegido_en} → medida en ${v.medido_en}</td><td>${combo(v.combo)}</td>${tdp(v.en_muestra)}${tdp(v.fuera)}</tr>`).join('');

@@ -13,3 +13,6 @@ Objetivo de Fabián: preservar y crecer el capital durante una década. Nada de 
 - Un activo-patrón entra solo si gana en 2025 y en 2026 por separado; una regla de gestión se acepta solo si mejora los dos años sin subir la caída máxima.
 - Simulaciones: remuestreo con reposición dentro de cada activo.
 - `duplicados()` detecta un START idéntico al Envolvente y lo excluye (pasó con el primer AUDUSD_START; ya se reemplazó por el correcto el 05/10/2026).
+
+## Gestión ganadora (decisión de Fabián, 06/10/2026)
+XAUUSD Envolvente + EURUSD Envolvente y START + GBPUSD START, de lunes a jueves (sin viernes en ningún activo), riesgo fijo 1%, límite 1 TP / 2 SL por sesión, freno de pérdida semanal −3R, sin objetivo semanal. Fijada en `hibrida.py` (`final = dict(vie=False, stop=3)`).

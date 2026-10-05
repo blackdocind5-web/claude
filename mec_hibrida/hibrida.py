@@ -181,6 +181,11 @@ def simular(ts, objetivo=None, curva=False, stop_sem=None, riesgo=1.0):
     for m in sorted(meses): mm.append(dict(m=m, pct=round(meses[m] / eqm * 100, 2))); eqm += meses[m]
     mcomp = [x for x in mm if x["m"] not in ("2025-12", "2026-01", "2026-10")]   # meses completos (sin receso ni el parcial)
     sd = st.pstdev(wpct) if len(wpct) > 1 else 0
+    dsd = math.sqrt(sum(min(0, w) ** 2 for w in wpct) / len(wpct)) if wpct else 0
+    gan = sum(x["pnl"] for x in tomadas if x["pnl"] > 0); per = -sum(x["pnl"] for x in tomadas if x["pnl"] < 0)
+    sneg = c_ = 0
+    for w in act:
+        c_ = c_ + 1 if w["pct"] < 0 else 0; sneg = max(sneg, c_)
     res = dict(n=n, wr=round(100 * sum(u > 0 for u in us) / n, 1) if n else 0, R=round(sum(us) / R_PCT, 1),
                ret=round(tot * 100, 1), cagr=round(cagr * 100, 1),
                sem_geo=round(((E / CAP) ** (1 / len(wk)) - 1) * 100, 2), mes_geo=round(((E / CAP) ** (30.4375 / dias) - 1) * 100, 2),
@@ -193,6 +198,12 @@ def simular(ts, objetivo=None, curva=False, stop_sem=None, riesgo=1.0):
                mdd=round(mdd * 100, 1), bajo_agua=max_bajo, racha=racha(us),
                calmar=round(cagr * 100 / (mdd * 100), 2) if mdd > 0 else None,
                sharpe=round(st.mean(wpct) / sd * math.sqrt(52), 2) if sd else None,
+               sortino=round(st.mean(wpct) / dsd * math.sqrt(52), 2) if dsd else None,
+               pf=round(gan / per, 2) if per else None, R_op=round(sum(us) / R_PCT / n, 3) if n else 0,
+               rec=round(tot * 100 / (mdd * 100), 2) if mdd > 0 else None, sem_neg_seg=sneg,
+               mejor_mes=round(max((x["pct"] for x in mcomp), default=0), 2),
+               prom_gan=round(st.mean([u for u in us if u > 0]) / R_PCT, 2) if any(u > 0 for u in us) else 0,
+               prom_per=round(st.mean([u for u in us if u <= 0]) / R_PCT, 2) if any(u <= 0 for u in us) else 0,
                anios=por_anio, max_conc=max_conc,
                dd_ini=dd_ini.strftime("%d/%m/%Y") if dd_ini else None, dd_fin=dd_fin.strftime("%d/%m/%Y") if dd_fin else None)
     if curva:
@@ -201,7 +212,10 @@ def simular(ts, objetivo=None, curva=False, stop_sem=None, riesgo=1.0):
         res["meses"] = mm
         res["por_activo"] = {a: dict(n=sum(1 for x in tomadas if x["a"] == a), R=round(sum(x["u"] for x in tomadas if x["a"] == a) / R_PCT, 1),
                                      wr=round(100 * sum(x["u"] > 0 for x in tomadas if x["a"] == a) / max(1, sum(1 for x in tomadas if x["a"] == a)), 1),
-                                     usd=round(sum(x["pnl"] for x in tomadas if x["a"] == a), 2)) for a in ACTIVOS if any(x["a"] == a for x in tomadas)}
+                                     usd=round(sum(x["pnl"] for x in tomadas if x["a"] == a), 2),
+                                     **{f"R{y}": round(sum(x["u"] for x in tomadas if x["a"] == a and x["ent"].year == y) / R_PCT, 1) for y in (2025, 2026)},
+                                     **{f"wr{y}": round(100 * sum(x["u"] > 0 for x in tomadas if x["a"] == a and x["ent"].year == y) / max(1, sum(1 for x in tomadas if x["a"] == a and x["ent"].year == y)), 1) for y in (2025, 2026)})
+                             for a in ACTIVOS if any(x["a"] == a for x in tomadas)}
     return res
 
 
@@ -311,9 +325,10 @@ def main():
                         "mdd", "bajo_agua", "racha", "calmar", "sharpe", "anios", "max_conc")}))
     print("simulaciones:", len(grid))
 
-    def ts_de(c, vie=True, regla="cont"):
+    def ts_de(c, vie=True, regla="cont", sinv=None):
         base = [t for a, p in c for t in T[(a, p)]]
         if not vie: base = [t for t in base if t["ent"].weekday() != 4]
+        if sinv: base = [t for t in base if not (t["a"] in sinv and t["ent"].weekday() == 4)]
         return aplicar_regla(sorted(base, key=lambda t: (t["a"], t["ent"])), regla)
 
     robusto = lambda g: all(v > 0 for v in g["anios"].values()) and len(g["anios"]) == 2
@@ -431,10 +446,31 @@ def main():
         acc = [d_ for d_ in decis if d_["ok"]]
         final = max(acc, key=lambda d_: d_["calmar"] or 0)["kw"] if acc else {}
         rf = corre(mc=True, curva=True, **final)
+    validada = dict(final)
+    # Decisión de Fabián (06/10/2026): no operar los viernes en ningún activo. Con el freno de −3R, sacar los viernes
+    # mejora los dos años; operar viernes en XAUUSD y GBPUSD es una mejora marginal que no justifica la sesión.
+    final = dict(vie=False, stop=3)
+    rf = corre(mc=True, curva=True, **final)
+    viernes = []
+    for nom, sv in (("Con viernes (los tres activos)", ()), ("Sin viernes en los tres activos", ("XAUUSD", "EURUSD", "GBPUSD")),
+                    ("Sin viernes solo en EURUSD", ("EURUSD",)), ("Sin viernes solo en XAUUSD", ("XAUUSD",)), ("Sin viernes solo en GBPUSD", ("GBPUSD",))):
+        ts_ = ts_de(C, sinv=sv); r = simular(ts_, None, stop_sem=3); m = montecarlo(ts_, None, sims=1000, stop_sem=3)
+        viernes.append(dict(variante=nom, sinv=list(sv), **{k: r[k] for k in ("n", "wr", "ret", "cagr", "mes_geo", "mdd", "racha", "calmar", "anios", "sem_pos", "peor_mes", "bajo_agua", "pf")},
+                            mc_cagr_p5=m["cagr_p5"], mc_dd95=m["dd_p95"], mc_anio_neg=m["p_anio_neg"]))
+    vie_act = {}
+    for a, p in C:
+        v = [t for t in T[(a, p)] if t["ent"].weekday() == 4]
+        vie_act[a] = {str(y): dict(n=len([t for t in v if t["ent"].year == y]), R=round(sum(t["u"] for t in v if t["ent"].year == y) / R_PCT, 1),
+                                   wr=round(100 * sum(t["u"] > 0 for t in v if t["ent"].year == y) / max(1, len([t for t in v if t["ent"].year == y])), 1)) for y in (2025, 2026)}
+    # cada año por separado, arrancando con 1.000 USD
+    tsg = ts_de(C, vie=False)
+    por_anio = {str(y): {k: v for k, v in simular([t for t in tsg if t["ent"].year == y], None, stop_sem=3).items() if k in (
+        "n", "wr", "R", "ret", "mdd", "racha", "pf", "peor_mes", "mejor_mes", "R_op", "prom_gan", "prom_per")} for y in (2025, 2026)}
     base_det = corre(mc=True, curva=True)
     usuario = corre(obj=5, mc=True, curva=True)
     data["recomendada"] = dict(combo=[list(x) for x in C], etiqueta=etiqueta(C), califica=califica, marginal=marg, decisiones=decis,
-                               final=final, detalle=rf, base=base_det, usuario=usuario,
+                               final=final, validada=validada, viernes=viernes, viernes_activo=vie_act, por_anio=por_anio,
+                               detalle=rf, base=base_det, usuario=usuario,
                                objetivos=[dict(obj=o, **{k: v for k, v in corre(obj=o, **{k2: v2 for k2, v2 in final.items() if k2 != "obj"}).items() if k in (
                                    "n", "wr", "cagr", "mes_geo", "sem_geo", "mdd", "racha", "obj_hit", "anios", "sem_pos", "calmar", "peor_sem", "bajo_agua")}) for o in OBJETIVOS])
     # riesgo por operación que haría falta para la meta de 240% anual (solo como referencia de lo que implica)
