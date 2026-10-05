@@ -12,4 +12,4 @@ Objetivo de Fabián: preservar y crecer el capital durante una década. Nada de 
 - Objetivo semanal (+nR, 1R = 0,9%) y freno de pérdida semanal (−nR): al alcanzarlo no se abren operaciones hasta el lunes.
 - Un activo-patrón entra solo si gana en 2025 y en 2026 por separado; una regla de gestión se acepta solo si mejora los dos años sin subir la caída máxima.
 - Simulaciones: remuestreo con reposición dentro de cada activo.
-- AUDUSD_START cargado es idéntico al Envolvente (se detecta y se excluye) hasta recibir el archivo correcto.
+- `duplicados()` detecta un START idéntico al Envolvente y lo excluye (pasó con el primer AUDUSD_START; ya se reemplazó por el correcto el 05/10/2026).
