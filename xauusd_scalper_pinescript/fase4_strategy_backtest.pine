@@ -1061,6 +1061,68 @@ plot(mostrarDebugQty ? qtySell : na, title="DEBUG qtySell", color=color.purple, 
 mecBuyGate  = mecBuyBruto  and barstate.isconfirmed and diaHabilitado and ((candidataEnvolventeBuy  and habilitarEnvolvente) or (esStartBuy  and habilitarStart))
 mecSellGate = mecSellBruto and barstate.isconfirmed and diaHabilitado and ((candidataEnvolventeSell and habilitarEnvolvente) or (esStartSell and habilitarStart))
 
+// ============================================================================
+// DEBUG — Distribución de distancias de SL (06/10): herramienta para calibrar
+// `UMBRAL_SL_PCT` por activo, a pedido de Fabián al notar que el valor
+// calibrado contra oro (0,46%) no rendía igual de bien en BTCUSD. Acumula la
+// distancia NATURAL del SL (distanciaCrudaBuy/Sell, en % del precio de
+// entrada, ANTES de cualquier reducción) de cada señal MEC detectada en todo
+// el backtest, y en la última barra arma una tabla con mínimo/percentiles/
+// máximo + cuántas de esas señales quedan por encima del umbral actual (las
+// que se recortan). Es de solo lectura: no toca `distanciaFinalBuy/Sell`,
+// `slBuy/tpBuy/slSell/tpSell` ni ninguna variable de ejecución -- no cambia
+// el comportamiento de la estrategia, sea cual sea el activo.
+// ============================================================================
+grpDebugSL = "Debug — Distribución de distancias SL"
+mostrarHistogramaSL = input.bool(false, "DEBUG temporal: tabla de distribución de distancias de SL (para calibrar Umbral de distancia SL por activo)", group=grpDebugSL)
+
+var array<float> distanciasSLPct = array.new<float>()
+
+if mostrarHistogramaSL and mecBuyGate and not na(distanciaCrudaBuy)
+    array.push(distanciasSLPct, distanciaCrudaBuy / close * 100)
+if mostrarHistogramaSL and mecSellGate and not na(distanciaCrudaSell)
+    array.push(distanciasSLPct, distanciaCrudaSell / close * 100)
+
+var table tablaSL = na
+if mostrarHistogramaSL and barstate.islast and array.size(distanciasSLPct) > 0
+    distanciasOrdenadas = array.copy(distanciasSLPct)
+    array.sort(distanciasOrdenadas)
+    n = array.size(distanciasOrdenadas)
+
+    pMin = array.min(distanciasOrdenadas)
+    p25  = array.percentile_nearest_rank(distanciasOrdenadas, 25)
+    p50  = array.percentile_nearest_rank(distanciasOrdenadas, 50)
+    p75  = array.percentile_nearest_rank(distanciasOrdenadas, 75)
+    p90  = array.percentile_nearest_rank(distanciasOrdenadas, 90)
+    p95  = array.percentile_nearest_rank(distanciasOrdenadas, 95)
+    pMax = array.max(distanciasOrdenadas)
+
+    cuantosSuperanUmbral = 0
+    for i = 0 to n - 1
+        if array.get(distanciasOrdenadas, i) > UMBRAL_SL_PCT
+            cuantosSuperanUmbral += 1
+    pctSuperanUmbral = cuantosSuperanUmbral / n * 100
+
+    tablaSL := table.new(position.top_right, 2, 9, bgcolor=color.new(color.black, 10), border_width=1, border_color=color.gray)
+    table.cell(tablaSL, 0, 0, "Distribución distancia SL (%)", text_color=color.white, bgcolor=color.new(color.blue, 40), text_size=size.small)
+    table.cell(tablaSL, 1, 0, "n=" + str.tostring(n), text_color=color.white, bgcolor=color.new(color.blue, 40), text_size=size.small)
+    table.cell(tablaSL, 0, 1, "Mínimo", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 1, 1, str.tostring(pMin, "#.###") + "%", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 0, 2, "P25", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 1, 2, str.tostring(p25, "#.###") + "%", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 0, 3, "Mediana (P50)", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 1, 3, str.tostring(p50, "#.###") + "%", text_color=color.yellow, text_size=size.small)
+    table.cell(tablaSL, 0, 4, "P75", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 1, 4, str.tostring(p75, "#.###") + "%", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 0, 5, "P90", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 1, 5, str.tostring(p90, "#.###") + "%", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 0, 6, "P95", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 1, 6, str.tostring(p95, "#.###") + "%", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 0, 7, "Máximo", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 1, 7, str.tostring(pMax, "#.###") + "%", text_color=color.orange, text_size=size.small)
+    table.cell(tablaSL, 0, 8, "Umbral actual (" + str.tostring(UMBRAL_SL_PCT, "#.##") + "%) recorta", text_color=color.white, bgcolor=color.new(color.green, 40), text_size=size.small)
+    table.cell(tablaSL, 1, 8, str.tostring(cuantosSuperanUmbral) + " / " + str.tostring(n) + " (" + str.tostring(pctSuperanUmbral, "#.#") + "%)", text_color=color.white, bgcolor=color.new(color.green, 40), text_size=size.small)
+
 // -- estado por sesión (mismas 6 variables que el indicador, una copia por
 // sesión -- Pre-NY, NY, Asia y Wall Street no comparten límite ni trade
 // entre sí) --

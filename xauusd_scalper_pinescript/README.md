@@ -1009,6 +1009,36 @@ tocar los defaults ya validados en oro).
   archivo `fase4_strategy_backtest_m3.pine` se deja en el repo sin más
   desarrollo, como referencia por si se retoma más adelante.
 
+- [ ] **Fase 4 (backtesting) — debug: distribución de distancias de SL
+  (06/10)**: Fabián probó `UMBRAL_SL_PCT` (Sección 6B, SL/TP) en 0 para
+  BTCUSD (en vez del 0,46% default, calibrado contra oro) y la
+  rentabilidad pasó de -0,24% a +17% en casi dos años de backtest, con
+  win rate de 49% a 53%. Quiso entender a qué valor por activo conviene
+  llevar ese umbral, en vez de ir probando a ciegas. Se agregó una
+  herramienta de debug (temporal, `mostrarHistogramaSL`, grupo "Debug —
+  Distribución de distancias SL") que acumula, señal MEC por señal MEC
+  (`mecBuyGate`/`mecSellGate`), la distancia NATURAL de SL en % del
+  precio de entrada (`distanciaCrudaBuy`/`distanciaCrudaSell`, el mismo
+  valor que ya se usaba para decidir si recortar o no, pero sin recortar)
+  y en la última barra arma una tabla (mínimo, P25, mediana, P75, P90,
+  P95, máximo, y cuántas señales superan el umbral actual) -- sirve para
+  cualquier activo, no solo BTC, porque trabaja en porcentaje. Puramente
+  de lectura: no toca `distanciaFinalBuy/Sell`, `slBuy/tpBuy/slSell/
+  tpSell` ni ninguna variable de ejecución, así que no cambia el
+  comportamiento de la estrategia esté prendida o apagada. Implementado
+  en `fase4_strategy_backtest.pine`, justo después de `mecBuyGate`/
+  `mecSellGate`. Nota de uso importante que le pasé a Fabián: el umbral
+  no es un punto neutral -- todo lo que quede por encima se recorta 40%,
+  todo lo que quede por debajo queda intacto, así que elegirlo adentro
+  del grueso de la distribución parte en dos señales casi idénticas. Si
+  la intención es mantener el diseño original (recorte SOLO para outliers
+  anormalmente anchos), el umbral va por ENCIMA del grueso de la
+  distribución; si la intención es la que sugiere el resultado de BTC
+  (SL/TP más chico en general, no solo para los outliers), el umbral va
+  por DEBAJO de toda la distribución -- y en ese caso seguir afinando el
+  número cerca de 0 no tiene más efecto, el parámetro realmente a ajustar
+  pasa a ser `REDUCCION_SL`. Validación/uso real pendiente por Fabián.
+
 ## Decisiones de diseño (confirmadas con Fabián)
 
 - **Estética minimalista, solo la señal final**: los triángulos/etiquetas de
