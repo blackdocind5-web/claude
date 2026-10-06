@@ -20,7 +20,7 @@ if modo == "escalera":
 else:
     t = (t.replace("__TITULO__", "XAUUSD | Backtest 2026").replace("__H1BASE__", "XAUUSD | Backtest ").replace("__MUESTRA__", "")
           .replace("__EXTRA_TAB__", "").replace("__EXTRA_VIEW__", "")
-          .replace("__FUENTES__", "Fuente: listas de operaciones exportadas del Strategy Tester de TradingView, horario de Nueva York. 2025: XAU_m1_2025_Envolvente_y_START, XAU_m1_2025_Envolvente y XAU_m1_2025_START. 2026: XAU_m1_2026_CORREGIDO_Envolvente_y_START, XAU_m1_2026_CORREGIDO_Envolvente y XAU_m1_2026_CORREGIDO_START. Cada año arranca con 1.000 USD.").replace("__EXTRA_JS__", "").replace("__DATA__", rd("datos.json")))
+          .replace("__FUENTES__", "Fuente: listas de operaciones exportadas del Strategy Tester de TradingView, horario de Nueva York. 2025: XAU_m1_2025_Envolvente_y_START, XAU_m1_2025_Envolvente y XAU_m1_2025_START. 2026: XAU_m1_2026_CORREGIDO_Envolvente_y_START, XAU_m1_2026_CORREGIDO_Envolvente y XAU_m1_2026_CORREGIDO_START. Desde el 06/10/2026 ambos años salen de la exportación XAUUSD_m1_2025-2026 con el código ajustado, separada por año y reescalada para que cada año arranque con 1.000 USD.").replace("__EXTRA_JS__", "").replace("__DATA__", rd("datos.json")))
     out = "XAUUSD_Backtest_2026.html"
 open(out, "w", encoding="utf-8").write(t)
 print("ok", out, len(t))

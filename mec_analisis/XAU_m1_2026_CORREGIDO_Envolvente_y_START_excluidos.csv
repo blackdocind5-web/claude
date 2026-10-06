@@ -1,103 +1,135 @@
 ﻿Motivo de exclusión,Número de operación,Tipo,Fecha y hora,Señal,Precio USD,Tamaño (cant.),Tamaño de la posición (valor),PyG netas USD,Rentabilidad %,Comisión USD,Desviación favorable USD,Desviación favorable %,Desviación adversa USD,Desviación adversa %,PyG acumuladas USD,PyG acumuladas %,Duración (barras)
-Día sin operar: PPI m/m y Core PPI m/m (USD),5,Salida en corto,2026-01-30 09:00,Salida PreNY_5,5026.642,0.3,1498.3875,-9.61,-0.64,0,0.62,0.04,-9.61,-0.64,-30.41,-3.04,10
-Día sin operar: PPI m/m y Core PPI m/m (USD),5,Entrada en corto,2026-01-30 08:50,SELL PreNY,4994.625,0.3,1498.3875,-9.61,-0.64,0,0.62,0.04,-9.61,-0.64,-30.41,-3.04,10
-Entrada dentro del bloqueo 08:05-08:18: ADP Non-Farm Employment Change (dato 08:15),7,Salida en corto,2026-02-04 08:22,Salida PreNY_7,5046.235,0.58,2917.2028,-9.61,-0.33,0,3.44,0.12,-9.61,-0.33,-31.42,-3.14,12
-Entrada dentro del bloqueo 08:05-08:18: ADP Non-Farm Employment Change (dato 08:15),7,Entrada en corto,2026-02-04 08:10,SELL PreNY,5029.66,0.58,2917.2028,-9.61,-0.33,0,3.44,0.12,-9.61,-0.33,-31.42,-3.14,12
-Entrada fuera de la ventana 07:00-08:00: BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference,10,Salida en largo,2026-02-05 08:24,Salida PreNY_10,4859.343,0.61,2955.70925,8.49,0.29,0,8.49,0.29,-6.84,-0.23,-42,-4.20,5
-Entrada fuera de la ventana 07:00-08:00: BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference,10,Entrada en largo,2026-02-05 08:19,BUY PreNY,4845.425,0.61,2955.70925,8.49,0.29,0,8.49,0.29,-6.84,-0.23,-42,-4.20,5
-Día sin operar: CPI m/m (USD),15,Salida en largo,2026-02-13 08:01,Salida PreNY_15,4975.734,0.5,2479.1975,8.67,0.35,0,8.67,0.35,-2.26,-0.09,-20.32,-2.03,57
-Día sin operar: CPI m/m (USD),15,Entrada en largo,2026-02-13 07:04,BUY PreNY,4958.395,0.5,2479.1975,8.67,0.35,0,8.67,0.35,-2.26,-0.09,-20.32,-2.03,57
-Día sin operar: CPI y/y (GBP),18,Salida en largo,2026-02-18 07:30,Reset antes de nueva entrada,4921.125,0.61,3004.5184,-2.63,-0.09,0,2.47,0.08,-2.66,-0.09,-20.07,-2.01,17
-Día sin operar: CPI y/y (GBP),18,Entrada en largo,2026-02-18 07:13,BUY PreNY,4925.44,0.61,3004.5184,-2.63,-0.09,0,2.47,0.08,-2.66,-0.09,-20.07,-2.01,17
-Día sin operar: CPI y/y (GBP),19,Salida en corto,2026-02-18 07:42,Salida PreNY_19,4929.265,1.2,5905.35,-9.77,-0.17,0,4.09,0.07,-9.77,-0.17,-29.84,-2.98,12
-Día sin operar: CPI y/y (GBP),19,Entrada en corto,2026-02-18 07:30,SELL PreNY,4921.125,1.2,5905.35,-9.77,-0.17,0,4.09,0.07,-9.77,-0.17,-29.84,-2.98,12
-Día sin operar: PPI m/m y Core PPI m/m (USD),27,Salida en largo,2026-02-27 08:20,Salida PreNY_27,5223.959,0.61,3178.0756,8.54,0.27,0,8.54,0.27,-2.06,-0.06,-6.66,-0.67,12
-Día sin operar: PPI m/m y Core PPI m/m (USD),27,Entrada en largo,2026-02-27 08:08,BUY PreNY,5209.96,0.61,3178.0756,8.54,0.27,0,8.54,0.27,-2.06,-0.06,-6.66,-0.67,12
-Día sin operar: NFP - Non-Farm Payrolls (USD),32,Salida en largo,2026-03-06 07:34,Reset antes de nueva entrada,5085.84,0.57,2902.4229,-3.49,-0.12,0,2.71,0.09,-3.5,-0.12,-10.71,-1.07,15
-Día sin operar: NFP - Non-Farm Payrolls (USD),32,Entrada en largo,2026-03-06 07:19,BUY PreNY,5091.97,0.57,2902.4229,-3.49,-0.12,0,2.71,0.09,-3.5,-0.12,-10.71,-1.07,15
-Día sin operar: NFP - Non-Farm Payrolls (USD),33,Salida en corto,2026-03-06 08:01,Salida PreNY_33,5076.083,0.9,4577.256,8.78,0.19,0,8.78,0.19,-9.64,-0.21,-1.93,-0.19,27
-Día sin operar: NFP - Non-Farm Payrolls (USD),33,Entrada en corto,2026-03-06 07:34,SELL PreNY,5085.84,0.9,4577.256,8.78,0.19,0,8.78,0.19,-9.64,-0.21,-1.93,-0.19,27
-Día sin operar: PPI m/m y Core PPI m/m (USD),38,Salida en corto,2026-03-18 08:10,Salida PreNY_38,4911.067,0.79,3888.81055,9.07,0.23,0,9.07,0.23,-7.98,-0.21,23.91,2.39,8
-Día sin operar: PPI m/m y Core PPI m/m (USD),38,Entrada en corto,2026-03-18 08:02,SELL PreNY,4922.545,0.79,3888.81055,9.07,0.23,0,9.07,0.23,-7.98,-0.21,23.91,2.39,8
-Día sin operar: CPI y/y (GBP),43,Salida en largo,2026-03-25 07:22,Salida PreNY_43,4574.929,1.04,4748.8116,9.11,0.19,0,9.11,0.19,-3.84,-0.08,39.82,3.98,17
-Día sin operar: CPI y/y (GBP),43,Entrada en largo,2026-03-25 07:05,BUY PreNY,4566.165,1.04,4748.8116,9.11,0.19,0,9.11,0.19,-3.84,-0.08,39.82,3.98,17
-"Día sin operar: Feriado bancario Reino Unido, Alemania, Francia e Italia (Lunes de Pascua)",50,Salida en corto,2026-04-06 09:25,CHoCH en contra (arrastre),4672.725,0.57,2661.16185,-2.29,-0.09,0,5.16,0.19,-7.25,-0.27,50.1,5.01,64
-"Día sin operar: Feriado bancario Reino Unido, Alemania, Francia e Italia (Lunes de Pascua)",50,Entrada en corto,2026-04-06 08:21,SELL PreNY,4668.705,0.57,2661.16185,-2.29,-0.09,0,5.16,0.19,-7.25,-0.27,50.1,5.01,64
-Día sin operar: PIB final trimestral - Final GDP q/q (USD),54,Salida en corto,2026-04-09 09:09,CHoCH en contra (arrastre),4748.645,0.7,3321.6225,-2.43,-0.07,0,7.08,0.21,-3.27,-0.10,36.24,3.62,59
-Día sin operar: PIB final trimestral - Final GDP q/q (USD),54,Entrada en corto,2026-04-09 08:10,SELL PreNY,4745.175,0.7,3321.6225,-2.43,-0.07,0,7.08,0.21,-3.27,-0.10,36.24,3.62,59
-Día sin operar: CPI m/m (USD),55,Salida en largo,2026-04-10 07:59,Salida PreNY_55,4767.603,2.09,9954.8163,9.47,0.10,0,9.47,0.10,-9.02,-0.09,45.71,4.57,28
-Día sin operar: CPI m/m (USD),55,Entrada en largo,2026-04-10 07:31,BUY PreNY,4763.07,2.09,9954.8163,9.47,0.10,0,9.47,0.10,-9.02,-0.09,45.71,4.57,28
-Día sin operar: PPI m/m y Core PPI m/m (USD),57,Salida en largo,2026-04-14 07:28,Salida PreNY_57,4782.801,1.24,5921.3596,9.31,0.16,0,9.31,0.16,-0.74,-0.01,44.66,4.47,19
-Día sin operar: PPI m/m y Core PPI m/m (USD),57,Entrada en largo,2026-04-14 07:09,BUY PreNY,4775.29,1.24,5921.3596,9.31,0.16,0,9.31,0.16,-0.74,-0.01,44.66,4.47,19
-Día sin operar: Discurso/entrevista de Trump (presidente de EE. UU.) a las 08:30 NY,61,Salida en corto,2026-04-21 08:30,Salida PreNY_61,4778.653,1.14,5457.0717,9.41,0.17,0,9.41,0.17,-0.09,0.00,62.11,6.21,11
-Día sin operar: Discurso/entrevista de Trump (presidente de EE. UU.) a las 08:30 NY,61,Entrada en corto,2026-04-21 08:19,SELL PreNY,4786.905,1.14,5457.0717,9.41,0.17,0,9.41,0.17,-0.09,0.00,62.11,6.21,11
-Día sin operar: CPI y/y (GBP),62,Salida en largo,2026-04-22 08:36,Salida PreNY_62,4747.255,0.94,4472.9336,-10.51,-0.24,0,1.75,0.04,-10.51,-0.24,51.6,5.16,7
-Día sin operar: CPI y/y (GBP),62,Entrada en largo,2026-04-22 08:29,BUY PreNY,4758.44,0.94,4472.9336,-10.51,-0.24,0,1.75,0.04,-10.51,-0.24,51.6,5.16,7
-Entrada fuera de la ventana 07:00-08:00: BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference,66,Salida en largo,2026-04-30 09:27,CHoCH en contra (arrastre),4634.66,0.95,4405.0455,-2.12,-0.05,0,8.56,0.19,-2.54,-0.06,37.94,3.79,30
-Entrada fuera de la ventana 07:00-08:00: BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference,66,Entrada en largo,2026-04-30 08:57,BUY PreNY,4636.89,0.95,4405.0455,-2.12,-0.05,0,8.56,0.19,-2.54,-0.06,37.94,3.79,30
-"Día sin operar: Feriado bancario Alemania, Francia e Italia (Día del Trabajo)",67,Salida en corto,2026-05-01 07:05,Salida PreNY_67,4569.02,2.49,11366.48895,-10.37,-0.09,0,1.84,0.02,-10.37,-0.09,27.57,2.76,3
-"Día sin operar: Feriado bancario Alemania, Francia e Italia (Día del Trabajo)",67,Entrada en corto,2026-05-01 07:02,SELL PreNY,4564.855,2.49,11366.48895,-10.37,-0.09,0,1.84,0.02,-10.37,-0.09,27.57,2.76,3
-"Día sin operar: Feriado bancario Alemania, Francia e Italia (Día del Trabajo)",68,Salida en largo,2026-05-01 08:14,Salida PreNY_68,4583.868,0.91,4162.14435,9.18,0.22,0,9.18,0.22,-3.01,-0.07,36.75,3.67,51
-"Día sin operar: Feriado bancario Alemania, Francia e Italia (Día del Trabajo)",68,Entrada en largo,2026-05-01 07:23,BUY PreNY,4573.785,0.91,4162.14435,9.18,0.22,0,9.18,0.22,-3.01,-0.07,36.75,3.67,51
-Día sin operar: Feriado bancario Reino Unido (May Day),69,Salida en largo,2026-05-04 09:00,Salida PreNY_69,4566.71,1.21,5536.0888,-10.37,-0.19,0,1.43,0.03,-10.37,-0.19,26.38,2.64,7
-Día sin operar: Feriado bancario Reino Unido (May Day),69,Entrada en largo,2026-05-04 08:53,BUY PreNY,4575.28,1.21,5536.0888,-10.37,-0.19,0,1.43,0.03,-10.37,-0.19,26.38,2.64,7
-Día sin operar: NFP + Feriado bancario Francia (Día de la Victoria),72,Salida en corto,2026-05-08 08:11,Salida PreNY_72,4704.159,0.89,4195.8605,9.16,0.22,0,9.16,0.22,-5.06,-0.12,34.27,3.43,18
-Día sin operar: NFP + Feriado bancario Francia (Día de la Victoria),72,Entrada en corto,2026-05-08 07:53,SELL PreNY,4714.45,0.89,4195.8605,9.16,0.22,0,9.16,0.22,-5.06,-0.12,34.27,3.43,18
-Día sin operar: CPI m/m (USD),73,Salida en largo,2026-05-12 08:24,Salida PreNY_73,4698.005,1.21,5694.82265,-10.24,-0.18,0,3.64,0.06,-10.24,-0.18,24.04,2.40,38
-Día sin operar: CPI m/m (USD),73,Entrada en largo,2026-05-12 07:46,BUY PreNY,4706.465,1.21,5694.82265,-10.24,-0.18,0,3.64,0.06,-10.24,-0.18,24.04,2.40,38
-Día sin operar: PPI m/m y Core PPI m/m (USD),74,Salida en largo,2026-05-13 07:45,Salida PreNY_74,4705.679,1.39,6531.75595,9.14,0.14,0,9.14,0.14,-4.55,-0.07,33.17,3.32,30
-Día sin operar: PPI m/m y Core PPI m/m (USD),74,Entrada en largo,2026-05-13 07:15,BUY PreNY,4699.105,1.39,6531.75595,9.14,0.14,0,9.14,0.14,-4.55,-0.07,33.17,3.32,30
-Día sin operar: Feriado bancario Alemania y Francia (Ascensión),75,Salida en corto,2026-05-14 07:41,Salida PreNY_75,4696.96,1.47,6894.17505,-10.36,-0.15,0,0.6,0.01,-10.36,-0.15,22.82,2.28,15
-Día sin operar: Feriado bancario Alemania y Francia (Ascensión),75,Entrada en corto,2026-05-14 07:26,SELL PreNY,4689.915,1.47,6894.17505,-10.36,-0.15,0,0.6,0.01,-10.36,-0.15,22.82,2.28,15
-Día sin operar: Feriado bancario Alemania y Francia (Ascensión),76,Salida en largo,2026-05-14 07:59,Salida PreNY_76,4695.06,1.11,5221.7508,-10.23,-0.20,0,0.68,0.01,-10.23,-0.20,12.58,1.26,4
-Día sin operar: Feriado bancario Alemania y Francia (Ascensión),76,Entrada en largo,2026-05-14 07:55,BUY PreNY,4704.28,1.11,5221.7508,-10.23,-0.20,0,0.68,0.01,-10.23,-0.20,12.58,1.26,4
-"Día sin operar: Feriado bancario EE. UU. (Memorial Day), Reino Unido (Spring Bank Holiday), Alemania y Francia (Lunes de Pentecostés)",84,Salida en corto,2026-05-25 08:01,Salida PreNY_84,4565.05,1.57,7176.14815,9.02,0.13,0,9.02,0.13,-0.82,-0.01,14.59,1.46,7
-"Día sin operar: Feriado bancario EE. UU. (Memorial Day), Reino Unido (Spring Bank Holiday), Alemania y Francia (Lunes de Pentecostés)",84,Entrada en corto,2026-05-25 07:54,SELL PreNY,4570.795,1.57,7176.14815,9.02,0.13,0,9.02,0.13,-0.82,-0.01,14.59,1.46,7
-Día sin operar: Feriado bancario Italia (Día de la República),92,Salida en corto,2026-06-02 08:21,Salida PreNY_92,4530.785,1.99,9006.43155,-9.83,-0.11,0,3.54,0.04,-9.83,-0.11,-22.26,-2.23,33
-Día sin operar: Feriado bancario Italia (Día de la República),92,Entrada en corto,2026-06-02 07:48,SELL PreNY,4525.845,1.99,9006.43155,-9.83,-0.11,0,3.54,0.04,-9.83,-0.11,-22.26,-2.23,33
-Día sin operar: Feriado bancario Italia (Día de la República),93,Salida en corto,2026-06-02 08:59,Salida PreNY_93,4513.94,1.37,6192.96855,8.87,0.14,0,8.87,0.14,-1.18,-0.02,-13.39,-1.34,9
-Día sin operar: Feriado bancario Italia (Día de la República),93,Entrada en corto,2026-06-02 08:50,SELL PreNY,4520.415,1.37,6192.96855,8.87,0.14,0,8.87,0.14,-1.18,-0.02,-13.39,-1.34,9
-Día sin operar: PPI m/m y Core PPI m/m (USD),98,Salida en corto,2026-06-11 08:44,Salida PreNY_98,4074.524,0.88,3575.5632,-10.02,-0.28,0,4.92,0.14,-10.02,-0.28,-6.78,-0.68,21
-Día sin operar: PPI m/m y Core PPI m/m (USD),98,Entrada en corto,2026-06-11 08:23,SELL PreNY,4063.14,0.88,3575.5632,-10.02,-0.28,0,4.92,0.14,-10.02,-0.28,-6.78,-0.68,21
-Día sin operar: CPI y/y (GBP),102,Salida en corto,2026-06-17 07:56,Salida PreNY_102,4321.525,2.07,8954.3646,8.81,0.10,0,8.81,0.10,-3.38,-0.04,-8.69,-0.87,21
-Día sin operar: CPI y/y (GBP),102,Entrada en corto,2026-06-17 07:35,SELL PreNY,4325.78,2.07,8954.3646,8.81,0.10,0,8.81,0.10,-3.38,-0.04,-8.69,-0.87,21
-Día sin operar: Feriado bancario EE. UU. (Juneteenth),104,Salida en largo,2026-06-19 08:51,Salida PreNY_104,4163.54,0.87,3613.54065,8.74,0.24,0,8.74,0.24,-5.26,-0.15,-3.95,-0.40,63
-Día sin operar: Feriado bancario EE. UU. (Juneteenth),104,Entrada en largo,2026-06-19 07:48,BUY PreNY,4153.495,0.87,3613.54065,8.74,0.24,0,8.74,0.24,-5.26,-0.15,-3.95,-0.40,63
-Día sin operar: PIB final trimestral - Final GDP q/q (USD),107,Salida en largo,2026-06-25 08:30,Salida PreNY_107,3999.779,0.72,2870.9424,8.9,0.31,0,8.9,0.31,-6.18,-0.22,11.94,1.19,44
-Día sin operar: PIB final trimestral - Final GDP q/q (USD),107,Entrada en largo,2026-06-25 07:46,BUY PreNY,3987.42,0.72,2870.9424,8.9,0.31,0,8.9,0.31,-6.18,-0.22,11.94,1.19,44
-Día sin operar: Discurso de Warsh (presidente de la Fed) a las 09:00 NY,110,Salida en largo,2026-07-01 08:12,Reset antes de nueva entrada,4021.32,0.42,1690.8864,-1.93,-0.11,0,4.06,0.24,-2.85,-0.17,8.84,0.88,50
-Día sin operar: Discurso de Warsh (presidente de la Fed) a las 09:00 NY,110,Entrada en largo,2026-07-01 07:22,BUY PreNY,4025.92,0.42,1690.8864,-1.93,-0.11,0,4.06,0.24,-2.85,-0.17,8.84,0.88,50
-Día sin operar: Discurso de Warsh (presidente de la Fed) a las 09:00 NY,111,Salida en corto,2026-07-01 09:18,CHoCH en contra (arrastre),4029.985,0.78,3136.6296,-6.76,-0.22,0,6.59,0.21,-9.22,-0.29,2.08,0.21,66
-Día sin operar: Discurso de Warsh (presidente de la Fed) a las 09:00 NY,111,Entrada en corto,2026-07-01 08:12,SELL PreNY,4021.32,0.78,3136.6296,-6.76,-0.22,0,6.59,0.21,-9.22,-0.29,2.08,0.21,66
-Día sin operar: NFP - Non-Farm Payrolls (USD),112,Salida en corto,2026-07-02 07:43,Salida PreNY_112,4068.17,0.99,4017.56355,-9.92,-0.25,0,0.7,0.02,-9.92,-0.25,-7.84,-0.78,36
-Día sin operar: NFP - Non-Farm Payrolls (USD),112,Entrada en corto,2026-07-02 07:07,SELL PreNY,4058.145,0.99,4017.56355,-9.92,-0.25,0,0.7,0.02,-9.92,-0.25,-7.84,-0.78,36
-"Día sin operar: Feriado bancario EE. UU. (Día de la Independencia, observado)",113,Salida en largo,2026-07-03 07:14,Salida PreNY_113,4183.829,2.29,9571.98245,8.99,0.09,0,8.99,0.09,-1.01,-0.01,1.14,0.11,4
-"Día sin operar: Feriado bancario EE. UU. (Día de la Independencia, observado)",113,Entrada en largo,2026-07-03 07:10,BUY PreNY,4179.905,2.29,9571.98245,8.99,0.09,0,8.99,0.09,-1.01,-0.01,1.14,0.11,4
-Día sin operar: CPI USD + Feriado bancario Francia (Día Nacional),120,Salida en largo,2026-07-14 08:03,Salida PreNY_120,4035.093,1.82,7334.8184,9.05,0.12,0,9.05,0.12,-7.83,-0.11,26.38,2.64,27
-Día sin operar: CPI USD + Feriado bancario Francia (Día Nacional),120,Entrada en largo,2026-07-14 07:36,BUY PreNY,4030.12,1.82,7334.8184,9.05,0.12,0,9.05,0.12,-7.83,-0.11,26.38,2.64,27
-Día sin operar: PPI m/m y Core PPI m/m (USD),121,Salida en largo,2026-07-15 07:19,Salida PreNY_121,4028.58,2.82,11370.9027,-10.31,-0.09,0,2.38,0.02,-10.31,-0.09,16.08,1.61,7
-Día sin operar: PPI m/m y Core PPI m/m (USD),121,Entrada en largo,2026-07-15 07:12,BUY PreNY,4032.235,2.82,11370.9027,-10.31,-0.09,0,2.38,0.02,-10.31,-0.09,16.08,1.61,7
-Día sin operar: PPI m/m y Core PPI m/m (USD),122,Salida en largo,2026-07-15 08:58,Salida PreNY_122,4066.978,0.65,2634.53125,9,0.34,0,9,0.34,-1.76,-0.07,25.08,2.51,25
-Día sin operar: PPI m/m y Core PPI m/m (USD),122,Entrada en largo,2026-07-15 08:33,BUY PreNY,4053.125,0.65,2634.53125,9,0.34,0,9,0.34,-1.76,-0.07,25.08,2.51,25
-Día sin operar: CPI y/y (GBP),126,Salida en largo,2026-07-22 08:30,Salida PreNY_126,4134.288,2.8,11566.562,9.44,0.08,0,9.44,0.08,-0.55,0.00,62.56,6.26,2
-Día sin operar: CPI y/y (GBP),126,Entrada en largo,2026-07-22 08:28,BUY PreNY,4130.915,2.8,11566.562,9.44,0.08,0,9.44,0.08,-0.55,0.00,62.56,6.26,2
-Día sin operar: NFP - Non-Farm Payrolls (USD),141,Salida en largo,2026-08-07 08:06,Salida PreNY_141,4316.46,1.4,6053.635,-10.59,-0.17,0,5.21,0.09,-10.59,-0.17,54.38,5.44,62
-Día sin operar: NFP - Non-Farm Payrolls (USD),141,Entrada en largo,2026-08-07 07:04,BUY PreNY,4324.025,1.4,6053.635,-10.59,-0.17,0,5.21,0.09,-10.59,-0.17,54.38,5.44,62
-Día sin operar: PPI m/m y Core PPI m/m (USD),144,Salida en corto,2026-08-13 08:09,Reset antes de nueva entrada,4391.57,1.45,6361.1935,-6.58,-0.10,0,5.86,0.09,-6.68,-0.10,66.66,6.67,35
-Día sin operar: PPI m/m y Core PPI m/m (USD),144,Entrada en corto,2026-08-13 07:34,SELL PreNY,4387.03,1.45,6361.1935,-6.58,-0.10,0,5.86,0.09,-6.68,-0.10,66.66,6.67,35
-Día sin operar: PPI m/m y Core PPI m/m (USD),145,Salida en largo,2026-08-13 08:16,Salida PreNY_145,4385.81,1.85,8124.4045,-10.66,-0.13,0,0.38,0.00,-10.66,-0.13,56.01,5.60,7
-Día sin operar: PPI m/m y Core PPI m/m (USD),145,Entrada en largo,2026-08-13 08:09,BUY PreNY,4391.57,1.85,8124.4045,-10.66,-0.13,0,0.38,0.00,-10.66,-0.13,56.01,5.60,7
-Día sin operar: CPI y/y (GBP),148,Salida en largo,2026-08-19 08:33,Salida PreNY_148,4376.739,1.37,5986.5712,9.56,0.16,0,9.56,0.16,-4.99,-0.08,68,6.80,21
-Día sin operar: CPI y/y (GBP),148,Entrada en largo,2026-08-19 08:12,BUY PreNY,4369.76,1.37,5986.5712,9.56,0.16,0,9.56,0.16,-4.99,-0.08,68,6.80,21
-Día sin operar: NFP - Non-Farm Payrolls (USD),159,Salida en largo,2026-09-04 08:30,Salida PreNY_159,4464.475,1.37,6127.52365,-11.19,-0.18,0,5.51,0.09,-11.19,-0.18,113.92,11.39,1
-Día sin operar: NFP - Non-Farm Payrolls (USD),159,Entrada en largo,2026-09-04 08:29,BUY PreNY,4472.645,1.37,6127.52365,-11.19,-0.18,0,5.51,0.09,-11.19,-0.18,113.92,11.39,1
-Día sin operar: Feriado bancario EE. UU. (Labor Day),160,Salida en largo,2026-09-07 09:02,Salida PreNY_160,4399.789,2.25,9889.4475,10.08,0.10,0,10.08,0.10,-5.5,-0.06,124,12.40,32
-Día sin operar: Feriado bancario EE. UU. (Labor Day),160,Entrada en largo,2026-09-07 08:30,BUY PreNY,4395.31,2.25,9889.4475,10.08,0.10,0,10.08,0.10,-5.5,-0.06,124,12.40,32
-Día sin operar: PPI m/m y Core PPI m/m (USD),164,Salida en corto,2026-09-10 08:31,Salida PreNY_164,4356.443,0.83,3625.89235,10.04,0.28,0,10.04,0.28,-4.88,-0.13,142.79,14.28,14
-Día sin operar: PPI m/m y Core PPI m/m (USD),164,Entrada en corto,2026-09-10 08:17,SELL PreNY,4368.545,0.83,3625.89235,10.04,0.28,0,10.04,0.28,-4.88,-0.13,142.79,14.28,14
-Día sin operar: CPI m/m (USD),165,Salida en corto,2026-09-11 08:04,Salida PreNY_165,4329.872,1.68,7284.4548,10.27,0.14,0,10.27,0.14,-9.54,-0.13,153.06,15.31,53
-Día sin operar: CPI m/m (USD),165,Entrada en corto,2026-09-11 07:11,SELL PreNY,4335.985,1.68,7284.4548,10.27,0.14,0,10.27,0.14,-9.54,-0.13,153.06,15.31,53
-Día sin operar: CPI y/y (GBP),169,Salida en corto,2026-09-16 08:20,Salida PreNY_169,4339.136,1.83,7950.8742,10.26,0.13,0,10.26,0.13,-6.42,-0.08,155.8,15.58,24
-Día sin operar: CPI y/y (GBP),169,Entrada en corto,2026-09-16 07:56,SELL PreNY,4344.74,1.83,7950.8742,10.26,0.13,0,10.26,0.13,-6.42,-0.08,155.8,15.58,24
-Día sin operar: PIB final trimestral - Final GDP q/q (USD),181,Salida en corto,2026-09-30 07:31,Salida PreNY_181,4185.5,1.69,7061.8002,-11.69,-0.17,0,3.59,0.05,-11.69,-0.17,152.15,15.22,15
-Día sin operar: PIB final trimestral - Final GDP q/q (USD),181,Entrada en corto,2026-09-30 07:16,SELL PreNY,4178.58,1.69,7061.8002,-11.69,-0.17,0,3.59,0.05,-11.69,-0.17,152.15,15.22,15
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",231,Salida en corto,2026-01-02 07:41,Salida PreNY_231,4387.903,3,13173.285,8.8,0.07,0,9.58,0.07,-0.37,0.00,8.8,0.88,0
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",231,Entrada en corto,2026-01-02 07:41,SELL PreNY,4391.095,3,13173.285,8.8,0.07,0,9.58,0.07,-0.37,0.00,8.8,0.88,0
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",232,Salida en largo,2026-01-05 08:09,Salida PreNY_232,4407.625,1.41,6225.69285,-10.05,-0.18,0,5.08,0.08,-10.94,-0.18,-1.25,-0.12,5
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",232,Entrada en largo,2026-01-05 08:04,BUY PreNY,4415.385,1.41,6225.69285,-10.05,-0.18,0,5.08,0.08,-10.94,-0.18,-1.25,-0.12,5
+Día sin operar: Feriado bancario Italia (Epifanía),233,Salida en largo,2026-01-06 08:50,Salida PreNY_233,4455.76,1.45,6471.67625,-9.94,-0.17,0,1.04,0.02,-10.82,-0.17,-11.19,-1.12,4
+Día sin operar: Feriado bancario Italia (Epifanía),233,Entrada en largo,2026-01-06 08:46,BUY PreNY,4463.225,1.45,6471.67625,-9.94,-0.17,0,1.04,0.02,-10.82,-0.17,-11.19,-1.12,4
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",234,Salida en corto,2026-01-07 08:08,Salida PreNY_234,4437.24,1.23,5467.3869,8.81,0.18,0,9.58,0.18,-6.19,-0.11,-2.38,-0.24,8
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",234,Entrada en corto,2026-01-07 08:00,SELL PreNY,4445.03,1.23,5467.3869,8.81,0.18,0,9.58,0.18,-6.19,-0.11,-2.38,-0.24,8
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",235,Salida en largo,2026-01-08 08:05,Salida PreNY_235,4422.28,1.37,6069.21645,-9.83,-0.18,0,1.86,0.03,-10.69,-0.18,-12.21,-1.22,23
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",235,Entrada en largo,2026-01-08 07:42,BUY PreNY,4430.085,1.37,6069.21645,-9.83,-0.18,0,1.86,0.03,-10.69,-0.18,-12.21,-1.22,23
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",236,Salida en corto,2026-01-08 09:25,CHoCH en contra (arrastre),4429.065,1.16,5129.9956,-7.1,-0.15,0,4.04,0.08,-7.91,-0.15,-19.31,-1.93,26
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",236,Entrada en corto,2026-01-08 08:59,SELL PreNY,4422.41,1.16,5129.9956,-7.1,-0.15,0,4.04,0.08,-7.91,-0.15,-19.31,-1.93,26
+Día sin operar: NFP - Non-Farm Payrolls (USD),237,Salida en largo,2026-01-09 07:20,Salida PreNY_237,4471.64,1.53,6852.21975,-9.75,-0.15,0,3.12,0.05,-10.61,-0.15,-29.06,-2.91,19
+Día sin operar: NFP - Non-Farm Payrolls (USD),237,Entrada en largo,2026-01-09 07:01,BUY PreNY,4478.575,1.53,6852.21975,-9.75,-0.15,0,3.12,0.05,-10.61,-0.15,-29.06,-2.91,19
+Día sin operar: NFP - Non-Farm Payrolls (USD),238,Salida en largo,2026-01-09 08:19,Salida PreNY_238,4463.72,1.23,5500.93515,-9.71,-0.19,0,1.95,0.04,-10.56,-0.19,-38.77,-3.88,13
+Día sin operar: NFP - Non-Farm Payrolls (USD),238,Entrada en largo,2026-01-09 08:06,BUY PreNY,4472.305,1.23,5500.93515,-9.71,-0.19,0,1.95,0.04,-10.56,-0.19,-38.77,-3.88,13
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",239,Salida en largo,2026-01-12 08:01,Salida PreNY_239,4592.189,2.56,11746.624,8.62,0.08,0,9.38,0.08,-2.25,-0.02,-30.15,-3.01,10
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",239,Entrada en largo,2026-01-12 07:51,BUY PreNY,4588.525,2.56,11746.624,8.62,0.08,0,9.38,0.08,-2.25,-0.02,-30.15,-3.01,10
+Día sin operar: CPI m/m (USD),240,Salida en largo,2026-01-13 07:52,Salida PreNY_240,4591.845,1.59,7291.63665,8.64,0.13,0,9.4,0.13,-0.59,-0.01,-21.51,-2.15,8
+Día sin operar: CPI m/m (USD),240,Entrada en largo,2026-01-13 07:44,BUY PreNY,4585.935,1.59,7291.63665,8.64,0.13,0,9.4,0.13,-0.59,-0.01,-21.51,-2.15,8
+Día sin operar: PPI m/m y Core PPI m/m (USD),241,Salida en corto,2026-01-14 09:02,Cierre fin de sesión (estructura en contra),4635.19,0.87,4027.9347,-4.3,-0.12,0,4.79,0.12,-6.66,-0.17,-25.81,-2.58,52
+Día sin operar: PPI m/m y Core PPI m/m (USD),241,Entrada en corto,2026-01-14 08:10,SELL PreNY,4629.81,0.87,4027.9347,-4.3,-0.12,0,4.79,0.12,-6.66,-0.17,-25.81,-2.58,52
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",242,Salida en largo,2026-01-15 07:48,Salida PreNY_242,4614.11,2.39,11038.48985,-9.9,-0.10,0,0.6,0.01,-10.77,-0.10,-35.71,-3.57,22
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",242,Entrada en largo,2026-01-15 07:26,BUY PreNY,4618.615,2.39,11038.48985,-9.9,-0.10,0,0.6,0.01,-10.77,-0.10,-35.71,-3.57,22
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",243,Salida en corto,2026-01-15 08:28,Salida PreNY_243,4603.324,1.29,5947.6353,8.59,0.16,0,9.35,0.16,-7.42,-0.12,-27.12,-2.71,26
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",243,Entrada en corto,2026-01-15 08:02,SELL PreNY,4610.57,1.29,5947.6353,8.59,0.16,0,9.35,0.16,-7.42,-0.12,-27.12,-2.71,26
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",244,Salida en corto,2026-01-16 09:00,Salida PreNY_244,4603.415,0.62,2843.6765,-9.6,-0.37,0,2.42,0.09,-10.44,-0.37,-36.72,-3.67,43
+"Día sin operar: Receso de fin de año (22/12/2025 al 16/01/2026, sin operar)",244,Entrada en corto,2026-01-16 08:17,SELL PreNY,4586.575,0.62,2843.6765,-9.6,-0.37,0,2.42,0.09,-10.44,-0.37,-36.72,-3.67,43
+Día sin operar: Feriado bancario EE. UU. (Martin Luther King Jr.),245,Salida en largo,2026-01-19 09:02,Cierre fin de sesión (estructura en contra),4665.975,1.33,6207.8415,-1.92,-0.03,0,8.38,0.13,-4.01,-0.06,-38.64,-3.86,106
+Día sin operar: Feriado bancario EE. UU. (Martin Luther King Jr.),245,Entrada en largo,2026-01-19 07:16,BUY PreNY,4667.55,1.33,6207.8415,-1.92,-0.03,0,8.38,0.13,-4.01,-0.06,-38.64,-3.86,106
+Día sin operar: CPI y/y (GBP),247,Salida en largo,2026-01-21 08:38,Salida PreNY_247,4878.524,0.85,4137.409,8.58,0.23,0,9.34,0.23,-10.22,-0.25,-21.48,-2.15,96
+Día sin operar: CPI y/y (GBP),247,Entrada en largo,2026-01-21 07:02,BUY PreNY,4867.54,0.85,4137.409,8.58,0.23,0,9.34,0.23,-10.22,-0.25,-21.48,-2.15,96
+Día sin operar: PPI m/m y Core PPI m/m (USD),252,Salida en corto,2026-01-30 09:00,Salida PreNY_252,5026.642,0.32,1598.28,-9.42,-0.64,0,0.66,0.04,-10.25,-0.64,-51.24,-5.12,10
+Día sin operar: PPI m/m y Core PPI m/m (USD),252,Entrada en corto,2026-01-30 08:50,SELL PreNY,4994.625,0.32,1598.28,-9.42,-0.64,0,0.66,0.04,-10.25,-0.64,-51.24,-5.12,10
+Entrada dentro del bloqueo 08:05-08:18: ADP Non-Farm Employment Change (dato 08:15),254,Salida en corto,2026-02-04 08:22,Salida PreNY_254,5046.235,0.62,3118.3892,-9.45,-0.33,0,3.67,0.12,-10.28,-0.33,-52.28,-5.23,12
+Entrada dentro del bloqueo 08:05-08:18: ADP Non-Farm Employment Change (dato 08:15),254,Entrada en corto,2026-02-04 08:10,SELL PreNY,5029.66,0.62,3118.3892,-9.45,-0.33,0,3.67,0.12,-10.28,-0.33,-52.28,-5.23,12
+Entrada fuera de la ventana 07:00-08:00: BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference,257,Salida en largo,2026-02-05 08:32,Salida PreNY_257,4868.635,0.39,1889.71575,8.32,0.48,0,9.05,0.48,-4.37,-0.23,-57.27,-5.73,13
+Entrada fuera de la ventana 07:00-08:00: BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference,257,Entrada en largo,2026-02-05 08:19,BUY PreNY,4845.425,0.39,1889.71575,8.32,0.48,0,9.05,0.48,-4.37,-0.23,-57.27,-5.73,13
+Día sin operar: CPI m/m (USD),262,Salida en largo,2026-02-13 08:01,Salida PreNY_262,4975.734,0.54,2677.5333,8.6,0.35,0,9.36,0.35,-2.44,-0.09,-35.79,-3.58,57
+Día sin operar: CPI m/m (USD),262,Entrada en largo,2026-02-13 07:04,BUY PreNY,4958.395,0.54,2677.5333,8.6,0.35,0,9.36,0.35,-2.44,-0.09,-35.79,-3.58,57
+Día sin operar: CPI y/y (GBP),265,Salida en largo,2026-02-18 07:30,Reset antes de nueva entrada,4921.125,0.66,3250.7904,-2.62,-0.09,0,2.67,0.08,-2.88,-0.09,-35.55,-3.55,17
+Día sin operar: CPI y/y (GBP),265,Entrada en largo,2026-02-18 07:13,BUY PreNY,4925.44,0.66,3250.7904,-2.62,-0.09,0,2.67,0.08,-2.88,-0.09,-35.55,-3.55,17
+Día sin operar: CPI y/y (GBP),266,Salida en corto,2026-02-18 07:42,Salida PreNY_266,4929.265,1.28,6299.04,-9.58,-0.17,0,4.36,0.07,-10.42,-0.17,-45.13,-4.51,12
+Día sin operar: CPI y/y (GBP),266,Entrada en corto,2026-02-18 07:30,SELL PreNY,4921.125,1.28,6299.04,-9.58,-0.17,0,4.36,0.07,-10.42,-0.17,-45.13,-4.51,12
+Día sin operar: PPI m/m y Core PPI m/m (USD),274,Salida en largo,2026-02-27 08:23,Salida PreNY_274,5233.474,0.39,2031.8844,8.43,0.45,0,9.17,0.45,-1.32,-0.06,-22.42,-2.24,15
+Día sin operar: PPI m/m y Core PPI m/m (USD),274,Entrada en largo,2026-02-27 08:08,BUY PreNY,5209.96,0.39,2031.8844,8.43,0.45,0,9.17,0.45,-1.32,-0.06,-22.42,-2.24,15
+Día sin operar: NFP - Non-Farm Payrolls (USD),279,Salida en largo,2026-03-06 07:34,Reset antes de nueva entrada,5085.84,0.37,1884.0289,-2.09,-0.12,0,1.76,0.09,-2.27,-0.12,-21.78,-2.18,15
+Día sin operar: NFP - Non-Farm Payrolls (USD),279,Entrada en largo,2026-03-06 07:19,BUY PreNY,5091.97,0.37,1884.0289,-2.09,-0.12,0,1.76,0.09,-2.27,-0.12,-21.78,-2.18,15
+Día sin operar: NFP - Non-Farm Payrolls (USD),280,Salida en corto,2026-03-06 08:01,Salida PreNY_280,5076.083,0.97,4933.2648,8.69,0.19,0,9.46,0.19,-10.39,-0.21,-13.09,-1.31,27
+Día sin operar: NFP - Non-Farm Payrolls (USD),280,Entrada en corto,2026-03-06 07:34,SELL PreNY,5085.84,0.97,4933.2648,8.69,0.19,0,9.46,0.19,-10.39,-0.21,-13.09,-1.31,27
+Día sin operar: PPI m/m y Core PPI m/m (USD),285,Salida en corto,2026-03-18 08:10,Salida PreNY_285,4911.067,0.85,4184.16325,8.97,0.23,0,9.76,0.23,-8.59,-0.21,12.5,1.25,8
+Día sin operar: PPI m/m y Core PPI m/m (USD),285,Entrada en corto,2026-03-18 08:02,SELL PreNY,4922.545,0.85,4184.16325,8.97,0.23,0,9.76,0.23,-8.59,-0.21,12.5,1.25,8
+Día sin operar: CPI y/y (GBP),290,Salida en largo,2026-03-25 07:22,Salida PreNY_290,4574.929,1.12,5114.1048,9.03,0.19,0,9.82,0.19,-4.13,-0.08,28.2,2.82,17
+Día sin operar: CPI y/y (GBP),290,Entrada en largo,2026-03-25 07:05,BUY PreNY,4566.165,1.12,5114.1048,9.03,0.19,0,9.82,0.19,-4.13,-0.08,28.2,2.82,17
+"Día sin operar: Feriado bancario Reino Unido, Alemania, Francia e Italia (Lunes de Pascua)",297,Salida en corto,2026-04-06 09:25,CHoCH en contra (arrastre),4672.725,0.62,2894.5971,-2.29,-0.09,0,5.61,0.19,-7.88,-0.27,38.27,3.83,64
+"Día sin operar: Feriado bancario Reino Unido, Alemania, Francia e Italia (Lunes de Pascua)",297,Entrada en corto,2026-04-06 08:21,SELL PreNY,4668.705,0.62,2894.5971,-2.29,-0.09,0,5.61,0.19,-7.88,-0.27,38.27,3.83,64
+Día sin operar: PIB final trimestral - Final GDP q/q (USD),301,Salida en corto,2026-04-09 09:09,CHoCH en contra (arrastre),4748.645,0.75,3558.88125,-2.39,-0.07,0,7.58,0.21,-3.5,-0.10,24.55,2.46,59
+Día sin operar: PIB final trimestral - Final GDP q/q (USD),301,Entrada en corto,2026-04-09 08:10,SELL PreNY,4745.175,0.75,3558.88125,-2.39,-0.07,0,7.58,0.21,-3.5,-0.10,24.55,2.46,59
+Día sin operar: CPI m/m (USD),302,Salida en largo,2026-04-10 07:59,Salida PreNY_302,4767.603,2.25,10716.9075,9.38,0.10,0,10.2,0.10,-9.71,-0.09,33.93,3.39,28
+Día sin operar: CPI m/m (USD),302,Entrada en largo,2026-04-10 07:31,BUY PreNY,4763.07,2.25,10716.9075,9.38,0.10,0,10.2,0.10,-9.71,-0.09,33.93,3.39,28
+Día sin operar: PPI m/m y Core PPI m/m (USD),304,Salida en largo,2026-04-14 07:28,Salida PreNY_304,4782.801,1.33,6351.1357,9.18,0.16,0,9.99,0.16,-0.8,-0.01,32.85,3.29,19
+Día sin operar: PPI m/m y Core PPI m/m (USD),304,Entrada en largo,2026-04-14 07:09,BUY PreNY,4775.29,1.33,6351.1357,9.18,0.16,0,9.99,0.16,-0.8,-0.01,32.85,3.29,19
+Día sin operar: Discurso/entrevista de Trump (presidente de EE. UU.) a las 08:30 NY,308,Salida en corto,2026-04-21 08:30,Salida PreNY_308,4778.653,1.22,5840.0241,9.26,0.17,0,10.07,0.17,-0.09,0.00,50.12,5.01,11
+Día sin operar: Discurso/entrevista de Trump (presidente de EE. UU.) a las 08:30 NY,308,Entrada en corto,2026-04-21 08:19,SELL PreNY,4786.905,1.22,5840.0241,9.26,0.17,0,10.07,0.17,-0.09,0.00,50.12,5.01,11
+Día sin operar: CPI y/y (GBP),309,Salida en largo,2026-04-22 08:36,Salida PreNY_309,4747.255,1.02,4853.6088,-10.49,-0.24,0,1.9,0.04,-11.41,-0.24,39.63,3.96,7
+Día sin operar: CPI y/y (GBP),309,Entrada en largo,2026-04-22 08:29,BUY PreNY,4758.44,1.02,4853.6088,-10.49,-0.24,0,1.9,0.04,-11.41,-0.24,39.63,3.96,7
+Entrada fuera de la ventana 07:00-08:00: BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference,313,Salida en largo,2026-04-30 09:27,CHoCH en contra (arrastre),4634.66,1.02,4729.6278,-2.09,-0.05,0,9.2,0.19,-2.73,-0.06,26.16,2.62,30
+Entrada fuera de la ventana 07:00-08:00: BCE: Main Refinancing Rate + Monetary Policy Statement + ECB Press Conference,313,Entrada en largo,2026-04-30 08:57,BUY PreNY,4636.89,1.02,4729.6278,-2.09,-0.05,0,9.2,0.19,-2.73,-0.06,26.16,2.62,30
+"Día sin operar: Feriado bancario Alemania, Francia e Italia (Día del Trabajo)",314,Salida en corto,2026-05-01 07:05,Salida PreNY_314,4569.02,2.68,12233.8114,-10.26,-0.09,0,1.98,0.02,-11.16,-0.09,15.9,1.59,3
+"Día sin operar: Feriado bancario Alemania, Francia e Italia (Día del Trabajo)",314,Entrada en corto,2026-05-01 07:02,SELL PreNY,4564.855,2.68,12233.8114,-10.26,-0.09,0,1.98,0.02,-11.16,-0.09,15.9,1.59,3
+"Día sin operar: Feriado bancario Alemania, Francia e Italia (Día del Trabajo)",315,Salida en largo,2026-05-01 08:14,Salida PreNY_315,4583.868,0.98,4482.3093,9.08,0.22,0,9.88,0.22,-3.24,-0.07,24.98,2.50,51
+"Día sin operar: Feriado bancario Alemania, Francia e Italia (Día del Trabajo)",315,Entrada en largo,2026-05-01 07:23,BUY PreNY,4573.785,0.98,4482.3093,9.08,0.22,0,9.88,0.22,-3.24,-0.07,24.98,2.50,51
+Día sin operar: Feriado bancario Reino Unido (May Day),316,Salida en largo,2026-05-04 09:00,Salida PreNY_316,4566.71,1.3,5947.864,-10.24,-0.19,0,1.53,0.03,-11.14,-0.19,14.74,1.47,7
+Día sin operar: Feriado bancario Reino Unido (May Day),316,Entrada en largo,2026-05-04 08:53,BUY PreNY,4575.28,1.3,5947.864,-10.24,-0.19,0,1.53,0.03,-11.14,-0.19,14.74,1.47,7
+Día sin operar: NFP + Feriado bancario Francia (Día de la Victoria),319,Salida en corto,2026-05-08 08:11,Salida PreNY_319,4704.159,0.96,4525.872,9.08,0.22,0,9.88,0.22,-5.46,-0.12,22.52,2.25,18
+Día sin operar: NFP + Feriado bancario Francia (Día de la Victoria),319,Entrada en corto,2026-05-08 07:53,SELL PreNY,4714.45,0.96,4525.872,9.08,0.22,0,9.88,0.22,-5.46,-0.12,22.52,2.25,18
+Día sin operar: CPI m/m (USD),320,Salida en largo,2026-05-12 08:24,Salida PreNY_320,4698.005,1.31,6165.46915,-10.18,-0.18,0,3.94,0.06,-11.08,-0.18,12.34,1.23,38
+Día sin operar: CPI m/m (USD),320,Entrada en largo,2026-05-12 07:46,BUY PreNY,4706.465,1.31,6165.46915,-10.18,-0.18,0,3.94,0.06,-11.08,-0.18,12.34,1.23,38
+Día sin operar: PPI m/m y Core PPI m/m (USD),321,Salida en largo,2026-05-13 07:45,Salida PreNY_321,4705.679,1.5,7048.6575,9.06,0.14,0,9.86,0.14,-4.91,-0.07,21.4,2.14,30
+Día sin operar: PPI m/m y Core PPI m/m (USD),321,Entrada en largo,2026-05-13 07:15,BUY PreNY,4699.105,1.5,7048.6575,9.06,0.14,0,9.86,0.14,-4.91,-0.07,21.4,2.14,30
+Día sin operar: Feriado bancario Alemania y Francia (Ascensión),322,Salida en corto,2026-05-14 07:41,Salida PreNY_322,4696.96,1.58,7410.0657,-10.23,-0.15,0,0.64,0.01,-11.13,-0.15,11.17,1.12,15
+Día sin operar: Feriado bancario Alemania y Francia (Ascensión),322,Entrada en corto,2026-05-14 07:26,SELL PreNY,4689.915,1.58,7410.0657,-10.23,-0.15,0,0.64,0.01,-11.13,-0.15,11.17,1.12,15
+Día sin operar: Feriado bancario Alemania y Francia (Ascensión),323,Salida en largo,2026-05-14 07:59,Salida PreNY_323,4695.06,1.19,5598.0932,-10.08,-0.20,0,0.73,0.01,-10.97,-0.20,1.09,0.11,4
+Día sin operar: Feriado bancario Alemania y Francia (Ascensión),323,Entrada en largo,2026-05-14 07:55,BUY PreNY,4704.28,1.19,5598.0932,-10.08,-0.20,0,0.73,0.01,-10.97,-0.20,1.09,0.11,4
+"Día sin operar: Feriado bancario EE. UU. (Memorial Day), Reino Unido (Spring Bank Holiday), Alemania y Francia (Lunes de Pentecostés)",331,Salida en corto,2026-05-25 08:01,Salida PreNY_331,4565.05,1.69,7724.64355,8.92,0.13,0,9.71,0.13,-0.88,-0.01,2.98,0.30,7
+"Día sin operar: Feriado bancario EE. UU. (Memorial Day), Reino Unido (Spring Bank Holiday), Alemania y Francia (Lunes de Pentecostés)",331,Entrada en corto,2026-05-25 07:54,SELL PreNY,4570.795,1.69,7724.64355,8.92,0.13,0,9.71,0.13,-0.88,-0.01,2.98,0.30,7
+Día sin operar: Feriado bancario Italia (Día de la República),339,Salida en corto,2026-06-02 08:21,Salida PreNY_339,4530.785,2.15,9730.56675,-9.76,-0.11,0,3.83,0.04,-10.62,-0.11,-31.7,-3.17,33
+Día sin operar: Feriado bancario Italia (Día de la República),339,Entrada en corto,2026-06-02 07:48,SELL PreNY,4525.845,2.15,9730.56675,-9.76,-0.11,0,3.83,0.04,-10.62,-0.11,-31.7,-3.17,33
+Día sin operar: Feriado bancario Italia (Día de la República),340,Salida en corto,2026-06-02 08:59,Salida PreNY_340,4513.94,1.47,6645.01005,8.75,0.14,0,9.52,0.14,-1.26,-0.02,-22.95,-2.29,9
+Día sin operar: Feriado bancario Italia (Día de la República),340,Entrada en corto,2026-06-02 08:50,SELL PreNY,4520.415,1.47,6645.01005,8.75,0.14,0,9.52,0.14,-1.26,-0.02,-22.95,-2.29,9
+Día sin operar: PPI m/m y Core PPI m/m (USD),345,Salida en corto,2026-06-11 08:55,Salida PreNY_345,4082.11,0.56,2275.3584,-9.76,-0.47,0,3.13,0.14,-10.62,-0.47,-16.31,-1.63,32
+Día sin operar: PPI m/m y Core PPI m/m (USD),345,Entrada en corto,2026-06-11 08:23,SELL PreNY,4063.14,0.56,2275.3584,-9.76,-0.47,0,3.13,0.14,-10.62,-0.47,-16.31,-1.63,32
+Día sin operar: CPI y/y (GBP),349,Salida en corto,2026-06-17 07:56,Salida PreNY_349,4321.525,2.23,9646.4894,8.72,0.10,0,9.49,0.10,-3.65,-0.04,-18.14,-1.81,21
+Día sin operar: CPI y/y (GBP),349,Entrada en corto,2026-06-17 07:35,SELL PreNY,4325.78,2.23,9646.4894,8.72,0.10,0,9.49,0.10,-3.65,-0.04,-18.14,-1.81,21
+Día sin operar: Feriado bancario EE. UU. (Juneteenth),351,Salida en largo,2026-06-19 08:51,Salida PreNY_351,4163.54,0.93,3862.75035,8.58,0.24,0,9.34,0.24,-5.63,-0.15,-13.48,-1.35,63
+Día sin operar: Feriado bancario EE. UU. (Juneteenth),351,Entrada en largo,2026-06-19 07:48,BUY PreNY,4153.495,0.93,3862.75035,8.58,0.24,0,9.34,0.24,-5.63,-0.15,-13.48,-1.35,63
+Día sin operar: PIB final trimestral - Final GDP q/q (USD),354,Salida en largo,2026-06-25 08:30,Salida PreNY_354,3999.779,0.78,3110.1876,8.86,0.31,0,9.64,0.31,-6.69,-0.22,2.34,0.23,44
+Día sin operar: PIB final trimestral - Final GDP q/q (USD),354,Entrada en largo,2026-06-25 07:46,BUY PreNY,3987.42,0.78,3110.1876,8.86,0.31,0,9.64,0.31,-6.69,-0.22,2.34,0.23,44
+Día sin operar: Discurso de Warsh (presidente de la Fed) a las 09:00 NY,357,Salida en largo,2026-07-01 08:12,Reset antes de nueva entrada,4021.32,0.46,1851.9232,-1.95,-0.11,0,4.45,0.24,-3.12,-0.17,-0.76,-0.08,50
+Día sin operar: Discurso de Warsh (presidente de la Fed) a las 09:00 NY,357,Entrada en largo,2026-07-01 07:22,BUY PreNY,4025.92,0.46,1851.9232,-1.95,-0.11,0,4.45,0.24,-3.12,-0.17,-0.76,-0.08,50
+Día sin operar: Discurso de Warsh (presidente de la Fed) a las 09:00 NY,358,Salida en corto,2026-07-01 09:18,CHoCH en contra (arrastre),4029.985,0.84,3377.9088,-6.69,-0.22,0,7.1,0.21,-9.93,-0.29,-7.45,-0.74,66
+Día sin operar: Discurso de Warsh (presidente de la Fed) a las 09:00 NY,358,Entrada en corto,2026-07-01 08:12,SELL PreNY,4021.32,0.84,3377.9088,-6.69,-0.22,0,7.1,0.21,-9.93,-0.29,-7.45,-0.74,66
+Día sin operar: NFP - Non-Farm Payrolls (USD),359,Salida en corto,2026-07-02 07:43,Salida PreNY_359,4068.17,1.07,4342.21515,-9.86,-0.25,0,0.75,0.02,-10.73,-0.25,-17.31,-1.73,36
+Día sin operar: NFP - Non-Farm Payrolls (USD),359,Entrada en corto,2026-07-02 07:07,SELL PreNY,4058.145,1.07,4342.21515,-9.86,-0.25,0,0.75,0.02,-10.73,-0.25,-17.31,-1.73,36
+"Día sin operar: Feriado bancario EE. UU. (Día de la Independencia, observado)",360,Salida en largo,2026-07-03 07:14,Salida PreNY_360,4183.829,2.47,10324.36535,8.91,0.09,0,9.69,0.09,-1.09,-0.01,-8.4,-0.84,4
+"Día sin operar: Feriado bancario EE. UU. (Día de la Independencia, observado)",360,Entrada en largo,2026-07-03 07:10,BUY PreNY,4179.905,2.47,10324.36535,8.91,0.09,0,9.69,0.09,-1.09,-0.01,-8.4,-0.84,4
+Día sin operar: CPI USD + Feriado bancario Francia (Día Nacional),367,Salida en largo,2026-07-14 08:03,Salida PreNY_367,4035.093,1.96,7899.0352,8.96,0.12,0,9.75,0.12,-8.43,-0.11,16.49,1.65,27
+Día sin operar: CPI USD + Feriado bancario Francia (Día Nacional),367,Entrada en largo,2026-07-14 07:36,BUY PreNY,4030.12,1.96,7899.0352,8.96,0.12,0,9.75,0.12,-8.43,-0.11,16.49,1.65,27
+Día sin operar: PPI m/m y Core PPI m/m (USD),368,Salida en largo,2026-07-15 07:19,Salida PreNY_368,4028.58,3.04,12257.9944,-10.21,-0.09,0,2.57,0.02,-11.11,-0.09,6.28,0.63,7
+Día sin operar: PPI m/m y Core PPI m/m (USD),368,Entrada en largo,2026-07-15 07:12,BUY PreNY,4032.235,3.04,12257.9944,-10.21,-0.09,0,2.57,0.02,-11.11,-0.09,6.28,0.63,7
+Día sin operar: PPI m/m y Core PPI m/m (USD),369,Salida en largo,2026-07-15 08:58,Salida PreNY_369,4066.978,0.7,2837.1875,8.91,0.34,0,9.7,0.34,-1.9,-0.07,15.19,1.52,25
+Día sin operar: PPI m/m y Core PPI m/m (USD),369,Entrada en largo,2026-07-15 08:33,BUY PreNY,4053.125,0.7,2837.1875,8.91,0.34,0,9.7,0.34,-1.9,-0.07,15.19,1.52,25
+Día sin operar: CPI y/y (GBP),373,Salida en largo,2026-07-22 08:30,Salida PreNY_373,4134.288,3.01,12434.05415,9.33,0.08,0,10.15,0.08,-0.59,0.00,52.25,5.22,2
+Día sin operar: CPI y/y (GBP),373,Entrada en largo,2026-07-22 08:28,BUY PreNY,4130.915,3.01,12434.05415,9.33,0.08,0,10.15,0.08,-0.59,0.00,52.25,5.22,2
+Día sin operar: NFP - Non-Farm Payrolls (USD),388,Salida en largo,2026-08-07 08:06,Salida PreNY_388,4316.46,1.51,6529.27775,-10.5,-0.17,0,5.62,0.09,-11.42,-0.17,44.25,4.42,62
+Día sin operar: NFP - Non-Farm Payrolls (USD),388,Entrada en largo,2026-08-07 07:04,BUY PreNY,4324.025,1.51,6529.27775,-10.5,-0.17,0,5.62,0.09,-11.42,-0.17,44.25,4.42,62
+Día sin operar: PPI m/m y Core PPI m/m (USD),391,Salida en corto,2026-08-13 08:09,Reset antes de nueva entrada,4391.57,1.56,6843.7668,-6.51,-0.10,0,6.3,0.09,-7.18,-0.10,56.41,5.64,35
+Día sin operar: PPI m/m y Core PPI m/m (USD),391,Entrada en corto,2026-08-13 07:34,SELL PreNY,4387.03,1.56,6843.7668,-6.51,-0.10,0,6.3,0.09,-7.18,-0.10,56.41,5.64,35
+Día sin operar: PPI m/m y Core PPI m/m (USD),392,Salida en largo,2026-08-13 08:16,Salida PreNY_392,4385.81,1.99,8739.2243,-10.53,-0.13,0,0.41,0.00,-11.46,-0.13,45.88,4.59,7
+Día sin operar: PPI m/m y Core PPI m/m (USD),392,Entrada en largo,2026-08-13 08:09,BUY PreNY,4391.57,1.99,8739.2243,-10.53,-0.13,0,0.41,0.00,-11.46,-0.13,45.88,4.59,7
+Día sin operar: CPI y/y (GBP),395,Salida en largo,2026-08-19 08:33,Salida PreNY_395,4376.739,1.47,6423.5472,9.43,0.16,0,10.26,0.16,-5.35,-0.08,57.71,5.77,21
+Día sin operar: CPI y/y (GBP),395,Entrada en largo,2026-08-19 08:12,BUY PreNY,4369.76,1.47,6423.5472,9.43,0.16,0,10.26,0.16,-5.35,-0.08,57.71,5.77,21
+Día sin operar: NFP - Non-Farm Payrolls (USD),406,Salida en largo,2026-09-04 08:30,Salida PreNY_406,4464.475,1.48,6619.5146,-11.11,-0.18,0,5.95,0.09,-12.09,-0.18,103.44,10.34,1
+Día sin operar: NFP - Non-Farm Payrolls (USD),406,Entrada en largo,2026-09-04 08:29,BUY PreNY,4472.645,1.48,6619.5146,-11.11,-0.18,0,5.95,0.09,-12.09,-0.18,103.44,10.34,1
+Día sin operar: Feriado bancario EE. UU. (Labor Day),407,Salida en largo,2026-09-07 09:02,Salida PreNY_407,4399.789,2.42,10636.6502,9.96,0.10,0,10.84,0.10,-5.92,-0.06,113.4,11.34,32
+Día sin operar: Feriado bancario EE. UU. (Labor Day),407,Entrada en largo,2026-09-07 08:30,BUY PreNY,4395.31,2.42,10636.6502,9.96,0.10,0,10.84,0.10,-5.92,-0.06,113.4,11.34,32
+Día sin operar: PPI m/m y Core PPI m/m (USD),411,Salida en corto,2026-09-10 08:33,Salida PreNY_411,4348.385,0.54,2359.0143,10.01,0.46,0,10.89,0.46,-3.18,-0.13,132.12,13.21,16
+Día sin operar: PPI m/m y Core PPI m/m (USD),411,Entrada en corto,2026-09-10 08:17,SELL PreNY,4368.545,0.54,2359.0143,10.01,0.46,0,10.89,0.46,-3.18,-0.13,132.12,13.21,16
+Día sin operar: CPI m/m (USD),412,Salida en corto,2026-09-11 08:04,Salida PreNY_412,4329.872,1.81,7848.13285,10.16,0.14,0,11.06,0.14,-10.28,-0.13,142.28,14.23,53
+Día sin operar: CPI m/m (USD),412,Entrada en corto,2026-09-11 07:11,SELL PreNY,4335.985,1.81,7848.13285,10.16,0.14,0,11.06,0.14,-10.28,-0.13,142.28,14.23,53
+Día sin operar: CPI y/y (GBP),416,Salida en corto,2026-09-16 08:20,Salida PreNY_416,4339.136,1.98,8602.5852,10.2,0.13,0,11.1,0.13,-6.95,-0.08,145.07,14.51,24
+Día sin operar: CPI y/y (GBP),416,Entrada en corto,2026-09-16 07:56,SELL PreNY,4344.74,1.98,8602.5852,10.2,0.13,0,11.1,0.13,-6.95,-0.08,145.07,14.51,24
+Día sin operar: PIB final trimestral - Final GDP q/q (USD),428,Salida en corto,2026-09-30 07:31,Salida PreNY_428,4185.5,1.82,7605.0156,-11.57,-0.17,0,3.87,0.05,-12.59,-0.17,141.48,14.15,15
+Día sin operar: PIB final trimestral - Final GDP q/q (USD),428,Entrada en corto,2026-09-30 07:16,SELL PreNY,4178.58,1.82,7605.0156,-11.57,-0.17,0,3.87,0.05,-12.59,-0.17,141.48,14.15,15

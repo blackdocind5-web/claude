@@ -17,7 +17,7 @@ import filtrar_trades as F
 CAP = 1000.0
 R_PCT = 0.9                     # 1R = 1 TP = 0,9% del capital
 CAL = F.cargar_calendario()
-ACTIVOS = ["XAUUSD", "AUDUSD", "EURUSD", "GBPUSD"]
+ACTIVOS = ["XAUUSD", "AUDUSD", "EURUSD", "GBPUSD", "BTCUSD"]
 PATRONES = {"E": "Envolvente", "S": "START", "ES": "Envolvente_y_START"}
 NOMBRE_PAT = {"E": "Envolvente", "S": "START", "ES": "Envolvente + START"}
 INI, FIN = dt.date(2025, 1, 13), dt.date(2026, 10, 2)
@@ -26,10 +26,7 @@ OBJETIVOS = [None, 2, 3, 4, 5, 6, 7, 8]
 
 
 def archivos(activo, pat):
-    if activo == "XAUUSD":
-        p = PATRONES[pat]
-        return [os.path.join(AQUI, "..", "mec_analisis", f"XAU_m1_2025_{p}.csv"),
-                os.path.join(AQUI, "..", "mec_analisis", f"XAU_m1_2026_CORREGIDO_{p}.csv")]
+    # XAUUSD: exportación 2025-2026 con el código ajustado (06/10/2026); BTCUSD: sesión Pre NY
     return [os.path.join(AQUI, "datos", f"{activo}_m1_2025-2026_{PATRONES[pat]}.csv")]
 
 
@@ -307,7 +304,7 @@ def main():
 
     # 2) todas las combinaciones de activos y patrones
     combos = []
-    for k in range(1, 5):
+    for k in range(1, len(ACTIVOS) + 1):
         for sub in itertools.combinations(ACTIVOS, k):
             for pats in itertools.product(*[opciones[a] for a in sub]):
                 combos.append(tuple(zip(sub, pats)))
@@ -388,7 +385,8 @@ def main():
     data["efecto_stop"] = efs
 
     # combinaciones pedidas: XAU + cada par y los cuatro juntos (mejor patrón por activo, y mismos patrones en todos)
-    pedidas = [("XAUUSD", "AUDUSD"), ("XAUUSD", "EURUSD"), ("XAUUSD", "GBPUSD"), tuple(ACTIVOS), ("XAUUSD",)]
+    pedidas = [("XAUUSD", "AUDUSD"), ("XAUUSD", "EURUSD"), ("XAUUSD", "GBPUSD"), ("XAUUSD", "BTCUSD"),
+               ("XAUUSD", "AUDUSD", "EURUSD", "GBPUSD"), ("XAUUSD", "EURUSD", "GBPUSD", "BTCUSD"), tuple(ACTIVOS), ("XAUUSD",)]
     data["pedidas"] = []
     for sub in pedidas:
         cand = [g for g in grid if tuple(a for a, _ in g["c"]) == sub and base_usuario(g)]
@@ -401,7 +399,7 @@ def main():
                                     objetivos=[dict(obj=o, **{k: v for k, v in simular(tsm, o).items() if k in (
                                         "n", "wr", "cagr", "mes_geo", "mdd", "racha", "obj_hit", "anios", "sem_pos", "calmar")}) for o in OBJETIVOS],
                                     curve=simular(tsm, 5, curva=True)["curve"]))
-    data["por_k"] = [max([g for g in grid if g["k"] == k and base_usuario(g)], key=lambda g: (robusto(g), g["calmar"] or 0)) for k in (1, 2, 3, 4)]
+    data["por_k"] = [max([g for g in grid if g["k"] == k and base_usuario(g)], key=lambda g: (robusto(g), g["calmar"] or 0)) for k in range(1, len(ACTIVOS) + 1)]
 
     # 4) recomendada, con reglas explícitas para no sobreoptimizar
     #   a) un activo-patrón entra solo si gana en 2025 y en 2026 por separado; por activo, el patrón con más R
@@ -411,12 +409,19 @@ def main():
               if activos[a][p]["2025"].get("R", 0) > 0 and activos[a][p]["2026"].get("R", 0) > 0]
         califica[a] = dict(ok=[p for _, p in sorted(ok, reverse=True)], elegido=max(ok)[1] if ok else None)
     C = tuple((a, califica[a]["elegido"]) for a in ACTIVOS if califica[a]["elegido"])
-    #   b) cada activo tiene que sumar en los dos años dentro de la cartera
+    #   b) cada activo tiene que sumar en los dos años dentro de la cartera (sin viernes y con el freno, como se opera)
+    while len(C) > 1:
+        full_ = simular(ts_de(C, vie=False), None, stop_sem=3); peor = None
+        for x in C:
+            r_ = simular(ts_de(tuple(y for y in C if y != x), vie=False), None, stop_sem=3)
+            if not all(full_["anios"][y] > r_["anios"][y] for y in ("2025", "2026")): peor = x; break
+        if peor is None: break
+        C = tuple(y for y in C if y != peor)
     marg = []
-    full = simular(ts_de(C), None)
+    full = simular(ts_de(C, vie=False), None, stop_sem=3)
     for x in C:
         sin = tuple(y for y in C if y != x)
-        r = simular(ts_de(sin), None) if sin else None
+        r = simular(ts_de(sin, vie=False), None, stop_sem=3) if sin else None
         marg.append(dict(activo=x[0], patron=x[1], con=full["anios"], sin=r["anios"] if r else None,
                          suma=all(full["anios"][y] > (r["anios"][y] if r else 0) for y in ("2025", "2026"))))
     #   c) reglas de gestión: se acepta una regla solo si mejora el resultado de los dos años sin empeorar la caída máxima
@@ -452,8 +457,8 @@ def main():
     final = dict(vie=False, stop=3)
     rf = corre(mc=True, curva=True, **final)
     viernes = []
-    for nom, sv in (("Con viernes (los tres activos)", ()), ("Sin viernes en los tres activos", ("XAUUSD", "EURUSD", "GBPUSD")),
-                    ("Sin viernes solo en EURUSD", ("EURUSD",)), ("Sin viernes solo en XAUUSD", ("XAUUSD",)), ("Sin viernes solo en GBPUSD", ("GBPUSD",))):
+    acts = tuple(a for a, _ in C)
+    for nom, sv in [("Con viernes en todos los activos", ()), ("Sin viernes en todos los activos", acts)] + [(f"Sin viernes solo en {a}", (a,)) for a in acts]:
         ts_ = ts_de(C, sinv=sv); r = simular(ts_, None, stop_sem=3); m = montecarlo(ts_, None, sims=1000, stop_sem=3)
         viernes.append(dict(variante=nom, sinv=list(sv), **{k: r[k] for k in ("n", "wr", "ret", "cagr", "mes_geo", "mdd", "racha", "calmar", "anios", "sem_pos", "peor_mes", "bajo_agua", "pf")},
                             mc_cagr_p5=m["cagr_p5"], mc_dd95=m["dd_p95"], mc_anio_neg=m["p_anio_neg"]))
@@ -482,11 +487,20 @@ def main():
     data["riesgo_necesario"] = nec
     # referencias: XAU solo y los cuatro activos con Envolvente, con la misma gestión final
     ref = {}
-    for nombre, c in (("xau", (("XAUUSD", "E"),)), ("cuatro", tuple((a, "E") for a in ACTIVOS))):
+    for nombre, c in (("xau", (("XAUUSD", "E"),)), ("todos", tuple((a, "E") for a in ACTIVOS))):
         ts = ts_de(c, final.get("vie", True), final.get("regla", "cont"))
         r = simular(ts, final.get("obj"), stop_sem=final.get("stop"), curva=True); r["mc"] = montecarlo(ts, final.get("obj"), sims=500, stop_sem=final.get("stop"))
         ref[nombre] = dict(etiqueta=etiqueta(c), detalle=r)
     data["referencias"] = ref
+    # BTCUSD: la gestión ganadora con y sin BTC, con cada patrón (sin viernes, freno −3R)
+    sinbtc = tuple(x for x in C if x[0] != "BTCUSD")
+    comp = []
+    for nom, c in [("Sin BTCUSD", sinbtc)] + [(f"+ BTCUSD {NOMBRE_PAT[p]}", sinbtc + (("BTCUSD", p),)) for p in opciones["BTCUSD"]]:
+        ts_ = ts_de(c, vie=False); r = simular(ts_, None, stop_sem=3, curva=True); m = montecarlo(ts_, None, sims=1000, stop_sem=3)
+        comp.append(dict(nombre=nom, combo=[list(x) for x in c], curve=r.pop("curve"), **{k: r[k] for k in (
+            "n", "wr", "ret", "cagr", "mes_geo", "mdd", "racha", "calmar", "anios", "sem_pos", "peor_mes", "bajo_agua", "pf", "sharpe", "sortino", "max_conc", "mes_pos")},
+                         mc=m))
+    data["btc"] = comp
     json.dump(data, open(os.path.join(AQUI, "datos_hibrida.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     return data
 
