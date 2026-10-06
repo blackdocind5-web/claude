@@ -954,8 +954,9 @@ tocar los defaults ya validados en oro).
   `fase4_strategy_backtest.pine`. **Validación pendiente por Fabián --
   prueba temporal, no definitiva.**
 
-- [ ] **Fase 4 (backtesting) — archivo nuevo experimental: motor de
-  detección exclusivo para velas M3 (02/10)**: Fabián notó que el
+- [x] **DESCARTADO (06/10) — Fase 4 (backtesting) — archivo nuevo
+  experimental: motor de detección exclusivo para velas M3 (02/10)**:
+  Fabián notó que el
   indicador, al mirarlo con el gráfico en resolución M3, marca señales
   BUY/SELL basadas en velas M3 -- quiere poder probar lo mismo en el
   backtest, es decir, que Envolvente/Start/MEC se detecten sobre velas M3
@@ -989,10 +990,24 @@ tocar los defaults ya validados en oro).
     niveles M3 nativos) y Sección 6C (ejecución/Hedge/límite diario/
     arrastre -- solo se agregó `and finalVelaM3` explícito en
     `mecBuyGate`/`mecSellGate`, aunque ya quedaba implícito).
-  Implementado en `fase4_strategy_backtest_m3.pine`. **Validación
-  pendiente por Fabián** -- si el resultado convence, decide si lo
-  mantiene como variante separada; si no, se descarta sin tocar
-  `fase4_strategy_backtest.pine`.
+  Implementado en `fase4_strategy_backtest_m3.pine`.
+
+  **Descartado por Fabián (06/10)**: al probarlo, el backtest no arrojaba
+  ninguna operación (reporte vacío, "Pre-NY: sin trade" todo el tiempo).
+  Se descartaron primero el modo Replay activo y la resolución del
+  gráfico (M3 en vez de M1) como causas -- ninguna de las dos lo
+  explicaba, y con `mostrarDebugM3`/`mostrarZonaBusquedaMEC` activados no
+  se veía ningún marcador ni siquiera en una ventana corta (7 días), pese
+  a que el panel sí mostraba una tendencia calculada (lo cual exige que
+  `finalVelaM3` esté disparando correctamente en algún punto -- quedó sin
+  terminar de aislar si era un problema de visualización del debug o de
+  la cadena Sección 3/4/6 reescrita). Fabián decidió frenar la
+  investigación: el ajuste insumía demasiado tiempo/esfuerzo para su
+  prioridad actual. `fase4_strategy_backtest.pine` (la última versión M1
+  confirmada, con `sinLimiteDiario`) nunca se tocó durante este
+  experimento y queda como el archivo vigente para backtesting. El
+  archivo `fase4_strategy_backtest_m3.pine` se deja en el repo sin más
+  desarrollo, como referencia por si se retoma más adelante.
 
 ## Decisiones de diseño (confirmadas con Fabián)
 
