@@ -682,7 +682,21 @@ esMartilloIndBuy = (nivelOpenIndBuy >= 0.40 - TOLERANCIA_CUERPO and nivelOpenInd
 // Envolvente"). Ahora se exige explícitamente `close[1] > open[1]`
 // (indecisión ALCISTA, igual que la entrada de un Start BUY) antes de
 // evaluar la forma del cuerpo.
-esIndecisionBuy = close[1] > open[1] and cuerpoIndBuy < 0.50 - TOLERANCIA and not esMartilloIndBuy
+// Vela de indecisión en cruz exacta (fix 07/10, bug reportado por Fabián --
+// EURUSD SELL 07/10 07:39 y GBPUSD BUY 07/10 09:00, ambos con la vela de
+// indecisión en cruz perfecta -- apertura = cierre, 0,00% de cambio -- y
+// el código no los reconoció como Start): el fix del 01/10 de arriba exigía
+// `close[1] > open[1]` ESTRICTO para aceptar la indecisión de un BUY -- una
+// cruz exacta (`close[1] == open[1]`) nunca cumple esa desigualdad estricta
+// en ningún sentido, así que quedaba excluida de CUALQUIER Start, aunque
+// una cruz sea, si acaso, la indecisión más "pura" posible (cuerpo 0%). La
+// regla de Fabián es "distinto color invalida" -- una cruz no tiene color,
+// así que no puede violarla. Fix: `>` pasa a `>=` (dos casos verificados
+// letra por letra con los valores reales de Fabián: EURUSD 07:38 y GBPUSD
+// 08:59, ambas cruces exactas, ambas ahora reconocidas). Esto NO reabre el
+// bug del 01/10 -- una vela [1] claramente BAJISTA (close[1] < open[1])
+// sigue sin cumplir `>=`, exactamente como antes.
+esIndecisionBuy = close[1] >= open[1] and cuerpoIndBuy < 0.50 - TOLERANCIA and not esMartilloIndBuy
 
 wickContraBuy = math.min(nivelOpenIndBuy, nivelCloseIndBuy)
 wickFavorBuy  = 1 - math.max(nivelOpenIndBuy, nivelCloseIndBuy)
@@ -699,7 +713,12 @@ esMartilloIndSell = (nivelOpenIndSell >= 0.40 - TOLERANCIA_CUERPO and nivelOpenI
 // reportado: la vela [1] (08:58) era ALCISTA y el código la aceptaba igual
 // como indecisión de un SELL -- con este fix, ese caso puntual pasa a
 // evaluarse (correctamente) como candidato a patrón Envolvente, no Start.
-esIndecisionSell = close[1] < open[1] and cuerpoIndSell < 0.50 - TOLERANCIA and not esMartilloIndSell
+// Vela de indecisión en cruz exacta (fix 07/10, mismo bug/fix que
+// esIndecisionBuy -- ver comentario largo junto a esa variable más
+// arriba, incluye el caso EURUSD SELL 07/10 07:39 verificado letra por
+// letra): `<` pasa a `<=` para dejar pasar la cruz exacta sin reabrir el
+// bug del 01/10 (una vela [1] claramente ALCISTA sigue sin cumplir `<=`).
+esIndecisionSell = close[1] <= open[1] and cuerpoIndSell < 0.50 - TOLERANCIA and not esMartilloIndSell
 
 wickContraSell = math.min(nivelOpenIndSell, nivelCloseIndSell)
 wickFavorSell  = 1 - math.max(nivelOpenIndSell, nivelCloseIndSell)

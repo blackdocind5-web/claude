@@ -1039,6 +1039,31 @@ tocar los defaults ya validados en oro).
   número cerca de 0 no tiene más efecto, el parámetro realmente a ajustar
   pasa a ser `REDUCCION_SL`. Validación/uso real pendiente por Fabián.
 
+- [ ] **Vela de indecisión en cruz exacta, patrón Start (fix 07/10, bug
+  reportado por Fabián -- EURUSD SELL 07/10 07:39 y GBPUSD BUY 07/10
+  09:00, ambos patrones Start válidos no detectados)**: en ambos casos la
+  vela de indecisión (la del medio de las tres del patrón) fue una cruz
+  exacta (apertura = cierre, 0,00% de cambio) -- confirmado letra por
+  letra con los valores de Fabián (EURUSD 07:38: 1,11843 = 1,11843;
+  GBPUSD 08:59: 1,32028 = 1,32028). Fabián sospechó primero del fix del
+  30/09 (vela de retroceso) pero la causa real era otra: el fix del 01/10
+  (color de la vela de indecisión, ver esa entrada arriba) exige
+  `close[1] > open[1]` ESTRICTO para un BUY (`close[1] < open[1]` para un
+  SELL) -- una cruz exacta nunca cumple ninguna desigualdad estricta de
+  color, así que quedaba excluida de CUALQUIER Start, pese a ser,
+  conceptualmente, la indecisión más "pura" posible (cuerpo 0%). La regla
+  de Fabián es "distinto color invalida" -- una cruz no tiene color, no
+  puede violarla. Fix: `>`/`<` pasan a `>=`/`<=` en `esIndecisionBuy`/
+  `esIndecisionSell` (Sección 4) -- deja pasar la cruz exacta sin reabrir
+  el bug del 01/10 (una vela [1] claramente del color contrario sigue sin
+  cumplir la desigualdad). Los dos casos de Fabián verificados a mano con
+  la fórmula completa (envolvente, indecisión, retroceso, mismo color):
+  con el fix, ambos pasan a reconocerse correctamente como Start. La
+  vela de retroceso (candle[2], fix 30/09) NO se tocó -- esa sigue
+  exigiendo una vela con cuerpo real (no cruz), que es el criterio
+  correcto y ya confirmado para esa posición del patrón, distinta de la
+  vela de indecisión. Validación en TradingView pendiente por Fabián.
+
 ## Decisiones de diseño (confirmadas con Fabián)
 
 - **Estética minimalista, solo la señal final**: los triángulos/etiquetas de
