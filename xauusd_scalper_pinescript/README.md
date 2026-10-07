@@ -1039,7 +1039,7 @@ tocar los defaults ya validados en oro).
   número cerca de 0 no tiene más efecto, el parámetro realmente a ajustar
   pasa a ser `REDUCCION_SL`. Validación/uso real pendiente por Fabián.
 
-- [ ] **Vela de indecisión en cruz exacta, patrón Start (fix 07/10, bug
+- [x] **Vela de indecisión en cruz exacta, patrón Start (fix 07/10, bug
   reportado por Fabián -- EURUSD SELL 07/10 07:39 y GBPUSD BUY 07/10
   09:00, ambos patrones Start válidos no detectados)**: en ambos casos la
   vela de indecisión (la del medio de las tres del patrón) fue una cruz
@@ -1062,7 +1062,41 @@ tocar los defaults ya validados en oro).
   vela de retroceso (candle[2], fix 30/09) NO se tocó -- esa sigue
   exigiendo una vela con cuerpo real (no cruz), que es el criterio
   correcto y ya confirmado para esa posición del patrón, distinta de la
-  vela de indecisión. Validación en TradingView pendiente por Fabián.
+  vela de indecisión. Confirmado por Fabián.
+
+- [ ] **Pérdida por Reset cuenta como SL, límite operativo de sesión (fix
+  07/10, a pedido de Fabián)**: hasta ahora, la excepción de "tercer hedge
+  encadenado" (regla 5 de `procesarSesionTrade`, Sección 6C) permitía
+  abrir una 3ra entrada en la sesión cada vez que la 2da se cerraba por
+  Hedge (`strategy.close` con comentario "Reset antes de nueva entrada",
+  cuando aparece una señal MEC en sentido contrario ANTES de que la
+  operación llegue a su propio SL/TP real) -- sin distinguir si esa 2da
+  operación estaba ganando o perdiendo en el momento del cierre. Fabián
+  pidió que una pérdida por Reset cuente igual que un SL real a efectos
+  del límite operativo ("1 TP, 1 SL + 2do intento (1 TP o 2 SL)") -- nunca
+  debería abrirse una 3ra entrada tras dos pérdidas, sea cual sea el
+  motivo del cierre de la 2da. Complicación técnica: el precio de entrada
+  de la operación vigente no se guardaba en ninguna variable propia (solo
+  `dirOut`/`slOut`/`tpOut`) -- se reconstruye algebraicamente con una
+  función nueva, `precioEntradaDesdeSLTP(slOut, tpOut)`, usando la
+  relación fija entre SL y TP (`tpOut = entrada ± distancia×RR_TP×(1-
+  TOLERANCIA_TP_PCT/100)`, `slOut = entrada ∓ distancia`) -- válido
+  porque `RR_TP`/`TOLERANCIA_TP_PCT` son inputs fijos durante todo el
+  backtest, los mismos que se usaron para calcular slOut/tpOut en el
+  momento en que esa entrada se abrió. La fórmula resultante
+  (`(tpOut + k×slOut) / (1+k)`, con `k = RR_TP×(1-TOLERANCIA_TP_PCT/100)`)
+  es la MISMA para BUY y SELL por simetría (interpolación lineal entre
+  los dos niveles conocidos). Con eso, `hedgeVigenteEnPerdida` compara el
+  `close` actual contra ese precio reconstruido (estrictamente, para que
+  un cierre en breakeven exacto NO cuente como pérdida, consistente con
+  la aclaración de Fabián de que un BE no es una pérdida) y bloquea
+  `tercerHedgeBuyLocal`/`tercerHedgeSellLocal` cuando da true -- además
+  de fijar `cerradaOut := true` explícitamente en ese caso, por simetría
+  con la regla del 2do SL real (aunque ya alcanzaría con bloquear la
+  excepción: `puedeBuy`/`puedeSell` igual dan false). No se tocó nada de
+  la regla 2 (monitoreo SL/TP real) ni del resto de reglas 3/4 -- el
+  cambio queda acotado a esta excepción puntual. Implementado en
+  `fase4_strategy_backtest.pine`. Validación pendiente por Fabián.
 
 ## Decisiones de diseño (confirmadas con Fabián)
 

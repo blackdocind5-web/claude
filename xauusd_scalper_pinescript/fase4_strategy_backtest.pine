@@ -252,6 +252,19 @@ strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=1
 // reaccionan a las mismas señales durante el solapamiento (09:30-11:00),
 // duplicando entradas/riesgo en esa franja. Para backtestear índices, dejar
 // Wall Street habilitada y NY deshabilitada.
+//
+// Pérdida por Reset cuenta como SL (07/10, a pedido de Fabián): la
+// excepción de "tercer hedge encadenado" (Sección 6C, regla 5) permitía
+// una 3ra entrada en la sesión cada vez que la 2da se cerraba por Hedge
+// (`strategy.close` con comentario "Reset antes de nueva entrada", en vez
+// de por su propio SL/TP real) -- sin distinguir si esa 2da operación
+// estaba ganando o perdiendo en el momento del cierre. Ahora, si estaba en
+// PÉRDIDA, cuenta igual que un SL real a efectos del límite operativo ("1
+// TP, 1 SL + 2do intento (1 TP o 2 SL)") -- nunca se abre una 3ra entrada
+// tras dos pérdidas, sea cual sea el motivo del cierre de la 2da. Ver el
+// comentario largo junto a `precioEntradaDesdeSLTP` (inicio de la Sección
+// 6C) para el detalle de cómo se reconstruye el precio de entrada (no se
+// guardaba como variable propia) a partir de `slOut`/`tpOut`.
 // ============================================================================
 
 // ============================================================================
@@ -822,6 +835,27 @@ tpSell = not na(distanciaFinalSell) ? close - distanciaFinalSell * RR_TP * (1 - 
 // SECCIÓN 6C — EJECUCIÓN REAL (BACKTEST) + LÍMITE DIARIO + ARRASTRE ENTRE
 // SESIONES (Fase 4, 15/09 -- Wall Street y filtros de sesión/día agregados 16/09)
 // ============================================================================
+// Pérdida por Reset cuenta como SL (fix 07/10, a pedido de Fabián -- quiere
+// que una pérdida realizada por Hedge/Reset (cierre de un trade abierto
+// ANTES de llegar a su SL/TP real, porque aparece una señal MEC en sentido
+// contrario) cuente igual que un SL real a efectos del límite operativo de
+// sesión ("1 TP, 1 SL + 2do intento (1 TP o 2 SL)") -- así nunca se abre una
+// 3ra operación tras dos pérdidas, sea cual sea el motivo del cierre de la
+// 2da. El precio de entrada de la operación vigente no se guarda como
+// variable propia en ningún lado -- se reconstruye algebraicamente a partir
+// de `slOut`/`tpOut` (que sí se guardan) y la relación fija entre ambos:
+// `tpOut = entrada ± distancia×RR_TP×(1-TOLERANCIA_TP_PCT/100)` (el signo
+// según dirección) y `slOut = entrada ∓ distancia`. Despejando entrada en
+// función de slOut/tpOut y k=RR_TP×(1-TOLERANCIA_TP_PCT/100): la fórmula es
+// la MISMA para BUY y SELL por simetría (es una interpolación lineal entre
+// los dos niveles conocidos, en la proporción 1:k). Válido porque RR_TP y
+// TOLERANCIA_TP_PCT son inputs FIJOS durante todo el backtest -- los mismos
+// valores que ya se usaron para calcular slOut/tpOut en el momento en que
+// esa entrada se abrió, sin importar cuántas barras atrás haya sido.
+precioEntradaDesdeSLTP(slOut, tpOut) =>
+    k = RR_TP * (1 - TOLERANCIA_TP_PCT / 100)
+    (tpOut + k * slOut) / (1 + k)
+
 // procesarSesionTrade: misma idea que procesarVelaM3 (Sección 2) -- función
 // PURA que recibe el estado actual de UNA sesión (Pre-NY, NY, Asia o Wall
 // Street, cada una se llama con sus propias variables) y devuelve el estado
@@ -955,8 +989,20 @@ procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tp
     // (el límite diario se suprime con `sinLimiteDiario`, ver comentario largo
     // junto a ese input más abajo -- la excepción de "tercer hedge encadenado"
     // deja de hacer falta en ese caso, ya no hay un conteo que desbordar)
-    tercerHedgeBuyLocal  = senalesOut == 2 and not na(dirOut) and dirOut == "SELL" and hedgeFlagOut
-    tercerHedgeSellLocal = senalesOut == 2 and not na(dirOut) and dirOut == "BUY"  and hedgeFlagOut
+    // Pérdida por Reset cuenta como SL (fix 07/10, ver comentario largo junto
+    // a `precioEntradaDesdeSLTP` al inicio de la Sección 6C): la excepción de
+    // "tercer hedge encadenado" de abajo permitía una 3ra entrada cada vez
+    // que la 2da se cerraba por Hedge en vez de por su propio SL/TP -- sin
+    // importar si esa 2da operación estaba ganando o perdiendo en ese
+    // momento. Si estaba en PÉRDIDA, son -- a efectos del límite -- dos
+    // pérdidas, y la excepción ya no debería aplicar.
+    precioEntradaVigente = not na(dirOut) ? precioEntradaDesdeSLTP(slOut, tpOut) : na
+    hedgeVigenteEnPerdida = not na(dirOut) and (dirOut == "SELL" ? close > precioEntradaVigente : close < precioEntradaVigente)
+    if senalesOut == 2 and hedgeFlagOut and hedgeVigenteEnPerdida and not sinLimiteDiario
+        cerradaOut := true
+
+    tercerHedgeBuyLocal  = senalesOut == 2 and not na(dirOut) and dirOut == "SELL" and hedgeFlagOut and not hedgeVigenteEnPerdida
+    tercerHedgeSellLocal = senalesOut == 2 and not na(dirOut) and dirOut == "BUY"  and hedgeFlagOut and not hedgeVigenteEnPerdida
     puedeBuy  = not cerradaOut and (sinLimiteDiario ? (na(dirOut) or dirOut == "SELL") : ((senalesOut < 2 and (na(dirOut) or dirOut == "SELL")) or tercerHedgeBuyLocal))
     puedeSell = not cerradaOut and (sinLimiteDiario ? (na(dirOut) or dirOut == "BUY")  : ((senalesOut < 2 and (na(dirOut) or dirOut == "BUY"))  or tercerHedgeSellLocal))
 
