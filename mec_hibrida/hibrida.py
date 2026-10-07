@@ -64,8 +64,21 @@ def cargar():
             ts = [t for t in ts if not F.motivo_exclusion(t["ent"], CAL)]
             ts.sort(key=lambda t: t["ent"])
             for t in ts: t["m"] = motivo(t["salida"])
-            T[(a, p)] = ts
+            T[(a, p)] = limite_perdidas(ts)
     return T
+
+
+def limite_perdidas(ts):
+    """Límite de sesión corregido (decisión de Fabián, 07/10/2026): una pérdida cerrada por Reset cuenta como SL,
+    así que tras dos operaciones perdedoras en la sesión del activo no se abre una tercera.
+    Elimina la 3.ª operación del 04/08/2026 en EURUSD (y las otras dos sesiones con 3 operaciones)."""
+    out = []; dia = None; perdidas = 0
+    for t in ts:
+        if t["ent"].date() != dia: dia = t["ent"].date(); perdidas = 0
+        if perdidas >= 2: continue
+        out.append(t)
+        if t["u"] < 0: perdidas += 1
+    return out
 
 
 def duplicados():
