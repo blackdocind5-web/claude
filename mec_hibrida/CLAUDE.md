@@ -12,6 +12,7 @@ Objetivo de Fabián: preservar y crecer el capital durante una década. Nada de 
 - Objetivo semanal (+nR, 1R = 0,9%) y freno de pérdida semanal (−nR): al alcanzarlo no se abren operaciones hasta el lunes.
 - Un activo-patrón entra solo si gana en 2025 y en 2026 por separado; una regla de gestión se acepta solo si mejora los dos años sin subir la caída máxima.
 - Simulaciones: remuestreo con reposición dentro de cada activo.
+- Meta de Fabián: 5% semanal, 20% mensual y 79,59% anual compuesto (corregida el 07/10/2026; antes decía 240%).
 - `duplicados()` detecta un START idéntico al Envolvente y lo excluye (pasó con el primer AUDUSD_START; ya se reemplazó por el correcto el 05/10/2026).
 
 ## Gestión ganadora (decisión de Fabián, 06/10/2026)

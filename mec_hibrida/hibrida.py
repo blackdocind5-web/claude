@@ -343,7 +343,7 @@ def main():
 
     data = dict(meta=dict(ini=INI.strftime("%d/%m/%Y"), fin=FIN.strftime("%d/%m/%Y"), receso="22/12/2025 al 16/01/2026",
                           start_duplicado=dup, objetivos=OBJETIVOS, simulaciones=len(grid), combinaciones=len(combos),
-                          meta_usuario=dict(semanal=5, mensual=20, anual=240)),
+                          meta_usuario=dict(semanal=5, mensual=20, anual=79.59)),
                 activos=activos, correlaciones=dict(E=correlaciones(T, "E"), ES=correlaciones(T, "ES")),
                 validacion=validacion)
 
@@ -481,7 +481,7 @@ def main():
     # riesgo por operación que haría falta para la meta de 240% anual (solo como referencia de lo que implica)
     tsf = ts_de(C, final.get("vie", True), final.get("regla", "cont"))
     nec = []
-    for rk in (1, 1.5, 2, 2.5, 3, 3.5, 4, 5):
+    for rk in (1, 1.1, 1.25, 1.5, 2, 2.5, 3, 4, 5):
         r = simular(tsf, final.get("obj"), stop_sem=final.get("stop"), riesgo=rk)
         nec.append(dict(riesgo=rk, cagr=r["cagr"], mes=r["mes_geo"], sem=r["sem_geo"], mdd=r["mdd"], peor_mes=r["peor_mes"], anios=r["anios"]))
     data["riesgo_necesario"] = nec
