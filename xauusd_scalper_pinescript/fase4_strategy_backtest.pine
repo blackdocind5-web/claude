@@ -265,6 +265,30 @@ strategy("XAUUSD Scalper — Backtest (Fase 4)", overlay=true, initial_capital=1
 // comentario largo junto a `precioEntradaDesdeSLTP` (inicio de la Sección
 // 6C) para el detalle de cómo se reconstruye el precio de entrada (no se
 // guardaba como variable propia) a partir de `slOut`/`tpOut`.
+//
+// Filtro EMA de tendencia (08/10, a pedido de Fabián -- quiere subir el win
+// rate y achicar las rachas negativas): nuevo toggle `habilitarFiltroEMA`
+// (grupo "Backtest — Filtro EMA de tendencia (prueba)", Sección 6C). BUY
+// solo válido si la vela de entrada cierra por ENCIMA de una EMA de un
+// timeframe MAYOR al M1/M3 que ya usa la estructura, SELL solo si cierra
+// por DEBAJO -- la idea es filtrar entradas que van en contra del sesgo
+// direccional de marco mayor, algo que la estructura M3 (reactiva a swings
+// de 2-3 velas) no distingue de ruido direccional de corto plazo. El
+// timeframe de la EMA queda como INPUT (no hardcodeado), con opciones
+// 15/30/45/60/240 minutos o Diario, para que Fabián compare directamente en
+// el Strategy Tester -- recomendación de partida: 1H (lo bastante lento
+// para ser un sesgo genuino de marco mayor, lo bastante rápido para seguir
+// siendo relevante dentro de una sesión de 2 horas; Diario/4H pueden vetar
+// sesiones con estructura M3 intradía impecable solo por el sesgo de varias
+// semanas, y 15-30m quedan redundantes con la propia estructura M3). Se usa
+// `request.security(..., lookahead=barmerge.lookahead_off)` sobre una
+// `ta.ema()` -- el patrón estándar de Pine para series de PRECIO sin
+// repintado, sin relación con el problema histórico de `lookahead_off`
+// sobre `time_close` (una serie de TIEMPO) que forzó a abandonar ese
+// enfoque para `finalVelaM3` (Sección 2) -- acá es un caso distinto y
+// seguro. Aplicado en `mecBuyGate`/`mecSellGate` (Sección 6C), no en la
+// Sección 6 -- esa sigue siendo copia literal del indicador. Apagado
+// (default), el comportamiento es idéntico al actual.
 // ============================================================================
 
 // ============================================================================
@@ -1058,6 +1082,37 @@ grpFiltrosPatron = "Backtest — Filtros de patrón de entrada"
 habilitarEnvolvente = input.bool(true, "Habilitar señales por patrón Envolvente", group=grpFiltrosPatron)
 habilitarStart = input.bool(true, "Habilitar señales por patrón Start", group=grpFiltrosPatron)
 
+// -- prueba temporal (08/10, a pedido de Fabián -- quiere subir el win rate
+// y achicar las rachas negativas, filtrando entradas que van en contra del
+// sesgo direccional de un marco temporal MAYOR al M3 que ya usa la
+// estructura): una EMA de un timeframe superior (M3/M1 reaccionan rápido a
+// swings de 2-3 velas, pero no distinguen una tendencia real de ruido
+// direccional de corto plazo) -- BUY solo válido si la vela de entrada
+// cierra por ENCIMA de la EMA, SELL solo si cierra por DEBAJO, exactamente
+// como lo planteó Fabián. Timeframe de la EMA dejado como INPUT (no
+// hardcodeado) a pedido explícito de Fabián, para comparar 15/30/45/60/240
+// minutos (o Diario) directamente en el Strategy Tester sin tocar código --
+// ver el análisis completo en el chat sobre por qué 1H es la recomendación
+// de partida (lo bastante lento para ser un sesgo de marco mayor genuino,
+// lo bastante rápido para seguir siendo relevante dentro de una sesión de
+// 2 horas) y por qué Diario/4H pueden ser demasiado lentos y 15-30m
+// redundantes con la propia estructura M3. `request.security` con
+// `lookahead=barmerge.lookahead_off` es el patrón estándar y documentado
+// de Pine para series de PRECIO sin repintado -- no tiene relación con el
+// problema histórico de `lookahead_off` sobre `time_close` (una serie de
+// TIEMPO, no de precio) que forzó a abandonar ese enfoque para
+// `finalVelaM3` en su momento (ver comentario largo junto a esa variable,
+// Sección 2) -- acá es seguro. Aplicado en `mecBuyGate`/`mecSellGate` más
+// abajo, no en la Sección 6 -- esa sigue siendo copia literal del
+// indicador, sin tocar. Apagado (default), el comportamiento es idéntico
+// al actual.
+grpFiltroEMA = "Backtest — Filtro EMA de tendencia (prueba)"
+habilitarFiltroEMA = input.bool(false, "PRUEBA: filtrar entradas por EMA de tendencia -- BUY solo si la vela de entrada cierra por encima de la EMA, SELL solo si cierra por debajo", group=grpFiltroEMA)
+timeframeEMA = input.timeframe("60", "Timeframe de la EMA (probar 15/30/45/60/240 minutos o D)", options=["15", "30", "45", "60", "240", "D"], group=grpFiltroEMA)
+periodoEMA = input.int(20, "Período de la EMA", minval=1, group=grpFiltroEMA)
+emaFiltro = request.security(syminfo.tickerid, timeframeEMA, ta.ema(close, periodoEMA), lookahead=barmerge.lookahead_off)
+plot(habilitarFiltroEMA ? emaFiltro : na, title="EMA de tendencia (filtro)", color=color.fuchsia, linewidth=2)
+
 // -- prueba temporal (30/09, a pedido de Fabián -- quiere comparar en
 // backtesting profundo esta variante contra el comportamiento actual, SIN
 // que sea todavía un cambio definitivo): con el toggle activado, un trade
@@ -1123,8 +1178,15 @@ mostrarDebugQty = input.bool(false, "DEBUG temporal: qtyBuy/qtySell bar a bar (V
 plot(mostrarDebugQty ? qtyBuy : na, title="DEBUG qtyBuy", color=color.blue, style=plot.style_circles, linewidth=2)
 plot(mostrarDebugQty ? qtySell : na, title="DEBUG qtySell", color=color.purple, style=plot.style_circles, linewidth=2)
 
-mecBuyGate  = mecBuyBruto  and barstate.isconfirmed and diaHabilitado and ((candidataEnvolventeBuy  and habilitarEnvolvente) or (esStartBuy  and habilitarStart))
-mecSellGate = mecSellBruto and barstate.isconfirmed and diaHabilitado and ((candidataEnvolventeSell and habilitarEnvolvente) or (esStartSell and habilitarStart))
+// Filtro EMA de tendencia (08/10, ver comentario largo junto a
+// `habilitarFiltroEMA` más arriba): BUY exige vela de entrada por encima de
+// la EMA, SELL por debajo. Con el toggle apagado (default), `filtroEMABuyOk`/
+// `filtroEMASellOk` dan siempre true -- comportamiento idéntico al actual.
+filtroEMABuyOk  = not habilitarFiltroEMA or close > emaFiltro
+filtroEMASellOk = not habilitarFiltroEMA or close < emaFiltro
+
+mecBuyGate  = mecBuyBruto  and barstate.isconfirmed and diaHabilitado and filtroEMABuyOk  and ((candidataEnvolventeBuy  and habilitarEnvolvente) or (esStartBuy  and habilitarStart))
+mecSellGate = mecSellBruto and barstate.isconfirmed and diaHabilitado and filtroEMASellOk and ((candidataEnvolventeSell and habilitarEnvolvente) or (esStartSell and habilitarStart))
 
 // ============================================================================
 // DEBUG — Distribución de distancias de SL (06/10): herramienta para calibrar

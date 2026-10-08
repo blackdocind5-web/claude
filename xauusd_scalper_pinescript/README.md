@@ -1064,7 +1064,7 @@ tocar los defaults ya validados en oro).
   correcto y ya confirmado para esa posición del patrón, distinta de la
   vela de indecisión. Confirmado por Fabián.
 
-- [ ] **Pérdida por Reset cuenta como SL, límite operativo de sesión (fix
+- [x] **Pérdida por Reset cuenta como SL, límite operativo de sesión (fix
   07/10, a pedido de Fabián)**: hasta ahora, la excepción de "tercer hedge
   encadenado" (regla 5 de `procesarSesionTrade`, Sección 6C) permitía
   abrir una 3ra entrada en la sesión cada vez que la 2da se cerraba por
@@ -1096,7 +1096,48 @@ tocar los defaults ya validados en oro).
   excepción: `puedeBuy`/`puedeSell` igual dan false). No se tocó nada de
   la regla 2 (monitoreo SL/TP real) ni del resto de reglas 3/4 -- el
   cambio queda acotado a esta excepción puntual. Implementado en
-  `fase4_strategy_backtest.pine`. Validación pendiente por Fabián.
+  `fase4_strategy_backtest.pine`. Confirmado por Fabián.
+
+- [ ] **Filtro EMA de tendencia (08/10, a pedido de Fabián -- quiere subir
+  el win rate y achicar las rachas negativas)**: sesión de análisis
+  conjunto antes de implementar -- Fabián propuso agregar una EMA de 20
+  períodos como filtro adicional de tendencia (BUY solo con la vela de
+  entrada por encima, SELL solo por debajo), pero no tenía claro en qué
+  timeframe calcularla (diario, 4H, 1H, o algo intradía tipo 30-45min).
+  Análisis compartido: la estructura M3 ya existente reacciona rápido a
+  swings de 2-3 velas pero no distingue una tendencia real de ruido
+  direccional de corto plazo -- justo el punto ciego que Fabián quiere
+  tapar, dado que su sistema es direccional (busca que el precio llegue
+  rápido al TP gracias a volatilidad bien direccionada). Recomendación:
+  una EMA en un timeframe MAYOR a M3 aporta información genuinamente
+  nueva, mientras que 15-30min quedaría redundante con lo que la propia
+  estructura M3 ya captura, y Diario/4H son demasiado lentos para una
+  sesión de 2 horas (podrían vetar una sesión con estructura M3 intradía
+  impecable solo por el sesgo de varias semanas) -- 1H como punto de
+  partida sugerido, lo bastante lento para ser un sesgo genuino de marco
+  mayor, lo bastante rápido para seguir siendo relevante dentro de la
+  sesión. Fabián pidió dejar el timeframe como INPUT (no hardcodeado) para
+  comparar 15/30/45/60/240 minutos o Diario directamente en el Strategy
+  Tester, y descartó explícitamente agregar un contador de rachas
+  negativas al panel (ya lo tiene disponible nativo en Pine/Strategy
+  Tester). Implementado: nuevo toggle `habilitarFiltroEMA` (grupo
+  "Backtest — Filtro EMA de tendencia (prueba)", Sección 6C, default
+  apagado), `timeframeEMA` (`input.timeframe`, opciones 15/30/45/60/240/D,
+  default "60") y `periodoEMA` (`input.int`, default 20). `emaFiltro` se
+  calcula con `request.security(syminfo.tickerid, timeframeEMA,
+  ta.ema(close, periodoEMA), lookahead=barmerge.lookahead_off)` -- el
+  patrón estándar de Pine para series de PRECIO sin repintado, sin
+  relación con el problema histórico de `lookahead_off` sobre `time_close`
+  (una serie de TIEMPO) que forzó a abandonar ese enfoque para
+  `finalVelaM3` (Sección 2) en su momento -- acá es un caso distinto y
+  seguro. El filtro (`filtroEMABuyOk`/`filtroEMASellOk`) se aplica en
+  `mecBuyGate`/`mecSellGate` (Sección 6C), no en la Sección 6 -- esa sigue
+  siendo copia literal del indicador, sin tocar. Apagado (default), el
+  comportamiento es idéntico al actual. Implementado en
+  `fase4_strategy_backtest.pine`. Validación pendiente por Fabián --
+  comparar 15/30/45/60/240/D en el Strategy Tester para elegir el
+  timeframe, y confirmar que efectivamente sube el win rate / achica las
+  rachas negativas antes de darlo por definitivo.
 
 ## Decisiones de diseño (confirmadas con Fabián)
 
