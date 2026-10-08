@@ -2,7 +2,8 @@
 
 Reglas (definidas por Fabián, 08/10/2026):
 - SIN_OPERAR: los mismos días "sin operar" de Pre NY que son feriados bancarios, el receso de fin de año y los
-  discursos (los de Pre NY y los de la ventana NY, archivo fuentes/discursos_ny_2025_2026.csv).
+  discursos dentro de la ventana 09:00-11:00 (archivo fuentes/discursos_ny_2025_2026.csv, incluidos los de las 11:00).
+  Los discursos de Pre NY no cuentan (otro horario).
 - ANALIZAR_NOTICIA: NFP, CPI (USD y GBP), PPI y PIB final. En Pre NY no se opera; en NY la noticia ya pasó:
   no se excluyen de entrada, se analiza si conviene operar esos días.
 - ANALIZAR_FOMC: días de FOMC Statement / Federal Funds Rate, Economic Projections y Meeting Minutes (14:00 NY).
@@ -26,7 +27,9 @@ ISM = ["2025-01-03", "2025-02-03", "2025-03-03", "2025-04-01", "2025-05-01", "20
 JOLTS = ["2025-01-07", "2025-02-04", "2025-03-11", "2025-04-01", "2025-04-29", "2025-06-03", "2025-07-01", "2025-07-29", "2025-09-03",
          "2025-09-30", "2025-12-09", "2026-01-07", "2026-02-05", "2026-03-13", "2026-03-31", "2026-05-05", "2026-06-02", "2026-06-30",
          "2026-08-04", "2026-09-01", "2026-09-29"]
-CB_CONF = []   # pendiente: Fabián envía la captura de CB Consumer Confidence
+CB_CONF = ["2025-01-28", "2025-02-25", "2025-03-25", "2025-04-29", "2025-05-27", "2025-06-24", "2025-07-29", "2025-08-26", "2025-09-30",
+           "2025-10-28", "2025-11-25", "2025-12-23", "2026-01-27", "2026-02-24", "2026-03-31", "2026-04-28", "2026-05-26", "2026-06-30",
+           "2026-07-28", "2026-08-25", "2026-09-29"]
 
 def fila(f, regla, ventana, divisa, evento, fuente):
     return dict(fecha=dt.date.fromisoformat(f).strftime("%d/%m/%Y"), regla=regla, ventana_NY=ventana, divisa=divisa,
@@ -40,7 +43,7 @@ def main():
             if r["regla"] == "SIN_OPERAR":
                 if any(k in ev for k in ("NFP", "CPI", "PPI", "PIB final")):
                     rows.append(fila(f, "ANALIZAR_NOTICIA", "", r["divisa"], ev, r["fuente"] + " (Pre NY)"))
-                else:   # feriados, receso, discursos
+                elif "Discurso" not in ev:   # feriados y receso (los discursos de Pre NY no cuentan para NY: otro horario)
                     rows.append(fila(f, "SIN_OPERAR", "", r["divisa"], ev, r["fuente"] + " (Pre NY)"))
             elif r["regla"] == "BLOQUEO_NOTICIA" and r["ventana_NY"] >= "09:00":
                 rows.append(fila(f, "BLOQUEO_NOTICIA", "09:50-10:03", r["divisa"], ev.replace(", fuera de la sesión", ""), r["fuente"] + " (Pre NY)"))

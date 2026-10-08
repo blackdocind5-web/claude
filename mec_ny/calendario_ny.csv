@@ -9,6 +9,7 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 15/01/2025;ANALIZAR_NOTICIA;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD 2025 (Pre NY)
 15/01/2025;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025 (Pre NY)
 20/01/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Martin Luther King Jr.);confirmado;Capturas FF feriados 2025 (Pre NY)
+28/01/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 29/01/2025;ANALIZAR_FOMC;;USD;FOMC: Federal Funds Rate + FOMC Statement (14:00);confirmado;Captura FF FOMC
 03/02/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
 04/02/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;JOLTS Job Openings (dato 10:00);confirmado;Captura FF JOLTS
@@ -20,6 +21,7 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 17/02/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Presidents' Day);confirmado;Capturas FF feriados 2025 (Pre NY)
 19/02/2025;ANALIZAR_FOMC;;USD;FOMC Meeting Minutes (14:00);confirmado;Captura FF FOMC
 19/02/2025;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025 (Pre NY)
+25/02/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 03/03/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
 07/03/2025;ANALIZAR_NOTICIA;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP 2025 (Pre NY)
 07/03/2025;SIN_OPERAR;;USD;Discurso: President Trump Speaks (11:00);confirmado;Discursos NY (archivo de Fabián)
@@ -29,6 +31,7 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 19/03/2025;ANALIZAR_FOMC;;USD;FOMC: Federal Funds Rate + FOMC Statement (14:00);confirmado;Captura FF FOMC
 19/03/2025;ANALIZAR_FOMC;;USD;FOMC Economic Projections (14:00);confirmado;Captura FF FOMC
 20/03/2025;SIN_OPERAR;;USD;Discurso: President Trump Speaks (10:40);confirmado;Discursos NY (archivo de Fabián)
+25/03/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 26/03/2025;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025 (Pre NY)
 27/03/2025;ANALIZAR_NOTICIA;;USD;PIB final trimestral - Final GDP q/q (USD);confirmado;Captura FF Final GDP 2025 (Pre NY)
 01/04/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
@@ -42,6 +45,7 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 21/04/2025;SIN_OPERAR;;GBP/EUR;Feriado bancario Reino Unido, Alemania, Francia y Italia (Lunes de Pascua);confirmado;Capturas FF feriados 2025 (Pre NY)
 25/04/2025;SIN_OPERAR;;EUR;Feriado bancario Italia (Día de la Liberación);confirmado;Capturas FF feriados 2025 (Pre NY)
 29/04/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;JOLTS Job Openings (dato 10:00);confirmado;Captura FF JOLTS
+29/04/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 30/04/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;Core PCE Price Index m/m (dato 10:00);confirmado;Captura FF Core PCE 2025 (Pre NY)
 01/05/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
 01/05/2025;SIN_OPERAR;;EUR;Feriado bancario Alemania, Francia y Italia (Día del Trabajo);confirmado;Capturas FF feriados 2025 (Pre NY)
@@ -53,9 +57,9 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 12/05/2025;SIN_OPERAR;;USD;Discurso: President Trump Speaks (09:30);confirmado;Discursos NY (archivo de Fabián)
 13/05/2025;ANALIZAR_NOTICIA;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD 2025 (Pre NY)
 15/05/2025;ANALIZAR_NOTICIA;;USD;PPI m/m y Core PPI m/m (USD);confirmado;Captura FF PPI 2025 (Pre NY)
-15/05/2025;SIN_OPERAR;;USD;Discurso de Powell (presidente de la Fed) a las 08:40 NY;confirmado;Hora de FF informada por Fabián (Pre NY)
 21/05/2025;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025 (Pre NY)
 26/05/2025;SIN_OPERAR;;USD/GBP;Feriado bancario EE. UU. y Reino Unido (Memorial Day / Spring Bank Holiday);confirmado;Capturas FF feriados 2025 (Pre NY)
+27/05/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 28/05/2025;ANALIZAR_FOMC;;USD;FOMC Meeting Minutes (14:00);confirmado;Captura FF FOMC
 29/05/2025;SIN_OPERAR;;EUR;Feriado bancario Alemania y Francia (Ascensión);confirmado;Capturas FF feriados 2025 (Pre NY)
 02/06/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
@@ -69,6 +73,7 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 18/06/2025;ANALIZAR_FOMC;;USD;FOMC Economic Projections (14:00);confirmado;Captura FF FOMC
 18/06/2025;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025 (Pre NY)
 19/06/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Juneteenth);confirmado;Capturas FF feriados 2025 (Pre NY)
+24/06/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 24/06/2025;SIN_OPERAR;;USD;Discurso: Fed Chairman Powell Testifies (10:00);confirmado;Discursos NY (archivo de Fabián)
 25/06/2025;SIN_OPERAR;;USD;Discurso: Fed Chairman Powell Testifies (10:00);confirmado;Discursos NY (archivo de Fabián)
 26/06/2025;ANALIZAR_NOTICIA;;USD;PIB final trimestral - Final GDP q/q (USD);confirmado;Captura FF Final GDP 2025 (Pre NY)
@@ -82,21 +87,20 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 15/07/2025;ANALIZAR_NOTICIA;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD 2025 (Pre NY)
 16/07/2025;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025 (Pre NY)
 16/07/2025;ANALIZAR_NOTICIA;;USD;PPI m/m y Core PPI m/m (USD);confirmado;Captura FF PPI 2025 (Pre NY)
-22/07/2025;SIN_OPERAR;;USD;Discurso de Powell (presidente de la Fed) a las 08:30 NY;confirmado;Hora de FF informada por Fabián (Pre NY)
 29/07/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;JOLTS Job Openings (dato 10:00);confirmado;Captura FF JOLTS
+29/07/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 30/07/2025;ANALIZAR_FOMC;;USD;FOMC: Federal Funds Rate + FOMC Statement (14:00);confirmado;Captura FF FOMC
 01/08/2025;ANALIZAR_NOTICIA;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP 2025 (Pre NY)
 01/08/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
-05/08/2025;SIN_OPERAR;;USD;Discurso de Trump (presidente de EE. UU.) a las 08:00 NY;confirmado;Hora de FF informada por Fabián (Pre NY)
 11/08/2025;SIN_OPERAR;;USD;Discurso: President Trump Speaks (10:00);confirmado;Discursos NY (archivo de Fabián)
 12/08/2025;ANALIZAR_NOTICIA;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD 2025 (Pre NY)
 14/08/2025;ANALIZAR_NOTICIA;;USD;PPI m/m y Core PPI m/m (USD);confirmado;Captura FF PPI 2025 (Pre NY)
 15/08/2025;SIN_OPERAR;;EUR;Feriado bancario Francia y Italia (Asunción);confirmado;Capturas FF feriados 2025 (Pre NY)
-19/08/2025;SIN_OPERAR;;USD;Discurso de Trump (presidente de EE. UU.) a las 08:00 NY;confirmado;Hora de FF informada por Fabián (Pre NY)
 20/08/2025;ANALIZAR_FOMC;;USD;FOMC Meeting Minutes (14:00);confirmado;Captura FF FOMC
 20/08/2025;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025 (Pre NY)
 22/08/2025;SIN_OPERAR;;USD;Discurso: FOMC Member Powell Speaks (10:00);confirmado;Discursos NY (archivo de Fabián)
 25/08/2025;SIN_OPERAR;;GBP;Feriado bancario Reino Unido (Summer Bank Holiday);confirmado;Capturas FF feriados 2025 (Pre NY)
+26/08/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 01/09/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Labor Day);confirmado;Capturas FF feriados 2025 (Pre NY)
 02/09/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
 03/09/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;JOLTS Job Openings (dato 10:00);confirmado;Captura FF JOLTS
@@ -109,14 +113,15 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 23/09/2025;SIN_OPERAR;;USD;Discurso: President Trump Speaks (09:50);confirmado;Discursos NY (archivo de Fabián)
 25/09/2025;ANALIZAR_NOTICIA;;USD;PIB final trimestral - Final GDP q/q (USD);confirmado;Captura FF Final GDP 2025 (Pre NY)
 30/09/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;JOLTS Job Openings (dato 10:00);confirmado;Captura FF JOLTS
+30/09/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 30/09/2025;SIN_OPERAR;;USD;Discurso: President Trump Speaks (11:00);confirmado;Discursos NY (archivo de Fabián)
 01/10/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
 03/10/2025;SIN_OPERAR;;EUR;Feriado bancario Alemania (Día de la Unidad);confirmado;Capturas FF feriados 2025 (Pre NY)
 08/10/2025;ANALIZAR_FOMC;;USD;FOMC Meeting Minutes (14:00);confirmado;Captura FF FOMC
-09/10/2025;SIN_OPERAR;;USD;Discurso de Powell (presidente de la Fed) a las 08:30 NY;confirmado;Hora de FF informada por Fabián (Pre NY)
 13/10/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Columbus Day);confirmado;Capturas FF feriados 2025 (Pre NY)
 22/10/2025;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025 (Pre NY)
 24/10/2025;ANALIZAR_NOTICIA;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD 2025 (Pre NY)
+28/10/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 29/10/2025;ANALIZAR_FOMC;;USD;FOMC: Federal Funds Rate + FOMC Statement (14:00);confirmado;Captura FF FOMC
 03/11/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
 06/11/2025;SIN_OPERAR;;USD;Discurso: President Trump Speaks (11:00);confirmado;Discursos NY (archivo de Fabián)
@@ -125,6 +130,7 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 19/11/2025;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025 (Pre NY)
 20/11/2025;ANALIZAR_NOTICIA;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP 2025 (Pre NY)
 25/11/2025;ANALIZAR_NOTICIA;;USD;PPI m/m y Core PPI m/m (USD);confirmado;Captura FF PPI 2025 (Pre NY)
+25/11/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 27/11/2025;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Acción de Gracias);confirmado;Capturas FF feriados 2025 (Pre NY)
 01/12/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
 05/12/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;Core PCE Price Index m/m (dato 10:00);confirmado;Captura FF Core PCE 2025 (Pre NY)
@@ -135,6 +141,7 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 16/12/2025;ANALIZAR_NOTICIA;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP 2025 (Pre NY)
 17/12/2025;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP 2025 (Pre NY)
 22/12/2025;SIN_OPERAR;;USD/GBP/EUR;Receso de fin de año (22/12/2025 al 16/01/2026, sin operar);confirmado;Decisión de Fabián (Pre NY)
+23/12/2025;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 23/12/2025;SIN_OPERAR;;USD/GBP/EUR;Receso de fin de año (22/12/2025 al 16/01/2026, sin operar);confirmado;Decisión de Fabián (Pre NY)
 24/12/2025;SIN_OPERAR;;EUR;Feriado bancario Alemania (Nochebuena);confirmado;Capturas FF feriados 2025 (Pre NY)
 24/12/2025;SIN_OPERAR;;USD/GBP/EUR;Receso de fin de año (22/12/2025 al 16/01/2026, sin operar);confirmado;Decisión de Fabián (Pre NY)
@@ -169,6 +176,7 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 19/01/2026;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Martin Luther King Jr.);confirmado;Captura FF US (Pre NY)
 21/01/2026;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP (Pre NY)
 22/01/2026;ANALIZAR_NOTICIA;;USD;PIB final trimestral - Final GDP q/q (USD);confirmado;Captura FF Final GDP (Pre NY)
+27/01/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 28/01/2026;ANALIZAR_FOMC;;USD;FOMC: Federal Funds Rate + FOMC Statement (14:00);confirmado;Captura FF FOMC
 30/01/2026;ANALIZAR_NOTICIA;;USD;PPI m/m y Core PPI m/m (USD);confirmado;Captura FF PPI 2026 (Pre NY)
 02/02/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
@@ -178,6 +186,7 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 16/02/2026;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Presidents' Day);confirmado;Captura FF US (Pre NY)
 18/02/2026;ANALIZAR_FOMC;;USD;FOMC Meeting Minutes (14:00);confirmado;Captura FF FOMC
 18/02/2026;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP (Pre NY)
+24/02/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 27/02/2026;ANALIZAR_NOTICIA;;USD;PPI m/m y Core PPI m/m (USD);confirmado;Captura FF PPI 2026 (Pre NY)
 02/03/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
 06/03/2026;ANALIZAR_NOTICIA;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP (Pre NY)
@@ -188,6 +197,7 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 18/03/2026;ANALIZAR_NOTICIA;;USD;PPI m/m y Core PPI m/m (USD);confirmado;Captura FF PPI 2026 (Pre NY)
 25/03/2026;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP (Pre NY)
 31/03/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;JOLTS Job Openings (dato 10:00);confirmado;Captura FF JOLTS
+31/03/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 01/04/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
 03/04/2026;ANALIZAR_NOTICIA;;USD/GBP/EUR;NFP + Feriado bancario Reino Unido y Alemania (Viernes Santo);confirmado;Capturas FF NFP/UK/DE (Pre NY)
 06/04/2026;SIN_OPERAR;;GBP/EUR;Feriado bancario Reino Unido, Alemania, Francia e Italia (Lunes de Pascua);confirmado;Capturas FF UK/DE/FR/IT (Pre NY)
@@ -195,9 +205,9 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 09/04/2026;ANALIZAR_NOTICIA;;USD;PIB final trimestral - Final GDP q/q (USD);confirmado;Captura FF Final GDP (Pre NY)
 10/04/2026;ANALIZAR_NOTICIA;;USD;CPI m/m (USD);confirmado;Captura FF CPI USD (Pre NY)
 14/04/2026;ANALIZAR_NOTICIA;;USD;PPI m/m y Core PPI m/m (USD);confirmado;Captura FF PPI 2026 (Pre NY)
-21/04/2026;SIN_OPERAR;;USD;Discurso/entrevista de Trump (presidente de EE. UU.) a las 08:30 NY;confirmado;Hora de FF informada por Fabián (Pre NY)
 21/04/2026;SIN_OPERAR;;USD;Discurso: Fed Chairman Warsh Testifies (10:00);confirmado;Discursos NY (archivo de Fabián)
 22/04/2026;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP (Pre NY)
+28/04/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 29/04/2026;ANALIZAR_FOMC;;USD;FOMC: Federal Funds Rate + FOMC Statement (14:00);confirmado;Captura FF FOMC
 01/05/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
 01/05/2026;SIN_OPERAR;;EUR;Feriado bancario Alemania, Francia e Italia (Día del Trabajo);confirmado;Capturas FF DE/FR/IT (Pre NY)
@@ -210,6 +220,7 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 20/05/2026;ANALIZAR_FOMC;;USD;FOMC Meeting Minutes (14:00);confirmado;Captura FF FOMC
 20/05/2026;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP (Pre NY)
 25/05/2026;SIN_OPERAR;;USD/GBP/EUR;Feriado bancario EE. UU. (Memorial Day), Reino Unido (Spring Bank Holiday), Alemania y Francia (Lunes de Pentecostés);confirmado;Capturas FF US/UK/DE/FR (Pre NY)
+26/05/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 01/06/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
 02/06/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;JOLTS Job Openings (dato 10:00);confirmado;Captura FF JOLTS
 02/06/2026;SIN_OPERAR;;EUR;Feriado bancario Italia (Día de la República);confirmado;Captura FF IT (Pre NY)
@@ -226,8 +237,8 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 25/06/2026;ANALIZAR_NOTICIA;;USD;PIB final trimestral - Final GDP q/q (USD);confirmado;Captura FF Final GDP (Pre NY)
 29/06/2026;SIN_OPERAR;;EUR;Feriado bancario parcial Italia (San Pedro y San Pablo, solo algunos bancos);confirmado;Captura FF IT (Pre NY)
 30/06/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;JOLTS Job Openings (dato 10:00);confirmado;Captura FF JOLTS
+30/06/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 01/07/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
-01/07/2026;SIN_OPERAR;;USD;Discurso de Warsh (presidente de la Fed) a las 09:00 NY;confirmado;Hora de FF informada por Fabián (Pre NY)
 01/07/2026;SIN_OPERAR;;USD;Discurso: Fed Chairman Warsh Speaks (09:00);confirmado;Discursos NY (archivo de Fabián)
 02/07/2026;ANALIZAR_NOTICIA;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Captura FF NFP (Pre NY)
 03/07/2026;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Día de la Independencia, observado);confirmado;Captura FF US (Pre NY)
@@ -237,6 +248,7 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 15/07/2026;ANALIZAR_NOTICIA;;USD;PPI m/m y Core PPI m/m (USD);confirmado;Captura FF PPI 2026 (Pre NY)
 15/07/2026;SIN_OPERAR;;USD;Discurso: Fed Chairman Warsh Testifies (10:00);confirmado;Discursos NY (archivo de Fabián)
 22/07/2026;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP (Pre NY)
+28/07/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 29/07/2026;ANALIZAR_FOMC;;USD;FOMC: Federal Funds Rate + FOMC Statement (14:00);confirmado;Captura FF FOMC
 03/08/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
 04/08/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;JOLTS Job Openings (dato 10:00);confirmado;Captura FF JOLTS
@@ -245,6 +257,7 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 13/08/2026;ANALIZAR_NOTICIA;;USD;PPI m/m y Core PPI m/m (USD);confirmado;Captura FF PPI 2026 (Pre NY)
 19/08/2026;ANALIZAR_FOMC;;USD;FOMC Meeting Minutes (14:00);confirmado;Captura FF FOMC
 19/08/2026;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Captura FF CPI GBP (Pre NY)
+25/08/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 28/08/2026;SIN_OPERAR;;USD;Discurso: Fed Chairman Warsh Speaks (10:00);confirmado;Discursos NY (archivo de Fabián)
 31/08/2026;SIN_OPERAR;;GBP;Feriado bancario Reino Unido (Summer Bank Holiday);confirmado;Captura FF UK (Pre NY)
 01/09/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
@@ -260,6 +273,7 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 22/09/2026;SIN_OPERAR;;USD;Discurso: President Trump Speaks (09:55);confirmado;Discursos NY (archivo de Fabián)
 24/09/2026;SIN_OPERAR;;USD;Discurso: President Trump Speaks (10:15);confirmado;Discursos NY (archivo de Fabián)
 29/09/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;JOLTS Job Openings (dato 10:00);confirmado;Captura FF JOLTS
+29/09/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 30/09/2026;ANALIZAR_NOTICIA;;USD;PIB final trimestral - Final GDP q/q (USD);confirmado;Captura FF Final GDP (Pre NY)
 01/10/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
 07/10/2026;ANALIZAR_FOMC;;USD;FOMC Meeting Minutes (14:00);confirmado;Captura FF FOMC
