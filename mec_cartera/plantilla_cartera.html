@@ -24,7 +24,7 @@ __ESTILO_HIBRIDA__
     <span>Lunes a jueves</span>
     <span>Freno de pérdida semanal <b>−3R</b></span>
   </div>
-  <div class="meta"><span class="chip">Menos, pero mejor</span><span class="chip">Ley de Pareto: 20% de esfuerzos, 80% de resultados</span></div>
+  <div class="meta"><span class="chip">Recomendación: solo Pre NY, sin candado</span><span class="chip">Menos, pero mejor</span><span class="chip">Ley de Pareto: 20% de esfuerzos, 80% de resultados</span></div>
 </header>
 
 <div class="verdict" id="verdict"></div>
@@ -41,6 +41,14 @@ __ESTILO_HIBRIDA__
 </section>
 
 <section>
+  <div class="sec-head"><h2>¿Vale la pena operar NY?</h2><p>Dos horas más por día (09:00–11:00) contra lo que aportan</p></div>
+  <div class="grid2">
+    <div class="panel tbl"><h3>Activos de NY: ¿ganan en 2025 y en 2026?</h3><table class="cmp" id="t-nya"></table></div>
+    <div class="panel tbl"><h3>¿Qué tan sólido es el aporte? (300 escenarios)</h3><table class="cmp" id="t-rob"></table><p class="note" id="rob-n"></p></div>
+  </div>
+</section>
+
+<section>
   <div class="sec-head"><h2>¿Por qué no frenar en el promedio?</h2><p id="con-p"></p></div>
   <div class="grid2">
     <div class="panel"><h3>Resultado de cada semana, de peor a mejor (R)</h3><div class="chart" id="c-sem"></div></div>
@@ -52,7 +60,7 @@ __ESTILO_HIBRIDA__
   <div class="sec-head"><h2>Reglas de corte por ganancia</h2><p>Una regla se acepta si mejora 2025 y 2026 sin subir la caída máxima</p></div>
   <div class="yearbar"><span class="eyebrow">Cartera</span><div class="seg" id="s-reg"></div></div>
   <div class="panel tbl"><table class="cmp" id="t-reg"></table><p class="note">Objetivo: al llegar a +nR se deja de operar hasta el lunes (semanal), el mes siguiente (mensual), el día siguiente (diario) o, solo en ese activo, hasta el lunes. Candado: cuando la semana llega a +aR, si vuelve a +bR o menos se deja de operar hasta el lunes; protege lo ganado sin cortar las semanas que siguen subiendo.</p></div>
-  <div class="panel tbl"><h3>Estabilidad del candado (cartera esencial)</h3><table class="cmp" id="t-est"></table><p class="note">Una regla robusta funciona también con valores vecinos. Marcados: los que mejoran los dos años sin subir la caída.</p></div>
+  <div class="panel tbl"><h3>Estabilidad del candado</h3><div class="yearbar"><div class="seg" id="s-est"></div></div><table class="cmp" id="t-est"></table><p class="note">Una regla robusta funciona también con valores vecinos. Marcados: los que mejoran los dos años sin subir la caída.</p></div>
 </section>
 
 <section>
@@ -62,10 +70,10 @@ __ESTILO_HIBRIDA__
 </section>
 
 <section>
-  <div class="sec-head"><h2>Plan operativo</h2><p>Qué hacer cada semana</p></div>
+  <div class="sec-head"><h2>Plan operativo</h2><p>Cartera recomendada: solo Pre NY · qué hacer cada semana</p></div>
   <ol class="plan" id="plan"></ol>
 </section>
-<p class="note">Fuente: listas de operaciones del Strategy Tester de TradingView. Pre NY: XAUUSD Envolvente, EURUSD Envolvente + START, GBPUSD START y BTCUSD Envolvente, con el calendario de restricciones y el receso de fin de año. NY: S&P 500 Envolvente y BTCUSD Envolvente + START desde las 09:00, sin días de noticia de alto impacto ni FOMC, con el calendario NY. Todas sin viernes, con límite de 1 TP o 2 pérdidas por sesión y riesgo de 1% sobre el capital realizado al entrar.</p>
+<p class="note">Fuente: listas de operaciones del Strategy Tester de TradingView. Pre NY: XAUUSD Envolvente, EURUSD Envolvente + START, GBPUSD START y BTCUSD Envolvente, con el calendario de restricciones y el receso de fin de año. NY (comparación): S&P 500 Envolvente y BTCUSD Envolvente + START desde las 09:00, sin días de noticia de alto impacto ni FOMC, con el calendario NY. Todas sin viernes, con límite de 1 TP o 2 pérdidas por sesión y riesgo de 1% sobre el capital realizado al entrar.</p>
 </div>
 
 <script>
@@ -75,52 +83,65 @@ const NOM=D.nombres, ACOL={XAUUSD:'--a-xau',EURUSD:'--a-eur',GBPUSD:'--a-gbp',BT
 const nm=xs=>xs.map(a=>NOM[a]).join(' + ');
 const chips=xs=>`<div class="combo">${xs.map(a=>`<span style="--c:var(${ACOL[a]})">${NOM[a]}</span>`).join('')}</div>`;
 const yrs=x=>`${td(pc(x.anios['2025']),cls(x.anios['2025']))}${td(pc(x.anios['2026']),cls(x.anios['2026']))}`;
-const F=D.finales, P0=F[0], P6=F[1], P5=F[2], PC=F[3];
+const F=D.finales, PR=F[0], P5=F[1], PC=F[2], P6=F[3];
+const RB=Object.fromEntries(D.ny.robustez.map(x=>[x.activo,x])), rs=RB.SPX500;
+const EP=D.estabilidad.pre, e25=EP.find(e=>e.a===2.5&&e.c===0.5), e20=EP.find(e=>e.a===2&&e.c===0);
 
-$('#verdict').innerHTML=`<div class="big">Menos, pero mejor: sin BTCUSD NY y con un candado semanal, la cartera rinde ${pc(PC.cagr)} anual con caída máxima de −${fmt(PC.mdd)}%, contra ${pc(P6.cagr)} y −${fmt(P6.mdd)}% de la cartera planteada, con ${P6.n-PC.n} operaciones menos.</div>
-<p><b>Qué sale</b>: BTCUSD NY. Es 23% de las operaciones de la cartera planteada y aporta 12% del R, con ${sg(D.activos.find(a=>a.a==='BTCUSD_NY').R_op,3)}R por operación; sacarlo sube el rendimiento y baja la caída en los dos años. <b>Qué se queda</b>: los 4 activos de Pre NY (60% de las operaciones, 82% del R) y el S&P 500 de NY, que rinde poco solo pero baja la caída de la cartera porque se mueve distinto. <b>Cómo frenar</b>: un objetivo fijo en el promedio corta justo las semanas que pagan el resultado (el 20% de las mejores semanas aporta ${fmt(D.concentracion.cinco.top20,0)}% del R neto). Lo que sí funciona es un candado: <b>si la semana llega a +2R y vuelve a 0R, se deja de operar hasta el lunes</b>. Win rate y racha perdedora casi no cambian con ninguna regla de corte: dependen de las señales, no de cuándo se frena.</p>`;
+$('#verdict').innerHTML=`<div class="big">Recomendación: operar solo Pre NY, sin candado. ${pc(PR.cagr)} anual con caída máxima de −${fmt(PR.mdd)}%, ${PR.n} operaciones en dos horas por día.</div>
+<p><b>Por qué no NY</b>: el S&P 500 suma en el orden histórico (${pc(P5.cagr)} con caída de −${fmt(P5.mdd)}%), pero de lunes a jueves deja apenas ${sg(rs.R_sin_viernes,1)}R en ${rs.n_sin_viernes} operaciones, y en los escenarios remuestreados baja la caída solo en ${fmt(rs.p_dd,0)}% de los casos y mejora el rendimiento por unidad de caída en ${fmt(rs.p_calmar,0)}%. La mejora histórica depende de cuándo cayeron las rachas, no de una ventaja firme. US100 y BTCUSD NY suben la caída; US30, EURUSD NY y GBPUSD NY no ganan en los dos años. <b>Dos horas más de pantalla por día no se justifican.</b></p>
+<p><b>¿Y el candado?</b> No se aplica a Pre NY sola. El candado (+2R → 0R) mejoraba la cartera con S&P 500 porque esa combinación devolvía ganancias a mitad de semana; en Pre NY sola no mejora los dos años en ninguna de las 12 variantes probadas: +2R → 0R deja ${pc(e20.cagr)} (2025 ${pc(e20.anios['2025'])} contra ${pc(PR.anios['2025'])}); la mejor, +2,5R → +0,5R, da ${pc(e25.cagr)} pero empata 2025 y sus vecinas pierden. Ninguna baja la caída. Tampoco sirve un objetivo fijo: el 20% de las mejores semanas aporta ${fmt(D.concentracion.pre.top20,0)}% del R. <b>El único freno es el de pérdida: −3R por semana.</b></p>`;
 const k=(l,v,s,c='',h='')=>`<div class="kpi${h}"><span class="l">${l}</span><span class="v ${c}">${v}</span><span class="s">${s}</span></div>`;
-$('#kpis').innerHTML=k('Anual compuesto',pc(PC.cagr),`planteada ${pc(P6.cagr)} · Pre NY ${pc(P0.cagr)}`,'pos',' hero')+k('Caída máxima','−'+fmt(PC.mdd)+'%',`planteada −${fmt(P6.mdd)}%`,'neg')+k('Peor 5% de simulaciones',pc(PC.mc.cagr_p5),`planteada ${pc(P6.mc.cagr_p5)}`,'pos')+k('Operaciones',fmt(PC.n,0),`win rate ${fmt(PC.wr)}% · racha máx. ${PC.racha}`);
+$('#kpis').innerHTML=k('Anual compuesto',pc(PR.cagr),`2025 ${pc(PR.anios['2025'])} · 2026 ${pc(PR.anios['2026'])}`,'pos',' hero')+k('Caída máxima','−'+fmt(PR.mdd)+'%',`peor 5% sim. −${fmt(PR.mc.dd_p95)}%`,'neg')+k('Peor 5% de simulaciones',pc(PR.mc.cagr_p5),`año negativo ${fmt(PR.mc.p_anio_neg,1)}%`,'pos')+k('Operaciones',fmt(PR.n,0),`win rate ${fmt(PR.wr)}% · racha máx. ${PR.racha}`);
 
 const mx=Math.max(...D.activos.map(a=>Math.max(a.pct_ops,a.pct_R)));
 $('#t-par').innerHTML=`<thead><tr><th>Activo</th><th>Sesión</th><th class="n">Ops.</th><th class="n">% ops.</th><th class="n">R</th><th class="n">% del R</th><th>Ops. (gris) contra R (verde)</th><th class="n">R por op.</th><th class="n">Win rate</th><th class="n">R 2025</th><th class="n">R 2026</th></tr></thead>`+
-  D.activos.map(a=>`<tr${a.a==='BTCUSD_NY'?' class="fuera"':''}><td>${NOM[a.a]}${a.a==='BTCUSD_NY'?' <span class="pill r">sale</span>':''}</td><td>${a.sesion}</td>${td(a.n)}${td(fmt(a.pct_ops)+'%')}${td(sg(a.R),cls(a.R))}${td(fmt(a.pct_R)+'%')}<td><div class="pb"><div class="o" style="width:${a.pct_ops/mx*100}%"></div><div class="r" style="width:${a.pct_R/mx*100}%"></div></div></td>${td(sg(a.R_op,3),cls(a.R_op))}${td(fmt(a.wr)+'%')}${td(sg(a.R25),cls(a.R25))}${td(sg(a.R26),cls(a.R26))}</tr>`).join('');
+  D.activos.map(a=>{const f=a.sesion==='NY';return `<tr${f?' class="fuera"':''}><td>${NOM[a.a]}${f?' <span class="pill r">sale</span>':''}</td><td>${a.sesion}</td>${td(a.n)}${td(fmt(a.pct_ops)+'%')}${td(sg(a.R),cls(a.R))}${td(fmt(a.pct_R)+'%')}<td><div class="pb"><div class="o" style="width:${a.pct_ops/mx*100}%"></div><div class="r" style="width:${a.pct_R/mx*100}%"></div></div></td>${td(sg(a.R_op,3),cls(a.R_op))}${td(fmt(a.wr)+'%')}${td(sg(a.R25),cls(a.R25))}${td(sg(a.R26),cls(a.R26))}</tr>`}).join('');
 const pre=D.activos.filter(a=>a.sesion==='Pre NY');
-$('#par-n').textContent=`Los 4 activos de Pre NY son ${fmt(pre.reduce((s,a)=>s+a.pct_ops,0),0)}% de las operaciones y generan ${fmt(pre.reduce((s,a)=>s+a.pct_R,0),0)}% del R. GBPUSD es el más eficiente (${sg(D.activos.find(a=>a.a==='GBPUSD').R_op,3)}R por operación con pocas operaciones). Los dos activos de NY rinden menos de 0,07R por operación. El S&P 500 se queda porque dentro de la cartera baja la caída; BTCUSD NY sale porque la sube (es el mismo instrumento que BTCUSD Pre NY y sus pérdidas se suman).`;
+$('#par-n').textContent=`Los 4 activos de Pre NY son ${fmt(pre.reduce((s,a)=>s+a.pct_ops,0),0)}% de las operaciones de la cartera planteada y generan ${fmt(pre.reduce((s,a)=>s+a.pct_R,0),0)}% del R. GBPUSD es el más eficiente (${sg(D.activos.find(a=>a.a==='GBPUSD').R_op,3)}R por operación). Los dos activos de NY rinden menos de 0,07R por operación: con lo mínimo (Pre NY) se consigue casi todo el resultado.`;
 
-const C=D.combinaciones.slice(0,15);
+const C=D.combinaciones.slice(0,15); if(!C.some(f=>f.activos.join()===PR.activos.join())) C.push(D.combinaciones.find(f=>f.activos.join()===PR.activos.join()));
 $('#t-comb').innerHTML=`<thead><tr><th>Activos</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">2025</th><th class="n">2026</th><th class="n">Anual</th><th class="n">Caída máx.</th><th class="n">Calmar</th><th class="n">R por op.</th></tr></thead>`+
-  C.map(f=>{const es=f.activos.join()===P5.activos.join(),pl=f.activos.length===6;return `<tr${es?' class="best"':''}><td>${chips(f.activos)}${es?' <span class="pill g">esencial</span>':pl?' <span class="pill n">planteada</span>':''}</td>${td(f.n)}${td(fmt(f.wr)+'%')}${yrs(f)}${tdp(f.cagr)}${td('−'+fmt(f.mdd)+'%')}${td(fmt(f.calmar,2))}${td(sg(f.R/f.n,3),cls(f.R))}</tr>`}).join('');
+  C.map(f=>{const es=f.activos.join()===PR.activos.join(),pl=f.activos.length===6;return `<tr${es?' class="best"':''}><td>${chips(f.activos)}${es?' <span class="pill g">recomendada</span>':pl?' <span class="pill n">planteada</span>':''}</td>${td(f.n)}${td(fmt(f.wr)+'%')}${yrs(f)}${tdp(f.cagr)}${td('−'+fmt(f.mdd)+'%')}${td(fmt(f.calmar,2))}${td(sg(f.R/f.n,3),cls(f.R))}</tr>`}).join('');
 
-const cc=D.concentracion.cinco;
-$('#con-p').textContent=`Cartera esencial · ${cc.semanas} semanas operadas · media ${sg(cc.media,2)}R, mediana ${sg(cc.mediana,2)}R por semana`;
+const NYN={NAS100:'US100 (NAS100)',SPX500:'S&P 500',US30:'Dow Jones (US30)',BTCUSD_NY:'BTCUSD NY',EURUSD_NY:'EURUSD NY',GBPUSD_NY:'GBPUSD NY'}, PATN={E:'Envolvente',S:'START',ES:'Envolvente + START'};
+$('#t-nya').innerHTML=`<thead><tr><th>Activo</th><th>Mejor variante</th><th class="n">Gana 2025 y 2026</th><th>Decisión</th></tr></thead>`+
+  Object.entries(D.ny.activos).map(([a,e])=>{const r=RB[a],dec=!e.gana_ambos?'No califica':a==='SPX500'?'Aporte frágil':'Sube la caída';return `<tr><td>${NYN[a]}</td><td>${e.inicio.slice(0,2)}:${e.inicio.slice(2)} · ${PATN[e.patron]}</td><td class="n">${pill(e.gana_ambos)}</td><td>${dec}</td></tr>`}).join('');
+$('#t-rob').innerHTML=`<thead><tr><th>Sumado a Pre NY</th><th class="n">R lun–jue</th><th class="n">Ops.</th><th class="n">Sube rend.</th><th class="n">Baja caída</th><th class="n">Mejora Calmar</th></tr></thead>`+
+  D.ny.robustez.map(x=>`<tr${x.activo==='SPX500'?' class="best"':''}><td>${NYN[x.activo]}</td>${td(sg(x.R_sin_viernes,1),cls(x.R_sin_viernes))}${td(x.n_sin_viernes)}${td(fmt(x.p_cagr,0)+'%')}${td(fmt(x.p_dd,0)+'%','neg')}${td(fmt(x.p_calmar,0)+'%')}</tr>`).join('');
+$('#rob-n').textContent=`Un activo que suma de verdad debería bajar la caída o mejorar el Calmar en la gran mayoría de los escenarios. Ninguno llega a la mitad. El S&P 500 queda en observación: si en el próximo año sostiene al menos +0,10R por operación de lunes a jueves, se reevalúa.`;
+
+const cc=D.concentracion.pre;
+$('#con-p').textContent=`Solo Pre NY · ${cc.semanas} semanas operadas · media ${sg(cc.media,2)}R, mediana ${sg(cc.mediana,2)}R por semana`;
 barChart($('#c-sem'),cc.hist.map((v,i)=>({v,label:'',title:`Semana ${i+1} de ${cc.hist.length}`})),240,'R');
+const rp=(g,x)=>D.reglas.pre.find(r=>r.regla===x&&r.grupo===g);
 $('#con-f').innerHTML=[
   ['y','Concentración',`El 20% de las mejores semanas aporta <b>${fmt(cc.top20,0)}%</b> del R neto (${sg(cc.neto)}R). Las semanas por encima de la media suman ${sg(cc.sobre_media)}R; el resto, ${sg(cc.neto-cc.sobre_media)}R.`],
-  ['r','Objetivo en el promedio',`Frenar al llegar a la media (${sg(cc.media,1)}R por semana, ${sg(cc.mes_media,1)}R por mes) corta esas semanas grandes: el objetivo semanal de +2R baja el anual de ${pc(P5.cagr)} a ${pc(D.reglas.cinco.find(r=>r.regla==='+2R'&&r.grupo==='Objetivo semanal').cagr)} y el mensual de +6R a ${pc(D.reglas.cinco.find(r=>r.regla==='+6R'&&r.grupo==='Objetivo mensual').cagr)}.`],
-  ['g','Proteger sin cortar',`Lo que se pierde en las semanas que empiezan bien y terminan en cero se evita mejor con un candado: deja seguir a las semanas que suben y corta solo las que devuelven lo ganado.`],
+  ['r','Objetivo en el promedio',`Frenar al llegar a la media (${sg(cc.media,1)}R por semana, ${sg(cc.mes_media,1)}R por mes) corta esas semanas grandes: el objetivo semanal de +2R baja el anual de ${pc(PR.cagr)} a ${pc(rp('Objetivo semanal','+2R').cagr)} y el mensual de +6R a ${pc(rp('Objetivo mensual','+6R').cagr)}.`],
+  ['n','Candado',`En Pre NY sola el candado +2R → 0R casi no cambia nada (2025 ${pc(e20.anios['2025'])}, 2026 ${pc(e20.anios['2026'])}, misma caída de −${fmt(e20.mdd)}%): cuando corta, deja afuera tanto pérdidas como recuperaciones. Con el S&P 500 sí servía; sin él, no hace falta.`],
   ['n','Percentiles semanales',`10%: ${sg(cc.p[0])}R · 25%: ${sg(cc.p[1])}R · 50%: ${sg(cc.p[2])}R · 75%: ${sg(cc.p[3])}R · 90%: ${sg(cc.p[4])}R.`]].map(x=>`<li><span class="tag ${x[0]}">${x[1]}</span><p>${x[2]}</p></li>`).join('');
 
-let SR='cinco';
+let SR='pre';
 function reg(){const R=D.reglas[SR], b=R[0];
   $('#t-reg').innerHTML=`<thead><tr><th>Regla</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">Racha</th><th class="n">2025</th><th class="n">2026</th><th class="n">Anual</th><th class="n">Caída máx.</th><th class="n">Semanas +</th><th class="n">Meses +</th><th class="n">Peor mes</th><th class="n">Se acepta</th></tr></thead>`+
-  R.map((r,i)=>{const g=i===0||R[i-1].grupo!==r.grupo?`<tr class="grp"><td colspan="12">${r.grupo}</td></tr>`:'';const el_=SR==='cinco'&&r.grupo==='Candado semanal'&&r.regla.startsWith('llega a +2R, corta en 0R');
+  R.map((r,i)=>{const g=i===0||R[i-1].grupo!==r.grupo?`<tr class="grp"><td colspan="12">${r.grupo}</td></tr>`:'';const el_=SR==='pre'&&i===0;
     return g+`<tr${el_?' class="best"':''}><td>${r.regla}${el_?' <span class="pill g">elegida</span>':''}</td>${td(r.n)}${td(fmt(r.wr)+'%')}${td(r.racha)}${td(pc(r.anios['2025']),i&&r.anios['2025']<=b.anios['2025']?'neg':'')}${td(pc(r.anios['2026']),i&&r.anios['2026']<=b.anios['2026']?'neg':'')}${tdp(r.cagr)}${td('−'+fmt(r.mdd)+'%',i&&r.mdd>b.mdd?'neg':i&&r.mdd<b.mdd?'pos':'')}${td(fmt(r.sem_pos,0)+'%')}${td(fmt(r.mes_pos,0)+'%')}${tdp(r.peor_mes)}<td class="n">${r.ok==null?'':pill(r.ok)}</td></tr>`}).join('');}
-seg($('#s-reg'),[['cinco','Esencial (5 activos)'],['seis','Planteada (6 activos)']],SR,v=>{SR=v;reg()});reg();
-$('#t-est').innerHTML=`<thead><tr><th>Llega a</th><th>Corta en</th><th class="n">2025</th><th class="n">2026</th><th class="n">Anual</th><th class="n">Caída máx.</th><th class="n">Mejora</th></tr></thead>`+D.estabilidad.map(e=>`<tr${e.a===2&&e.c===0?' class="best"':''}><td>+${fmt(e.a,1)}R</td><td>${e.c?'+'+fmt(e.c,1):'0'}R</td>${yrs(e)}${tdp(e.cagr)}${td('−'+fmt(e.mdd)+'%')}<td class="n">${pill(e.ok)}</td></tr>`).join('');
+seg($('#s-reg'),[['pre','Solo Pre NY (recomendada)'],['cinco','Pre NY + S&P 500'],['seis','Planteada (6 activos)']],SR,v=>{SR=v;reg()});reg();
+let SE='pre';
+function est(){$('#t-est').innerHTML=`<thead><tr><th>Llega a</th><th>Corta en</th><th class="n">2025</th><th class="n">2026</th><th class="n">Anual</th><th class="n">Caída máx.</th><th class="n">Mejora</th></tr></thead>`+D.estabilidad[SE].map(e=>`<tr${SE==='cinco'&&e.a===2&&e.c===0?' class="best"':''}><td>+${fmt(e.a,1)}R</td><td>${e.c?'+'+fmt(e.c,1):'0'}R</td>${yrs(e)}${tdp(e.cagr)}${td('−'+fmt(e.mdd)+'%')}<td class="n">${pill(e.ok)}</td></tr>`).join('');}
+seg($('#s-est'),[['pre','Solo Pre NY'],['cinco','Pre NY + S&P 500']],SE,v=>{SE=v;est()});est();
 
 $('#t-fin').innerHTML=`<thead><tr><th>Cartera</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">Racha</th><th class="n">2025</th><th class="n">2026</th><th class="n">Anual</th><th class="n">Mensual</th><th class="n">Caída máx.</th><th class="n">Peor mes</th><th class="n">Peor 5% sim.</th><th class="n">Caída peor 5%</th><th class="n">Año negativo</th></tr></thead>`+
-  F.map(f=>`<tr${f===PC?' class="best"':''}><td>${f.nombre}</td>${td(f.n)}${td(fmt(f.wr)+'%')}${td(f.racha)}${yrs(f)}${tdp(f.cagr)}${td(pc(f.mes_geo,2),cls(f.mes_geo))}${td('−'+fmt(f.mdd)+'%')}${tdp(f.peor_mes)}${tdp(f.mc.cagr_p5)}${td('−'+fmt(f.mc.dd_p95)+'%')}${td(fmt(f.mc.p_anio_neg,1)+'%')}</tr>`).join('');
-const col=['--fg3','--a-bny','--a-spx','--gain'];
-const ser=F.map((f,i)=>({name:f.nombre,color:col[i],pts:f.curve,w:f===PC?2.4:1.5,op:f===PC?1:.85}));
+  F.map(f=>`<tr${f===PR?' class="best"':''}><td>${f.nombre}</td>${td(f.n)}${td(fmt(f.wr)+'%')}${td(f.racha)}${yrs(f)}${tdp(f.cagr)}${td(pc(f.mes_geo,2),cls(f.mes_geo))}${td('−'+fmt(f.mdd)+'%')}${tdp(f.peor_mes)}${tdp(f.mc.cagr_p5)}${td('−'+fmt(f.mc.dd_p95)+'%')}${td(fmt(f.mc.p_anio_neg,1)+'%')}</tr>`).join('');
+const col=['--gain','--a-spx','--a-gbp','--a-bny'];
+const ser=F.map((f,i)=>({name:f.nombre,color:col[i],pts:f.curve,w:f===PR?2.4:1.5,op:f===PR?1:.8}));
 $('#fin-leg').innerHTML=ser.map((s,i)=>`<span><i style="background:var(${s.color})"></i>${s.name} · ${pc(F[i].ret??((F[i].curve.at(-1).eq/1000-1)*100))}</span>`).join('');
 lineChart($('#c-fin'),ser,320);
 $('#plan').innerHTML=[
-  `<b>Pre NY (07:00–09:00)</b>: XAUUSD Envolvente, EURUSD Envolvente + START, GBPUSD START y BTCUSD Envolvente, con el calendario de siempre.`,
-  `<b>NY (09:00–11:00)</b>: solo S&P 500 Envolvente. No se opera NY los días de NFP, CPI, PPI, PIB final ni FOMC; bloqueo de 09:50 a 10:03 por ISM, JOLTS, CB y Core PCE.`,
-  `<b>Días</b>: de lunes a jueves. <b>Riesgo</b>: 1% fijo por operación; hasta ${PC.max_conc} posiciones abiertas a la vez.`,
+  `<b>Pre NY (07:00–09:00)</b>: XAUUSD Envolvente, EURUSD Envolvente + START, GBPUSD START y BTCUSD Envolvente, con el calendario de siempre. A las 09:00 se termina el día.`,
+  `<b>Días</b>: de lunes a jueves. <b>Riesgo</b>: 1% fijo por operación; hasta ${PR.max_conc} posiciones abiertas a la vez. Límite de 1 TP o 2 pérdidas por activo y sesión (una pérdida por Reset cuenta).`,
   `<b>Freno de pérdida</b>: si la semana llega a −3R, no se abren más operaciones hasta el lunes.`,
-  `<b>Candado de ganancia</b>: si la semana llegó a +2R y vuelve a 0R, no se abren más operaciones hasta el lunes. No hay objetivo fijo: las semanas que siguen subiendo se dejan correr.`,
+  `<b>Sin candado ni objetivo de ganancia</b>: las semanas que suben se dejan correr; en Pre NY sola ningún corte por ganancia mejora los dos años.`,
+  `<b>NY en observación</b>: el S&P 500 09:00 Envolvente se sigue registrando sin operarlo. Se reevalúa con un año más de datos si sostiene al menos +0,10R por operación de lunes a jueves.`,
   `<b>Revisión</b>: cada trimestre, con los datos nuevos. Un activo que pierde en el año móvil o sube la caída de la cartera, sale.`].map(x=>`<li>${x}</li>`).join('');
 let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{lineChart($('#c-fin'),ser,320);barChart($('#c-sem'),cc.hist.map((v,i)=>({v,label:'',title:`Semana ${i+1} de ${cc.hist.length}`})),240,'R')},200)});
 </script>

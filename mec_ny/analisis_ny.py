@@ -5,10 +5,10 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 import ny
 H = ny.H
-for _a in ["NAS100", "SPX500", "US30", "BTCUSD_NY"]:
+for _a in ["NAS100", "SPX500", "US30", "BTCUSD_NY", "EURUSD_NY", "GBPUSD_NY"]:
     if _a not in H.ACTIVOS: H.ACTIVOS.append(_a)
 
-ACTIVOS_NY = ["NAS100", "SPX500", "US30", "BTCUSD_NY"]
+ACTIVOS_NY = ["NAS100", "SPX500", "US30", "BTCUSD_NY", "EURUSD_NY", "GBPUSD_NY"]
 INICIOS = {"0900": "09:00", "0930": "09:30"}
 R_PCT = 0.9
 DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
@@ -102,8 +102,8 @@ def cartera_con_preny(lim_ny, a="NAS100"):
     pre = [t for a, p in C for t in T[(a, p)] if t["ent"].weekday() != 4]
     out = []
     ny_ = [t for t in lim_ny if t["ent"].weekday() != 4]
-    for nom, ts in (("Pre NY (gestión ganadora)", pre), (f"Pre NY + {NOMBRES[a]} NY", pre + ny_),
-                    (f"Pre NY + {NOMBRES[a]} NY sin entradas 10:00–10:29", pre + [t for t in ny_ if sin_franja_10(t)])):
+    for nom, ts in (("Pre NY (gestión ganadora)", pre), (f"Pre NY + {NOMBRES[a]}" + ("" if NOMBRES[a].endswith("NY") else " NY"), pre + ny_),
+                    (f"Pre NY + {NOMBRES[a]}" + ("" if NOMBRES[a].endswith("NY") else " NY") + " sin entradas 10:00–10:29", pre + [t for t in ny_ if sin_franja_10(t)])):
         r = H.simular(ts, None, stop_sem=3, curva=True); m = H.montecarlo(ts, None, sims=1000, stop_sem=3)
         out.append(dict(nombre=nom, curve=r["curve"], mc=m, **{k: r[k] for k in ("n", "wr", "ret", "cagr", "mes_geo", "mdd", "racha", "calmar", "anios", "pf", "peor_mes", "max_conc")}))
     return out
@@ -136,7 +136,7 @@ def apertura(a):
     return out
 
 
-NOMBRES = {"NAS100": "US100", "SPX500": "S&P 500", "US30": "US30", "BTCUSD_NY": "BTCUSD NY"}
+NOMBRES = {"NAS100": "US100", "SPX500": "S&P 500", "US30": "US30", "BTCUSD_NY": "BTCUSD NY", "EURUSD_NY": "EURUSD NY", "GBPUSD_NY": "GBPUSD NY"}
 
 
 def cartera_ny(elegidas):
@@ -164,7 +164,23 @@ def cartera_ny(elegidas):
         r = H.simular(ts, None, stop_sem=3, curva=True); m = H.montecarlo(ts, None, sims=1000, stop_sem=3)
         det.append(dict(nombre=nom, curve=r["curve"], meses=r["meses"], mc=m, **{k2: r[k2] for k2 in (
             "n", "wr", "ret", "cagr", "mes_geo", "sem_geo", "mdd", "racha", "calmar", "anios", "pf", "peor_mes", "max_conc", "sharpe", "mes_pos")}))
-    return dict(base={k2: base[k2] for k2 in ("cagr", "mdd", "anios")}, filas=filas, recomendada=rec, cumple=bool(ok), detalle=det)
+    # robustez: remuestreo pareado de las operaciones de cada activo; ¿sumar el activo mejora la cartera en cuántos escenarios?
+    import random
+    rob = []
+    for a in nombres:
+        rnd = random.Random(5); L = []
+        base_ts = {x: [t for t in T[(x, p)] if t["ent"].weekday() != 4] for x, p in C}
+        add = [t for t in elegidas[a] if t["ent"].weekday() != 4]
+        for _ in range(300):
+            S = {x: [dict(t, u=rnd.choice(v)["u"]) for t in v] for x, v in base_ts.items()}
+            Ad = [dict(t, u=rnd.choice(add)["u"]) for t in add]
+            r0 = H.simular([t for v in S.values() for t in v], None, stop_sem=3); r1 = H.simular([t for v in S.values() for t in v] + Ad, None, stop_sem=3)
+            L.append((r1["cagr"] - r0["cagr"], r1["mdd"] - r0["mdd"], (r1["calmar"] or 0) - (r0["calmar"] or 0)))
+        pc = lambda f: round(100 * sum(1 for x in L if f(x)) / len(L), 1)
+        rob.append(dict(activo=a, p_cagr=pc(lambda x: x[0] > 0), p_dd=pc(lambda x: x[1] < 0), p_calmar=pc(lambda x: x[2] > 0),
+                        d_cagr=round(st.median(x[0] for x in L), 1), d_dd=round(st.median(x[1] for x in L), 1),
+                        R_sin_viernes=round(sum(t["u"] for t in add) / R_PCT, 1), n_sin_viernes=len(add)))
+    return dict(base={k2: base[k2] for k2 in ("cagr", "mdd", "anios")}, filas=filas, recomendada=rec, cumple=bool(ok), detalle=det, robustez=rob)
 
 
 def main():

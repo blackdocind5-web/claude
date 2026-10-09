@@ -5,9 +5,9 @@ __ESTILO__
 __ESTILO_HIBRIDA__
 <style>
 /* Sesión NY: mismo sistema visual que Gestión Híbrida; color por índice */
-:root{--a-nas:#6a4fc4;--a-spx:#2a78d6;--a-dji:#1baf7a;--a-bny:#b13f8c}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--a-nas:#9a7fe8;--a-spx:#3987e5;--a-dji:#199e70;--a-bny:#d064ad}}
-:root[data-theme="dark"]{--a-nas:#9a7fe8;--a-spx:#3987e5;--a-dji:#199e70;--a-bny:#d064ad}
+:root{--a-nas:#6a4fc4;--a-spx:#2a78d6;--a-dji:#1baf7a;--a-bny:#b13f8c;--a-eny:#0e8a9c;--a-gny:#c2622b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--a-nas:#9a7fe8;--a-spx:#3987e5;--a-dji:#199e70;--a-bny:#d064ad;--a-eny:#2ab0c4;--a-gny:#e07a3c}}
+:root[data-theme="dark"]{--a-nas:#9a7fe8;--a-spx:#3987e5;--a-dji:#199e70;--a-bny:#d064ad;--a-eny:#2ab0c4;--a-gny:#e07a3c}
 .dec{font:600 11px var(--f-mono);padding:2px 6px;border-radius:3px;white-space:nowrap}
 .dec.operar{background:var(--gain-soft);color:var(--gain)} .dec.no{background:var(--loss-soft);color:var(--loss)} .dec.neutral,.dec.sin{border:1px solid var(--line);color:var(--fg3)}
 </style>
@@ -32,7 +32,7 @@ __ESTILO_HIBRIDA__
 </div>
 
 <div id="v-cartera" class="view" role="tabpanel" hidden>
-  <div class="view-head"><span class="eyebrow">Pre NY + NY</span><h2>Cartera NY</h2><p>Activos de NY que ganan en los dos años (variante elegida, días sin noticia ni FOMC), sumados a la gestión ganadora de Pre NY. Todo sin viernes y con el freno de pérdida semanal de −3R.</p></div>
+  <div class="view-head"><span class="eyebrow">Pre NY + NY</span><h2>Cartera NY</h2><p>Activos de NY que ganan en los dos años (variante elegida, días sin noticia ni FOMC), sumados a la gestión ganadora de Pre NY. Todo sin viernes y con el freno de pérdida semanal de −3R. Se prueba si alguno justifica operar dos horas más por día.</p></div>
   <div class="verdict" id="cn-verdict"></div>
   <div class="kpis" id="cn-kpis"></div>
   <section>
@@ -42,6 +42,10 @@ __ESTILO_HIBRIDA__
   <section>
     <div class="sec-head"><h2>Curva de capital</h2><p>1.000 USD iniciales · operaciones de las dos sesiones en orden cronológico</p></div>
     <div class="panel"><div class="legend" id="cn-leg"></div><div class="chart" id="c-cn"></div></div>
+  </section>
+  <section>
+    <div class="sec-head"><h2>¿Qué tan sólido es el aporte de cada activo?</h2><p>300 escenarios: se remuestrean las operaciones de cada activo y se compara la cartera con y sin él</p></div>
+    <div class="panel tbl"><table class="cmp" id="t-rob"></table><p class="note">Un activo que suma de verdad debería mejorar la cartera en la gran mayoría de los escenarios, no solo en el orden histórico.</p></div>
   </section>
   <section>
     <div class="sec-head"><h2>Riesgo con simulaciones</h2><p>1.000 remuestreos por cartera</p></div>
@@ -111,7 +115,7 @@ __ESTILO_HIBRIDA__
 <script>
 const D = __DATA__;
 __HELPERS__
-const AN={NAS100:['US100 (NAS100)','--a-nas'],SPX500:['S&P 500','--a-spx'],US30:['Dow Jones (US30)','--a-dji'],BTCUSD_NY:['BTCUSD (NY)','--a-bny']};
+const AN={NAS100:['US100 (NAS100)','--a-nas'],SPX500:['S&P 500','--a-spx'],US30:['Dow Jones (US30)','--a-dji'],BTCUSD_NY:['BTCUSD (NY)','--a-bny'],EURUSD_NY:['EURUSD (NY)','--a-eny'],GBPUSD_NY:['GBPUSD (NY)','--a-gny']};
 const PATN={E:'Envolvente',S:'START',ES:'Envolvente + START'};
 const DEC={operar:['operar','Operar'],'no operar':['no','No operar'],neutral:['neutral','Neutral'],'sin datos':['sin','Sin datos']};
 const rr=(v,d=1)=>v==null?'—':sg(v,d);
@@ -176,13 +180,15 @@ function renderActivo(a,root){
 }
 
 function renderCartera(){
-  const CN=D.cartera_ny, R0=CN.recomendada, B=CN.base, Dt=CN.detalle, P=Dt[0], C=Dt[1];
+  const CN=D.cartera_ny, R0=CN.recomendada, B=CN.base, Dt=CN.detalle, P=Dt[0], C=Dt[1], rs=CN.robustez.find(x=>x.activo==='SPX500');
   const nm=x=>x.map(a=>AN[a][0]).join(' + ');
-  $('#cn-verdict').innerHTML=`<div class="big">${CN.cumple?`Sumar ${nm(R0.activos)} en NY: ${pc(C.cagr)} anual con caída máxima de −${fmt(C.mdd)}%, contra ${pc(P.cagr)} y −${fmt(P.mdd)}% de Pre NY sola.`:'Ningún activo de NY mejora los dos años sin subir la caída: por ahora, solo Pre NY.'}</div><p>Con NY la cartera opera ${C.n} veces contra ${P.n} (${pc(C.anios['2025'])} en 2025 y ${pc(C.anios['2026'])} en 2026, contra ${pc(P.anios['2025'])} y ${pc(P.anios['2026'])}). En las simulaciones, el peor 5% queda en ${pc(C.mc.cagr_p5)} anual contra ${pc(P.mc.cagr_p5)} de Pre NY sola y la probabilidad de un año en pérdida en ${fmt(C.mc.p_anio_neg,1)}% contra ${fmt(P.mc.p_anio_neg,1)}%: NY suma rendimiento y baja la caída histórica, pero su ventaja es más chica que la de Pre NY. Los demás activos (NAS100 y BTCUSD) ganan en los dos años pero suben la caída; US30 no califica.</p>`;
+  
+  $('#cn-verdict').innerHTML=`<div class="big">Recomendación: operar solo Pre NY. Ningún activo de NY aporta lo suficiente para justificar 2 horas más de pantalla por día.</div><p><b>S&P 500</b>: en el orden histórico, sumado a Pre NY rinde ${pc(C.cagr)} anual con caída de −${fmt(C.mdd)}% (contra ${pc(P.cagr)} y −${fmt(P.mdd)}%). Pero de lunes a jueves su ventaja es de ${sg(rs.R_sin_viernes)}R en ${rs.n_sin_viernes} operaciones, y en los escenarios remuestreados sumarlo baja la caída solo en ${fmt(rs.p_dd,0)}% de los casos y mejora el rendimiento por unidad de caída en ${fmt(rs.p_calmar,0)}% (mediana: ${sg(rs.d_cagr)} puntos de rendimiento y ${sg(rs.d_dd)} puntos de caída). La mejora histórica dependió en buena parte de cuándo cayeron las rachas. <b>NAS100 y BTCUSD NY</b> suben la caída. <b>US30, EURUSD NY y GBPUSD NY</b> no ganan en los dos años. El S&P 500 queda en observación: si en el próximo año sostiene al menos +0,10R por operación de lunes a jueves, se reevalúa.</p>`;
   const k=(l,v,s,c='')=>`<div class="kpi"><span class="l">${l}</span><span class="v ${c}">${v}</span><span class="s">${s}</span></div>`;
-  $('#cn-kpis').innerHTML=k('Anual compuesto',pc(C.cagr),`Pre NY sola ${pc(P.cagr)}`,'pos')+k('Caída máxima','−'+fmt(C.mdd)+'%',`Pre NY sola −${fmt(P.mdd)}%`,'neg')+k('Win rate',fmt(C.wr)+'%',`${C.n} operaciones`)+k('Posiciones a la vez',`hasta ${C.max_conc}`,`riesgo simultáneo ${C.max_conc}%`);
+  $('#cn-kpis').innerHTML=k('Pre NY: anual compuesto',pc(P.cagr),`con S&P 500 ${pc(C.cagr)}`,'pos')+k('Pre NY: caída máxima','−'+fmt(P.mdd)+'%',`con S&P 500 −${fmt(C.mdd)}%`,'neg')+k('Pre NY: peor 5% sim.',pc(P.mc.cagr_p5),`con S&P 500 ${pc(C.mc.cagr_p5)}`,'pos')+k('S&P 500 baja la caída',`en ${fmt(rs.p_dd,0)}%`,'de los escenarios remuestreados','neg');
   $('#t-cn').innerHTML=`<thead><tr><th>Activos NY</th><th class="n">Solo NY 2025</th><th class="n">Solo NY 2026</th><th class="n">Con Pre NY 2025</th><th class="n">Con Pre NY 2026</th><th class="n">Anual</th><th class="n">Caída máx.</th><th class="n">Calmar</th><th class="n">Mejora los dos años</th><th class="n">No sube la caída</th></tr></thead><tr><td><b>Solo Pre NY</b></td>${td('—')}${td('—')}${td(pc(B.anios['2025']))}${td(pc(B.anios['2026']))}${tdp(B.cagr)}${td('−'+fmt(B.mdd)+'%')}<td></td><td></td><td></td></tr>`+
     CN.filas.map(f=>`<tr${f===R0||(f.activos.join()===R0.activos.join())?' class="best"':''}><td>${nm(f.activos)}</td>${td(pc(f.solo.anios['2025']),cls(f.solo.anios['2025']))}${td(pc(f.solo.anios['2026']),cls(f.solo.anios['2026']))}${td(pc(f.con.anios['2025']),f.con.anios['2025']>B.anios['2025']?'pos':'neg')}${td(pc(f.con.anios['2026']),f.con.anios['2026']>B.anios['2026']?'pos':'neg')}${tdp(f.con.cagr)}${td('−'+fmt(f.con.mdd)+'%',f.con.mdd>B.mdd?'neg':'pos')}${td(fmt(f.con.calmar,2))}<td class="n">${pill(f.mejora)}</td><td class="n">${pill(f.no_sube_dd)}</td></tr>`).join('');
+  $('#t-rob').innerHTML=`<thead><tr><th>Activo sumado a Pre NY</th><th class="n">R lunes a jueves</th><th class="n">Ops.</th><th class="n">Sube el rendimiento</th><th class="n">Baja la caída</th><th class="n">Mejora Calmar</th><th class="n">Δ anual (mediana)</th><th class="n">Δ caída (mediana)</th></tr></thead>`+CN.robustez.map(x=>`<tr><td>${AN[x.activo][0]}</td>${td(sg(x.R_sin_viernes),cls(x.R_sin_viernes))}${td(x.n_sin_viernes)}${td(fmt(x.p_cagr,0)+'%')}${td(fmt(x.p_dd,0)+'%',x.p_dd<50?'neg':'pos')}${td(fmt(x.p_calmar,0)+'%',x.p_calmar<50?'neg':'pos')}${td(sg(x.d_cagr)+' pp',cls(x.d_cagr))}${td(sg(x.d_dd)+' pp',cls(-x.d_dd))}</tr>`).join('');
   const cc=['--fg3','--gain','--a-spx'];
   const ser=Dt.map((x,i)=>({name:x.nombre,color:cc[i],pts:x.curve,w:i===1?2.4:1.6}));
   $('#cn-leg').innerHTML=ser.map((s,i)=>`<span><i style="background:var(${s.color})"></i>${s.name} · ${pc(Dt[i].ret)}</span>`).join('');

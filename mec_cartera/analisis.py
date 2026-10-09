@@ -43,7 +43,7 @@ def main():
     data["combinaciones"] = filas
     # 3) concentración del resultado en el tiempo
     conc = {}
-    for nom, acts in (("seis", TODOS), ("cinco", CINCO)):
+    for nom, acts in (("seis", TODOS), ("cinco", CINCO), ("pre", PRE)):
         m = corre(acts); sw = sorted(m["sem_R"].values(), reverse=True); sm = sorted(m["mes_R"].values(), reverse=True)
         k = max(1, round(0.2 * len(sw))); km = max(1, round(0.2 * len(sm)))
         conc[nom] = dict(semanas=len(sw), media=round(st.mean(sw), 2), mediana=round(st.median(sw), 2),
@@ -59,25 +59,31 @@ def main():
               [("Objetivo diario", "obj_dia", x, f"+{x}R") for x in (1, 2, 3)] +
               [("Candado semanal", "candado", x, f"llega a +{x[0]}R, corta en {'+' if x[1] else ''}{x[1]}R") for x in ((2, 0), (2, 1), (3, 0), (3, 1), (3, 2), (4, 2))])
     data["reglas"] = {}
-    for nom, acts in (("seis", TODOS), ("cinco", CINCO)):
+    for nom, acts in (("pre", PRE), ("cinco", CINCO), ("seis", TODOS)):
         b = corre(acts); rows = [dict(grupo="Base", regla="Sin corte por ganancia", ok=None, **recorta(b))]
         for g, k, v, txt in reglas:
             r = corre(acts, **{k: v}); rows.append(dict(grupo=g, regla=txt, ok=mejora(r, b), **recorta(r)))
         data["reglas"][nom] = rows
-    # estabilidad del candado (5 activos)
-    b5 = corre(CINCO); est = []
-    for a_ in (1.5, 2, 2.5, 3):
-        for c_ in (0, 0.5, 1):
-            r = corre(CINCO, candado=(a_, c_)); est.append(dict(a=a_, c=c_, cagr=r["cagr"], mdd=r["mdd"], anios=r["anios"], ok=mejora(r, b5)))
-    data["estabilidad"] = est
+    # estabilidad del candado (solo Pre NY y Pre NY + S&P 500)
+    data["estabilidad"] = {}
+    for nom, acts in (("pre", PRE), ("cinco", CINCO)):
+        b_ = corre(acts); est = []
+        for a_ in (1.5, 2, 2.5, 3):
+            for c_ in (0, 0.5, 1):
+                r = corre(acts, candado=(a_, c_)); est.append(dict(a=a_, c=c_, cagr=r["cagr"], mdd=r["mdd"], anios=r["anios"], ok=mejora(r, b_)))
+        data["estabilidad"][nom] = est
     # 5) carteras finales con simulaciones
     fin = []
-    for nom, acts, kw in (("Pre NY (gestión ganadora)", PRE, {}), ("Planteada: Pre NY + S&P 500 + BTCUSD NY", TODOS, {}),
-                          ("Esencial: Pre NY + S&P 500", CINCO, {}), ("Esencial + candado semanal (+2R → 0R)", CINCO, dict(candado=(2, 0)))):
+    for nom, acts, kw in (("Recomendada: solo Pre NY", PRE, {}), ("Pre NY + S&P 500", CINCO, {}),
+                          ("Pre NY + S&P 500 + candado (+2R → 0R)", CINCO, dict(candado=(2, 0))), ("Planteada: Pre NY + S&P 500 + BTCUSD NY", TODOS, {})):
         m = corre(acts, mc=True, curva=True, **kw)
         fin.append(dict(nombre=nom, activos=acts, regla=kw, curve=m["curve"], meses=m["meses"], mc=m["mc"], max_conc=m["max_conc"],
                         sem_neg_seg=m["sem_neg_seg"], bajo_agua=m["bajo_agua"], **recorta(m)))
     data["finales"] = fin
+    # 6) resto de NY (de ../mec_ny/datos_ny.json): robustez del aporte y activos que no ganan los dos años
+    dny = json.load(open(os.path.join(AQUI, "..", "mec_ny", "datos_ny.json"), encoding="utf-8"))
+    data["ny"] = dict(robustez=dny["cartera_ny"]["robustez"],
+                      activos={a: dny["activos"][a]["elegida"] for a in dny["activos"]})
     json.dump(data, open(os.path.join(AQUI, "datos_cartera.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     return data
 
