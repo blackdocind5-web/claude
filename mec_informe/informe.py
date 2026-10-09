@@ -36,6 +36,22 @@ def cagr_de(curve):
     return round(((curve[-1]["eq"] / 1000) ** (365.25 / (d1 - d0).days) - 1) * 100, 1)
 
 
+def precio(patrones):
+    """Serie de precios del propio TradingView: precio de cada entrada y salida de todas las exportaciones del activo.
+    Base = primer precio del 13/01/2025; curva = 1.000 USD comprados y mantenidos (sin apalancamiento ni dividendos)."""
+    import csv, glob
+    px = {}
+    for pat in patrones:
+        for f in glob.glob(os.path.join(RAIZ, pat)):
+            if f.endswith(("_excluidos.csv", "_validos.csv")): continue
+            for r in csv.DictReader(open(f, encoding="utf-8-sig")): px[r["Fecha y hora"]] = float(r["Precio USD"])
+    ts = sorted(t for t in px if "2025-01-13" <= t[:10] <= "2026-10-02")
+    p0 = px[ts[0]]
+    curve = diaria([dict(t=t, eq=1000 * px[t] / p0) for t in ts])
+    return dict(curve=curve, ret=round((curve[-1]["eq"] / 1000 - 1) * 100, 1), cagr=cagr_de(curve), mdd=mdd_de(curve), anios=por_anio(curve),
+                p0=p0, p1=px[ts[-1]], dias=len(curve))
+
+
 def main():
     T = H.cargar()
     xau = T[("XAUUSD", "E")]
@@ -94,6 +110,7 @@ def main():
     out["ny"] = dict(filas=filas, robustez=ny["cartera_ny"]["robustez"], calendario=ny["meta"]["calendario"],
                      cand_pre=[x for x in ca["estabilidad"]["pre"]], reglas_pre=[{k: r[k] for k in ("grupo", "regla", "cagr", "mdd", "anios", "ok")} for r in ca["reglas"]["pre"]],
                      concentracion=ca["concentracion"]["pre"]["top20"])
+    out["bench"] = dict(spx=precio(["mec_ny/datos/SPX500_*.csv"]), oro=precio(["mec_hibrida/datos/XAUUSD_m1_2025-2026_*.csv"]))
     json.dump(out, open(os.path.join(AQUI, "datos_informe.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     return out
 
@@ -103,4 +120,4 @@ if __name__ == "__main__":
     print("E1", o["etapa1"]["total"], {y: (v["ret_pct"], v["mdd_pct"]) for y, v in o["etapa1"]["anios"].items()}, o["etapa1"]["sin_viernes"])
     e = o["etapa2"]; print("E2", {k: v for k, v in e["escalera"].items() if k != "meses"}, e["mc"], e["fijo"])
     for f in o["finales"]: print(f["nombre"], f["cagr"], f["mdd"], f["anios"], f["calmar"], f["sharpe"], f["pf"])
-    for f in o["ny"]["filas"]: print(f)
+    for k, b in o["bench"].items(): print(k, {x: b[x] for x in b if x != "curve"})
