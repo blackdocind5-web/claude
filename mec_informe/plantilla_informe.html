@@ -1,0 +1,659 @@
+<title>Hoja de ruta MEC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Nunito:wght@600;700;800&display=swap">
+<style>
+/* Layout: una sola columna con aire, cuatro paradas numeradas (la secuencia real del trabajo) y una conclusión.
+   Marcos redondeados con contorno luminoso violeta; números en tipografía redondeada; sin mayúsculas. */
+:root{
+  --bg:#0A0712; --surface:#120D1F; --surface2:#1A1430; --line:rgba(123,101,240,.30); --halo:rgba(97,73,218,.10); --grid:rgba(250,249,255,.07);
+  --fg:#FAF9FF; --fg2:#BDB7D0; --fg3:#857F99;
+  --violet:#7B65F0; --violet-solid:#6149DA; --celeste:#50ACEA; --green:#3EDB9C; --orange:#F4AA44; --lila:#F0DAFF;
+  --s-xau:#F4AA44; --s-esc:#50ACEA; --s-rec:#3EDB9C; --s-spx:#B9A8FF; --s-pla:#857F99;
+  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",Inter,system-ui,"Segoe UI",sans-serif;
+  --num:"Proxima Nova Soft",Nunito,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --bg:#EFECFB; --surface:#FAF9FF; --surface2:#F3F0FD; --line:rgba(97,73,218,.24); --halo:rgba(97,73,218,.07); --grid:rgba(52,52,75,.09);
+  --fg:#22222F; --fg2:#4A4960; --fg3:#73718A;
+  --violet:#6149DA; --violet-solid:#6149DA; --celeste:#1F86CC; --green:#0E9E6B; --orange:#C77A12; --lila:#6149DA;
+  --s-xau:#D98A1C; --s-esc:#1F86CC; --s-rec:#0E9E6B; --s-spx:#8B76F2; --s-pla:#9C99AE;
+  color-scheme:light;
+}}
+:root[data-theme="light"]{
+  --bg:#EFECFB; --surface:#FAF9FF; --surface2:#F3F0FD; --line:rgba(97,73,218,.24); --halo:rgba(97,73,218,.07); --grid:rgba(52,52,75,.09);
+  --fg:#22222F; --fg2:#4A4960; --fg3:#73718A;
+  --violet:#6149DA; --violet-solid:#6149DA; --celeste:#1F86CC; --green:#0E9E6B; --orange:#C77A12; --lila:#6149DA;
+  --s-xau:#D98A1C; --s-esc:#1F86CC; --s-rec:#0E9E6B; --s-spx:#8B76F2; --s-pla:#9C99AE;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:24px;padding-block:56px 72px;display:grid;gap:96px}
+@media (max-width:640px){.wrap{padding-inline:16px;padding-block:32px 48px;gap:72px}}
+h1,h2,h3{margin:0;text-wrap:balance;font-weight:600;letter-spacing:-.01em}
+p{margin:0}
+.muted{color:var(--fg2)} .small{font-size:13px;color:var(--fg3)}
+.num{font-family:var(--num);font-variant-numeric:tabular-nums}
+.pos{color:var(--green)} .neg{color:var(--orange)}
+.grad{background:linear-gradient(100deg,var(--violet) 0%,var(--celeste) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+a{color:var(--celeste)}
+:focus-visible{outline:2px solid var(--celeste);outline-offset:3px;border-radius:8px}
+
+/* ---------- portada ---------- */
+.hero{display:grid;gap:28px}
+.eyebrow{font-size:14px;color:var(--fg3);letter-spacing:.01em}
+.hero h1{font-size:clamp(34px,5.6vw,60px);line-height:1.06;font-weight:600;max-width:17ch}
+.hero .lead{font-size:clamp(17px,2vw,20px);color:var(--fg2);max-width:60ch}
+.big{font-family:var(--ui);font-weight:300;font-size:clamp(64px,13vw,150px);line-height:.95;letter-spacing:-.04em}
+.hero-figs{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 28px}
+.hero-figs .arrow{font-size:clamp(28px,5vw,56px);font-weight:300;color:var(--fg3);padding-bottom:.25em}
+.hero-figs .cap{display:block;font-size:14px;color:var(--fg3);margin-top:8px;letter-spacing:0}
+.note-pill{border:1px solid var(--line);box-shadow:0 0 0 6px var(--halo);border-radius:999px;padding:12px 22px;max-width:max-content;color:var(--fg2);font-size:15px}
+@media (max-width:640px){.note-pill{border-radius:22px;max-width:none}}
+
+/* ---------- hoja de ruta ---------- */
+.road{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;position:relative}
+.road a{text-decoration:none;color:inherit;display:grid;gap:10px;padding:20px;border-radius:24px;background:var(--surface);border:1px solid var(--line);transition:transform .2s ease,border-color .2s ease;min-width:0}
+.road a:hover{transform:translateY(-3px);border-color:var(--violet)}
+.road .n{font-family:var(--num);font-weight:800;font-size:13px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--violet-solid);color:#FAF9FF}
+.road .t{font-weight:600;font-size:16px;line-height:1.25}
+.road .r{font-family:var(--num);font-weight:800;font-size:28px;line-height:1}
+.road .d{font-size:13px;color:var(--fg3)}
+.road a.final{background:linear-gradient(160deg,var(--surface2),var(--surface));border-color:var(--violet);box-shadow:0 0 0 6px var(--halo)}
+@media (max-width:860px){.road{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ---------- glosario ---------- */
+.gloss{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:24px;overflow:hidden}
+.gloss div{background:var(--surface);padding:18px 18px 20px;display:grid;gap:6px;align-content:start;min-width:0}
+.gloss b{font-weight:600;font-size:15px}
+.gloss span{font-size:14px;color:var(--fg2);line-height:1.45}
+@media (max-width:860px){.gloss{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:460px){.gloss{grid-template-columns:1fr}}
+
+/* ---------- etapas ---------- */
+section.stage{display:grid;gap:28px;scroll-margin-top:24px}
+.st-head{display:grid;grid-template-columns:auto 1fr;gap:6px 20px;align-items:start}
+.st-num{font-family:var(--ui);font-weight:300;font-size:clamp(56px,8vw,96px);line-height:.85;letter-spacing:-.04em;grid-row:span 3}
+.st-kicker{font-size:14px;color:var(--fg3)}
+.st-head h2{font-size:clamp(26px,3.4vw,38px);line-height:1.12}
+.st-head .q{font-size:17px;color:var(--fg2);max-width:62ch}
+@media (max-width:560px){.st-head{grid-template-columns:1fr}.st-num{grid-row:auto}}
+.answer{display:grid;gap:6px;padding:22px 26px;border-radius:28px;border:1px solid var(--line);box-shadow:0 0 0 6px var(--halo);background:var(--surface)}
+.answer .lbl{font-size:13px;color:var(--fg3)}
+.answer p{font-size:clamp(18px,2.2vw,22px);line-height:1.35;font-weight:500;max-width:60ch;text-wrap:pretty}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border-radius:20px;padding:16px 18px;display:grid;gap:4px;align-content:start;min-width:0}
+.kpi .l{font-size:13px;color:var(--fg3);line-height:1.3}
+.kpi .v{font-family:var(--num);font-weight:800;font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:12.5px;color:var(--fg3);line-height:1.35}
+.kpi.hero-k{background:linear-gradient(150deg,var(--surface2),var(--surface));outline:1px solid var(--line)}
+.panel{background:var(--surface);border-radius:24px;padding:22px;display:grid;gap:14px;min-width:0;align-content:start}
+.panel h3{font-size:17px}
+.panel .sub{font-size:13.5px;color:var(--fg3);margin-top:-8px}
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cols3{display:grid;grid-template-columns:1.4fr 1fr;gap:12px}
+@media (max-width:820px){.cols,.cols3{grid-template-columns:1fr}}
+.learn{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.learn div{padding:18px 20px;border-radius:20px;border:1px solid var(--line);display:grid;gap:6px;align-content:start}
+.learn b{font-size:15px;font-weight:600}
+.learn p{font-size:14.5px;color:var(--fg2)}
+.next{display:flex;gap:14px;align-items:center;padding:18px 22px;border-radius:999px;background:var(--surface2);font-size:15px;color:var(--fg2)}
+.next b{color:var(--fg)}
+.next .go{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--violet-solid);color:#FAF9FF;font-weight:700}
+@media (max-width:640px){.next{border-radius:22px;align-items:flex-start}}
+
+/* ---------- años lado a lado ---------- */
+.years{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.year{background:var(--surface);border-radius:24px;padding:20px 22px;display:grid;gap:14px;min-width:0}
+.year .yh{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.year .yh b{font-size:18px;font-weight:600}
+.year .yh .num{font-size:30px;font-weight:800}
+.year dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 14px;margin:0}
+.year dt{font-size:12.5px;color:var(--fg3)}
+.year dd{margin:0;font-family:var(--num);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums}
+@media (max-width:640px){.years{grid-template-columns:1fr}}
+
+/* ---------- tablas ---------- */
+.tbl{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:14.5px;font-variant-numeric:tabular-nums}
+th{font-weight:500;color:var(--fg3);font-size:12.5px;text-align:left;padding:0 12px 10px;white-space:nowrap}
+td{padding:11px 12px;border-top:1px solid var(--grid);white-space:nowrap}
+.wrapt td{white-space:normal}
+th.n,td.n{text-align:right}
+td.n{font-family:var(--num);font-weight:700}
+tr.hl td{background:var(--halo)}
+tr.hl td:first-child{border-radius:12px 0 0 12px} tr.hl td:last-child{border-radius:0 12px 12px 0}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.tag.g{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green)}
+.tag.o{background:color-mix(in srgb,var(--orange) 16%,transparent);color:var(--orange)}
+.tag.v{background:color-mix(in srgb,var(--violet) 18%,transparent);color:var(--lila)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;vertical-align:1px}
+
+/* ---------- escalera ---------- */
+.steps{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.step{font-family:var(--num);font-weight:800;font-size:20px;padding:10px 18px;border-radius:999px;border:1px solid var(--line);background:var(--surface2)}
+.steps .ar{color:var(--fg3)}
+.hbars{display:grid;gap:10px}
+.hbar{display:grid;grid-template-columns:110px 1fr 56px;align-items:center;gap:12px;font-size:14px}
+.hbar .tr{height:12px;border-radius:999px;background:var(--grid);overflow:hidden}
+.hbar .fl{height:100%;border-radius:999px}
+.hbar .vv{text-align:right;font-family:var(--num);font-weight:700}
+@media (max-width:460px){.hbar{grid-template-columns:86px 1fr 48px}}
+
+/* ---------- ficha ---------- */
+.ficha{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:24px;overflow:hidden}
+.ficha>div{background:var(--surface);padding:16px 20px;display:grid;gap:4px;min-width:0}
+.ficha dt{font-size:13px;color:var(--fg3)} .ficha dd{margin:0;font-size:15.5px;font-weight:500}
+.ficha>.wide{grid-column:1/-1}
+@media (max-width:640px){.ficha{grid-template-columns:1fr}}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:500;padding:6px 14px;border-radius:999px;background:var(--surface2);border:1px solid var(--line)}
+
+/* ---------- gráficos ---------- */
+.chart{position:relative;width:100%}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{fill:var(--fg3);font-family:var(--ui);font-size:11px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13.5px;color:var(--fg2)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend i{width:16px;height:3px;border-radius:2px;display:inline-block}
+.legend i.dash{background:repeating-linear-gradient(90deg,currentColor 0 5px,transparent 5px 8px)!important}
+.tip{position:absolute;pointer-events:none;background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:12.5px;line-height:1.5;min-width:170px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:2}
+.tip b{font-weight:600}
+.tip .row{display:flex;justify-content:space-between;gap:14px}
+.tip .row span:last-child{font-family:var(--num);font-weight:700}
+
+/* ---------- conclusión ---------- */
+.final-claim{display:grid;gap:16px;text-align:left}
+.final-claim .big{font-size:clamp(52px,10vw,120px)}
+.caveat{font-size:13px;color:var(--fg3);max-width:80ch;line-height:1.55}
+footer{display:grid;gap:8px;border-top:1px solid var(--grid);padding-top:24px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">Sistema MEC · primer informe de avance · 09/10/2026</span>
+  <h1>Cómo pasamos de un activo a una cartera que rinde casi cinco veces más</h1>
+  <div class="hero-figs" aria-label="Rendimiento anual: de la primera etapa a la cartera elegida">
+    <div><span class="big num" id="h-a"></span><span class="cap" id="h-a-c"></span></div>
+    <span class="arrow" aria-hidden="true">→</span>
+    <div><span class="big num grad" id="h-b"></span><span class="cap" id="h-b-c"></span></div>
+  </div>
+  <p class="lead" id="h-lead"></p>
+  <p class="note-pill">Todo se midió con el mismo punto de partida: una cuenta de 1.000 USD, operaciones reales del backtest entre el 13/01/2025 y el 02/10/2026, en horario de Nueva York.</p>
+</header>
+
+<nav aria-label="Hoja de ruta">
+  <div class="road" id="road"></div>
+</nav>
+
+<section aria-labelledby="g-t" style="display:grid;gap:18px">
+  <h2 id="g-t" style="font-size:22px">Cómo leer los números</h2>
+  <div class="gloss">
+    <div><b>Rendimiento anual</b><span>Cuánto crece la cuenta por año, reinvirtiendo lo ganado. Es la cifra para comparar etapas.</span></div>
+    <div><b>Caída máxima</b><span>La peor baja desde un máximo hasta un mínimo. Mide cuánto duele el peor momento.</span></div>
+    <div><b>Win rate</b><span>Porcentaje de operaciones que terminan en ganancia.</span></div>
+    <div><b>R</b><span>Unidad de resultado: 1R es una operación ganadora completa (0,9% de la cuenta). Sirve para comparar sin importar el tamaño de la cuenta.</span></div>
+    <div><b>Factor de beneficio</b><span>Lo ganado dividido por lo perdido. Por encima de 1, el sistema gana.</span></div>
+    <div><b>Calmar</b><span>Rendimiento anual dividido por la caída máxima: cuánto se gana por cada punto de caída.</span></div>
+    <div><b>Sharpe</b><span>Rendimiento en relación con lo que oscila la cuenta semana a semana. Más de 2 es muy bueno.</span></div>
+    <div><b>Simulaciones</b><span>Mezclamos al azar las mismas operaciones miles de veces para ver qué pudo pasar con otra suerte. El «peor 5%» es el escenario desfavorable.</span></div>
+  </div>
+</section>
+
+<!-- ====================== 1 ====================== -->
+<section class="stage" id="etapa-1" aria-labelledby="tt1">
+  <div class="st-head">
+    <span class="st-num grad">1</span>
+    <span class="st-kicker">XAUUSD | Backtest · oro · patrón Envolvente · riesgo fijo 1%</span>
+    <h2 id="tt1">El punto de partida: un patrón, un activo</h2>
+    <p class="q">¿El patrón Envolvente, operado en oro de 07:00 a 09:00, tiene una ventaja real?</p>
+  </div>
+  <div class="answer"><span class="lbl">Respuesta</span><p id="a1"></p></div>
+  <div class="kpis" id="k1"></div>
+  <div class="years" id="y1"></div>
+  <div class="panel">
+    <h3>Evolución de la cuenta</h3>
+    <p class="sub">1.000 USD iniciales · riesgo de 1% por operación</p>
+    <div class="chart" id="c1"></div>
+  </div>
+  <div class="panel">
+    <h3>Resultado de cada mes (R)</h3>
+    <p class="sub">Verde: mes ganador · naranja: mes perdedor</p>
+    <div class="chart" id="m1"></div>
+  </div>
+  <div class="learn" id="l1"></div>
+  <p class="next"><span class="go" aria-hidden="true">→</span><span id="n1"></span></p>
+</section>
+
+<!-- ====================== 2 ====================== -->
+<section class="stage" id="etapa-2" aria-labelledby="tt2">
+  <div class="st-head">
+    <span class="st-num grad">2</span>
+    <span class="st-kicker">XAUUSD | Escalera de riesgo · oro · Envolvente · lunes a jueves</span>
+    <h2 id="tt2">Gestionar mejor el riesgo del mismo activo</h2>
+    <p class="q">¿Podemos sacarle más al oro cambiando cuánto arriesgamos en cada operación?</p>
+  </div>
+  <div class="answer"><span class="lbl">Respuesta</span><p id="a2"></p></div>
+  <div class="panel">
+    <h3>Cómo funciona la escalera</h3>
+    <div class="steps" aria-label="Escalones de riesgo">
+      <span class="step">0,5%</span><span class="ar">→</span><span class="step">1%</span><span class="ar">→</span><span class="step">2%</span><span class="ar">→</span><span class="step">4%</span><span class="ar">→</span><span class="step" style="border-style:dashed">vuelve a 0,5%</span>
+    </div>
+    <p class="muted" style="font-size:15px;max-width:72ch">Después de cada pérdida, la próxima operación arriesga el doble. Cuando la cuenta recupera lo perdido, o si también se pierde en el 4.º escalón, se vuelve a 0,5%. El tope de 3 escalones es clave: sin tope, en mayo de 2025 la escalera llegó a arriesgar el 100% de la cuenta y la quemó.</p>
+  </div>
+  <div class="kpis" id="k2"></div>
+  <div class="cols3">
+    <div class="panel">
+      <h3>Escalera contra riesgo fijo</h3>
+      <p class="sub">Mismas operaciones de oro, lunes a jueves</p>
+      <div class="legend" id="lg2"></div>
+      <div class="chart" id="c2"></div>
+    </div>
+    <div class="panel">
+      <h3>¿En qué escalón se opera?</h3>
+      <p class="sub">Operaciones por nivel de riesgo</p>
+      <div class="hbars" id="b2"></div>
+      <p class="small" id="b2n"></p>
+    </div>
+  </div>
+  <div class="learn" id="l2"></div>
+  <p class="next"><span class="go" aria-hidden="true">→</span><span id="n2"></span></p>
+</section>
+
+<!-- ====================== 3 ====================== -->
+<section class="stage" id="etapa-3" aria-labelledby="tt3">
+  <div class="st-head">
+    <span class="st-num grad">3</span>
+    <span class="st-kicker">Gestión híbrida · cuatro activos · sesión Pre NY 07:00–09:00</span>
+    <h2 id="tt3">El salto: el mismo método en varios mercados</h2>
+    <p class="q">¿Qué pasa si aplicamos los patrones en otros mercados a la vez y nos quedamos solo con los que ganan siempre?</p>
+  </div>
+  <div class="answer"><span class="lbl">Respuesta</span><p id="a3"></p></div>
+  <div class="panel">
+    <h3>Cómo elegimos</h3>
+    <div class="learn" id="how3" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))"></div>
+  </div>
+  <div class="panel">
+    <h3>Los cuatro activos elegidos</h3>
+    <p class="sub">Aporte de cada uno dentro de la cartera, lunes a jueves</p>
+    <div class="tbl"><table id="t3a"></table></div>
+    <p class="small" id="t3n"></p>
+  </div>
+  <div class="kpis" id="k3"></div>
+  <div class="panel">
+    <h3>Evolución de la cuenta</h3>
+    <p class="sub">1.000 USD iniciales · cuatro activos en orden cronológico · riesgo de 1% por operación</p>
+    <div class="legend" id="lg3"></div>
+    <div class="chart" id="c3"></div>
+  </div>
+  <div class="panel">
+    <h3>Rendimiento de cada mes</h3>
+    <p class="sub" id="m3s"></p>
+    <div class="chart" id="m3"></div>
+  </div>
+  <div class="learn" id="l3"></div>
+  <p class="next"><span class="go" aria-hidden="true">→</span><span id="n3"></span></p>
+</section>
+
+<!-- ====================== 4 ====================== -->
+<section class="stage" id="etapa-4" aria-labelledby="tt4">
+  <div class="st-head">
+    <span class="st-num grad">4</span>
+    <span class="st-kicker">Cartera esencial · ¿sumar la sesión de Nueva York (09:00–11:00)?</span>
+    <h2 id="tt4">Menos, pero mejor</h2>
+    <p class="q">¿Conviene operar dos horas más por día, de 09:00 a 11:00, en índices, bitcoin o divisas?</p>
+  </div>
+  <div class="answer"><span class="lbl">Respuesta</span><p id="a4"></p></div>
+
+  <div class="cols">
+    <div class="panel">
+      <h3>Ventaja por operación</h3>
+      <p class="sub">R promedio por operación, lunes a jueves, días sin noticias fuertes</p>
+      <div class="hbars" id="b4"></div>
+    </div>
+    <div class="panel">
+      <h3>Resultado por hora de pantalla</h3>
+      <p class="sub">R ganados en todo el período por cada hora diaria de trabajo</p>
+      <div class="hbars" id="h4"></div>
+      <p class="small" id="h4n"></p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Los seis activos de NY, uno por uno</h3>
+    <p class="sub">Mejor variante de cada uno · lunes a jueves · días sin NFP, CPI, PPI, PIB ni FOMC · efecto al sumarlo a Pre NY</p>
+    <div class="tbl"><table id="t4tbl"></table></div>
+  </div>
+
+  <div class="panel">
+    <h3>El caso del S&amp;P 500: mejora el pasado, pero no de forma confiable</h3>
+    <p class="sub">Es el único que mejoró la cartera en el orden histórico. Lo pusimos a prueba con 300 escenarios.</p>
+    <div class="cols" style="gap:24px">
+      <div class="hbars" id="r4"></div>
+      <div class="learn" id="r4t" style="grid-template-columns:1fr"></div>
+    </div>
+  </div>
+
+  <div class="learn" id="l4"></div>
+
+  <div class="st-head" style="margin-top:24px">
+    <span class="st-num grad" aria-hidden="true">✓</span>
+    <span class="st-kicker">La cartera elegida</span>
+    <h2>Pre NY sola: cuatro activos, dos horas por día</h2>
+    <p class="q">Es la misma combinación de la etapa 3. Pasó todas las pruebas de esta etapa y quedó como recomendación final.</p>
+  </div>
+  <dl class="ficha" id="ficha"></dl>
+  <div class="kpis" id="k4"></div>
+  <div class="cols">
+    <div class="panel">
+      <h3>Año por año</h3>
+      <div class="tbl"><table id="t4y" class="wrapt"></table></div>
+    </div>
+    <div class="panel">
+      <h3>Qué pudo haber pasado con otra suerte</h3>
+      <p class="sub">1.000 simulaciones mezclando las operaciones de cada activo</p>
+      <div class="tbl"><table id="t4m"></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== CONCLUSIÓN ====================== -->
+<section class="stage" id="conclusion" aria-labelledby="tc">
+  <div class="final-claim">
+    <span class="st-kicker">Conclusión</span>
+    <h2 id="tc" style="font-size:clamp(26px,3.4vw,38px);max-width:30ch;line-height:1.15">Cada etapa mejoró la anterior. La cartera recomendada da el mejor equilibrio entre resultado, riesgo y tiempo.</h2>
+  </div>
+  <div class="panel">
+    <h3>Todas las gestiones estudiadas, sobre la misma cuenta</h3>
+    <p class="sub">1.000 USD iniciales · 13/01/2025 al 02/10/2026 · escala logarítmica para comparar crecimientos</p>
+    <div class="legend" id="lgc"></div>
+    <div class="chart" id="cc"></div>
+  </div>
+  <div class="panel">
+    <div class="tbl"><table id="tc-t"></table></div>
+    <p class="small" id="tc-n"></p>
+  </div>
+  <div class="learn" id="lc"></div>
+  <footer>
+    <p class="caveat">Los resultados son de backtest: operaciones simuladas sobre datos pasados con las reglas actuales del sistema, sin costos de ejecución adicionales a los del simulador. Un resultado pasado no asegura el futuro. Por eso cada regla se aceptó solo si mejoraba 2025 y 2026 por separado, y por eso el próximo paso es validar en vivo con las mismas reglas.</p>
+    <p class="small">Fuentes: listas de operaciones del Strategy Tester de TradingView (sistema MEC, gráficos de 1 minuto) y los artefactos «XAUUSD | Backtest 2026», «XAUUSD | Escalera de riesgo», «Gestión híbrida», «Sesión NY» y «Cartera esencial».</p>
+  </footer>
+</section>
+
+</div>
+
+<script>
+const D = __DATA__;
+const $ = s => document.querySelector(s);
+const nf = (v, d = 1) => Number(v).toLocaleString('es-AR', {minimumFractionDigits: d, maximumFractionDigits: d});
+const sg = (v, d = 1) => (v > 0 ? '+' : v < 0 ? '−' : '') + nf(Math.abs(v), d);
+const pc = (v, d = 1) => sg(v, d) + '%';
+const cl = v => v > 0 ? 'pos' : v < 0 ? 'neg' : '';
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const usd = v => nf(v, 0);
+const MES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const NOM = {XAUUSD:'XAUUSD (oro)', EURUSD:'EURUSD (euro)', GBPUSD:'GBPUSD (libra)', BTCUSD:'BTCUSD (bitcoin)',
+  NAS100:'US100 (Nasdaq)', SPX500:'S&P 500', US30:'US30 (Dow Jones)', BTCUSD_NY:'BTCUSD', EURUSD_NY:'EURUSD', GBPUSD_NY:'GBPUSD'};
+const PAT = {E:'Envolvente', S:'START', ES:'Envolvente + START'};
+const PATRON_PRE = {XAUUSD:'E', EURUSD:'ES', GBPUSD:'S', BTCUSD:'E'};
+const kpi = (l, v, s = '', c = '', h = false) => `<div class="kpi${h ? ' hero-k' : ''}"><span class="l">${l}</span><span class="v ${c}">${v}</span>${s ? `<span class="s">${s}</span>` : ''}</div>`;
+const learn = xs => xs.map(([b, p]) => `<div><b>${b}</b><p>${p}</p></div>`).join('');
+
+const E1 = D.etapa1, E2 = D.etapa2, H = D.hibrida, F = D.finales, NY = D.ny;
+const REC = F[0], SPX = F[1], PLA = F[3];
+
+/* ---------------- gráficos ---------------- */
+const T0 = new Date('2025-01-13'), T1 = new Date('2026-10-02');
+function niceTicks(lo, hi, n = 5) {
+  const span = hi - lo, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => span / s <= n) || 10 * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(6)); return out;
+}
+function lineChart(el, series, {h = 300, log = false} = {}) {
+  const W = Math.max(320, el.clientWidth || 800), H = h, m = {l: 52, r: 14, t: 12, b: 28};
+  const all = series.flatMap(s => s.pts.map(p => p.eq)).concat([1000]);
+  let lo = Math.min(...all), hi = Math.max(...all);
+  const f = log ? Math.log : (x => x);
+  if (!log) { const pad = (hi - lo) * .06; lo -= pad; hi += pad; } else { lo *= .96; hi *= 1.04; }
+  const x = d => m.l + (d - T0) / (T1 - T0) * (W - m.l - m.r);
+  const y = v => m.t + (1 - (f(v) - f(lo)) / (f(hi) - f(lo))) * (H - m.t - m.b);
+  let ticks = log ? [600, 800, 1000, 1250, 1500, 2000, 2500, 3000, 4000].filter(v => v >= lo && v <= hi) : niceTicks(lo, hi);
+  let g = '';
+  ticks.forEach(v => { g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end">${usd(v)}</text>`; });
+  g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(1000)}" y2="${y(1000)}" stroke="var(--fg3)" stroke-dasharray="2 4" opacity=".7"/>`;
+  for (let yy = 2025, mm = 1; yy < 2027; mm += 3) { if (mm > 12) { mm -= 12; yy++; } if (yy > 2026) break; const d = new Date(yy, mm - 1, 1); if (d < T0 || d > T1) continue;
+    g += `<text x="${x(d)}" y="${H - 8}" text-anchor="middle">${MES[mm - 1]}${mm === 1 ? ' ' + yy : ''}</text>`; }
+  series.forEach(s => {
+    const pts = [{t: '2025-01-13', eq: 1000}].concat(s.pts);
+    const dpath = pts.map((p, i) => `${i ? 'L' : 'M'}${x(new Date(p.t)).toFixed(1)},${y(p.eq).toFixed(1)}`).join('');
+    if (s.area) g += `<path d="${dpath}L${x(new Date(pts.at(-1).t))},${H - m.b}L${m.l},${H - m.b}Z" fill="${s.color}" opacity=".08"/>`;
+    g += `<path d="${dpath}" fill="none" stroke="${s.color}" stroke-width="${s.w || 2}" stroke-linejoin="round" ${s.dash ? 'stroke-dasharray="5 4"' : ''} opacity="${s.op || 1}"/>`;
+    const lp = pts.at(-1); g += `<circle cx="${x(new Date(lp.t))}" cy="${y(lp.eq)}" r="${s.w > 2 ? 4.5 : 3}" fill="${s.color}"/>`;
+  });
+  g += `<line id="cx" x1="0" x2="0" y1="${m.t}" y2="${H - m.b}" stroke="var(--fg3)" opacity="0"/>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Curva de capital">${g}</svg><div class="tip" hidden></div>`;
+  const svg = el.querySelector('svg'), tip = el.querySelector('.tip'), cx = svg.querySelector('#cx');
+  const at = (s, d) => { let r = 1000; for (const p of s.pts) { if (new Date(p.t) <= d) r = p.eq; else break; } return r; };
+  const move = ev => {
+    const b = svg.getBoundingClientRect(), px = (ev.clientX - b.left) * W / b.width;
+    if (px < m.l || px > W - m.r) { tip.hidden = true; cx.setAttribute('opacity', 0); return; }
+    const d = new Date(+T0 + (px - m.l) / (W - m.l - m.r) * (T1 - T0));
+    cx.setAttribute('x1', px); cx.setAttribute('x2', px); cx.setAttribute('opacity', .5);
+    tip.innerHTML = `<b>${d.toLocaleDateString('es-AR', {day: '2-digit', month: '2-digit', year: 'numeric'})}</b>` +
+      series.map(s => `<div class="row"><span><i class="dot" style="background:${s.color}"></i>${s.short || s.name}</span><span>${usd(at(s, d))}</span></div>`).join('');
+    tip.hidden = false;
+    const left = (ev.clientX - b.left), tw = tip.offsetWidth;
+    tip.style.left = Math.min(Math.max(0, left + 14), b.width - tw) + 'px'; tip.style.top = '8px';
+  };
+  svg.addEventListener('pointermove', move); svg.addEventListener('pointerleave', () => { tip.hidden = true; cx.setAttribute('opacity', 0); });
+}
+function barChart(el, items, {h = 200, unit = 'R', dec = 1} = {}) {
+  const W = Math.max(320, el.clientWidth || 800), H = h, m = {l: 40, r: 8, t: 10, b: 34};
+  const vs = items.map(i => i.v), hi = Math.max(0, ...vs), lo = Math.min(0, ...vs);
+  const pad = (hi - lo) * .08, Y0 = lo - (lo < 0 ? pad : 0), Y1 = hi + pad;
+  const y = v => m.t + (1 - (v - Y0) / (Y1 - Y0)) * (H - m.t - m.b);
+  const bw = (W - m.l - m.r) / items.length;
+  let g = '';
+  niceTicks(Y0, Y1, 4).forEach(v => { g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${m.l - 6}" y="${y(v) + 4}" text-anchor="end">${sg(v, Math.abs(v) < 10 && v % 1 ? 1 : 0)}</text>`; });
+  items.forEach((it, i) => {
+    const x0 = m.l + i * bw + bw * .18, w = bw * .64, top = y(Math.max(0, it.v)), hh = Math.abs(y(it.v) - y(0));
+    g += `<rect x="${x0}" y="${top}" width="${w}" height="${Math.max(1, hh)}" rx="${Math.min(4, w / 2)}" fill="${it.v >= 0 ? 'var(--green)' : 'var(--orange)'}"><title>${it.title}: ${sg(it.v, dec)}${unit}</title></rect>`;
+    if (bw > 15 || i % 2 === 0) g += `<text x="${x0 + w / 2}" y="${H - 18}" text-anchor="middle">${it.label}</text>`;
+    if (it.year) g += `<text x="${x0 + w / 2}" y="${H - 3}" text-anchor="middle" style="font-weight:600">${it.year}</text>`;
+  });
+  g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(0)}" y2="${y(0)}" stroke="var(--fg3)"/>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Resultado mensual">${g}</svg>`;
+}
+const hbars = (items, max) => items.map(it => `<div class="hbar"><span>${it.l}</span><div class="tr"><div class="fl" style="width:${Math.max(1.5, Math.abs(it.v) / max * 100)}%;background:${it.c}"></div></div><span class="vv ${it.cls || ''}">${it.t}</span></div>`).join('');
+
+/* ---------------- portada y ruta ---------------- */
+$('#h-a').textContent = pc(E1.total.cagr, 0); $('#h-a-c').textContent = 'anual · oro solo, etapa 1';
+$('#h-b').textContent = pc(REC.cagr, 0); $('#h-b-c').textContent = 'anual · cartera recomendada';
+$('#h-lead').innerHTML = `En cuatro etapas llevamos el sistema MEC de un solo activo a una cartera de cuatro mercados. El rendimiento anual pasó de ${pc(E1.total.cagr)} a ${pc(REC.cagr)}, con una caída máxima parecida (${pc(-E1.total.mdd)} contra ${pc(-REC.mdd)}). La mejora vino de sumar ventaja, no de arriesgar más.`;
+const road = [
+  ['etapa-1', 1, 'Backtest del oro', pc(E1.total.cagr), `anual · caída ${pc(-E1.total.mdd)}`],
+  ['etapa-2', 2, 'Escalera de riesgo', pc(E2.escalera.cagr), `anual · ${nf(E2.escalera.meses_pos, 0)}% de meses positivos`],
+  ['etapa-3', 3, 'Gestión híbrida', pc(REC.cagr), `anual · caída ${pc(-REC.mdd)}`],
+  ['etapa-4', 4, 'Cartera esencial', 'Pre NY', 'NY no suma: se confirma la etapa 3']];
+$('#road').innerHTML = road.map(([id, n, t, r, d], i) => `<a href="#${id}" class="${i === 3 ? 'final' : ''}"><span class="n">${n}</span><span class="t">${t}</span><span class="r num ${i < 3 ? 'pos' : 'grad'}">${r}</span><span class="d">${d}</span></a>`).join('');
+
+/* ---------------- 1 ---------------- */
+const y25 = E1.anios['2025'], y26 = E1.anios['2026'];
+$('#a1').innerHTML = `Sí, pero chica y despareja. En dos años el oro rindió ${pc(E1.total.ret)} (${pc(E1.total.cagr)} anual), casi todo en 2026: ${pc(y25.ret_pct)} en 2025 contra ${pc(y26.ret_pct)} en 2026.`;
+$('#k1').innerHTML = kpi('Rendimiento anual', pc(E1.total.cagr), `${pc(E1.total.ret)} en todo el período`, 'pos', true) +
+  kpi('Caída máxima', pc(-E1.total.mdd), 'peor baja desde un máximo', 'neg') +
+  kpi('Win rate', nf(E1.total.wr) + '%', `${E1.total.n} operaciones`) +
+  kpi('Factor de beneficio', nf(E1.total.pf, 2), `gana ${nf(E1.total.pf, 2)} por cada 1 que pierde`) +
+  kpi('Resultado', sg(E1.total.R) + 'R', `${sg(E1.total.R_op, 2)}R por operación`, 'pos') +
+  kpi('Sharpe', nf(E1.total.sharpe, 2), `Calmar ${nf(E1.total.calmar, 2)}`) +
+  kpi('Peor racha', E1.total.racha + ' pérdidas', 'seguidas') +
+  kpi('Tiempo sin nuevo máximo', E1.total.bajo_agua + ' días', 'el período más largo');
+const yr = (y, o) => `<div class="year"><div class="yh"><b>${y}</b><span class="num ${cl(o.ret_pct)}">${pc(o.ret_pct)}</span></div><dl>
+  <div><dt>Win rate</dt><dd>${nf(o.wr)}%</dd></div><div><dt>Factor de beneficio</dt><dd>${nf(o.pf, 2)}</dd></div><div><dt>Caída máxima</dt><dd class="neg">${pc(-o.mdd_pct)}</dd></div>
+  <div><dt>Operaciones</dt><dd>${o.n}</dd></div><div><dt>R por semana</dt><dd>${sg(o.R_week, 2)}</dd></div><div><dt>Semanas positivas</dt><dd>${o.wk_pos} de ${o.wk_pos + o.wk_neg}</dd></div></dl></div>`;
+$('#y1').innerHTML = yr('2025', y25) + yr('2026', y26);
+const M1 = [...y25.meses.map(m => ({...m, y: '2025'})), ...y26.meses.map(m => ({...m, y: '2026'}))];
+$('#l1').innerHTML = learn([
+  ['La ventaja existe', `Ganó los dos años y el factor de beneficio es mayor a 1. Es la base sobre la que se construyó todo lo demás.`],
+  ['Pero en 2025 fue casi nula', `${sg(y25.R_week, 2)}R por semana en 2025 contra ${sg(y26.R_week, 2)}R en 2026. Con un solo activo, un año flojo deja la cuenta casi quieta.`],
+  ['Mucho tiempo sin avanzar', `La cuenta pasó ${E1.total.bajo_agua} días sin superar su máximo anterior. Es difícil de sostener psicológicamente.`]]);
+$('#n1').innerHTML = `<b>Siguiente paso:</b> con la misma ventaja, ¿podemos mejorar el resultado cambiando el tamaño del riesgo?`;
+
+/* ---------------- 2 ---------------- */
+const es = E2.escalera, fj = E2.fijo, mc2 = E2.mc;
+$('#a2').innerHTML = `Un poco. La escalera subió el rendimiento anual de ${pc(fj.cagr)} a ${pc(es.cagr)} y los meses positivos de ${nf(fj.mes_pos, 0)}% a ${nf(es.meses_pos, 0)}%, sin ruina en ninguna simulación. Pero no crea ventaja: solo la reparte mejor.`;
+$('#k2').innerHTML = kpi('Rendimiento anual', pc(es.cagr), `riesgo fijo 1%: ${pc(fj.cagr)}`, 'pos', true) +
+  kpi('Meses positivos', nf(es.meses_pos, 0) + '%', `riesgo fijo 1%: ${nf(fj.mes_pos, 0)}%`) +
+  kpi('Caída máxima', pc(-es.mdd), `riesgo fijo 1%: ${pc(-fj.mdd)}`, 'neg') +
+  kpi('Riesgo máximo', nf(es.max_riesgo, 0) + '%', 'en una sola operación') +
+  kpi('Por año', `${pc(es.anios['2025'], 0)} · ${pc(es.anios['2026'], 0)}`, '2025 · 2026') +
+  kpi('Prob. de terminar en pérdida', nf(mc2.p_perdida) + '%', `${nf(3000, 0)} simulaciones · ruina: ${nf(mc2.p_ruina, 0)}%`) +
+  kpi('Peor 5% simulado', pc(mc2.ret_p5), `mediana ${pc(mc2.ret_med)}`, 'pos') +
+  kpi('Caída esperable', pc(-mc2.dd_p95), 'peor 5% de las simulaciones', 'neg');
+const nv = es.niveles, tot2 = Object.values(nv).reduce((a, b) => a + b, 0);
+$('#b2').innerHTML = hbars(['0', '1', '2', '3'].map((k, i) => ({l: ['0,5%', '1%', '2%', '4%'][i], v: nv[k] || 0, t: nv[k] || 0, c: ['var(--green)', 'var(--celeste)', 'var(--violet)', 'var(--orange)'][i]})), Math.max(...Object.values(nv)));
+$('#b2n').textContent = `${nf(100 * (nv['0'] || 0) / tot2, 0)}% de las operaciones se hacen con el riesgo base de 0,5%; solo ${nv['3'] || 0} de ${tot2} llegan al 4%.`;
+$('#l2').innerHTML = learn([
+  ['Más estable', `${nf(es.meses_pos, 0)}% de los meses terminan en positivo. Las simulaciones nunca quemaron la cuenta y en el peor 5% igual se gana ${pc(mc2.ret_p5)}.`],
+  ['Sin viernes', `Dejamos de operar los viernes: en el oro restaban. Desde esta etapa, todo el sistema opera de lunes a jueves.`],
+  ['El límite es el activo', `2025 sigue flojo (${pc(es.anios['2025'])}). Ninguna regla de riesgo convierte una ventaja chica en una grande: para crecer hace falta más ventaja.`]]);
+$('#n2').innerHTML = `<b>Siguiente paso:</b> buscar esa ventaja en otros mercados, en el mismo horario.`;
+
+/* ---------------- 3 ---------------- */
+const marg = Object.fromEntries(H.marginal.map(m => [m.activo, m]));
+$('#a3').innerHTML = `El rendimiento se multiplicó. Con cuatro activos la cartera rinde ${pc(REC.cagr)} anual, con una caída máxima de ${pc(-REC.mdd)}: parecida a la del oro solo. Cada activo gana por su cuenta en 2025 y en 2026, y cuando uno tiene un mal mes, los otros compensan.`;
+$('#how3').innerHTML = learn([
+  ['5 activos × 3 patrones', `Oro, euro, libra, dólar australiano y bitcoin, con Envolvente, START o ambos: ${nf(H.combinaciones, 0)} combinaciones probadas.`],
+  ['Regla de oro', 'Un activo entra solo si gana en 2025 y en 2026 por separado. AUDUSD no la cumplió y quedó afuera.'],
+  ['Cada uno debe sumar', 'Probamos sacar cada activo de la cartera: si sin él no empeoran los dos años, sale.'],
+  ['Reglas simples', 'Riesgo fijo de 1%, lunes a jueves, y un freno: si la semana pierde 3R, se deja de operar hasta el lunes.']]);
+$('#t3a').innerHTML = `<thead><tr><th>Activo</th><th>Patrón</th><th class="n">Operaciones</th><th class="n">Win rate</th><th class="n">R total</th><th class="n">R por op.</th><th class="n">R 2025</th><th class="n">R 2026</th><th class="n">Si lo sacamos, 2026</th></tr></thead><tbody>` +
+  H.activos.sort((a, b) => b.R - a.R).map(a => { const mg = marg[a.a]; const d26 = mg ? mg.sin['2026'] - mg.con['2026'] : 0;
+    return `<tr><td>${NOM[a.a]}</td><td>${PAT[PATRON_PRE[a.a]]}</td><td class="n">${a.n}</td><td class="n">${nf(a.wr)}%</td><td class="n pos">${sg(a.R)}</td><td class="n">${sg(a.R_op, 2)}</td><td class="n ${cl(a.R25)}">${sg(a.R25)}</td><td class="n ${cl(a.R26)}">${sg(a.R26)}</td><td class="n neg">${sg(d26)} pts</td></tr>`; }).join('') + '</tbody>';
+$('#t3n').textContent = 'La última columna muestra cuántos puntos de rendimiento pierde 2026 si se saca ese activo: todos suman. El oro, que era el sistema entero en la etapa 1, hoy aporta un quinto del resultado.';
+$('#k3').innerHTML = kpi('Rendimiento anual', pc(REC.cagr), `${pc(REC.anios['2025'])} en 2025 · ${pc(REC.anios['2026'])} en 2026`, 'pos', true) +
+  kpi('Caída máxima', pc(-REC.mdd), `oro solo: ${pc(-E1.total.mdd)}`, 'neg') +
+  kpi('Rendimiento mensual', pc(REC.mes_geo, 2), 'promedio compuesto', 'pos') +
+  kpi('Win rate', nf(REC.wr) + '%', `${REC.n} operaciones`) +
+  kpi('Factor de beneficio', nf(REC.pf, 2), `${sg(REC.R)}R en total`) +
+  kpi('Calmar', nf(REC.calmar, 2), `oro solo: ${nf(E1.total.calmar, 2)}`) +
+  kpi('Sharpe', nf(REC.sharpe, 2), `oro solo: ${nf(E1.total.sharpe, 2)}`) +
+  kpi('Meses positivos', nf(REC.mes_pos, 0) + '%', `semanas positivas: ${nf(REC.sem_pos, 0)}%`);
+const M3 = REC.meses.map(m => ({v: m.pct, label: MES[+m.m.slice(5) - 1], year: m.m.slice(5) === '01' ? m.m.slice(0, 4) : '', title: `${MES[+m.m.slice(5) - 1]} ${m.m.slice(0, 4)}`}));
+$('#m3s').textContent = `% sobre la cuenta al inicio de cada mes · peor mes ${pc(REC.peor_mes)}`;
+$('#l3').innerHTML = learn([
+  ['Más ventaja, no más riesgo', `El riesgo por operación sigue en 1%. Lo que cambió es la cantidad de oportunidades buenas: ${REC.n} operaciones con ventaja en lugar de ${E1.total.n}.`],
+  ['Los activos se compensan', `Las caídas de uno no coinciden con las de los otros. Por eso el rendimiento se multiplica y la caída casi no cambia.`],
+  ['Sin escalera', 'Con cuatro activos no hace falta duplicar el riesgo tras una pérdida: la diversificación ya suaviza la curva.']]);
+$('#n3').innerHTML = `<b>Siguiente paso:</b> ¿podemos sumar más con una segunda sesión, de 09:00 a 11:00?`;
+
+/* ---------------- 4 ---------------- */
+const rsp = NY.robustez.find(x => x.activo === 'SPX500');
+const fil = NY.filas, nyMax = fil.reduce((a, b) => b.R_op > a.R_op ? b : a);
+const preRop = REC.R / REC.n;
+$('#a4').innerHTML = `No. Ninguno de los seis activos de NY tiene la ventaja de Pre NY: el mejor gana ${sg(nyMax.R_op, 2)}R por operación contra ${sg(preRop, 2)}R de Pre NY. Duplicar las horas de pantalla no se justifica. La cartera recomendada queda en Pre NY sola.`;
+const preA = H.activos.map(a => ({l: a.a, v: a.R_op, t: sg(a.R_op, 2), c: 'var(--green)', cls: 'pos'}));
+const nyA = fil.slice().sort((a, b) => b.R_op - a.R_op).map(f => ({l: (NOM[f.activo]).replace(' (Nasdaq)', '').replace(' (Dow Jones)', '') + ' NY', v: f.R_op, t: sg(f.R_op, 2), c: f.R_op >= 0 ? 'var(--s-pla)' : 'var(--orange)', cls: f.R_op < 0 ? 'neg' : ''}));
+const mx4 = Math.max(...preA.concat(nyA).map(i => Math.abs(i.v)));
+$('#b4').innerHTML = `<p class="small">Pre NY (07:00–09:00)</p>` + hbars(preA.sort((a, b) => b.v - a.v), mx4) + `<p class="small" style="margin-top:6px">NY (09:00–11:00)</p>` + hbars(nyA, mx4);
+const hPre = REC.R / 2, hSpx = SPX.R / 4;
+$('#h4').innerHTML = hbars([{l: 'Pre NY sola', v: hPre, t: sg(hPre, 0) + 'R', c: 'var(--green)', cls: 'pos'}, {l: '+ S&P 500', v: hSpx, t: sg(hSpx, 0) + 'R', c: 'var(--s-spx)'}], hPre);
+$('#h4n').textContent = `Pre NY: ${sg(REC.R)}R en 2 horas por día. Sumando el S&P 500: ${sg(SPX.R)}R en 4 horas. El doble de tiempo para ${sg(SPX.R - REC.R)}R más en todo el período.`;
+const ver = f => {
+  if (!f.gana_ambos) return ['o', f.R26 < 0 || f.R25 < 0 ? 'Pierde en un año' : 'No gana los dos años'];
+  if (f.activo === 'SPX500') return ['v', 'Aporte frágil'];
+  return ['o', 'Sube la caída'];
+};
+const verGBP = f => f.activo === 'GBPUSD_NY' ? ['o', 'Baja 2026'] : ver(f);
+$('#t4tbl').innerHTML = `<thead><tr><th>Activo y patrón</th><th class="n">Operaciones</th><th class="n">R 2025</th><th class="n">R 2026</th><th class="n">R por op.</th><th class="n">Efecto en el anual</th><th class="n">Efecto en la caída</th><th>Veredicto</th></tr></thead><tbody>` +
+  fil.map(f => { const v = verGBP(f), da = f.con.cagr - f.base.cagr, dd = f.con.mdd - f.base.mdd;
+    return `<tr${f.activo === 'SPX500' ? ' class="hl"' : ''}><td>${NOM[f.activo]}<br><span class="small">${PAT[f.patron]}</span></td><td class="n">${f.n}</td><td class="n ${cl(f.R25)}">${sg(f.R25)}</td><td class="n ${cl(f.R26)}">${sg(f.R26)}</td><td class="n ${cl(f.R_op)}">${sg(f.R_op, 3)}</td><td class="n ${cl(da)}">${sg(da)} pts</td><td class="n ${dd > 0 ? 'neg' : 'pos'}">${sg(dd)} pts</td><td><span class="tag ${v[0]}">${v[1]}</span></td></tr>`; }).join('') + '</tbody>';
+$('#r4').innerHTML = `<p class="small">De 300 escenarios, en cuántos sumar el S&P 500 mejora la cartera</p>` + hbars([
+  {l: 'Rendimiento', v: rsp.p_cagr, t: nf(rsp.p_cagr, 0) + '%', c: 'var(--s-spx)'},
+  {l: 'Calmar', v: rsp.p_calmar, t: nf(rsp.p_calmar, 0) + '%', c: 'var(--s-spx)'},
+  {l: 'Caída', v: rsp.p_dd, t: nf(rsp.p_dd, 0) + '%', c: 'var(--orange)', cls: 'neg'}], 100) +
+  `<p class="small">Para confiar en un activo, debería mejorar la cartera en la gran mayoría de los escenarios. La caída solo baja en ${nf(rsp.p_dd, 0)} de cada 100.</p>`;
+$('#r4t').innerHTML = learn([
+  ['En el pasado, mejora todo', `Sumado a Pre NY, el anual sube de ${pc(REC.cagr)} a ${pc(SPX.cagr)} y la caída baja a ${pc(-SPX.mdd)}.`],
+  ['Pero la ventaja es mínima', `De lunes a jueves deja ${sg(rsp.R_sin_viernes)}R en ${rsp.n_sin_viernes} operaciones: ${sg(rsp.R_sin_viernes / rsp.n_sin_viernes, 3)}R cada una. La mejora del pasado dependió de en qué semanas cayeron sus rachas, y eso no se repite.`],
+  ['Queda en observación', 'Se sigue registrando sin operarlo. Si en el próximo año sostiene al menos +0,10R por operación, se vuelve a evaluar.']]);
+const can = NY.cand_pre, best = can.reduce((a, b) => b.cagr > a.cagr ? b : a);
+$('#l4').innerHTML = learn([
+  ['Noticias y Fed afuera', `En NY no se opera los días de NFP, CPI, PPI, PIB ni FOMC: en esos días los índices perdían. Aun así, la ventaja no alcanza.`],
+  ['¿Un tope de ganancia semanal?', `Tampoco suma: el 20% de las mejores semanas aporta el ${nf(NY.concentracion, 0)}% del resultado, y cortarlas al llegar a una meta reduce el rendimiento. Probamos 12 variantes de «candado» y ninguna mejora 2025 y 2026 a la vez.`],
+  ['Menos, pero mejor', 'Con lo mínimo se logra casi todo: cuatro activos, dos horas por día y una sola regla de freno.']]);
+
+$('#ficha').innerHTML = [
+  ['Activos y patrones', `<div class="chips">${Object.entries(PATRON_PRE).map(([a, p]) => `<span class="chip">${NOM[a]} · ${PAT[p]}</span>`).join('')}</div>`, 'wide'],
+  ['Horario', '07:00 a 09:00 de Nueva York (sesión Pre NY)'],
+  ['Días', 'Lunes a jueves. Sin viernes.'],
+  ['Riesgo por operación', '1% fijo de la cuenta. Ganadora completa: +0,9%.'],
+  ['Límite por sesión', 'Por activo: 1 operación ganadora o 2 perdedoras, y se termina el día.'],
+  ['Freno semanal', 'Si la semana llega a −3R (cerca de −2,7%), no se opera más hasta el lunes.'],
+  ['Meta de ganancia', 'Ninguna. Las semanas buenas se dejan correr.'],
+  ['Calendario', 'Sin operar en feriados, receso de fin de año (22/12 al 16/01) y noticias de alto impacto del calendario MEC.'],
+  ['Posiciones a la vez', `Hasta ${REC.max_conc}, una por activo.`]].map(([t, d, c]) => `<div class="${c || ''}"><dt>${t}</dt><dd>${d}</dd></div>`).join('');
+$('#k4').innerHTML = kpi('Rendimiento anual', pc(REC.cagr), `${pc(REC.mes_geo, 2)} por mes`, 'pos', true) +
+  kpi('Caída máxima', pc(-REC.mdd), `${REC.bajo_agua} días hasta recuperar el máximo`, 'neg') +
+  kpi('Win rate', nf(REC.wr) + '%', `${REC.n} operaciones · racha máx. ${REC.racha}`) +
+  kpi('Factor de beneficio', nf(REC.pf, 2), `${sg(REC.R)}R · ${sg(preRop, 2)}R por op.`) +
+  kpi('Sharpe', nf(REC.sharpe, 2), `Calmar ${nf(REC.calmar, 2)}`) +
+  kpi('Peor mes', pc(REC.peor_mes), `peor semana ${pc(REC.peor_sem)}`, 'neg') +
+  kpi('Semanas positivas', nf(REC.sem_pos, 0) + '%', `máx. ${REC.sem_neg_seg} negativas seguidas`) +
+  kpi('Meses positivos', nf(REC.mes_pos, 0) + '%', 'de todos los meses operados');
+const ys = REC.anios;
+$('#t4y').innerHTML = `<thead><tr><th>Año</th><th class="n">Rendimiento</th><th>Lectura</th></tr></thead><tbody>
+  <tr><td>2025</td><td class="n pos">${pc(ys['2025'])}</td><td>Año completo (13/01 al 19/12)</td></tr>
+  <tr><td>2026</td><td class="n pos">${pc(ys['2026'])}</td><td>Hasta el 02/10, sin el receso de enero</td></tr>
+  <tr class="hl"><td>Anual compuesto</td><td class="n pos">${pc(REC.cagr)}</td><td>Ritmo de todo el período</td></tr></tbody>`;
+const mc = REC.mc;
+$('#t4m').innerHTML = `<thead><tr><th>Escenario</th><th class="n">Anual</th><th class="n">Caída</th></tr></thead><tbody>
+  <tr><td>Mediana (caso típico)</td><td class="n pos">${pc(mc.cagr_med)}</td><td class="n neg">${pc(-mc.dd_med)}</td></tr>
+  <tr><td>Peor 5%</td><td class="n pos">${pc(mc.cagr_p5)}</td><td class="n neg">${pc(-mc.dd_p95)}</td></tr>
+  <tr><td>Probabilidad de un año negativo</td><td class="n" colspan="2">${nf(mc.p_anio_neg)}%</td></tr>
+  <tr><td>Peor racha perdedora esperable</td><td class="n" colspan="2">${mc.racha_p95} operaciones</td></tr></tbody>`;
+
+/* ---------------- conclusión ---------------- */
+const SER = () => [
+  {name: 'Etapa 1 · oro, riesgo fijo 1%', short: 'Oro fijo', color: css('--s-xau'), pts: E1.curve, w: 1.6},
+  {name: 'Etapa 2 · oro con escalera', short: 'Escalera', color: css('--s-esc'), pts: E2.curve, w: 1.6},
+  {name: 'Pre NY + S&P 500 (en observación)', short: '+ S&P 500', color: css('--s-spx'), pts: SPX.curve, w: 1.4, dash: true, op: .9},
+  {name: 'Pre NY + S&P 500 + BTCUSD NY', short: '+ S&P + BTC NY', color: css('--s-pla'), pts: PLA.curve, w: 1.4, dash: true, op: .9},
+  {name: 'Recomendada · Pre NY, 4 activos', short: 'Recomendada', color: css('--s-rec'), pts: REC.curve, w: 3, area: true}];
+$('#lgc').innerHTML = SER().map(s => `<span><i class="${s.dash ? 'dash' : ''}" style="background:${s.color};color:${s.color}"></i>${s.name}</span>`).join('');
+const rows = [
+  ['Etapa 1 · oro, riesgo fijo 1%', E1.total.cagr, E1.total.mdd, E1.total.calmar, 2, null, 'Punto de partida'],
+  ['Etapa 2 · oro con escalera', es.cagr, es.mdd, es.cagr / es.mdd, 2, null, 'Más estable, misma ventaja'],
+  ['Recomendada · Pre NY, 4 activos', REC.cagr, REC.mdd, REC.calmar, 2, REC.mc.cagr_p5, 'Elegida'],
+  ['Pre NY + S&P 500', SPX.cagr, SPX.mdd, SPX.calmar, 4, SPX.mc.cagr_p5, 'Aporte frágil, en observación'],
+  ['Pre NY + S&P 500 + BTCUSD NY', PLA.cagr, PLA.mdd, PLA.calmar, 4, PLA.mc.cagr_p5, 'Sube la caída']];
+$('#tc-t').innerHTML = `<thead><tr><th>Gestión</th><th class="n">Anual</th><th class="n">Caída máx.</th><th class="n">Calmar</th><th class="n">Horas por día</th><th class="n">Anual por hora diaria</th><th>Estado</th></tr></thead><tbody>` +
+  rows.map(r => `<tr${r[6] === 'Elegida' ? ' class="hl"' : ''}><td>${r[0]}</td><td class="n pos">${pc(r[1])}</td><td class="n neg">${pc(-r[2])}</td><td class="n">${nf(r[3], 2)}</td><td class="n">${r[4]}</td><td class="n">${pc(r[1] / r[4])}</td><td><span class="tag ${r[6] === 'Elegida' ? 'g' : r[6].startsWith('Aporte') ? 'v' : 'o'}">${r[6]}</span></td></tr>`).join('') + '</tbody>';
+$('#tc-n').textContent = `Las dos variantes con NY quedan arriba en el pasado, pero piden el doble de horas y su ventaja extra no resistió las simulaciones. Por hora de pantalla, la recomendada rinde casi el doble.`;
+$('#lc').innerHTML = learn([
+  ['Lo que logramos', `De ${pc(E1.total.cagr)} a ${pc(REC.cagr)} anual con una caída máxima similar, y con reglas que se cumplen en 2025 y en 2026 por separado.`],
+  ['Por qué esta y no otra', `Es la que más rinde por cada hora de trabajo y por cada punto de caída sin depender de la suerte del orden de las operaciones: en el peor 5% de las simulaciones gana ${pc(REC.mc.cagr_p5)} anual.`],
+  ['Próximos pasos', 'Operarla en vivo con estas reglas, revisar cada trimestre con los datos nuevos y seguir midiendo el S&P 500 sin operarlo.']]);
+
+/* ---------------- dibujar ---------------- */
+function draw() {
+  lineChart($('#c1'), [{name: 'Oro, riesgo fijo 1%', short: 'Cuenta', color: css('--s-xau'), pts: E1.curve, w: 2.4, area: true}], {h: 280});
+  barChart($('#m1'), M1.map(m => ({v: m.R, label: m.mes, year: m.mes === 'Ene' ? m.y : '', title: `${m.mes} ${m.y}`})), {h: 210});
+  const s2 = [{name: 'Escalera 0,5% → 4%', short: 'Escalera', color: css('--s-esc'), pts: E2.curve, w: 2.4}, {name: 'Riesgo fijo 1%', short: 'Fijo 1%', color: css('--s-xau'), pts: E2.curve_fijo, w: 1.6, dash: true}];
+  $('#lg2').innerHTML = s2.map(s => `<span><i class="${s.dash ? 'dash' : ''}" style="background:${s.color};color:${s.color}"></i>${s.name}</span>`).join('');
+  lineChart($('#c2'), s2, {h: 260});
+  const s3 = [{name: 'Cartera de 4 activos', short: 'Cartera', color: css('--s-rec'), pts: REC.curve, w: 2.6, area: true}, {name: 'Oro solo (etapa 1)', short: 'Oro solo', color: css('--s-xau'), pts: E1.curve, w: 1.5, dash: true}];
+  $('#lg3').innerHTML = s3.map(s => `<span><i class="${s.dash ? 'dash' : ''}" style="background:${s.color};color:${s.color}"></i>${s.name}</span>`).join('');
+  lineChart($('#c3'), s3, {h: 300});
+  barChart($('#m3'), M3, {h: 210, unit: '%', dec: 2});
+  lineChart($('#cc'), SER(), {h: 380, log: true});
+}
+draw();
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(draw, 150); });
+matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', draw);
+new MutationObserver(draw).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
+</script>
