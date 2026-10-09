@@ -8,7 +8,7 @@ H = ny.H
 for _a in ["NAS100", "SPX500", "US30", "BTCUSD_NY"]:
     if _a not in H.ACTIVOS: H.ACTIVOS.append(_a)
 
-ACTIVOS_NY = ["NAS100"]                     # se suman S&P 500, US30 y BTCUSD a medida que lleguen
+ACTIVOS_NY = ["NAS100", "SPX500", "US30", "BTCUSD_NY"]
 INICIOS = {"0900": "09:00", "0930": "09:30"}
 R_PCT = 0.9
 DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"]
@@ -77,6 +77,7 @@ def analizar_activo(a):
         salidas=[dict(salida=m, **grupo([t for t in lim if t["m"] == m])) for m in sorted({t["m"] for t in lim})],
         primer_sl=H.primer_sl(lim),
         meses=[dict(mes=m, **grupo([t for t in lim if t["ent"].strftime("%Y-%m") == m])) for m in sorted({t["ent"].strftime("%Y-%m") for t in lim})],
+        capital=ts[0]["capital"],
         riesgo_real=dict(med=round(st.median(abs(t["u_real"]) for t in ts if t["salida"].startswith("Salida") and t["u"] < 0), 2),
                          min=round(min(abs(t["u_real"]) for t in ts if t["salida"].startswith("Salida") and t["u"] < 0), 2),
                          max=round(max(abs(t["u_real"]) for t in ts if t["salida"].startswith("Salida") and t["u"] < 0), 2)))
@@ -101,21 +102,83 @@ def cartera_con_preny(lim_ny, a="NAS100"):
     pre = [t for a, p in C for t in T[(a, p)] if t["ent"].weekday() != 4]
     out = []
     ny_ = [t for t in lim_ny if t["ent"].weekday() != 4]
-    for nom, ts in (("Pre NY (gestión ganadora)", pre), (f"Pre NY + {a} NY", pre + ny_),
-                    (f"Pre NY + {a} NY sin entradas 10:00–10:29", pre + [t for t in ny_ if sin_franja_10(t)])):
+    for nom, ts in (("Pre NY (gestión ganadora)", pre), (f"Pre NY + {NOMBRES[a]} NY", pre + ny_),
+                    (f"Pre NY + {NOMBRES[a]} NY sin entradas 10:00–10:29", pre + [t for t in ny_ if sin_franja_10(t)])):
         r = H.simular(ts, None, stop_sem=3, curva=True); m = H.montecarlo(ts, None, sims=1000, stop_sem=3)
         out.append(dict(nombre=nom, curve=r["curve"], mc=m, **{k: r[k] for k in ("n", "wr", "ret", "cagr", "mes_geo", "mdd", "racha", "calmar", "anios", "pf", "peor_mes", "max_conc")}))
     return out
+
+
+def apertura(a):
+    """Impacto de la apertura de Wall Street (09:30). Días sin noticia ni FOMC.
+    Muestra 09:00: operaciones abiertas entre 09:20 y 09:34 (y las que además cierran antes de 09:35), escenario sin abrirlas,
+    y operaciones que ya estaban abiertas a las 09:20 (su resultado final; el de un cierre forzado a las 09:20 no se puede
+    calcular sin el precio de ese minuto). Muestra 09:30: operaciones abiertas entre 09:30 y 09:34 y escenario sin abrirlas."""
+    import datetime as dt
+    T = dt.time; fmt_t = lambda t: dict(f=t["ent"].strftime("%d/%m/%Y"), e=t["ent"].strftime("%H:%M"), s=t["sal"].strftime("%H:%M"),
+                                         dir=t["dir"], R=round(t["u"] / R_PCT, 2), m=t["salida"])
+    out = dict(m0900=[], m0930=[])
+    for p in ("E", "S", "ES"):
+        try: ts, _ = ny.leer(a, "0900", p)
+        except FileNotFoundError: continue
+        lim = [t for t in ts if not t["tags"]]
+        ab = [t for t in lim if T(9, 20) <= t["ent"].time() < T(9, 35)]
+        dentro = [t for t in ab if t["sal"].time() <= T(9, 35)]
+        a920 = [t for t in lim if t["ent"].time() < T(9, 20) and t["sal"].time() > T(9, 20)]
+        out["m0900"].append(dict(patron=p, base=grupo(lim), abren=grupo(ab), dentro=grupo(dentro), sin=grupo([t for t in lim if t not in ab]),
+                                 abiertas920=grupo(a920), ops_abren=[fmt_t(t) for t in ab], ops_920=[fmt_t(t) for t in a920]))
+    for p in ("E", "S", "ES"):
+        try: ts, _ = ny.leer(a, "0930", p)
+        except FileNotFoundError: continue
+        lim = [t for t in ts if not t["tags"]]
+        ab = [t for t in lim if T(9, 30) <= t["ent"].time() < T(9, 35)]
+        out["m0930"].append(dict(patron=p, base=grupo(lim), abren=grupo(ab), sin=grupo([t for t in lim if t not in ab]), ops_abren=[fmt_t(t) for t in ab]))
+    return out
+
+
+NOMBRES = {"NAS100": "US100", "SPX500": "S&P 500", "US30": "US30", "BTCUSD_NY": "BTCUSD NY"}
+
+
+def cartera_ny(elegidas):
+    """Cartera NY con los activos que califican y su suma a la gestión ganadora de Pre NY (sin viernes, freno −3R)."""
+    import itertools
+    T = H.cargar()
+    C = (("XAUUSD", "E"), ("EURUSD", "ES"), ("GBPUSD", "S"), ("BTCUSD", "E"))
+    pre = [t for a, p in C for t in T[(a, p)] if t["ent"].weekday() != 4]
+    base = H.simular(pre, None, stop_sem=3)
+    filas = []
+    nombres = list(elegidas)
+    for k in range(1, len(nombres) + 1):
+        for sub in itertools.combinations(nombres, k):
+            ny_ = [t for a in sub for t in elegidas[a] if t["ent"].weekday() != 4]
+            solo = H.simular(ny_, None, stop_sem=3); con = H.simular(pre + ny_, None, stop_sem=3)
+            filas.append(dict(activos=list(sub),
+                              solo={k2: solo[k2] for k2 in ("n", "wr", "cagr", "mdd", "anios", "calmar", "racha")},
+                              con={k2: con[k2] for k2 in ("n", "wr", "cagr", "mdd", "anios", "calmar", "racha", "mes_geo", "peor_mes", "max_conc")},
+                              mejora=all(con["anios"][y] > base["anios"][y] for y in ("2025", "2026")), no_sube_dd=con["mdd"] <= base["mdd"] + 1e-9))
+    ok = [f for f in filas if f["mejora"] and f["no_sube_dd"]]
+    rec = max(ok, key=lambda f: f["con"]["calmar"] or 0) if ok else max([f for f in filas if f["mejora"]] or filas, key=lambda f: f["con"]["calmar"] or 0)
+    det = []
+    for nom, ts in (("Pre NY (gestión ganadora)", pre), ("Pre NY + NY (" + " + ".join(NOMBRES[x] for x in rec["activos"]) + ")", pre + [t for a in rec["activos"] for t in elegidas[a] if t["ent"].weekday() != 4]),
+                    ("Solo NY (" + " + ".join(NOMBRES[x] for x in rec["activos"]) + ")", [t for a in rec["activos"] for t in elegidas[a] if t["ent"].weekday() != 4])):
+        r = H.simular(ts, None, stop_sem=3, curva=True); m = H.montecarlo(ts, None, sims=1000, stop_sem=3)
+        det.append(dict(nombre=nom, curve=r["curve"], meses=r["meses"], mc=m, **{k2: r[k2] for k2 in (
+            "n", "wr", "ret", "cagr", "mes_geo", "sem_geo", "mdd", "racha", "calmar", "anios", "pf", "peor_mes", "max_conc", "sharpe", "mes_pos")}))
+    return dict(base={k2: base[k2] for k2 in ("cagr", "mdd", "anios")}, filas=filas, recomendada=rec, cumple=bool(ok), detalle=det)
 
 
 def main():
     data = dict(meta=dict(ini="13/01/2025", fin="02/10/2026", activos=ACTIVOS_NY,
                           calendario={r: sum(1 for v in ny.CAL.values() for x in v if x["regla"] == r) for r in ("SIN_OPERAR", "ANALIZAR_NOTICIA", "ANALIZAR_FOMC", "BLOQUEO_NOTICIA")}),
                 activos={})
+    elegidas = {}
     for a in ACTIVOS_NY:
         res, lim = analizar_activo(a)
-        res["cartera"] = cartera_con_preny(lim)
+        res["cartera"] = cartera_con_preny(lim, a)
+        res["apertura"] = apertura(a)
         data["activos"][a] = res
+        if res["elegida"]["gana_ambos"]: elegidas[a] = lim
+    data["cartera_ny"] = cartera_ny(elegidas)
     json.dump(data, open(os.path.join(AQUI, "datos_ny.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     return data
 
@@ -124,9 +187,7 @@ if __name__ == "__main__":
     d = main()
     for a, r in d["activos"].items():
         print(a, r["elegida"])
-        for v in r["variantes"]: print(v["hora"], v["patron"], v["todos"], "| limpio", v["limpio"], "| noticia", v["noticia"]["R"], "fomc", v["fomc"]["R"])
-        for c in r["cartera"]: print(c["nombre"], c["cagr"], c["mdd"], c["anios"], c["mc"]["cagr_p5"], c["n"])
-        D = r["detalle"]; print(D["franjas"]); print(D["dias"]); print(D["riesgo_real"]); print(D["sim"]["cagr"], D["sim"]["mdd"], D["sim"]["anios"], D["mc"]["cagr_p5"], D["mc"]["p_anio_neg"])
-        for v in r["variantes"]:
-            if v["inicio"] == r["elegida"]["inicio"] and v["patron"] == r["elegida"]["patron"]:
-                for c in v["categorias"]: print("  ", c)
+        for c in r["cartera"]: print("  ", c["nombre"], c["cagr"], c["mdd"], c["anios"], c["mc"]["cagr_p5"], c["n"])
+    cn = d["cartera_ny"]; print("BASE", cn["base"], "cumple", cn["cumple"])
+    for f in cn["filas"]: print(f["activos"], f["solo"]["cagr"], f["solo"]["anios"], "| con", f["con"]["cagr"], f["con"]["mdd"], f["con"]["anios"], f["mejora"], f["no_sube_dd"])
+    for x in cn["detalle"]: print(x["nombre"], x["cagr"], x["mdd"], x["anios"], x["mc"]["cagr_p5"], x["mc"]["p_anio_neg"])

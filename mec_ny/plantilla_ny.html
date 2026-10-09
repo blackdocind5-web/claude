@@ -18,8 +18,8 @@ __ESTILO_HIBRIDA__
   <h1>Sesión NY</h1>
   <div class="meta">
     <span>Período <b id="m-period"></b></span>
-    <span>Capital inicial <b>1.000 USD</b></span>
-    <span>Riesgo <b>1% por operación</b> (normalizado)</span>
+    <span>Capital simulado <b>1.000 USD</b></span>
+    <span>Riesgo <b>1% por operación</b></span>
     <span>1R = 1 TP = <b>0,9% del capital</b></span>
     <span>Límite por sesión <b>1 TP o 2 pérdidas</b></span>
   </div>
@@ -29,6 +29,24 @@ __ESTILO_HIBRIDA__
 <nav class="tabs" role="tablist" aria-label="Activos" id="tabs"></nav>
 <div id="vistas"></div>
 <p class="note" id="fuente"></p>
+</div>
+
+<div id="v-cartera" class="view" role="tabpanel" hidden>
+  <div class="view-head"><span class="eyebrow">Pre NY + NY</span><h2>Cartera NY</h2><p>Activos de NY que ganan en los dos años (variante elegida, días sin noticia ni FOMC), sumados a la gestión ganadora de Pre NY. Todo sin viernes y con el freno de pérdida semanal de −3R.</p></div>
+  <div class="verdict" id="cn-verdict"></div>
+  <div class="kpis" id="cn-kpis"></div>
+  <section>
+    <div class="sec-head"><h2>Todas las combinaciones</h2><p>Regla: entra si mejora 2025 y 2026 sin subir la caída máxima de Pre NY</p></div>
+    <div class="panel tbl"><table class="cmp" id="t-cn"></table></div>
+  </section>
+  <section>
+    <div class="sec-head"><h2>Curva de capital</h2><p>1.000 USD iniciales · operaciones de las dos sesiones en orden cronológico</p></div>
+    <div class="panel"><div class="legend" id="cn-leg"></div><div class="chart" id="c-cn"></div></div>
+  </section>
+  <section>
+    <div class="sec-head"><h2>Riesgo con simulaciones</h2><p>1.000 remuestreos por cartera</p></div>
+    <div class="panel tbl"><table class="cmp" id="t-cnmc"></table></div>
+  </section>
 </div>
 
 <template id="tpl-activo">
@@ -53,6 +71,14 @@ __ESTILO_HIBRIDA__
       <div class="panel tbl"><h3>Por franja de entrada</h3><table class="cmp" data-f="t-fr"></table></div>
       <div class="panel tbl"><h3>Sin entradas de 10:00 a 10:29, en todas las variantes</h3><table class="cmp" data-f="t-f10"></table><p class="note" data-f="f10-n"></p></div>
     </div>
+  </section>
+  <section>
+    <div class="sec-head"><h2>Apertura de Wall Street (09:30)</h2><p>Días sin noticia ni FOMC · R normalizado a 1%</p></div>
+    <div class="grid2">
+      <div class="panel tbl"><h3>Muestra desde las 09:00</h3><table class="cmp" data-f="t-ap9"></table><p class="note">Abren 09:20–09:34: operaciones abiertas en esa ventana (entre paréntesis, las que además cierran antes de 09:35). Sin ellas: resultado de la variante si no se abren. Abiertas a las 09:20: entraron antes y seguían abiertas; se muestra su resultado final. El efecto de cerrarlas a las 09:20 no se puede calcular con esta exportación (hace falta el precio de ese minuto).</p></div>
+      <div class="panel tbl"><h3>Muestra desde las 09:30</h3><table class="cmp" data-f="t-ap93"></table><p class="note">Abren 09:30–09:34: los primeros 5 minutos de Wall Street. Sin ellas: resultado si no se abren.</p></div>
+    </div>
+    <details><summary>Ver cada operación de las ventanas (patrón elegido)</summary><div class="panel tbl" style="margin-top:10px"><table data-f="t-apops"></table></div></details>
   </section>
   <section>
     <div class="sec-head"><h2>Curva de capital</h2><p data-f="cv-p"></p></div>
@@ -101,11 +127,13 @@ function renderActivo(a,root){
   const suma=c=>c.anios['2025']>c0.anios['2025']&&c.anios['2026']>c0.anios['2026'], sube=c=>c.mdd>c0.mdd;
   q('eyebrow').textContent=`${nom} · sesión NY`;
   q('titulo').textContent=`${nom}: inicio ${hora}, ${PATN[E.patron]}`;
-  q('sub').textContent=`La variante con mejor resultado entre las que ganan en los dos años, sin operar los días de noticia de alto impacto ni de FOMC. Cada operación se lleva a riesgo exacto de 1%: con 1.000 USD y lote mínimo de 0,1, el riesgo real de las operaciones del backtest fue de ${fmt(De.riesgo_real.min*100,0)}% a ${fmt(De.riesgo_real.max*100,0)}% del 1% (mediana ${fmt(De.riesgo_real.med*100,0)}%).`;
+  const rr_=De.riesgo_real, exacto=De.capital>=10000;
+  q('sub').textContent=`${E.gana_ambos?'La variante con mejor resultado entre las que ganan en los dos años':'La variante con más R (ninguna gana en los dos años)'}, sin operar los días de noticia de alto impacto ni de FOMC. ${exacto?'Exportado con 100.000 USD: el riesgo de cada operación es 1% exacto.':`Exportado con 1.000 USD: con lote mínimo de 0,1 el riesgo real fue de ${fmt(rr_.min*100,0)}% a ${fmt(rr_.max*100,0)}% del 1% (mediana ${fmt(rr_.med*100,0)}%); cada operación se llevó a riesgo exacto de 1%.`}`;
   const v09=V.filter(v=>v.inicio==='0900'), v93=V.filter(v=>v.inicio==='0930');
   const fr10=De.franjas.find(f=>f.franja.startsWith('10:00'));
-  q('verdict').innerHTML=`<div class="big">${nom} tiene una ventaja chica: ${sg(ve.limpio.R)}R en ${ve.limpio.n} operaciones (${sg(ve.limpio.R_op,3)}R por operación). ${both(f10.sin)?`Sin entradas de 10:00 a 10:29 sube a ${sg(f10.sin.R)}R y gana en los dos años.`:''}</div>
-  <p><b>Inicio</b>: arrancar a las 09:00 es mejor que a las 09:30 con los tres patrones (${v09.map(v=>`${PATN[v.patron]} ${sg(v.limpio.R)}R`).join(', ')} contra ${v93.map(v=>`${sg(v.limpio.R)}R`).join(', ')}). <b>Días de noticia y FOMC</b>: en la variante elegida restan ${sg(ve.noticia.R)}R y ${sg(ve.fomc.R)}R; sacarlos es lo que hace que gane en los dos años. <b>Franja de 10:00 a 10:29</b>: es la única que pierde en los dos años (${fmt(fr10.wr,0)}% de acierto, ${sg(fr10.R)}R), cuando salen los datos de las 10:00. <b>Riesgo</b>: solo, ${nom} cierra un año en pérdida en ${fmt(mc.p_anio_neg,0)}% de las simulaciones; ${both(f10.sin)?`con el filtro de 10:00, en ${fmt(f10.mc_sin.p_anio_neg,0)}%`:''}. <b>En la cartera</b>: sumado a Pre NY ${suma(c2)?'mejora los dos años':'no mejora los dos años'} (${pc(c2.anios['2025'])} y ${pc(c2.anios['2026'])} contra ${pc(c0.anios['2025'])} y ${pc(c0.anios['2026'])}) pero ${sube(c2)?`sube la caída máxima de −${fmt(c0.mdd)}% a −${fmt(c2.mdd)}%`:'no sube la caída'}: por la regla de siempre, ${suma(c2)&&!sube(c2)?'entra':'todavía no entra'}. Conviene esperar al S&P 500 y al Dow Jones para comparar.</p>`;
+  const okA=E.gana_ambos, entra=okA&&suma(c1)&&!sube(c1);
+  q('verdict').innerHTML=`<div class="big">${!okA?`${nom} no califica: ninguna variante gana en 2025 y en 2026 en los días sin noticia ni FOMC.`:entra?`${nom} entra en la cartera: sumado a Pre NY mejora los dos años y baja la caída máxima.`:`${nom} tiene ventaja propia (${sg(ve.limpio.R)}R, gana los dos años) pero sumado a Pre NY sube la caída máxima: por ahora no entra.`}</div>
+  <p><b>Inicio</b>: ${v09.map(v=>`09:00 ${PATN[v.patron]} ${sg(v.limpio.R)}R`).join(', ')}; ${v93.map(v=>`09:30 ${PATN[v.patron]} ${sg(v.limpio.R)}R`).join(', ')}. <b>Variante ${okA?'elegida':'con más R'}</b>: ${hora} · ${PATN[E.patron]}, ${fmt(ve.limpio.wr)}% de acierto, ${sg(ve.limpio.R_op,3)}R por operación (${sg(ve.limpio.R25)}R en 2025 y ${sg(ve.limpio.R26)}R en 2026). <b>Días de noticia y FOMC</b>: en esta variante suman ${sg(ve.noticia.R)}R y ${sg(ve.fomc.R)}R. <b>Franja de 10:00 a 10:29</b>: ${fmt(fr10.wr,0)}% de acierto, ${sg(fr10.R)}R. <b>Solo</b>, cierra un año en pérdida en ${fmt(mc.p_anio_neg,0)}% de las simulaciones. <b>Con Pre NY</b> (sin viernes, freno −3R): ${pc(c1.anios['2025'])} y ${pc(c1.anios['2026'])} contra ${pc(c0.anios['2025'])} y ${pc(c0.anios['2026'])}, caída máxima −${fmt(c1.mdd)}% contra −${fmt(c0.mdd)}%.</p>`;
   const k=(l,v,s,c='',h='')=>`<div class="kpi${h}"><span class="l">${l}</span><span class="v ${c}">${v}</span><span class="s">${s}</span></div>`;
   q('kpis').innerHTML=k('R total (días sin noticia ni FOMC)',sg(ve.limpio.R)+'R',`2025 ${sg(ve.limpio.R25)}R · 2026 ${sg(ve.limpio.R26)}R`,cls(ve.limpio.R),' hero')+k('Win rate',fmt(ve.limpio.wr)+'%',`${ve.limpio.n} operaciones · racha máx. ${ve.limpio_res.racha}`)+k('Anual compuesto (solo)',pc(S.cagr),`caída máx. −${fmt(S.mdd)}%`,cls(S.cagr))+k('Peor 5% de simulaciones',pc(mc.cagr_p5),`año negativo en ${fmt(mc.p_anio_neg,0)}%`,cls(mc.cagr_p5));
   q('t-var').innerHTML=`<thead><tr><th>Inicio · patrón</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">R 2025</th><th class="n">R 2026</th><th class="n">R total</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">R 2025</th><th class="n">R 2026</th><th class="n">R total</th><th class="n">R por op.</th><th class="n">Dos años</th></tr><tr><th></th><th class="n" colspan="5">Todos los días</th><th class="n" colspan="7">Sin días de noticia ni FOMC</th></tr></thead>`+
@@ -133,25 +161,47 @@ function renderActivo(a,root){
   q('t-psl').innerHTML=`<thead><tr><th>Cierre de la 1.ª</th><th class="n">Sesiones</th><th class="n">Siguientes</th><th class="n">Win rate</th><th class="n">R</th></tr></thead>`+ps.motivos.map(m=>`<tr${m.motivo==='Todas'?' class="best"':''}><td>${m.motivo.replace('Salida Pre NY / NY (SL o TP)','SL de precio')}</td>${td(m.dias)}${td(m.ops)}${td(m.wr==null?'—':fmt(m.wr,0)+'%')}${td(m.ops?sg(m.R):'—',cls(m.R))}</tr>`).join('');
   q('t-cart').innerHTML=`<thead><tr><th>Cartera</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">2025</th><th class="n">2026</th><th class="n">Anual comp.</th><th class="n">Mensual comp.</th><th class="n">Caída máx.</th><th class="n">Peor 5% sim.</th><th class="n">Caída peor 5%</th><th class="n">Año negativo</th></tr></thead>`+
     X.cartera.map((c,i)=>`<tr${i===0?' class="best"':''}><td>${c.nombre}</td>${td(c.n)}${td(fmt(c.wr)+'%')}${td(pc(c.anios['2025']),i&&c.anios['2025']<=c0.anios['2025']?'neg':cls(c.anios['2025']))}${td(pc(c.anios['2026']),i&&c.anios['2026']<=c0.anios['2026']?'neg':cls(c.anios['2026']))}${tdp(c.cagr)}${td(pc(c.mes_geo,2),cls(c.mes_geo))}${td('−'+fmt(c.mdd)+'%',i&&c.mdd>c0.mdd?'neg':'')}${tdp(c.mc.cagr_p5)}${td('−'+fmt(c.mc.dd_p95)+'%')}${td(fmt(c.mc.p_anio_neg,1)+'%')}</tr>`).join('');
-  q('cart-n').textContent=`Regla de siempre: un activo entra si mejora los dos años sin subir la caída máxima. ${nom} sube el rendimiento ${suma(c2)?'en los dos años':''} pero la caída máxima pasa de −${fmt(c0.mdd)}% a −${fmt(c2.mdd)}%${c2.mc.cagr_p5>c0.mc.cagr_p5?` (aunque el peor 5% de las simulaciones mejora de ${pc(c0.mc.cagr_p5)} a ${pc(c2.mc.cagr_p5)})`:''}. Queda como candidato hasta ver los demás índices.`;
+  q('cart-n').textContent=`Regla de siempre: un activo entra si mejora los dos años sin subir la caída máxima. ${nom}: ${suma(c1)?'mejora los dos años':'no mejora los dos años'} y ${sube(c1)?`sube la caída máxima de −${fmt(c0.mdd)}% a −${fmt(c1.mdd)}%`:`no sube la caída máxima (−${fmt(c1.mdd)}% contra −${fmt(c0.mdd)}%)`}. La fila sin entradas de 10:00 a 10:29 es un filtro candidato, no adoptado: no mejora a todos los activos.`;
   const cc=['--fg3',AN[a][1],'--gain'];
   const sc=X.cartera.map((c,i)=>({name:c.nombre,color:cc[i],pts:c.curve,w:i===2?2.2:1.6}));
   q('ct-leg').innerHTML=sc.map(s=>`<span><i style="background:var(${s.color})"></i>${s.name}</span>`).join('');
   lineChart(q('c-ct'),sc,280);
+  const Ap=X.apertura, gg=g=>`${td(g.n)}${td(g.wr==null?'—':fmt(g.wr,0)+'%')}${td(rr(g.R25),cls(g.R25))}${td(rr(g.R26),cls(g.R26))}${td(rr(g.R),cls(g.R))}`;
+  q('t-ap9').innerHTML=`<thead><tr><th>Patrón · grupo</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">R 2025</th><th class="n">R 2026</th><th class="n">R total</th></tr></thead>`+Ap.m0900.map(x=>`<tr class="grp"><td colspan="6">${PATN[x.patron]}${x.patron===E.patron&&E.inicio==='0900'?' · elegido':''}</td></tr><tr><td>Todas</td>${gg(x.base)}</tr><tr><td>Abren 09:20–09:34 <span class="muted">(${x.dentro.n} cierran antes de 09:35: ${sg(x.dentro.R)}R)</span></td>${gg(x.abren)}</tr><tr><td>Sin abrir en esa ventana</td>${gg(x.sin)}</tr><tr><td>Abiertas a las 09:20 (resultado final)</td>${gg(x.abiertas920)}</tr>`).join('');
+  q('t-ap93').innerHTML=`<thead><tr><th>Patrón · grupo</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">R 2025</th><th class="n">R 2026</th><th class="n">R total</th></tr></thead>`+Ap.m0930.map(x=>`<tr class="grp"><td colspan="6">${PATN[x.patron]}</td></tr><tr><td>Todas</td>${gg(x.base)}</tr><tr><td>Abren 09:30–09:34</td>${gg(x.abren)}</tr><tr><td>Sin abrir en esa ventana</td>${gg(x.sin)}</tr>`).join('');
+  const x9=Ap.m0900.find(x=>x.patron===E.patron), x3=Ap.m0930.find(x=>x.patron===E.patron);
+  const fila=(o,g)=>`<tr><td>${g}</td><td>${o.f}</td><td>${o.e}</td><td>${o.s}</td><td>${o.dir==='BUY'?'Compra':'Venta'}</td>${td(sg(o.R,2),cls(o.R))}<td style="color:var(--fg2)">${o.m}</td></tr>`;
+  q('t-apops').innerHTML=`<thead><tr><th>Ventana</th><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Dirección</th><th class="n">R</th><th>Motivo de salida</th></tr></thead>`+(x9?x9.ops_920.map(o=>fila(o,'Abierta a las 09:20')).join('')+x9.ops_abren.map(o=>fila(o,'09:00 · abre 09:20–09:34')).join(''):'')+(x3?x3.ops_abren.map(o=>fila(o,'09:30 · abre 09:30–09:34')).join(''):'');
   q('t-exc').innerHTML=`<thead><tr><th>Motivo</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">R 2025</th><th class="n">R 2026</th><th class="n">R total</th></tr></thead>`+ve.excluidas.map(x=>`<tr><td>${x.cat}</td>${td(x.n)}${td(x.wr==null?'—':fmt(x.wr,0)+'%')}${g5(x)}</tr>`).join('');
 }
 
+function renderCartera(){
+  const CN=D.cartera_ny, R0=CN.recomendada, B=CN.base, Dt=CN.detalle, P=Dt[0], C=Dt[1];
+  const nm=x=>x.map(a=>AN[a][0]).join(' + ');
+  $('#cn-verdict').innerHTML=`<div class="big">${CN.cumple?`Sumar ${nm(R0.activos)} en NY: ${pc(C.cagr)} anual con caída máxima de −${fmt(C.mdd)}%, contra ${pc(P.cagr)} y −${fmt(P.mdd)}% de Pre NY sola.`:'Ningún activo de NY mejora los dos años sin subir la caída: por ahora, solo Pre NY.'}</div><p>Con NY la cartera opera ${C.n} veces contra ${P.n} (${pc(C.anios['2025'])} en 2025 y ${pc(C.anios['2026'])} en 2026, contra ${pc(P.anios['2025'])} y ${pc(P.anios['2026'])}). En las simulaciones, el peor 5% queda en ${pc(C.mc.cagr_p5)} anual contra ${pc(P.mc.cagr_p5)} de Pre NY sola y la probabilidad de un año en pérdida en ${fmt(C.mc.p_anio_neg,1)}% contra ${fmt(P.mc.p_anio_neg,1)}%: NY suma rendimiento y baja la caída histórica, pero su ventaja es más chica que la de Pre NY. Los demás activos (NAS100 y BTCUSD) ganan en los dos años pero suben la caída; US30 no califica.</p>`;
+  const k=(l,v,s,c='')=>`<div class="kpi"><span class="l">${l}</span><span class="v ${c}">${v}</span><span class="s">${s}</span></div>`;
+  $('#cn-kpis').innerHTML=k('Anual compuesto',pc(C.cagr),`Pre NY sola ${pc(P.cagr)}`,'pos')+k('Caída máxima','−'+fmt(C.mdd)+'%',`Pre NY sola −${fmt(P.mdd)}%`,'neg')+k('Win rate',fmt(C.wr)+'%',`${C.n} operaciones`)+k('Posiciones a la vez',`hasta ${C.max_conc}`,`riesgo simultáneo ${C.max_conc}%`);
+  $('#t-cn').innerHTML=`<thead><tr><th>Activos NY</th><th class="n">Solo NY 2025</th><th class="n">Solo NY 2026</th><th class="n">Con Pre NY 2025</th><th class="n">Con Pre NY 2026</th><th class="n">Anual</th><th class="n">Caída máx.</th><th class="n">Calmar</th><th class="n">Mejora los dos años</th><th class="n">No sube la caída</th></tr></thead><tr><td><b>Solo Pre NY</b></td>${td('—')}${td('—')}${td(pc(B.anios['2025']))}${td(pc(B.anios['2026']))}${tdp(B.cagr)}${td('−'+fmt(B.mdd)+'%')}<td></td><td></td><td></td></tr>`+
+    CN.filas.map(f=>`<tr${f===R0||(f.activos.join()===R0.activos.join())?' class="best"':''}><td>${nm(f.activos)}</td>${td(pc(f.solo.anios['2025']),cls(f.solo.anios['2025']))}${td(pc(f.solo.anios['2026']),cls(f.solo.anios['2026']))}${td(pc(f.con.anios['2025']),f.con.anios['2025']>B.anios['2025']?'pos':'neg')}${td(pc(f.con.anios['2026']),f.con.anios['2026']>B.anios['2026']?'pos':'neg')}${tdp(f.con.cagr)}${td('−'+fmt(f.con.mdd)+'%',f.con.mdd>B.mdd?'neg':'pos')}${td(fmt(f.con.calmar,2))}<td class="n">${pill(f.mejora)}</td><td class="n">${pill(f.no_sube_dd)}</td></tr>`).join('');
+  const cc=['--fg3','--gain','--a-spx'];
+  const ser=Dt.map((x,i)=>({name:x.nombre,color:cc[i],pts:x.curve,w:i===1?2.4:1.6}));
+  $('#cn-leg').innerHTML=ser.map((s,i)=>`<span><i style="background:var(${s.color})"></i>${s.name} · ${pc(Dt[i].ret)}</span>`).join('');
+  lineChart($('#c-cn'),ser,300);
+  $('#t-cnmc').innerHTML=`<thead><tr><th>Cartera</th><th class="n">Anual mediana</th><th class="n">Anual peor 5%</th><th class="n">Caída mediana</th><th class="n">Caída peor 5%</th><th class="n">Año negativo</th><th class="n">Racha peor 5%</th></tr></thead>`+Dt.map((x,i)=>`<tr${i===1?' class="best"':''}><td>${x.nombre}</td>${tdp(x.mc.cagr_med)}${tdp(x.mc.cagr_p5)}${td('−'+fmt(x.mc.dd_med)+'%')}${td('−'+fmt(x.mc.dd_p95)+'%')}${td(fmt(x.mc.p_anio_neg,1)+'%')}${td(x.mc.racha_p95)}</tr>`).join('');
+}
+
 const tabs=$('#tabs'), vistas=$('#vistas'); let VIEW=null; const pend={};
+{const b=document.createElement('button');b.setAttribute('role','tab');b.dataset.k='cartera';b.textContent='Cartera NY';tabs.appendChild(b);vistas.appendChild($('#v-cartera'));}
 D.meta.activos.forEach(a=>{
   const b=document.createElement('button');b.setAttribute('role','tab');b.dataset.k=a;b.textContent=AN[a][0];tabs.appendChild(b);
   const v=$('#tpl-activo').content.firstElementChild.cloneNode(true);v.id='v-'+a;v.hidden=true;vistas.appendChild(v);
 });
-function show(k){VIEW=k;tabs.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',b.dataset.k===k));vistas.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='v-'+k);renderActivo(k,$('#v-'+k));try{history.replaceState(null,'','#'+k)}catch(e){}}
+function show(k){VIEW=k;tabs.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',b.dataset.k===k));vistas.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='v-'+k);if(k==='cartera')renderCartera();else renderActivo(k,$('#v-'+k));try{history.replaceState(null,'','#'+k)}catch(e){}}
 tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>{show(b.dataset.k);window.scrollTo({top:0})});
 $('#m-period').textContent=`${D.meta.ini} al ${D.meta.fin}`;
-$('#m-activos').textContent=`Activos analizados: ${D.meta.activos.map(a=>AN[a][0]).join(', ')} · S&P 500, Dow Jones y BTCUSD en camino`;
+$('#m-activos').textContent=`Activos analizados: ${D.meta.activos.map(a=>AN[a][0]).join(', ')}`;
 const C_=D.meta.calendario;
-$('#fuente').textContent=`Fuente: listas de operaciones del Strategy Tester de TradingView (sesión NY desde las 09:00 y desde las 09:30, hasta las 11:00), horario de Nueva York, 2025-2026. Calendario NY: ${C_.SIN_OPERAR} días sin operar (feriados, receso de fin de año, discursos de 09:00 a 11:00), bloqueo de 09:50 a 10:03 por ISM, JOLTS, CB Consumer Confidence y Core PCE (${C_.BLOQUEO_NOTICIA} entradas), y ${C_.ANALIZAR_NOTICIA} días de noticia y ${C_.ANALIZAR_FOMC} de FOMC analizados aparte. Una pérdida por Reset cuenta como SL: tras dos pérdidas no se abre otra operación. Riesgo normalizado a 1% por operación (SL −1, TP +0,9; otras salidas, riesgo estimado con el tamaño). Cartera Pre NY: XAUUSD Envolvente, EURUSD Envolvente + START, GBPUSD START y BTCUSD Envolvente, sin viernes y con freno semanal de −3R.`;
-let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>VIEW&&renderActivo(VIEW,$('#v-'+VIEW)),200)});
-show(D.meta.activos.includes((location.hash||'').slice(1))?location.hash.slice(1):D.meta.activos[0]);
+$('#fuente').textContent=`Fuente: listas de operaciones del Strategy Tester de TradingView (sesión NY desde las 09:00 y desde las 09:30, hasta las 11:00), horario de Nueva York, 2025-2026. Calendario NY: ${C_.SIN_OPERAR} días sin operar (feriados, receso de fin de año, discursos de 09:00 a 11:00), bloqueo de 09:50 a 10:03 por ISM, JOLTS, CB Consumer Confidence y Core PCE (${C_.BLOQUEO_NOTICIA} entradas), y ${C_.ANALIZAR_NOTICIA} días de noticia y ${C_.ANALIZAR_FOMC} de FOMC analizados aparte. Una pérdida por Reset cuenta como SL: tras dos pérdidas no se abre otra operación. S&P 500, US30 y BTCUSD con riesgo exacto de 1% (S&P 500 y US30 exportados con 100.000 USD); NAS100, exportado con 1.000 USD, normalizado a 1% (SL −1, TP +0,9; otras salidas, riesgo estimado con el tamaño). Cartera Pre NY: XAUUSD Envolvente, EURUSD Envolvente + START, GBPUSD START y BTCUSD Envolvente, sin viernes y con freno semanal de −3R.`;
+let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>VIEW&&show(VIEW),200)});
+{const h=(location.hash||'').slice(1);show(D.meta.activos.includes(h)||h==='cartera'?h:'cartera');}
 </script>

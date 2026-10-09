@@ -35,18 +35,27 @@ def leer_csv(f, activo):
     ops = OrderedDict()
     for r in csv.DictReader(open(f, encoding="utf-8-sig")):
         ops.setdefault(int(r["Número de operación"]), []).append(r)
+    # capital inicial del backtest (1.000 o 100.000 USD), deducido de PyG acumuladas en USD y en %
+    cap = 1000.0
+    for fs in ops.values():
+        e = next(x for x in fs if x["Tipo"].startswith("Entrada"))
+        if abs(float(e["PyG acumuladas %"])) >= 0.5:
+            cap = round(float(e["PyG acumuladas USD"]) / (float(e["PyG acumuladas %"]) / 100), -3); break
+    exacto = cap >= 10000   # con capital grande el tamaño sale exacto: no hace falta normalizar
     out = []
     for n, fs in ops.items():
         e = next(x for x in fs if x["Tipo"].startswith("Entrada")); s_ = next(x for x in fs if x["Tipo"].startswith("Salida"))
-        pnl = float(e["PyG netas USD"]); eq = 1000 + float(e["PyG acumuladas USD"]) - pnl; uno = 0.01 * eq
+        pnl = float(e["PyG netas USD"]); eq = cap + float(e["PyG acumuladas USD"]) - pnl; uno = 0.01 * eq
         q = float(e["Tamaño (cant.)"]); sal = s_["Señal"]
-        if sal.startswith(("Salida", "SL alcanzado", "TP alcanzado")):
+        if exacto:
+            u = pnl / uno
+        elif sal.startswith(("Salida", "SL alcanzado", "TP alcanzado")):
             u = 0.9 if pnl > 0 else -1.0
         else:
             u = max(-1.0, min(0.9, pnl / (q * uno / (q + 0.05))))
         out.append(dict(a=activo, n=n, ent=dt.datetime.strptime(e["Fecha y hora"], "%Y-%m-%d %H:%M"),
                         sal=dt.datetime.strptime(s_["Fecha y hora"], "%Y-%m-%d %H:%M"), u=u, u_real=pnl / uno,
-                        salida=sal, dir="BUY" if "largo" in e["Tipo"] else "SELL", qty=q))
+                        salida=sal, dir="BUY" if "largo" in e["Tipo"] else "SELL", qty=q, capital=cap))
     return out
 
 def leer(activo, inicio, patron):
