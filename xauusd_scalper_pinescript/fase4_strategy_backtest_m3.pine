@@ -2,6 +2,36 @@
 strategy("XAUUSD Scalper — Backtest M3 (Fase 4, EXPERIMENTAL)", overlay=true, initial_capital=10000, currency=currency.USD, default_qty_type=strategy.fixed, default_qty_value=1, commission_type=strategy.commission.percent, commission_value=0, slippage=0, calc_on_every_tick=false, process_orders_on_close=false, pyramiding=4, max_lines_count=500, max_labels_count=500)
 
 // ============================================================================
+// DEBUG temporal (10/10, diagnóstico "0 trades" en todo el backtest M3) --
+// TODOS los contadores van acá arriba de todo, antes de cualquier otra cosa,
+// para que no vuelva a pasar que uno se use antes de declararse (error del
+// 10/10: "Undeclared identifier 'cntQuiebres'", estaban en la Sección 6 pero
+// se usaban en la Sección 2). Cada uno mide un escalón del embudo de entrada,
+// de atrás para adelante:
+//   cntSwings   -- Sección 2: veces que la vela M3 AGREGADA cambia de
+//                  dirección (alcista<->bajista) y marca un swing high/low
+//                  (esAltoM3/esBajoM3). Si esto da 0 con muchas barras
+//                  procesadas, el problema es la agregación M3 misma.
+//   cntQuiebres -- Sección 2: veces que el precio rompe un nivel M3 activo
+//                  (quiebreAlto/quiebreBajo) -- necesita cntSwings > 0 antes.
+//   cntMecListo -- Sección 6: veces que mecListo pasa a true (pullback +
+//                  continuación confirmados tras un quiebre).
+//   cntMecBruto -- Sección 6: mecListo + patrón Envolvente/Start coincide.
+//   cntMecGate  -- Sección 6C: el gate final que de verdad manda
+//                  strategy.entry() (Bruto + sesión/día/filtros habilitados).
+// Se muestran en el panel (Sección 7) junto a bar_index (barras M1 realmente
+// procesadas) -- si bar_index es chico, el "Profundo" de TradingView no está
+// consiguiendo datos de 1 minuto para todo el rango pedido (problema de
+// datos históricos del broker, no de lógica). Sacar todo este bloque (acá y
+// los `cnt... := cnt... + 1` repartidos en el resto del archivo) una vez
+// resuelto.
+var int cntSwings    = 0
+var int cntQuiebres  = 0
+var int cntMecListo  = 0
+var int cntMecBruto  = 0
+var int cntMecGate   = 0
+
+// ============================================================================
 // VARIANTE M3 -- RECONSTRUCCIÓN (10/10, a pedido de Fabián -- después de
 // múltiples pruebas sin alcanzar el win rate/rentabilidad que busca (EMA 20,
 // separar patrones, sacar días operativos, probar sesiones), le queda una
@@ -597,10 +627,12 @@ if finalVelaM3 and not na(m3OpenTime)
         esAltoM3 := true
         nivelAlto := nA
         altoRunInicio := arI
+        cntSwings := cntSwings + 1
     if esB
         esBajoM3 := true
         nivelBajo := nB
         bajoRunInicio := brI
+        cntSwings := cntSwings + 1
 
 var line altoLinea = na
 var line bajoLinea = na
@@ -683,18 +715,6 @@ if altoLineaActiva and not na(altoM3Activo)
     line.set_x2(altoLinea, int(math.min(time, altoM3Inicio + maxExtMs)))
 if bajoLineaActiva and not na(bajoM3Activo)
     line.set_x2(bajoLinea, int(math.min(time, bajoM3Inicio + maxExtMs)))
-
-// DEBUG temporal (10/10, para diagnosticar "0 trades" en todo el backtest
-// M3 -- ver panel Sección 7): contadores acumulados de cada escalón del
-// embudo de entrada, para ver en qué paso se corta sin tener que inspeccionar
-// la Ventana de Datos bar a bar. Sacar una vez resuelto. Declarados ACÁ (antes
-// de quiebreAlto/quiebreBajo, su primer uso) y no en la Sección 6 -- Pine
-// exige declarar una variable antes de usarla, no alcanza con que esté antes
-// en el ARCHIVO si el uso real queda más arriba en el orden de EJECUCIÓN.
-var int cntQuiebres   = 0  // quiebreAlto/quiebreBajo (la estructura SÍ rompe niveles)
-var int cntMecListo   = 0  // veces que mecListo pasa a true (pullback + continuación confirmados)
-var int cntMecBruto   = 0  // mecBuyBruto/mecSellBruto true (mecListo + patrón Envolvente/Start)
-var int cntMecGate    = 0  // mecBuyGate/mecSellGate true (lo que de verdad abre una orden)
 
 quiebreAlto = not na(altoM3Activo) and (tendencia == "bajista" ? close > altoM3Activo * (1 + UMBRAL_QUIEBRE) : high > altoM3Activo)
 quiebreBajo = not na(bajoM3Activo) and (tendencia == "alcista" ? close < bajoM3Activo * (1 - UMBRAL_QUIEBRE) : low < bajoM3Activo)
@@ -1541,7 +1561,7 @@ if abrirSellWallStreet and not na(qtySell)
 // ============================================================================
 // SECCIÓN 7 — PANEL DE ESTADO Y MÉTRICAS
 // ============================================================================
-var table panel = table.new(position.top_right, 1, 8, border_width=1)
+var table panel = table.new(position.top_right, 1, 9, border_width=1)
 if barstate.islast
     table.cell(panel, 0, 0, tendencia == "alcista" ? "Uptrend (BUY)" : tendencia == "bajista" ? "Downtrend (SELL)" : "Undefined", text_color=color.white, bgcolor=tendencia == "alcista" ? color.new(color.green, 40) : tendencia == "bajista" ? color.new(color.red, 40) : color.new(color.gray, 40))
     table.cell(panel, 0, 1, "Pre-NY: " + (na(dirPreNY) ? "sin trade" : dirPreNY + (not enPreNY ? " (arrastre)" : "")), text_color=color.white, bgcolor=color.new(color.blue, 60))
@@ -1567,3 +1587,12 @@ if barstate.islast
     // señal -- pasa a ser algo del lado del motor de backtest (qty/SL-TP
     // inválidos, o datos históricos insuficientes para esa fecha).
     table.cell(panel, 0, 7, "Quiebres:" + str.tostring(cntQuiebres) + " Listo:" + str.tostring(cntMecListo) + " Bruto:" + str.tostring(cntMecBruto) + " Gate:" + str.tostring(cntMecGate), text_color=color.white, bgcolor=color.new(color.orange, 40))
+    // Swings = cambios de dirección de la vela M3 agregada (el PASO ANTERIOR
+    // a Quiebres -- si esto da 0, el problema es la agregación M3, no el MEC).
+    // Barras = bar_index en la última barra procesada: cuántas velas M1 llegó
+    // a cargar/simular el backtest de verdad. Con el rango pedido (13/01/25 -
+    // hoy) deberían ser cientos de miles; si da un número chico (cientos o
+    // pocos miles), el broker/TradingView no tiene histórico de 1 minuto para
+    // ese rango y el "Profundo" está corriendo sobre muchos menos datos de
+    // los que parece -- ahí el problema es de DATOS, no de la lógica del script.
+    table.cell(panel, 0, 8, "Swings:" + str.tostring(cntSwings) + " | Barras:" + str.tostring(bar_index), text_color=color.white, bgcolor=color.new(color.orange, 60))
