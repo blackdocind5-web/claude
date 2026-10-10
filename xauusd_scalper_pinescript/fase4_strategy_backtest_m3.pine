@@ -476,6 +476,13 @@ var float m3HighPrev2  = na
 var float m3LowPrev2   = na
 var float m3HighPrev3  = na
 var float m3LowPrev3   = na
+// Open/Close de "Prev3" (10/10, fix del bug "Bruto:0" -- ver comentario
+// largo junto al bloque de desplazamiento más abajo): hacía falta para
+// pullbackStartBuy/Sell y mismoColor3 (Sección 4), que originalmente creían
+// usar Prev1/Prev2 pero en realidad necesitan Prev2/Prev3 -- antes solo se
+// guardaba High/Low de Prev3 (para la ventana de extremoQuiebre, Sección 6).
+var float m3OpenPrev3  = na
+var float m3ClosePrev3 = na
 
 // finalVelaM3 (fix 29/09, Opción A -- aritmética local, SIN request.security):
 // ¿esta vela M1 es la ÚLTIMA de su propia vela M3? Antes, el código solo se
@@ -602,8 +609,10 @@ if finalVelaM3 and not na(m3OpenTime)
     // (recién se van a sobrescribir en la próxima vela M1, cuando arranque
     // la vela M3 siguiente) -- por eso "Prev1" se llena con el valor ACTUAL
     // de estas cuatro variables, no con "Prev1" viejo.
-    m3HighPrev3 := m3HighPrev2
-    m3LowPrev3  := m3LowPrev2
+    m3HighPrev3  := m3HighPrev2
+    m3LowPrev3   := m3LowPrev2
+    m3OpenPrev3  := m3OpenPrev2
+    m3ClosePrev3 := m3ClosePrev2
     m3HighPrev2 := m3HighPrev1
     m3LowPrev2  := m3LowPrev1
     m3OpenPrev2  := m3OpenPrev1
@@ -820,8 +829,21 @@ esEnvolventeSell = esEstandarSell or esMartilloSell or esDojiSell
 // trazado de altos/bajos M3 (Sección 2) -- esa lógica usa su propia
 // detección de doji sobre la vela AGREGADA M3 (`candleDir == "doji"`
 // dentro de `procesarVelaM3`), completamente separada de esta.
-pullbackEnvolventeBuy  = m3ClosePrev1 < m3OpenPrev1
-pullbackEnvolventeSell = m3ClosePrev1 > m3OpenPrev1
+// FIX 10/10 (bug "Bruto:0" en todo el backtest, encontrado comparando
+// contadores de diagnóstico Quiebres:1578/Listo:669/Bruto:0): esto decía
+// `m3ClosePrev1 < m3OpenPrev1`, pero en el momento en que esta línea se
+// evalúa (vela finalVelaM3), el bloque de desplazamiento de la Sección 2 YA
+// corrió ANTES en esa misma barra y ya sobreescribió Prev1 con el valor de
+// la vela que acaba de cerrar (la misma vela de ENTRADA, no "la anterior").
+// Entonces `pullbackEnvolventeBuy` terminaba siendo ni más ni menos que
+// `m3Close < m3Open` -- la vela de entrada bajista -- que es LO CONTRARIO
+// de lo que exige `esEnvolventeBuy` (`esAlcista = m3Close > m3Open`, vela de
+// entrada alcista). Las dos condiciones de `candidataEnvolventeBuy` se
+// anulaban entre sí, siempre, para cualquier dato de precio -- de ahí el
+// Bruto:0 total. La vela M3 realmente anterior a la de entrada, en este
+// punto del código, ya quedó un casillero más atrás: Prev2 (no Prev1).
+pullbackEnvolventeBuy  = m3ClosePrev2 < m3OpenPrev2
+pullbackEnvolventeSell = m3ClosePrev2 > m3OpenPrev2
 
 candidataEnvolventeBuy  = esEnvolventeBuy  and pullbackEnvolventeBuy
 candidataEnvolventeSell = esEnvolventeSell and pullbackEnvolventeSell
@@ -832,34 +854,44 @@ tipoEnvSell = esEstandarSell ? "Estándar" : esMartilloSell ? "Martillo" : esDoj
 // ============================================================================
 // SECCIÓN 4 — PATRÓN START, SOBRE VELAS M3 (variante M3, reconstruido
 // 10/10) -- mismas fórmulas EXACTAS del original (Fase 2b), con la vela de
-// indecisión (M1[1]) → M3 Prev1, la vela de retroceso (M1[2]) → M3 Prev2.
+// indecisión (M1[1]) → M3 Prev2, la vela de retroceso (M1[2]) → M3 Prev3.
 // Incluye el fix del 07/10 (cruz exacta en la vela de indecisión, `>=`/
 // `<=` en vez de `>`/`<`) trasladado tal cual.
+//
+// FIX 10/10 (mismo bug de "Bruto:0" que en pullbackEnvolventeBuy/Sell,
+// Sección 3 -- ver ese comentario para el detalle del porqué): esta sección
+// originalmente usaba Prev1 para "la vela de indecisión" (un casillero
+// atrás de la entrada) y Prev2 para "la vela de retroceso" (dos casilleros
+// atrás), calcado del mapeo [1]/[2] del M1. Pero en M3, por el mismo motivo
+// que en la Sección 3 (el desplazamiento de historial ya corrió antes, en
+// la misma barra), "un casillero atrás de la entrada" en el momento en que
+// este código se evalúa es Prev2, no Prev1 (Prev1 ya es la vela de
+// ENTRADA) -- y "dos casilleros atrás" es Prev3, no Prev2.
 // ============================================================================
-rangoInd = m3HighPrev1 - m3LowPrev1
+rangoInd = m3HighPrev2 - m3LowPrev2
 TOLERANCIA = 0.0001  // 0,01%
 
-nivelOpenIndBuy  = rangoInd > 0 ? (m3OpenPrev1 - m3LowPrev1) / rangoInd : na
-nivelCloseIndBuy = rangoInd > 0 ? (m3ClosePrev1 - m3LowPrev1) / rangoInd : na
+nivelOpenIndBuy  = rangoInd > 0 ? (m3OpenPrev2 - m3LowPrev2) / rangoInd : na
+nivelCloseIndBuy = rangoInd > 0 ? (m3ClosePrev2 - m3LowPrev2) / rangoInd : na
 cuerpoIndBuy = math.abs(nivelCloseIndBuy - nivelOpenIndBuy)
 esMartilloIndBuy = (nivelOpenIndBuy >= 0.40 - TOLERANCIA_CUERPO and nivelOpenIndBuy <= 0.50 + TOLERANCIA_CUERPO and nivelCloseIndBuy >= 0.85 - TOLERANCIA_CUERPO) or (nivelOpenIndBuy < 0.15 and nivelCloseIndBuy > 0.50 - TOLERANCIA_CUERPO)
 // Vela de indecisión en cruz exacta (fix 07/10 del M1, trasladado sin
 // cambios): `>=` en vez de `>` deja pasar una vela M3 en cruz perfecta
 // (sin color) como indecisión válida, sin reabrir el bug del 01/10 (una
 // vela M3 claramente del color contrario sigue sin cumplir la desigualdad).
-esIndecisionBuy = m3ClosePrev1 >= m3OpenPrev1 and cuerpoIndBuy < 0.50 - TOLERANCIA and not esMartilloIndBuy
+esIndecisionBuy = m3ClosePrev2 >= m3OpenPrev2 and cuerpoIndBuy < 0.50 - TOLERANCIA and not esMartilloIndBuy
 
 wickContraBuy = math.min(nivelOpenIndBuy, nivelCloseIndBuy)
 wickFavorBuy  = 1 - math.max(nivelOpenIndBuy, nivelCloseIndBuy)
 tipoIndBuy = esIndecisionBuy ? (math.abs(wickContraBuy - wickFavorBuy) <= 0.15 ? "Doji" : "Pinbar") : na
 
-nivelOpenIndSell  = rangoInd > 0 ? (m3HighPrev1 - m3OpenPrev1) / rangoInd : na
-nivelCloseIndSell = rangoInd > 0 ? (m3HighPrev1 - m3ClosePrev1) / rangoInd : na
+nivelOpenIndSell  = rangoInd > 0 ? (m3HighPrev2 - m3OpenPrev2) / rangoInd : na
+nivelCloseIndSell = rangoInd > 0 ? (m3HighPrev2 - m3ClosePrev2) / rangoInd : na
 cuerpoIndSell = math.abs(nivelCloseIndSell - nivelOpenIndSell)
 esMartilloIndSell = (nivelOpenIndSell >= 0.40 - TOLERANCIA_CUERPO and nivelOpenIndSell <= 0.50 + TOLERANCIA_CUERPO and nivelCloseIndSell >= 0.85 - TOLERANCIA_CUERPO) or (nivelOpenIndSell < 0.15 and nivelCloseIndSell > 0.50 - TOLERANCIA_CUERPO)
 // Mismo fix del 07/10 trasladado para SELL -- ver comentario junto a
 // esIndecisionBuy más arriba.
-esIndecisionSell = m3ClosePrev1 <= m3OpenPrev1 and cuerpoIndSell < 0.50 - TOLERANCIA and not esMartilloIndSell
+esIndecisionSell = m3ClosePrev2 <= m3OpenPrev2 and cuerpoIndSell < 0.50 - TOLERANCIA and not esMartilloIndSell
 
 wickContraSell = math.min(nivelOpenIndSell, nivelCloseIndSell)
 wickFavorSell  = 1 - math.max(nivelOpenIndSell, nivelCloseIndSell)
@@ -867,11 +899,14 @@ tipoIndSell = esIndecisionSell ? (math.abs(wickContraSell - wickFavorSell) <= 0.
 
 // Vela de retroceso del patrón Start (fix 30/09, mismo criterio que
 // pullbackEnvolventeBuy/Sell de la Sección 3 -- trasladado a la vela M3
-// Prev2): una vela M3 cruz (sin cuerpo) no cuenta como retroceso.
-pullbackStartBuy  = m3ClosePrev2 < m3OpenPrev2
-pullbackStartSell = m3ClosePrev2 > m3OpenPrev2
+// Prev3, ver nota de índices más arriba): una vela M3 cruz (sin cuerpo) no
+// cuenta como retroceso.
+pullbackStartBuy  = m3ClosePrev3 < m3OpenPrev3
+pullbackStartSell = m3ClosePrev3 > m3OpenPrev3
 
-mismoColor3 = (m3Close > m3Open and m3ClosePrev1 > m3OpenPrev1 and m3ClosePrev2 > m3OpenPrev2) or (m3Close < m3Open and m3ClosePrev1 < m3OpenPrev1 and m3ClosePrev2 < m3OpenPrev2)
+// Mismo ajuste de índices que el resto de la Sección 4 (ver nota más
+// arriba): entrada=actual, indecisión=Prev2, retroceso=Prev3.
+mismoColor3 = (m3Close > m3Open and m3ClosePrev2 > m3OpenPrev2 and m3ClosePrev3 > m3OpenPrev3) or (m3Close < m3Open and m3ClosePrev2 < m3OpenPrev2 and m3ClosePrev3 < m3OpenPrev3)
 
 esStartBuy  = esEnvolventeBuy  and esIndecisionBuy  and pullbackStartBuy  and not mismoColor3
 esStartSell = esEnvolventeSell and esIndecisionSell and pullbackStartSell and not mismoColor3
