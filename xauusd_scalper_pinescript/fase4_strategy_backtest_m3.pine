@@ -684,6 +684,18 @@ if altoLineaActiva and not na(altoM3Activo)
 if bajoLineaActiva and not na(bajoM3Activo)
     line.set_x2(bajoLinea, int(math.min(time, bajoM3Inicio + maxExtMs)))
 
+// DEBUG temporal (10/10, para diagnosticar "0 trades" en todo el backtest
+// M3 -- ver panel Sección 7): contadores acumulados de cada escalón del
+// embudo de entrada, para ver en qué paso se corta sin tener que inspeccionar
+// la Ventana de Datos bar a bar. Sacar una vez resuelto. Declarados ACÁ (antes
+// de quiebreAlto/quiebreBajo, su primer uso) y no en la Sección 6 -- Pine
+// exige declarar una variable antes de usarla, no alcanza con que esté antes
+// en el ARCHIVO si el uso real queda más arriba en el orden de EJECUCIÓN.
+var int cntQuiebres   = 0  // quiebreAlto/quiebreBajo (la estructura SÍ rompe niveles)
+var int cntMecListo   = 0  // veces que mecListo pasa a true (pullback + continuación confirmados)
+var int cntMecBruto   = 0  // mecBuyBruto/mecSellBruto true (mecListo + patrón Envolvente/Start)
+var int cntMecGate    = 0  // mecBuyGate/mecSellGate true (lo que de verdad abre una orden)
+
 quiebreAlto = not na(altoM3Activo) and (tendencia == "bajista" ? close > altoM3Activo * (1 + UMBRAL_QUIEBRE) : high > altoM3Activo)
 quiebreBajo = not na(bajoM3Activo) and (tendencia == "alcista" ? close < bajoM3Activo * (1 - UMBRAL_QUIEBRE) : low < bajoM3Activo)
 
@@ -859,15 +871,6 @@ mostrarZonaBusquedaMEC = input.bool(false, "Sombrear zona de búsqueda de Contin
 var bool huboPullbackEnBusqueda = false
 var float extremoQuiebre = na
 var bool mecListo = false
-
-// DEBUG temporal (10/10, para diagnosticar "0 trades" en todo el backtest
-// M3 -- ver panel Sección 7): contadores acumulados de cada escalón del
-// embudo de entrada, para ver en qué paso se corta sin tener que inspeccionar
-// la Ventana de Datos bar a bar. Sacar una vez resuelto.
-var int cntQuiebres   = 0  // quiebreAlto/quiebreBajo (la estructura SÍ rompe niveles)
-var int cntMecListo   = 0  // veces que mecListo pasa a true (pullback + continuación confirmados)
-var int cntMecBruto   = 0  // mecBuyBruto/mecSellBruto true (mecListo + patrón Envolvente/Start)
-var int cntMecGate    = 0  // mecBuyGate/mecSellGate true (lo que de verdad abre una orden)
 
 if quiebreAlto and (esCambioEstructuraAlto or na(extremoQuiebre))
     huboPullbackEnBusqueda := false
