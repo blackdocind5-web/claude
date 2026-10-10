@@ -48,6 +48,7 @@ th.sort{cursor:pointer;user-select:none} th.sort:hover{color:var(--fg)} th.sort[
   <button role="tab" data-k="combos" aria-controls="combos">Combinaciones</button>
   <button role="tab" data-k="objetivo" aria-controls="objetivo">Objetivo y freno semanal</button>
   <button role="tab" data-k="primersl" aria-controls="primersl">Primer SL de la sesión</button>
+  <button role="tab" data-k="m3" aria-controls="m3">Prueba en m3</button>
 </nav>
 
 <!-- ============ RECOMENDACIÓN ============ -->
@@ -113,6 +114,25 @@ th.sort{cursor:pointer;user-select:none} th.sort:hover{color:var(--fg)} th.sort[
   <section aria-labelledby="b-s3">
     <div class="sec-head"><h2 id="b-s3">Antes de operarlo</h2><p>Lo que el backtest no mide</p></div>
     <ul class="findings" id="b-avisos"></ul>
+  </section>
+</div>
+
+<!-- ============ M3 ============ -->
+<div id="m3" class="view" role="tabpanel" hidden>
+  <div class="view-head"><span class="eyebrow">Estudio alternativo · no alcanzó el objetivo</span><h2>¿Mejora la cartera con entradas en m3?</h2><p>Los mismos cuatro activos y patrones, exportados en gráfico de 3 minutos en lugar de 1. Mismas reglas: calendario, límite de sesión, lunes a jueves, freno de pérdida semanal de −3R y riesgo fijo de 1%.</p></div>
+  <div class="verdict" id="m3-verdict"></div>
+  <section aria-labelledby="m3-s1">
+    <div class="sec-head"><h2 id="m3-s1">m1 contra m3</h2><p>Simulaciones: 1.000 remuestreos por cartera · mismo cálculo que Cartera esencial (650 operaciones; la pestaña Recomendación muestra +76,0% con 651)</p></div>
+    <div class="panel tbl"><table class="cmp" id="t-m3"></table></div>
+    <div class="panel"><div class="legend" id="m3-leg"></div><div class="chart" id="c-m3"></div></div>
+  </section>
+  <section aria-labelledby="m3-s2">
+    <div class="sec-head"><h2 id="m3-s2">Activo por activo</h2><p>Lunes a jueves · R por operación y R por año</p></div>
+    <div class="panel tbl"><table class="cmp" id="t-m3-act"></table></div>
+  </section>
+  <section aria-labelledby="m3-s3">
+    <div class="sec-head"><h2 id="m3-s3">Por qué m3 rinde menos</h2><p>Lectura de los datos</p></div>
+    <ul class="findings" id="m3-f"></ul>
   </section>
 </div>
 
@@ -196,6 +216,7 @@ th.sort{cursor:pointer;user-select:none} th.sort:hover{color:var(--fg)} th.sort[
 
 <script>
 const D = __DATA__;
+const M3 = __M3__;
 const $ = s => document.querySelector(s);
 const fmt = (v, d=1) => (v??0).toLocaleString('es-AR',{minimumFractionDigits:d,maximumFractionDigits:d});
 const sg = (v, d=1) => v==null?'—':(v>0?'+':v<0?'−':'') + fmt(Math.abs(v), d);
@@ -346,6 +367,29 @@ function renderBTC(){
     ['g','Revisión',`BTCUSD ganó mucho más en 2025 (${sg(A.E['2025'].R)}R) que en 2026 (${sg(A.E['2026'].R)}R). Revisarlo cada trimestre con el mismo criterio: si pasa a perder en el año móvil, se saca.`]].map(F_).join('');
 }
 
+/* ================= M3 ================= */
+function renderM3(){
+  const C=M3.carteras, a=C.m1, b=C.m3, c=C.m3_mejor, NOMP={E:'Envolvente',S:'START',ES:'Envolvente + START'};
+  const nmc=cb=>cb.map(([x,p])=>`${x} ${NOMP[p]}`).join(' + ');
+  $('#m3-verdict').innerHTML=`<div class="big">No: en m3 la misma cartera rinde ${pc(b.cagr)} anual con caída máxima de −${fmt(b.mdd)}%, contra ${pc(a.cagr)} y −${fmt(a.mdd)}% en m1. Seguimos en m1.</div>
+  <p>Los cuatro patrones elegidos rinden menos en m3, y EURUSD y GBPUSD pierden casi toda la ventaja. La mejor combinación posible en m3 (${nmc(c.combo)}) llega a ${pc(c.cagr)} anual: lejos de m1. En las simulaciones, la cartera en m3 tiene ${fmt(b.mc.p_anio_neg)}% de probabilidad de cerrar un año en pérdida, contra ${fmt(a.mc.p_anio_neg)}% en m1.</p>`;
+  const rows=[['Cartera ganadora en m1 (actual)',a,true],['La misma cartera en m3',b,false],[`Mejor combinación en m3: ${nmc(c.combo)}`,c,false]];
+  $('#t-m3').innerHTML=`<thead><tr><th>Cartera</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">2025</th><th class="n">2026</th><th class="n">Anual comp.</th><th class="n">Mensual comp.</th><th class="n">Caída máx.</th><th class="n">Sharpe</th><th class="n">Profit factor</th><th class="n">Peor 5% sim.</th><th class="n">Caída peor 5%</th><th class="n">Año negativo</th></tr></thead>`+
+    rows.map(([n,x,el_])=>`<tr${el_?' class="best"':''}><td>${n}${el_?' <span class="pill g">elegida</span>':''}</td>${td(x.n)}${td(fmt(x.wr)+'%')}${yrs(x)}${tdp(x.cagr)}${td(pc(x.mes_geo,2),cls(x.mes_geo))}${td('−'+fmt(x.mdd)+'%')}${td(fmt(x.sharpe,2))}${td(fmt(x.pf,2))}${tdp(x.mc.cagr_p5)}${td('−'+fmt(x.mc.dd_p95)+'%')}${td(fmt(x.mc.p_anio_neg)+'%')}</tr>`).join('');
+  const ser=[{name:'m1 (actual)',color:'--gain',pts:a.curve,w:2.4,op:1},{name:'m3, misma cartera',color:'--loss',pts:b.curve,w:1.6,op:.9},{name:'m3, mejor combinación',color:'--a-eur',pts:c.curve,w:1.6,op:.9}];
+  $('#m3-leg').innerHTML=ser.map(s=>`<span><i style="background:var(${s.color})"></i>${s.name}</span>`).join('');
+  lineChart($('#c-m3'),ser,300);
+  const GAN={XAUUSD:'E',EURUSD:'ES',GBPUSD:'S',BTCUSD:'E'};
+  $('#t-m3-act').innerHTML=`<thead><tr><th>Activo</th><th>Patrón</th><th class="n">Ops. m1</th><th class="n">Ops. m3</th><th class="n">R por op. m1</th><th class="n">R por op. m3</th><th class="n">R 2025 m3</th><th class="n">R 2026 m3</th><th class="n">m3 gana los dos años</th></tr></thead>`+
+    M3.activos.map(x=>{const el_=GAN[x.a]===x.p, ok=x.m3.R2025>0&&x.m3.R2026>0;return `<tr${el_?' class="best"':''}><td>${x.a}</td><td>${NOMP[x.p]}${el_?' <span class="pill g">elegido</span>':''}</td>${td(x.m1.n)}${td(x.m3.n)}${td(sg(x.m1.R_op,3),cls(x.m1.R_op))}${td(sg(x.m3.R_op,3),cls(x.m3.R_op))}${td(sg(x.m3.R2025),cls(x.m3.R2025))}${td(sg(x.m3.R2026),cls(x.m3.R2026))}<td class="n">${pill(ok)}</td></tr>`}).join('');
+  const g=(A,P)=>M3.activos.find(x=>x.a===A&&x.p===P), xs=g('XAUUSD','S'), so=M3.solape;
+  $('#m3-f').innerHTML=[
+    ['r','Menos ventaja',`Los cuatro patrones de la cartera ganan menos por operación en m3: XAUUSD ${sg(g('XAUUSD','E').m1.R_op,2)} → ${sg(g('XAUUSD','E').m3.R_op,2)}R, EURUSD ${sg(g('EURUSD','ES').m1.R_op,2)} → ${sg(g('EURUSD','ES').m3.R_op,2)}R, GBPUSD ${sg(g('GBPUSD','S').m1.R_op,2)} → ${sg(g('GBPUSD','S').m3.R_op,2)}R y BTCUSD ${sg(g('BTCUSD','E').m1.R_op,2)} → ${sg(g('BTCUSD','E').m3.R_op,2)}R.`],
+    ['y','Otras entradas',`En m3 el patrón se confirma más tarde y aparecen menos oportunidades. Días operados en común con m1: XAUUSD ${so.XAUUSD.comunes} de ${so.XAUUSD.d1}, EURUSD ${so.EURUSD.comunes} de ${so.EURUSD.d1}, GBPUSD ${so.GBPUSD.comunes} de ${so.GBPUSD.d1}, BTCUSD ${so.BTCUSD.comunes} de ${so.BTCUSD.d1}. Las operaciones duran la mitad (en XAUUSD, ${fmt(g('XAUUSD','E').m3.dur,0)} minutos contra ${fmt(g('XAUUSD','E').m1.dur,0)}).`],
+    ['n','Excepción',`XAUUSD START gana más en m3 (${sg(xs.m3.R_op,3)}R por operación contra ${sg(xs.m1.R_op,3)}R en m1), pero son ${xs.m3.n} operaciones y salió como la mejor de 12 variantes nuevas. Sumada a la cartera de m1 mejora los dos años pero sube un poco la caída, y 33 de sus 49 operaciones caen el mismo día que XAUUSD Envolvente. Queda en observación.`],
+    ['g','Decisión','Se mantiene m1 en los cuatro activos. Al elegir el mejor timeframe activo por activo, los cuatro quedan en m1.']].map(x=>`<li><span class="tag ${x[0]}">${x[1]}</span><p>${x[2]}</p></li>`).join('');
+}
+
 /* ================= ACTIVOS ================= */
 function renderActivos(){
   const A=D.activos;
@@ -422,7 +466,7 @@ function renderPrimerSL(){
 }
 
 /* ================= navegación ================= */
-const VIEWS={resumen:renderResumen,btc:renderBTC,activos:renderActivos,combos:renderCombos,objetivo:renderObjetivo,primersl:renderPrimerSL};
+const VIEWS={resumen:renderResumen,btc:renderBTC,activos:renderActivos,combos:renderCombos,objetivo:renderObjetivo,primersl:renderPrimerSL,m3:renderM3};
 const done={};let VIEW='resumen';
 function show(k){if(!VIEWS[k])k='resumen';VIEW=k;document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.k===k));document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!==k);VIEWS[k]();done[k]=1;try{history.replaceState(null,'','#'+k)}catch(e){}}
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{show(b.dataset.k);window.scrollTo({top:0})});

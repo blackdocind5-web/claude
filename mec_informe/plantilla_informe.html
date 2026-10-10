@@ -99,6 +99,7 @@ section.stage{display:grid;gap:28px;scroll-margin-top:24px}
 .learn div{padding:18px 20px;border-radius:20px;border:1px solid var(--line);display:grid;gap:6px;align-content:start}
 .learn b{font-size:15px;font-weight:600}
 .learn p{font-size:14.5px;color:var(--fg2)}
+.panel.alt{border:1px dashed var(--line);background:transparent}
 .next{display:flex;gap:14px;align-items:center;padding:18px 22px;border-radius:999px;background:var(--surface2);font-size:15px;color:var(--fg2)}
 .next b{color:var(--fg)}
 .next .go{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--violet-solid);color:#FAF9FF;font-weight:700}
@@ -298,6 +299,16 @@ footer{display:grid;gap:8px;border-top:1px solid var(--grid);padding-top:24px}
     <div class="chart" id="m3"></div>
   </div>
   <div class="learn" id="l3"></div>
+  <div class="panel alt">
+    <span class="st-kicker">Estudio alternativo · no alcanzó el objetivo</span>
+    <h3 style="font-size:21px">¿Y si entramos en gráfico de 3 minutos en lugar de 1?</h3>
+    <p class="muted" id="m3a" style="max-width:72ch"></p>
+    <div class="tbl"><table id="m3t"></table></div>
+    <div class="cols" style="gap:24px">
+      <div style="display:grid;gap:12px;align-content:start;min-width:0"><div class="legend" id="m3lg"></div><div class="chart" id="m3c"></div></div>
+      <div style="display:grid;gap:10px;align-content:start;min-width:0"><p class="small">R por operación de cada patrón elegido · m1 (verde) contra m3 (naranja); si pierde, la barra queda vacía</p><div class="hbars" id="m3b"></div></div>
+    </div>
+  </div>
   <p class="next"><span class="go" aria-hidden="true">→</span><span id="n3"></span></p>
 </section>
 
@@ -550,12 +561,19 @@ $('#k3').innerHTML = kpi('Rendimiento anual', pc(REC.cagr), `${pc(REC.anios['202
   kpi('Calmar', nf(REC.calmar, 2), `oro solo: ${nf(E1.total.calmar, 2)}`) +
   kpi('Sharpe', nf(REC.sharpe, 2), `oro solo: ${nf(E1.total.sharpe, 2)}`) +
   kpi('Meses positivos', nf(REC.mes_pos, 0) + '%', `semanas positivas: ${nf(REC.sem_pos, 0)}%`);
-const M3 = REC.meses.map(m => ({v: m.pct, label: MES[+m.m.slice(5) - 1], year: m.m.slice(5) === '01' ? m.m.slice(0, 4) : '', title: `${MES[+m.m.slice(5) - 1]} ${m.m.slice(0, 4)}`}));
+const M3m = REC.meses.map(m => ({v: m.pct, label: MES[+m.m.slice(5) - 1], year: m.m.slice(5) === '01' ? m.m.slice(0, 4) : '', title: `${MES[+m.m.slice(5) - 1]} ${m.m.slice(0, 4)}`}));
 $('#m3s').textContent = `% sobre la cuenta al inicio de cada mes · peor mes ${pc(REC.peor_mes)}`;
 $('#l3').innerHTML = learn([
   ['Más ventaja, no más riesgo', `El riesgo por operación sigue en 1%. Lo que cambió es la cantidad de oportunidades buenas: ${REC.n} operaciones con ventaja en lugar de ${E1.total.n}.`],
   ['Los activos se compensan', `Las caídas de uno no coinciden con las de los otros. Por eso el rendimiento se multiplica y la caída casi no cambia.`],
   ['Sin escalera', 'Con cuatro activos no hace falta duplicar el riesgo tras una pérdida: la diversificación ya suaviza la curva.']]);
+const M3 = D.m3, ma = M3.carteras.m1, mb = M3.carteras.m3, mc3 = M3.carteras.m3_mejor;
+$('#m3a').innerHTML = `Probamos los mismos cuatro activos con las mismas reglas, pero con entradas en m3. No funcionó: la misma cartera rinde ${pc(mb.cagr)} anual con caída de ${pc(-mb.mdd)}, contra ${pc(ma.cagr)} y ${pc(-ma.mdd)} en m1. Los cuatro patrones elegidos ganan menos por operación, y el euro y la libra pierden casi toda la ventaja: en m3 el patrón se confirma más tarde, hay menos oportunidades y las operaciones duran la mitad. Ni la mejor combinación posible en m3 se acerca. Seguimos en m1.`;
+$('#m3t').innerHTML = `<thead><tr><th>Cartera</th><th class="n">Anual</th><th class="n">2025</th><th class="n">2026</th><th class="n">Caída máx.</th><th class="n">Win rate</th><th class="n">Factor de beneficio</th><th class="n">Peor 5% sim.</th><th class="n">Año negativo</th></tr></thead><tbody>` +
+  [['m1 (elegida)', ma, true], ['La misma cartera en m3', mb], ['Mejor combinación en m3', mc3]].map(([n, x, el]) => `<tr${el ? ' class="hl"' : ''}><td>${n}</td><td class="n ${cl(x.cagr)}">${pc(x.cagr)}</td><td class="n ${cl(x.anios['2025'])}">${pc(x.anios['2025'])}</td><td class="n ${cl(x.anios['2026'])}">${pc(x.anios['2026'])}</td><td class="n neg">${pc(-x.mdd)}</td><td class="n">${nf(x.wr)}%</td><td class="n">${nf(x.pf, 2)}</td><td class="n ${cl(x.mc.cagr_p5)}">${pc(x.mc.cagr_p5)}</td><td class="n">${nf(x.mc.p_anio_neg)}%</td></tr>`).join('') + '</tbody>';
+const g3 = (a, p) => M3.activos.find(x => x.a === a && x.p === p);
+const m3items = Object.entries(PATRON_PRE).flatMap(([a, p]) => { const x = g3(a, p); return [{l: a + ' m1', v: x.m1.R_op, t: sg(x.m1.R_op, 2), c: 'var(--green)', cls: 'pos'}, {l: a + ' m3', v: Math.max(0, x.m3.R_op), t: sg(x.m3.R_op, 2), c: 'var(--orange)', cls: x.m3.R_op < 0 ? 'neg' : ''}]; });
+$('#m3b').innerHTML = hbars(m3items, Math.max(...m3items.map(i => Math.abs(i.v))));
 $('#n3').innerHTML = `<b>Siguiente paso:</b> ¿podemos sumar más con una segunda sesión, de 09:00 a 11:00?`;
 
 /* ---------------- 4 ---------------- */
@@ -661,7 +679,10 @@ function draw() {
   const s3 = [{name: 'Cartera de 4 activos', short: 'Cartera', color: css('--s-rec'), pts: REC.curve, w: 2.6, area: true}, {name: 'Oro solo (etapa 1)', short: 'Oro solo', color: css('--s-xau'), pts: E1.curve, w: 1.5, dash: true}, bSpx()];
   $('#lg3').innerHTML = leg(s3);
   lineChart($('#c3'), s3, {h: 300});
-  barChart($('#m3'), M3, {h: 210, unit: '%', dec: 2});
+  barChart($('#m3'), M3m, {h: 210, unit: '%', dec: 2});
+  const sm3 = [{name: `m1, elegida (${pc(ma.cagr)} anual)`, short: 'm1', color: css('--s-rec'), pts: ma.curve, w: 2.4}, {name: `m3, misma cartera (${pc(mb.cagr)})`, short: 'm3', color: css('--orange'), pts: mb.curve, w: 1.8, dash: true}, bSpx()];
+  $('#m3lg').innerHTML = leg(sm3);
+  lineChart($('#m3c'), sm3, {h: 260});
   lineChart($('#cc'), SER(), {h: 380, log: true});
 }
 draw();

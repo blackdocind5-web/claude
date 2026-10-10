@@ -36,7 +36,7 @@ def stats(ts):
 
 def cartera(T, combo, mc=False):
     ts = [t for a, p in combo for t in T[(a, p)] if t["ent"].weekday() != 4]
-    return B.metricas(B.filtrar(ts, freno_sem=3), mc=mc)
+    return B.metricas(B.filtrar(ts, freno_sem=3), mc=mc, curva=mc)
 
 
 def main():
@@ -65,7 +65,12 @@ def main():
         Tm[(a, GAN[a])] = T3[(a, GAN[a])] if stats(T3[(a, GAN[a])])["R_op"] > stats(T1[(a, GAN[a])])["R_op"] else T1[(a, GAN[a])]
     res["mixta"] = cartera(Tm, base1, mc=True)
     res["mixta"]["usa_m3"] = [a for a in ACT if Tm[(a, GAN[a])] is T3[(a, GAN[a])]]
-    out["ok3"] = ok3; out["carteras"] = {k: {kk: vv for kk, vv in v.items() if kk not in ("sem_R", "mes_R")} for k, v in res.items()}
+    out["ok3"] = ok3; out["carteras"] = {k: {kk: vv for kk, vv in v.items() if kk not in ("sem_R", "mes_R", "semanas")} for k, v in res.items()}
+    for v in out["carteras"].values():
+        if "curve" in v:
+            dd = {}
+            for c in v["curve"]: dd[c["t"][:10]] = c["eq"]
+            v["curve"] = [dict(t=k, eq=e) for k, e in sorted(dd.items())]
     out["top_m3"] = [dict(combo=c, cagr=m["cagr"], mdd=m["mdd"], anios=m["anios"], calmar=m["calmar"]) for _, c, m in mejores[:5]]
     # coincidencia de días operados entre m1 y m3 (¿son las mismas oportunidades?)
     out["solape"] = {}

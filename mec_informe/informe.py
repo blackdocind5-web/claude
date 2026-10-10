@@ -110,6 +110,8 @@ def main():
     out["ny"] = dict(filas=filas, robustez=ny["cartera_ny"]["robustez"], calendario=ny["meta"]["calendario"],
                      cand_pre=[x for x in ca["estabilidad"]["pre"]], reglas_pre=[{k: r[k] for k in ("grupo", "regla", "cagr", "mdd", "anios", "ok")} for r in ca["reglas"]["pre"]],
                      concentracion=ca["concentracion"]["pre"]["top20"])
+    m3 = rd("mec_m3", "resultados_m3.json")
+    out["m3"] = dict(carteras={k: m3["carteras"][k] for k in ("m1", "m3", "m3_mejor")}, activos=m3["activos"], solape=m3["solape"])
     out["bench"] = dict(spx=precio(["mec_ny/datos/SPX500_*.csv"]), oro=precio(["mec_hibrida/datos/XAUUSD_m1_2025-2026_*.csv"]))
     json.dump(out, open(os.path.join(AQUI, "datos_informe.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     return out
