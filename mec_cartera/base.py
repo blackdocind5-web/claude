@@ -14,12 +14,15 @@ NY_ = (("SPX500", "0900", "E"), ("BTCUSD_NY", "0900", "ES"))
 NOMBRE = {"XAUUSD": "XAUUSD", "EURUSD": "EURUSD", "GBPUSD": "GBPUSD", "BTCUSD": "BTCUSD Pre NY", "SPX500": "S&P 500 NY", "BTCUSD_NY": "BTCUSD NY"}
 
 
-def cargar():
+MESES_FUERA = {1}   # enero sin operar (decisión de Fabián, 10/10/2026): con el receso solo quedan dos semanas y perdió en 2025 y 2026
+
+
+def cargar(meses_fuera=MESES_FUERA):
     T = H.cargar(); out = {}
-    for a, p in PRE: out[a] = [t for t in T[(a, p)] if t["ent"].weekday() != 4]
+    for a, p in PRE: out[a] = [t for t in T[(a, p)] if t["ent"].weekday() != 4 and t["ent"].month not in meses_fuera]
     for a, ini, p in NY_:
         ts, _ = ny.leer(a, ini, p)
-        out[a] = [t for t in ts if not t["tags"] and t["ent"].weekday() != 4]
+        out[a] = [t for t in ts if not t["tags"] and t["ent"].weekday() != 4 and t["ent"].month not in meses_fuera]
     return out
 
 

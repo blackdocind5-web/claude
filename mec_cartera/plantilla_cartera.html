@@ -21,7 +21,7 @@ __ESTILO_HIBRIDA__
   <div class="meta">
     <span>Período <b>13/01/2025 al 02/10/2026</b></span>
     <span>Capital simulado <b>1.000 USD</b></span>
-    <span>Lunes a jueves</span>
+    <span>Lunes a jueves · sin enero</span>
     <span>Freno de pérdida semanal <b>−3R</b></span>
   </div>
   <div class="meta"><span class="chip">Recomendación: solo Pre NY, sin candado</span><span class="chip">Menos, pero mejor</span><span class="chip">Ley de Pareto: 20% de esfuerzos, 80% de resultados</span></div>
@@ -73,7 +73,7 @@ __ESTILO_HIBRIDA__
   <div class="sec-head"><h2>Plan operativo</h2><p>Cartera recomendada: solo Pre NY · qué hacer cada semana</p></div>
   <ol class="plan" id="plan"></ol>
 </section>
-<p class="note">Fuente: listas de operaciones del Strategy Tester de TradingView. Pre NY: XAUUSD Envolvente, EURUSD Envolvente + START, GBPUSD START y BTCUSD Envolvente, con el calendario de restricciones y el receso de fin de año. NY (comparación): S&P 500 Envolvente y BTCUSD Envolvente + START desde las 09:00, sin días de noticia de alto impacto ni FOMC, con el calendario NY. Todas sin viernes, con límite de 1 TP o 2 pérdidas por sesión y riesgo de 1% sobre el capital realizado al entrar.</p>
+<p class="note">Fuente: listas de operaciones del Strategy Tester de TradingView. Pre NY: XAUUSD Envolvente, EURUSD Envolvente + START, GBPUSD START y BTCUSD Envolvente, con el calendario de restricciones y el receso de fin de año. NY (comparación): S&P 500 Envolvente y BTCUSD Envolvente + START desde las 09:00, sin días de noticia de alto impacto ni FOMC, con el calendario NY. Todas sin viernes y sin enero, con límite de 1 TP o 2 pérdidas por sesión y riesgo de 1% sobre el capital realizado al entrar.</p>
 </div>
 
 <script>
@@ -89,7 +89,7 @@ const EP=D.estabilidad.pre, e25=EP.find(e=>e.a===2.5&&e.c===0.5), e20=EP.find(e=
 
 $('#verdict').innerHTML=`<div class="big">Recomendación: operar solo Pre NY, sin candado. ${pc(PR.cagr)} anual con caída máxima de −${fmt(PR.mdd)}%, ${PR.n} operaciones en dos horas por día.</div>
 <p><b>Por qué no NY</b>: el S&P 500 suma en el orden histórico (${pc(P5.cagr)} con caída de −${fmt(P5.mdd)}%), pero de lunes a jueves deja apenas ${sg(rs.R_sin_viernes,1)}R en ${rs.n_sin_viernes} operaciones, y en los escenarios remuestreados baja la caída solo en ${fmt(rs.p_dd,0)}% de los casos y mejora el rendimiento por unidad de caída en ${fmt(rs.p_calmar,0)}%. La mejora histórica depende de cuándo cayeron las rachas, no de una ventaja firme. US100 y BTCUSD NY suben la caída; US30, EURUSD NY y GBPUSD NY no ganan en los dos años. <b>Dos horas más de pantalla por día no se justifican.</b></p>
-<p><b>¿Y el candado?</b> No se aplica a Pre NY sola. El candado (+2R → 0R) mejoraba la cartera con S&P 500 porque esa combinación devolvía ganancias a mitad de semana; en Pre NY sola no mejora los dos años en ninguna de las 12 variantes probadas: +2R → 0R deja ${pc(e20.cagr)} (2025 ${pc(e20.anios['2025'])} contra ${pc(PR.anios['2025'])}); la mejor, +2,5R → +0,5R, da ${pc(e25.cagr)} pero empata 2025 y sus vecinas pierden. Ninguna baja la caída. Tampoco sirve un objetivo fijo: el 20% de las mejores semanas aporta ${fmt(D.concentracion.pre.top20,0)}% del R. <b>El único freno es el de pérdida: −3R por semana.</b></p>`;
+<p><b>¿Y el candado?</b> No se aplica a Pre NY sola. El candado (+2R → 0R) mejoraba la cartera con S&P 500 porque esa combinación devolvía ganancias a mitad de semana; en Pre NY sola no mejora los dos años en ninguna de las 12 variantes probadas: +2R → 0R deja ${pc(e20.cagr)} (2025 ${pc(e20.anios['2025'])} contra ${pc(PR.anios['2025'])}); la mejor, +2,5R → +0,5R, da ${pc(e25.cagr)} pero empata 2025 y las variantes vecinas no la sostienen. Ninguna baja la caída. Tampoco sirve un objetivo fijo: el 20% de las mejores semanas aporta ${fmt(D.concentracion.pre.top20,0)}% del R. <b>El único freno es el de pérdida: −3R por semana.</b></p>`;
 const k=(l,v,s,c='',h='')=>`<div class="kpi${h}"><span class="l">${l}</span><span class="v ${c}">${v}</span><span class="s">${s}</span></div>`;
 $('#kpis').innerHTML=k('Anual compuesto',pc(PR.cagr),`2025 ${pc(PR.anios['2025'])} · 2026 ${pc(PR.anios['2026'])}`,'pos',' hero')+k('Caída máxima','−'+fmt(PR.mdd)+'%',`peor 5% sim. −${fmt(PR.mc.dd_p95)}%`,'neg')+k('Peor 5% de simulaciones',pc(PR.mc.cagr_p5),`año negativo ${fmt(PR.mc.p_anio_neg,1)}%`,'pos')+k('Operaciones',fmt(PR.n,0),`win rate ${fmt(PR.wr)}% · racha máx. ${PR.racha}`);
 
@@ -138,7 +138,7 @@ $('#fin-leg').innerHTML=ser.map((s,i)=>`<span><i style="background:var(${s.color
 lineChart($('#c-fin'),ser,320);
 $('#plan').innerHTML=[
   `<b>Pre NY (07:00–09:00)</b>: XAUUSD Envolvente, EURUSD Envolvente + START, GBPUSD START y BTCUSD Envolvente, con el calendario de siempre. A las 09:00 se termina el día.`,
-  `<b>Días</b>: de lunes a jueves. <b>Riesgo</b>: 1% fijo por operación; hasta ${PR.max_conc} posiciones abiertas a la vez. Límite de 1 TP o 2 pérdidas por activo y sesión (una pérdida por Reset cuenta).`,
+  `<b>Días</b>: de lunes a jueves, de febrero a diciembre (enero no se opera). <b>Riesgo</b>: 1% fijo por operación; hasta ${PR.max_conc} posiciones abiertas a la vez. Límite de 1 TP o 2 pérdidas por activo y sesión (una pérdida por Reset cuenta).`,
   `<b>Freno de pérdida</b>: si la semana llega a −3R, no se abren más operaciones hasta el lunes.`,
   `<b>Sin candado ni objetivo de ganancia</b>: las semanas que suben se dejan correr; en Pre NY sola ningún corte por ganancia mejora los dos años.`,
   `<b>NY en observación</b>: el S&P 500 09:00 Envolvente se sigue registrando sin operarlo. Se reevalúa con un año más de datos si sostiene al menos +0,10R por operación de lunes a jueves.`,

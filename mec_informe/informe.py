@@ -95,6 +95,19 @@ def main():
         g["curve"] = diaria(f["curve"]); g["meses"] = f["meses"]
         fin.append(g)
     out["finales"] = fin
+    # etapa 3 = gestión híbrida tal como se diseñó (con enero); la etapa 4 la opera sin enero
+    sys.path.insert(0, os.path.join(RAIZ, "mec_cartera")); import base as B
+    T0 = B.cargar(meses_fuera=set()); ts0 = [t for a in ("XAUUSD", "EURUSD", "GBPUSD", "BTCUSD") for t in T0[a]]
+    m3e = B.metricas(B.filtrar(ts0, freno_sem=3), mc=True, curva=True)
+    e3 = {k: m3e[k] for k in ("n", "wr", "R", "cagr", "mes_geo", "mdd", "racha", "calmar", "anios", "sem_pos", "mes_pos", "peor_mes", "peor_sem", "pf", "sharpe", "mc", "max_conc", "bajo_agua")}
+    e3["curve"] = diaria(m3e["curve"]); e3["meses"] = m3e["meses"]
+    out["etapa3"] = e3
+    R_ = lambda xs: round(sum(t["u"] for t in xs) / 0.9, 1)
+    out["hibrida"]["activos"] = [dict(a=a, n=len(T0[a]), wr=round(100 * sum(t["u"] > 0 for t in T0[a]) / len(T0[a]), 1), R=R_(T0[a]), R_op=round(R_(T0[a]) / len(T0[a]), 3),
+                                      R25=R_([t for t in T0[a] if t["ent"].year == 2025]), R26=R_([t for t in T0[a] if t["ent"].year == 2026])) for a in ("XAUUSD", "EURUSD", "GBPUSD", "BTCUSD")]
+    ene = [t for t in ts0 if t["ent"].month == 1]
+    out["enero"] = {str(y): dict(n=sum(t["ent"].year == y for t in ene), R=R_([t for t in ene if t["ent"].year == y]),
+                                 dias=len({t["ent"].date() for t in ene if t["ent"].year == y})) for y in (2025, 2026)}
     filas = []
     for a in ny["meta"]["activos"]:
         el = ny["activos"][a]["elegida"]
