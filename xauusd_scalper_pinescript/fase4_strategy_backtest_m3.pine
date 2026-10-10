@@ -2,72 +2,74 @@
 strategy("XAUUSD Scalper — Backtest M3 (Fase 4, EXPERIMENTAL)", overlay=true, initial_capital=10000, currency=currency.USD, default_qty_type=strategy.fixed, default_qty_value=1, commission_type=strategy.commission.percent, commission_value=0, slippage=0, calc_on_every_tick=false, process_orders_on_close=false, pyramiding=4, max_lines_count=500, max_labels_count=500)
 
 // ============================================================================
-// FASE 4 (VARIANTE M3, EXPERIMENTAL) — MOTOR DE DETECCIÓN EXCLUSIVO PARA
-// VELAS M3 (02/10, a pedido de Fabián)
+// VARIANTE M3 -- RECONSTRUCCIÓN (10/10, a pedido de Fabián -- después de
+// múltiples pruebas sin alcanzar el win rate/rentabilidad que busca (EMA 20,
+// separar patrones, sacar días operativos, probar sesiones), le queda una
+// última pregunta pendiente: ¿qué pasa si las entradas se ejecutan en el
+// CIERRE de cada vela M3 en vez de en cada vela M1?
+//
+// Este archivo YA se había construido una vez (02/10) como copia separada de
+// `fase4_strategy_backtest.pine`, con el mismo enfoque de abajo. Se descartó
+// el 06/10: el backtest no generaba NINGUNA operación, y con los debugs
+// (`mostrarDebugM3`, `mostrarZonaBusquedaMEC`) encendidos no aparecía ningún
+// marcador -- ni siquiera el triángulo de `finalVelaM3` -- pese a que el
+// panel SÍ mostraba una tendencia calculada (lo cual exige que `finalVelaM3`
+// esté disparando correctamente, porque `procesarVelaM3` -- Sección 2 --
+// solo corre adentro de ese gate). Esa contradicción nunca se resolvió:
+// Fabián decidió frenar la investigación por tiempo, no porque se haya
+// confirmado un bug real de lógica. La sospecha más probable, sin confirmar,
+// es un problema de VISIBILIDAD en TradingView (el checkbox de cada plot en
+// la pestaña "Estilo" es independiente del toggle de Input) o el modo Replay
+// quedando activo -- dos causas externas al código que ya se habían
+// descartado una por una en esa conversación sin terminar de resolverlo.
+//
+// Esta vez, antes de sospechar de la lógica de nuevo: (1) confirmá que NO
+// estás en modo Replay (barra de reproducción visible debajo de la barra de
+// herramientas principal), (2) con `mostrarDebugM3` activado, revisá la
+// pestaña "Estilo" de la configuración del script y confirmá que el plot
+// "DEBUG finalVelaM3" esté tildado ahí TAMBIÉN (además del input) -- recién
+// si con ambas cosas confirmadas seguís sin ver el triángulo, ahí sí hay
+// evidencia real de un problema de lógica para investigar.
+//
+// Reconstrucción completa desde el `fase4_strategy_backtest.pine` VIGENTE
+// (10/10, no desde la copia vieja del 02/10) -- incluye todo lo agregado
+// después de aquel primer intento: fix de la vela de indecisión en cruz
+// exacta (07/10), pérdida por Reset cuenta como SL (07/10), filtro EMA de
+// tendencia configurable (08/10) y la tabla de distribución de distancias
+// de SL (06/10). El objetivo es que esta variante M3 tenga exactamente las
+// mismas herramientas que la variante M1 vigente -- una comparación justa,
+// no una versión vieja y atrasada.
+//
+// Qué cambia respecto al M1 (mismo criterio que la versión del 02/10, ver
+// el detalle sección por sección más abajo, en los comentarios junto a cada
+// bloque reescrito):
+//   - Sección 2 (estructura M3): SIN cambios de lógica -- ya era nativa de
+//     M3 desde antes. Se le agrega el rastreo de las 2-3 velas M3 anteriores
+//     (`m3OpenPrev1/m3ClosePrev1/m3HighPrev1/m3LowPrev1`, `m3OpenPrev2/
+//     m3ClosePrev2`, `m3HighPrev3/m3LowPrev3`) que las Secciones 3/4/6
+//     necesitan para reemplazar los `[1]`/`[2]`/`[3]` de velas M1.
+//   - Secciones 3 (Envolvente) y 4 (Start): mismas fórmulas exactas,
+//     `high/low/open/close` (vela M1 actual) → `m3High/m3Low/m3Open/
+//     m3Close` (vela M3 en curso/recién cerrada), `[1]`/`[2]` (velas M1
+//     anteriores) → `...Prev1`/`...Prev2` (velas M3 anteriores). El fix del
+//     07/10 (cruz exacta en la vela de indecisión, `>=`/`<=` en vez de
+//     `>`/`<`) se traslada tal cual a la versión M3 de `esIndecisionBuy`/
+//     `esIndecisionSell`.
+//   - Sección 6 (MEC): la ventana de `extremoQuiebre` pasa de 4 velas M1 a 4
+//     velas M3, y la secuencia de pullback-y-continuación solo avanza un
+//     paso cuando `finalVelaM3` es true (antes, cada vela M1).
+//   - Sección 6B (SL/TP), filtro EMA y debug de distribución de SL: SIN
+//     cambios -- ya operan sobre `close` (que en el M1 exacto donde
+//     `finalVelaM3` da true, coincide con `m3Close`) y niveles M3 nativos.
+//   - Sección 6C: único cambio explícito, `and finalVelaM3` agregado a
+//     `mecBuyGate`/`mecSellGate` (aunque ya queda implícito por la Sección 6,
+//     se deja explícito para que quede documentado en el gate real).
+//
+// Validación pendiente por Fabián -- primero confirmar que el triángulo de
+// `finalVelaM3` aparece normalmente (ver nota de arriba), después comparar
+// resultados contra `fase4_strategy_backtest.pine` en el mismo período.
 // ============================================================================
-// Archivo NUEVO, separado de `fase4_strategy_backtest.pine` (el original,
-// M1, que sigue intacto y es el que se usa por defecto). Fabián quiere
-// probar una variante que detecte los patrones Envolvente/Start y el
-// modelo MEC sobre velas M3 en vez de M1 -- igual que lo que él ve al
-// cambiar el gráfico del indicador a resolución M3 -- para comparar
-// resultados y decidir si la mantiene como variante separada o la
-// descarta por completo. Por eso se construyó como archivo APARTE y no
-// como un toggle más dentro del archivo M1: así cero riesgo de tocar el
-// código M1 que ya funciona bien, y si se descarta, no deja ningún rastro
-// en el archivo original.
-//
-// Qué SÍ cambia respecto al original (Secciones 3, 4 y 6 -- antes "copia
-// literal del indicador", acá reescritas a propósito):
-//   - Sección 2 (estructura M3): SIN cambios en su lógica -- ya era
-//     100% nativa de M3 (agrega M1 en velas M3 vía m3Open/m3High/m3Low/
-//     m3Close + `finalVelaM3`, Opción A confirmada el 29/09). Lo único que
-//     se agregó es el rastreo de las 2-3 velas M3 ANTERIORES
-//     (`m3OpenPrev1/m3ClosePrev1/m3HighPrev1/m3LowPrev1`,
-//     `m3OpenPrev2/m3ClosePrev2`, `m3HighPrev3/m3LowPrev3`), que no hacía
-//     falta en el original porque Secciones 3/4/6 usaban velas M1
-//     (`open[1]`, `close[2]`, etc.) directamente.
-//   - Sección 3 (Envolvente) y Sección 4 (Start): las mismas fórmulas
-//     exactas del original, pero con `high/low/open/close` (vela M1
-//     actual) reemplazado por `m3High/m3Low/m3Open/m3Close` (vela M3 en
-//     curso/recién cerrada), y `open[1]/close[1]/close[2]/open[2]` (velas
-//     M1 anteriores) reemplazado por `m3OpenPrev1/m3ClosePrev1/
-//     m3OpenPrev2/m3ClosePrev2` (velas M3 anteriores). Ni un umbral ni una
-//     tolerancia se tocó -- es la misma geometría de vela, aplicada a una
-//     vela 3 veces más ancha.
-//   - Sección 6 (MEC): la secuencia de pullback-y-continuación
-//     (`esVelaAFavor`/`esVelaEnContra`/`huboPullbackEnBusqueda`/
-//     `superaNivelAhora`/`mecListo`) ahora se evalúa con `m3Close`/
-//     `m3Open` (la vela M3, no la M1) y SOLO se actualiza cuando
-//     `finalVelaM3` es true (una vez cada 3 velas M1) -- antes se
-//     reevaluaba en cada vela M1 con `close`/`open`. La ventana de
-//     `extremoQuiebre` (el "colchón" de precio alrededor del quiebre antes
-//     de buscar el pullback) pasó de 4 velas M1 (`high`/`high[1..3]`) a 4
-//     velas M3 (`m3High`/`m3HighPrev1..3`) -- mismo criterio, escalado a
-//     la unidad de vela nueva.
-//
-// Qué NO cambia:
-//   - Sección 1 (sesiones) -- sin cambios, el corte de sesión sigue siendo
-//     por horario real (`time()`), no depende de la unidad de vela.
-//   - Sección 6B (SL/TP) -- sin cambios, ya calculaba los niveles a partir
-//     de `bajoM3Reciente`/`altoM3Reciente`/`ultimoBajoQuebrado`/
-//     `ultimoAltoQuebrado` (Sección 2), que ya son niveles M3 nativos.
-//   - Sección 6C (ejecución, Hedge Position, límite diario, arrastre entre
-//     sesiones) -- misma lógica; el único cambio puntual es agregar
-//     `and finalVelaM3` a `mecBuyGate`/`mecSellGate`, para que una entrada
-//     nueva solo pueda abrirse en la vela M1 donde cierra una vela M3 --
-//     confirmado por Fabián ("estoy de acuerdo con la señal de entrada
-//     solo en el cierre de cada vela M3"). En la práctica ya quedaba así
-//     de forma implícita (`superaNivelAhora` solo se vuelve true dentro
-//     del bloque gateado por `finalVelaM3`), pero se dejó explícito para
-//     que quede claro al leer el código.
-//
-// Validación pendiente por Fabián: correr este archivo en paralelo al
-// original (mismo período, mismo activo) y comparar que las señales
-// coincidan con lo que se ve al mirar el indicador en el gráfico M3 a
-// ojo. Si el resultado convence, Fabián decide si lo mantenemos como
-// variante separada; si no, se descarta sin tocar nada del archivo M1.
-// ============================================================================
-//
+
 // ============================================================================
 // FASE 4 — VERSIÓN STRATEGY PARA BACKTESTING (15/09)
 // ============================================================================
@@ -319,6 +321,43 @@ strategy("XAUUSD Scalper — Backtest M3 (Fase 4, EXPERIMENTAL)", overlay=true, 
 // reaccionan a las mismas señales durante el solapamiento (09:30-11:00),
 // duplicando entradas/riesgo en esa franja. Para backtestear índices, dejar
 // Wall Street habilitada y NY deshabilitada.
+//
+// Pérdida por Reset cuenta como SL (07/10, a pedido de Fabián): la
+// excepción de "tercer hedge encadenado" (Sección 6C, regla 5) permitía
+// una 3ra entrada en la sesión cada vez que la 2da se cerraba por Hedge
+// (`strategy.close` con comentario "Reset antes de nueva entrada", en vez
+// de por su propio SL/TP real) -- sin distinguir si esa 2da operación
+// estaba ganando o perdiendo en el momento del cierre. Ahora, si estaba en
+// PÉRDIDA, cuenta igual que un SL real a efectos del límite operativo ("1
+// TP, 1 SL + 2do intento (1 TP o 2 SL)") -- nunca se abre una 3ra entrada
+// tras dos pérdidas, sea cual sea el motivo del cierre de la 2da. Ver el
+// comentario largo junto a `precioEntradaDesdeSLTP` (inicio de la Sección
+// 6C) para el detalle de cómo se reconstruye el precio de entrada (no se
+// guardaba como variable propia) a partir de `slOut`/`tpOut`.
+//
+// Filtro EMA de tendencia (08/10, a pedido de Fabián -- quiere subir el win
+// rate y achicar las rachas negativas): nuevo toggle `habilitarFiltroEMA`
+// (grupo "Backtest — Filtro EMA de tendencia (prueba)", Sección 6C). BUY
+// solo válido si la vela de entrada cierra por ENCIMA de una EMA de un
+// timeframe MAYOR al M1/M3 que ya usa la estructura, SELL solo si cierra
+// por DEBAJO -- la idea es filtrar entradas que van en contra del sesgo
+// direccional de marco mayor, algo que la estructura M3 (reactiva a swings
+// de 2-3 velas) no distingue de ruido direccional de corto plazo. El
+// timeframe de la EMA queda como INPUT (no hardcodeado), con opciones
+// 15/30/45/60/240 minutos o Diario, para que Fabián compare directamente en
+// el Strategy Tester -- recomendación de partida: 1H (lo bastante lento
+// para ser un sesgo genuino de marco mayor, lo bastante rápido para seguir
+// siendo relevante dentro de una sesión de 2 horas; Diario/4H pueden vetar
+// sesiones con estructura M3 intradía impecable solo por el sesgo de varias
+// semanas, y 15-30m quedan redundantes con la propia estructura M3). Se usa
+// `request.security(..., lookahead=barmerge.lookahead_off)` sobre una
+// `ta.ema()` -- el patrón estándar de Pine para series de PRECIO sin
+// repintado, sin relación con el problema histórico de `lookahead_off`
+// sobre `time_close` (una serie de TIEMPO) que forzó a abandonar ese
+// enfoque para `finalVelaM3` (Sección 2) -- acá es un caso distinto y
+// seguro. Aplicado en `mecBuyGate`/`mecSellGate` (Sección 6C), no en la
+// Sección 6 -- esa sigue siendo copia literal del indicador. Apagado
+// (default), el comportamiento es idéntico al actual.
 // ============================================================================
 
 // ============================================================================
@@ -388,14 +427,15 @@ var float m3Low = na
 var float m3Close = na
 var int   m3OpenTime = na
 
-// Historial de velas M3 anteriores (variante M3, 02/10): el original (M1)
-// no necesitaba esto -- usaba `open[1]`, `close[2]`, etc. (velas M1
-// anteriores) directamente. Acá, para reescribir Envolvente/Start/MEC
-// sobre velas M3, hace falta guardar el open/close/high/low de la vela M3
-// que acaba de cerrar (`...Prev1`) y de la anterior a esa (`...Prev2`),
-// más el high/low de una tercera hacia atrás (`...Prev3`, solo para la
-// ventana de `extremoQuiebre` en la Sección 6). Se actualiza una sola vez
-// por vela M3, en el mismo bloque donde dispara `finalVelaM3` más abajo.
+// Historial de velas M3 anteriores (variante M3, reconstruido 10/10): el
+// original (M1) no necesitaba esto -- usaba `open[1]`, `close[2]`, etc.
+// (velas M1 anteriores) directamente. Acá, para reescribir Envolvente/
+// Start/MEC sobre velas M3, hace falta guardar el open/close/high/low de
+// la vela M3 que acaba de cerrar (`...Prev1`) y de la anterior a esa
+// (`...Prev2`), más el high/low de una tercera hacia atrás (`...Prev3`,
+// solo para la ventana de `extremoQuiebre` en la Sección 6). Se actualiza
+// una sola vez por vela M3, en el mismo bloque donde dispara `finalVelaM3`
+// más abajo.
 var float m3OpenPrev1  = na
 var float m3ClosePrev1 = na
 var float m3HighPrev1  = na
@@ -526,12 +566,12 @@ else
 // vela M1 más tarde (nuevaVelaM3) -- ver comentario largo junto a
 // finalVelaM3 más arriba.
 if finalVelaM3 and not na(m3OpenTime)
-    // -- desplazar el historial de velas M3 anteriores (variante M3, 02/10)
-    // ANTES de nada más: en este punto m3Open/m3High/m3Low/m3Close todavía
-    // representan la vela M3 que acaba de cerrar (recién se van a
-    // sobrescribir en la próxima vela M1, cuando arranque la vela M3
-    // siguiente) -- por eso "Prev1" se llena con el valor ACTUAL de estas
-    // cuatro variables, no con "Prev1" viejo.
+    // -- desplazar el historial de velas M3 anteriores (variante M3,
+    // reconstruido 10/10) ANTES de nada más: en este punto m3Open/m3High/
+    // m3Low/m3Close todavía representan la vela M3 que acaba de cerrar
+    // (recién se van a sobrescribir en la próxima vela M1, cuando arranque
+    // la vela M3 siguiente) -- por eso "Prev1" se llena con el valor ACTUAL
+    // de estas cuatro variables, no con "Prev1" viejo.
     m3HighPrev3 := m3HighPrev2
     m3LowPrev3  := m3LowPrev2
     m3HighPrev2 := m3HighPrev1
@@ -710,11 +750,11 @@ plotshape(mostrarDebugM3 and finalVelaM3, title="DEBUG finalVelaM3 (triángulo c
 
 // ============================================================================
 // SECCIÓN 3 — CLASIFICADOR DE VELA ENVOLVENTE, SOBRE VELAS M3 (variante M3,
-// 02/10) -- mismas fórmulas exactas del original (Fase 2a), pero aplicadas
-// a la vela M3 en curso/recién cerrada (`m3Open/m3High/m3Low/m3Close`) y a
-// la vela M3 inmediatamente anterior (`m3OpenPrev1/m3ClosePrev1`), en vez
-// de a la vela M1 actual y la M1 anterior. Ver el bloque de comentarios al
-// inicio del archivo para el detalle completo de qué cambió y por qué.
+// reconstruido 10/10) -- mismas fórmulas EXACTAS del original (Fase 2a),
+// con `high/low/open/close` (vela M1) → `m3High/m3Low/m3Open/m3Close`
+// (vela M3 en curso/recién cerrada) y `open[1]/close[1]` (vela M1 anterior)
+// → `m3OpenPrev1/m3ClosePrev1` (vela M3 anterior). Ningún umbral ni
+// tolerancia se modificó.
 // ============================================================================
 grpEnvolvente = "Patrón envolvente / Start"
 TOLERANCIA_CUERPO = input.float(0.01, "Margen sobre 85%/90% de cuerpo (grilla de Gann a mano)", minval=0, maxval=0.05, step=0.005, group=grpEnvolvente)
@@ -741,9 +781,11 @@ esMartilloSell = esBajista and not esEstandarSell and nivelOpenSell >= 0.40 - TO
 esDojiSell     = esBajista and not esEstandarSell and not esMartilloSell and nivelOpenSell < 0.40 - TOLERANCIA_CUERPO and ((nivelOpenSell >= 0.15 and nivelCloseSell >= 0.90 - TOLERANCIA_CUERPO) or (nivelOpenSell < 0.15 and nivelCloseSell >= 0.85 - TOLERANCIA_CUERPO))
 esEnvolventeSell = esEstandarSell or esMartilloSell or esDojiSell
 
-// Vela de retroceso: misma regla del 30/09 (una vela cruz/doji, sin
-// cuerpo, no cuenta como retroceso), aplicada acá a la vela M3 anterior
-// (`m3OpenPrev1`/`m3ClosePrev1`) en vez de a la vela M1 anterior.
+// Vela de retroceso (fix 30/09, trasladado sin cambios a velas M3): una
+// vela M3 cruz (sin cuerpo) no cuenta como retroceso. Esto NO afecta el
+// trazado de altos/bajos M3 (Sección 2) -- esa lógica usa su propia
+// detección de doji sobre la vela AGREGADA M3 (`candleDir == "doji"`
+// dentro de `procesarVelaM3`), completamente separada de esta.
 pullbackEnvolventeBuy  = m3ClosePrev1 < m3OpenPrev1
 pullbackEnvolventeSell = m3ClosePrev1 > m3OpenPrev1
 
@@ -754,12 +796,11 @@ tipoEnvBuy  = esEstandarBuy  ? "Estándar" : esMartilloBuy  ? "Martillo" : esDoj
 tipoEnvSell = esEstandarSell ? "Estándar" : esMartilloSell ? "Martillo" : esDojiSell ? "Doji" : na
 
 // ============================================================================
-// SECCIÓN 4 — PATRÓN START, SOBRE VELAS M3 (variante M3, 02/10) -- mismas
-// fórmulas exactas del original (Fase 2b): la vela de indecisión pasa a
-// ser la vela M3 anterior (`m3OpenPrev1`/`m3ClosePrev1`/`m3HighPrev1`/
-// `m3LowPrev1`, antes era la vela M1 anterior) y la vela de retroceso pasa
-// a ser la vela M3 de hace dos (`m3OpenPrev2`/`m3ClosePrev2`, antes era la
-// M1 de hace dos). Ver el bloque de comentarios al inicio del archivo.
+// SECCIÓN 4 — PATRÓN START, SOBRE VELAS M3 (variante M3, reconstruido
+// 10/10) -- mismas fórmulas EXACTAS del original (Fase 2b), con la vela de
+// indecisión (M1[1]) → M3 Prev1, la vela de retroceso (M1[2]) → M3 Prev2.
+// Incluye el fix del 07/10 (cruz exacta en la vela de indecisión, `>=`/
+// `<=` en vez de `>`/`<`) trasladado tal cual.
 // ============================================================================
 rangoInd = m3HighPrev1 - m3LowPrev1
 TOLERANCIA = 0.0001  // 0,01%
@@ -768,11 +809,11 @@ nivelOpenIndBuy  = rangoInd > 0 ? (m3OpenPrev1 - m3LowPrev1) / rangoInd : na
 nivelCloseIndBuy = rangoInd > 0 ? (m3ClosePrev1 - m3LowPrev1) / rangoInd : na
 cuerpoIndBuy = math.abs(nivelCloseIndBuy - nivelOpenIndBuy)
 esMartilloIndBuy = (nivelOpenIndBuy >= 0.40 - TOLERANCIA_CUERPO and nivelOpenIndBuy <= 0.50 + TOLERANCIA_CUERPO and nivelCloseIndBuy >= 0.85 - TOLERANCIA_CUERPO) or (nivelOpenIndBuy < 0.15 and nivelCloseIndBuy > 0.50 - TOLERANCIA_CUERPO)
-// Vela de indecisión: mismo umbral del 30/09 (cuerpo estrictamente menor
-// al 50%) y mismo chequeo de color del 01/10 (la indecisión debe ser del
-// mismo color que la entrada) -- acá aplicados sobre la vela M3 anterior
-// en vez de la M1 anterior.
-esIndecisionBuy = m3ClosePrev1 > m3OpenPrev1 and cuerpoIndBuy < 0.50 - TOLERANCIA and not esMartilloIndBuy
+// Vela de indecisión en cruz exacta (fix 07/10 del M1, trasladado sin
+// cambios): `>=` en vez de `>` deja pasar una vela M3 en cruz perfecta
+// (sin color) como indecisión válida, sin reabrir el bug del 01/10 (una
+// vela M3 claramente del color contrario sigue sin cumplir la desigualdad).
+esIndecisionBuy = m3ClosePrev1 >= m3OpenPrev1 and cuerpoIndBuy < 0.50 - TOLERANCIA and not esMartilloIndBuy
 
 wickContraBuy = math.min(nivelOpenIndBuy, nivelCloseIndBuy)
 wickFavorBuy  = 1 - math.max(nivelOpenIndBuy, nivelCloseIndBuy)
@@ -782,14 +823,17 @@ nivelOpenIndSell  = rangoInd > 0 ? (m3HighPrev1 - m3OpenPrev1) / rangoInd : na
 nivelCloseIndSell = rangoInd > 0 ? (m3HighPrev1 - m3ClosePrev1) / rangoInd : na
 cuerpoIndSell = math.abs(nivelCloseIndSell - nivelOpenIndSell)
 esMartilloIndSell = (nivelOpenIndSell >= 0.40 - TOLERANCIA_CUERPO and nivelOpenIndSell <= 0.50 + TOLERANCIA_CUERPO and nivelCloseIndSell >= 0.85 - TOLERANCIA_CUERPO) or (nivelOpenIndSell < 0.15 and nivelCloseIndSell > 0.50 - TOLERANCIA_CUERPO)
-esIndecisionSell = m3ClosePrev1 < m3OpenPrev1 and cuerpoIndSell < 0.50 - TOLERANCIA and not esMartilloIndSell
+// Mismo fix del 07/10 trasladado para SELL -- ver comentario junto a
+// esIndecisionBuy más arriba.
+esIndecisionSell = m3ClosePrev1 <= m3OpenPrev1 and cuerpoIndSell < 0.50 - TOLERANCIA and not esMartilloIndSell
 
 wickContraSell = math.min(nivelOpenIndSell, nivelCloseIndSell)
 wickFavorSell  = 1 - math.max(nivelOpenIndSell, nivelCloseIndSell)
 tipoIndSell = esIndecisionSell ? (math.abs(wickContraSell - wickFavorSell) <= 0.15 ? "Doji" : "Pinbar") : na
 
-// Vela de retroceso del patrón Start: mismo criterio del 30/09 (una vela
-// cruz no cuenta como retroceso), aplicado sobre la vela M3 de hace dos.
+// Vela de retroceso del patrón Start (fix 30/09, mismo criterio que
+// pullbackEnvolventeBuy/Sell de la Sección 3 -- trasladado a la vela M3
+// Prev2): una vela M3 cruz (sin cuerpo) no cuenta como retroceso.
 pullbackStartBuy  = m3ClosePrev2 < m3OpenPrev2
 pullbackStartSell = m3ClosePrev2 > m3OpenPrev2
 
@@ -799,15 +843,13 @@ esStartBuy  = esEnvolventeBuy  and esIndecisionBuy  and pullbackStartBuy  and no
 esStartSell = esEnvolventeSell and esIndecisionSell and pullbackStartSell and not mismoColor3
 
 // ============================================================================
-// SECCIÓN 6 — MODELO MEC, SOBRE VELAS M3 (variante M3, 02/10) -- misma
-// secuencia de pullback-y-continuación del original (Fase 3), pero
-// evaluada con la vela M3 (`m3Close`/`m3Open`) en vez de la vela M1, y
-// SOLO actualizada cuando `finalVelaM3` es true (una vez cada 3 velas M1,
-// no en cada vela M1 como el original). La ventana de `extremoQuiebre`
-// (el colchón de precio alrededor del quiebre) pasó de 4 velas M1
-// (`high`/`high[1..3]`) a 4 velas M3 (`m3High`/`m3HighPrev1..3`) -- mismo
-// criterio, escalado a la unidad de vela nueva. Ver el bloque de
-// comentarios al inicio del archivo para el detalle completo.
+// SECCIÓN 6 — MODELO MEC, SOBRE VELAS M3 (variante M3, reconstruido
+// 10/10) -- misma secuencia de pullback-y-continuación del original, pero
+// evaluada con la vela M3 (`m3Close`/`m3Open`) y SOLO actualizada cuando
+// `finalVelaM3` es true (antes se reevaluaba en cada vela M1). La ventana
+// de `extremoQuiebre` pasó de 4 velas M1 (`high`/`high[1..3]`) a 4 velas
+// M3 (`m3High`/`m3HighPrev1..3`) -- mismo criterio, escalado a la unidad
+// de vela nueva.
 // ============================================================================
 grpMEC = "Modelo MEC"
 mostrarZonaBusquedaMEC = input.bool(false, "Sombrear zona de búsqueda de Continuación (debug)", group=grpMEC)
@@ -833,8 +875,7 @@ superaNivelAhora = false
 // `and finalVelaM3`: la secuencia de pullback-y-continuación solo avanza
 // un paso cuando cierra una vela M3 de verdad -- con el chart corriendo en
 // M1, este bloque se evaluaría en cada vela M1 si no fuera por este
-// chequeo, y el patrón quedaría detectado a granularidad M1 otra vez (el
-// mismo tipo de bug que tuvo `finalVelaM3` en la Sección 2 el 28/09).
+// chequeo, y el patrón quedaría detectado a granularidad M1 otra vez.
 if finalVelaM3 and tendencia != "indefinida" and not na(extremoQuiebre)
     esVelaAFavor := tendencia == "alcista" ? m3Close > m3Open : m3Close < m3Open
     esVelaEnContra := tendencia == "alcista" ? m3Close < m3Open : m3Close > m3Open
@@ -898,6 +939,27 @@ tpSell = not na(distanciaFinalSell) ? close - distanciaFinalSell * RR_TP * (1 - 
 // SECCIÓN 6C — EJECUCIÓN REAL (BACKTEST) + LÍMITE DIARIO + ARRASTRE ENTRE
 // SESIONES (Fase 4, 15/09 -- Wall Street y filtros de sesión/día agregados 16/09)
 // ============================================================================
+// Pérdida por Reset cuenta como SL (fix 07/10, a pedido de Fabián -- quiere
+// que una pérdida realizada por Hedge/Reset (cierre de un trade abierto
+// ANTES de llegar a su SL/TP real, porque aparece una señal MEC en sentido
+// contrario) cuente igual que un SL real a efectos del límite operativo de
+// sesión ("1 TP, 1 SL + 2do intento (1 TP o 2 SL)") -- así nunca se abre una
+// 3ra operación tras dos pérdidas, sea cual sea el motivo del cierre de la
+// 2da. El precio de entrada de la operación vigente no se guarda como
+// variable propia en ningún lado -- se reconstruye algebraicamente a partir
+// de `slOut`/`tpOut` (que sí se guardan) y la relación fija entre ambos:
+// `tpOut = entrada ± distancia×RR_TP×(1-TOLERANCIA_TP_PCT/100)` (el signo
+// según dirección) y `slOut = entrada ∓ distancia`. Despejando entrada en
+// función de slOut/tpOut y k=RR_TP×(1-TOLERANCIA_TP_PCT/100): la fórmula es
+// la MISMA para BUY y SELL por simetría (es una interpolación lineal entre
+// los dos niveles conocidos, en la proporción 1:k). Válido porque RR_TP y
+// TOLERANCIA_TP_PCT son inputs FIJOS durante todo el backtest -- los mismos
+// valores que ya se usaron para calcular slOut/tpOut en el momento en que
+// esa entrada se abrió, sin importar cuántas barras atrás haya sido.
+precioEntradaDesdeSLTP(slOut, tpOut) =>
+    k = RR_TP * (1 - TOLERANCIA_TP_PCT / 100)
+    (tpOut + k * slOut) / (1 + k)
+
 // procesarSesionTrade: misma idea que procesarVelaM3 (Sección 2) -- función
 // PURA que recibe el estado actual de UNA sesión (Pre-NY, NY, Asia o Wall
 // Street, cada una se llama con sus propias variables) y devuelve el estado
@@ -1031,8 +1093,20 @@ procesarSesionTrade(enEstaSesion, inicioEstaSesion, mecBuy, mecSell, slBuyIn, tp
     // (el límite diario se suprime con `sinLimiteDiario`, ver comentario largo
     // junto a ese input más abajo -- la excepción de "tercer hedge encadenado"
     // deja de hacer falta en ese caso, ya no hay un conteo que desbordar)
-    tercerHedgeBuyLocal  = senalesOut == 2 and not na(dirOut) and dirOut == "SELL" and hedgeFlagOut
-    tercerHedgeSellLocal = senalesOut == 2 and not na(dirOut) and dirOut == "BUY"  and hedgeFlagOut
+    // Pérdida por Reset cuenta como SL (fix 07/10, ver comentario largo junto
+    // a `precioEntradaDesdeSLTP` al inicio de la Sección 6C): la excepción de
+    // "tercer hedge encadenado" de abajo permitía una 3ra entrada cada vez
+    // que la 2da se cerraba por Hedge en vez de por su propio SL/TP -- sin
+    // importar si esa 2da operación estaba ganando o perdiendo en ese
+    // momento. Si estaba en PÉRDIDA, son -- a efectos del límite -- dos
+    // pérdidas, y la excepción ya no debería aplicar.
+    precioEntradaVigente = not na(dirOut) ? precioEntradaDesdeSLTP(slOut, tpOut) : na
+    hedgeVigenteEnPerdida = not na(dirOut) and (dirOut == "SELL" ? close > precioEntradaVigente : close < precioEntradaVigente)
+    if senalesOut == 2 and hedgeFlagOut and hedgeVigenteEnPerdida and not sinLimiteDiario
+        cerradaOut := true
+
+    tercerHedgeBuyLocal  = senalesOut == 2 and not na(dirOut) and dirOut == "SELL" and hedgeFlagOut and not hedgeVigenteEnPerdida
+    tercerHedgeSellLocal = senalesOut == 2 and not na(dirOut) and dirOut == "BUY"  and hedgeFlagOut and not hedgeVigenteEnPerdida
     puedeBuy  = not cerradaOut and (sinLimiteDiario ? (na(dirOut) or dirOut == "SELL") : ((senalesOut < 2 and (na(dirOut) or dirOut == "SELL")) or tercerHedgeBuyLocal))
     puedeSell = not cerradaOut and (sinLimiteDiario ? (na(dirOut) or dirOut == "BUY")  : ((senalesOut < 2 and (na(dirOut) or dirOut == "BUY"))  or tercerHedgeSellLocal))
 
@@ -1087,6 +1161,37 @@ habilitarViernes = input.bool(true, "Habilitar Viernes", group=grpFiltros)
 grpFiltrosPatron = "Backtest — Filtros de patrón de entrada"
 habilitarEnvolvente = input.bool(true, "Habilitar señales por patrón Envolvente", group=grpFiltrosPatron)
 habilitarStart = input.bool(true, "Habilitar señales por patrón Start", group=grpFiltrosPatron)
+
+// -- prueba temporal (08/10, a pedido de Fabián -- quiere subir el win rate
+// y achicar las rachas negativas, filtrando entradas que van en contra del
+// sesgo direccional de un marco temporal MAYOR al M3 que ya usa la
+// estructura): una EMA de un timeframe superior (M3/M1 reaccionan rápido a
+// swings de 2-3 velas, pero no distinguen una tendencia real de ruido
+// direccional de corto plazo) -- BUY solo válido si la vela de entrada
+// cierra por ENCIMA de la EMA, SELL solo si cierra por DEBAJO, exactamente
+// como lo planteó Fabián. Timeframe de la EMA dejado como INPUT (no
+// hardcodeado) a pedido explícito de Fabián, para comparar 15/30/45/60/240
+// minutos (o Diario) directamente en el Strategy Tester sin tocar código --
+// ver el análisis completo en el chat sobre por qué 1H es la recomendación
+// de partida (lo bastante lento para ser un sesgo de marco mayor genuino,
+// lo bastante rápido para seguir siendo relevante dentro de una sesión de
+// 2 horas) y por qué Diario/4H pueden ser demasiado lentos y 15-30m
+// redundantes con la propia estructura M3. `request.security` con
+// `lookahead=barmerge.lookahead_off` es el patrón estándar y documentado
+// de Pine para series de PRECIO sin repintado -- no tiene relación con el
+// problema histórico de `lookahead_off` sobre `time_close` (una serie de
+// TIEMPO, no de precio) que forzó a abandonar ese enfoque para
+// `finalVelaM3` en su momento (ver comentario largo junto a esa variable,
+// Sección 2) -- acá es seguro. Aplicado en `mecBuyGate`/`mecSellGate` más
+// abajo, no en la Sección 6 -- esa sigue siendo copia literal del
+// indicador, sin tocar. Apagado (default), el comportamiento es idéntico
+// al actual.
+grpFiltroEMA = "Backtest — Filtro EMA de tendencia (prueba)"
+habilitarFiltroEMA = input.bool(false, "PRUEBA: filtrar entradas por EMA de tendencia -- BUY solo si la vela de entrada cierra por encima de la EMA, SELL solo si cierra por debajo", group=grpFiltroEMA)
+timeframeEMA = input.timeframe("60", "Timeframe de la EMA (probar 15/30/45/60/240 minutos o D)", options=["15", "30", "45", "60", "240", "D"], group=grpFiltroEMA)
+periodoEMA = input.int(20, "Período de la EMA", minval=1, group=grpFiltroEMA)
+emaFiltro = request.security(syminfo.tickerid, timeframeEMA, ta.ema(close, periodoEMA), lookahead=barmerge.lookahead_off)
+plot(habilitarFiltroEMA ? emaFiltro : na, title="EMA de tendencia (filtro)", color=color.fuchsia, linewidth=2)
 
 // -- prueba temporal (30/09, a pedido de Fabián -- quiere comparar en
 // backtesting profundo esta variante contra el comportamiento actual, SIN
@@ -1153,14 +1258,82 @@ mostrarDebugQty = input.bool(false, "DEBUG temporal: qtyBuy/qtySell bar a bar (V
 plot(mostrarDebugQty ? qtyBuy : na, title="DEBUG qtyBuy", color=color.blue, style=plot.style_circles, linewidth=2)
 plot(mostrarDebugQty ? qtySell : na, title="DEBUG qtySell", color=color.purple, style=plot.style_circles, linewidth=2)
 
-// `and finalVelaM3` explícito acá también (variante M3, 02/10): ya queda
-// implícito por cómo está armado `mecBuyBruto`/`mecSellBruto` arriba
-// (`superaNivelAhora` solo se pone true dentro del bloque gateado por
-// `finalVelaM3` en la Sección 6), pero se deja explícito para que quede
-// claro al leer el código que una entrada nueva solo puede abrirse en la
-// vela M1 donde cierra una vela M3 -- confirmado por Fabián.
-mecBuyGate  = mecBuyBruto  and barstate.isconfirmed and finalVelaM3 and diaHabilitado and ((candidataEnvolventeBuy  and habilitarEnvolvente) or (esStartBuy  and habilitarStart))
-mecSellGate = mecSellBruto and barstate.isconfirmed and finalVelaM3 and diaHabilitado and ((candidataEnvolventeSell and habilitarEnvolvente) or (esStartSell and habilitarStart))
+// Filtro EMA de tendencia (08/10, ver comentario largo junto a
+// `habilitarFiltroEMA` más arriba): BUY exige vela de entrada por encima de
+// la EMA, SELL por debajo. Con el toggle apagado (default), `filtroEMABuyOk`/
+// `filtroEMASellOk` dan siempre true -- comportamiento idéntico al actual.
+filtroEMABuyOk  = not habilitarFiltroEMA or close > emaFiltro
+filtroEMASellOk = not habilitarFiltroEMA or close < emaFiltro
+
+// `and finalVelaM3` explícito acá también (variante M3, reconstruido
+// 10/10): ya queda implícito por la Sección 6 (mecBuyBruto/mecSellBruto
+// solo se actualizan con `finalVelaM3` en la Sección 6), pero se deja
+// explícito en el gate real para que quede documentado sin depender de
+// leer la Sección 6 para saberlo.
+mecBuyGate  = mecBuyBruto  and barstate.isconfirmed and diaHabilitado and filtroEMABuyOk  and finalVelaM3 and ((candidataEnvolventeBuy  and habilitarEnvolvente) or (esStartBuy  and habilitarStart))
+mecSellGate = mecSellBruto and barstate.isconfirmed and diaHabilitado and filtroEMASellOk and finalVelaM3 and ((candidataEnvolventeSell and habilitarEnvolvente) or (esStartSell and habilitarStart))
+
+// ============================================================================
+// DEBUG — Distribución de distancias de SL (06/10): herramienta para calibrar
+// `UMBRAL_SL_PCT` por activo, a pedido de Fabián al notar que el valor
+// calibrado contra oro (0,46%) no rendía igual de bien en BTCUSD. Acumula la
+// distancia NATURAL del SL (distanciaCrudaBuy/Sell, en % del precio de
+// entrada, ANTES de cualquier reducción) de cada señal MEC detectada en todo
+// el backtest, y en la última barra arma una tabla con mínimo/percentiles/
+// máximo + cuántas de esas señales quedan por encima del umbral actual (las
+// que se recortan). Es de solo lectura: no toca `distanciaFinalBuy/Sell`,
+// `slBuy/tpBuy/slSell/tpSell` ni ninguna variable de ejecución -- no cambia
+// el comportamiento de la estrategia, sea cual sea el activo.
+// ============================================================================
+grpDebugSL = "Debug — Distribución de distancias SL"
+mostrarHistogramaSL = input.bool(false, "DEBUG temporal: tabla de distribución de distancias de SL (para calibrar Umbral de distancia SL por activo)", group=grpDebugSL)
+
+var array<float> distanciasSLPct = array.new<float>()
+
+if mostrarHistogramaSL and mecBuyGate and not na(distanciaCrudaBuy)
+    array.push(distanciasSLPct, distanciaCrudaBuy / close * 100)
+if mostrarHistogramaSL and mecSellGate and not na(distanciaCrudaSell)
+    array.push(distanciasSLPct, distanciaCrudaSell / close * 100)
+
+var table tablaSL = na
+if mostrarHistogramaSL and barstate.islast and array.size(distanciasSLPct) > 0
+    distanciasOrdenadas = array.copy(distanciasSLPct)
+    array.sort(distanciasOrdenadas)
+    n = array.size(distanciasOrdenadas)
+
+    pMin = array.min(distanciasOrdenadas)
+    p25  = array.percentile_nearest_rank(distanciasOrdenadas, 25)
+    p50  = array.percentile_nearest_rank(distanciasOrdenadas, 50)
+    p75  = array.percentile_nearest_rank(distanciasOrdenadas, 75)
+    p90  = array.percentile_nearest_rank(distanciasOrdenadas, 90)
+    p95  = array.percentile_nearest_rank(distanciasOrdenadas, 95)
+    pMax = array.max(distanciasOrdenadas)
+
+    cuantosSuperanUmbral = 0
+    for i = 0 to n - 1
+        if array.get(distanciasOrdenadas, i) > UMBRAL_SL_PCT
+            cuantosSuperanUmbral += 1
+    pctSuperanUmbral = cuantosSuperanUmbral / n * 100
+
+    tablaSL := table.new(position.top_right, 2, 9, bgcolor=color.new(color.black, 10), border_width=1, border_color=color.gray)
+    table.cell(tablaSL, 0, 0, "Distribución distancia SL (%)", text_color=color.white, bgcolor=color.new(color.blue, 40), text_size=size.small)
+    table.cell(tablaSL, 1, 0, "n=" + str.tostring(n), text_color=color.white, bgcolor=color.new(color.blue, 40), text_size=size.small)
+    table.cell(tablaSL, 0, 1, "Mínimo", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 1, 1, str.tostring(pMin, "#.###") + "%", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 0, 2, "P25", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 1, 2, str.tostring(p25, "#.###") + "%", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 0, 3, "Mediana (P50)", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 1, 3, str.tostring(p50, "#.###") + "%", text_color=color.yellow, text_size=size.small)
+    table.cell(tablaSL, 0, 4, "P75", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 1, 4, str.tostring(p75, "#.###") + "%", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 0, 5, "P90", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 1, 5, str.tostring(p90, "#.###") + "%", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 0, 6, "P95", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 1, 6, str.tostring(p95, "#.###") + "%", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 0, 7, "Máximo", text_color=color.white, text_size=size.small)
+    table.cell(tablaSL, 1, 7, str.tostring(pMax, "#.###") + "%", text_color=color.orange, text_size=size.small)
+    table.cell(tablaSL, 0, 8, "Umbral actual (" + str.tostring(UMBRAL_SL_PCT, "#.##") + "%) recorta", text_color=color.white, bgcolor=color.new(color.green, 40), text_size=size.small)
+    table.cell(tablaSL, 1, 8, str.tostring(cuantosSuperanUmbral) + " / " + str.tostring(n) + " (" + str.tostring(pctSuperanUmbral, "#.#") + "%)", text_color=color.white, bgcolor=color.new(color.green, 40), text_size=size.small)
 
 // -- estado por sesión (mismas 6 variables que el indicador, una copia por
 // sesión -- Pre-NY, NY, Asia y Wall Street no comparten límite ni trade

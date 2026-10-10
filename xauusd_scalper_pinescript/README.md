@@ -1139,6 +1139,36 @@ tocar los defaults ya validados en oro).
   timeframe, y confirmar que efectivamente sube el win rate / achica las
   rachas negativas antes de darlo por definitivo.
 
+- [ ] **Fase 4 (backtesting) — archivo M3 experimental, RECONSTRUIDO
+  (10/10)**: después de probar EMA de tendencia, separar patrones de
+  entrada, sacar días operativos y distintas combinaciones de sesión, sin
+  alcanzar el win rate/rentabilidad buscados, a Fabián le queda una última
+  pregunta: ¿qué cambia si las entradas se ejecutan en el cierre de cada
+  vela M3 en vez de en cada vela M1? Retoma el experimento que se había
+  descartado el 06/10 (ver esa entrada arriba) por no poder resolver por
+  qué el backtest no generaba ninguna operación. `fase4_strategy_backtest_m3.pine`
+  se reconstruyó por completo desde el `fase4_strategy_backtest.pine`
+  VIGENTE (10/10), no desde la copia vieja del 02/10 -- así la variante M3
+  tiene exactamente las mismas herramientas que la M1 (fix de la vela en
+  cruz del 07/10, pérdida por Reset cuenta como SL del 07/10, filtro EMA
+  del 08/10, tabla de distribución de SL del 06/10), comparación justa en
+  vez de una versión atrasada. Mismo criterio de reescritura que el intento
+  anterior -- Sección 2 (estructura M3) sin cambios de lógica, Secciones 3
+  (Envolvente) y 4 (Start) con `high/low/open/close`/`[1]`/`[2]` → velas M3
+  (`m3High/m3Low/m3Open/m3Close`/`...Prev1`/`...Prev2`, con el fix de la
+  cruz exacta del 07/10 trasladado tal cual), Sección 6 (MEC) con la
+  ventana de `extremoQuiebre` escalada a 4 velas M3 y la secuencia de
+  pullback-y-continuación gateada por `finalVelaM3`, Sección 6C con `and
+  finalVelaM3` explícito en `mecBuyGate`/`mecSellGate`. Verificado con diff
+  contra el M1 vigente filtrando comentarios: solo aparecen los cambios
+  documentados, nada más. Para esta vuelta, antes de sospechar de la
+  lógica si el backtest vuelve a dar vacío: confirmar que NO está activo
+  el modo Replay, y que el plot "DEBUG finalVelaM3" esté tildado también
+  en la pestaña "Estilo" de la configuración del script (no solo en el
+  input) -- las dos causas externas sospechadas (nunca confirmadas) del
+  intento anterior. Implementado en `fase4_strategy_backtest_m3.pine`.
+  Validación pendiente por Fabián.
+
 ## Decisiones de diseño (confirmadas con Fabián)
 
 - **Estética minimalista, solo la señal final**: los triángulos/etiquetas de
