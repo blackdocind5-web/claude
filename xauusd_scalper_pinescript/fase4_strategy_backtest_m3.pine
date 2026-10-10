@@ -697,6 +697,7 @@ var float ultimoAltoQuebrado = na
 var float ultimoBajoQuebrado = na
 
 if quiebreAlto
+    cntQuiebres := cntQuiebres + 1
     nivelQuebradoAlto := altoM3Activo
     ultimoAltoQuebrado := altoM3Activo
     esCambioEstructuraAlto := tendencia == "bajista"
@@ -715,6 +716,7 @@ if quiebreAlto
         bajoM3Bloqueado := false
 
 if quiebreBajo
+    cntQuiebres := cntQuiebres + 1
     nivelQuebradoBajo := bajoM3Activo
     ultimoBajoQuebrado := bajoM3Activo
     esCambioEstructuraBajo := tendencia == "alcista"
@@ -858,6 +860,15 @@ var bool huboPullbackEnBusqueda = false
 var float extremoQuiebre = na
 var bool mecListo = false
 
+// DEBUG temporal (10/10, para diagnosticar "0 trades" en todo el backtest
+// M3 -- ver panel Sección 7): contadores acumulados de cada escalón del
+// embudo de entrada, para ver en qué paso se corta sin tener que inspeccionar
+// la Ventana de Datos bar a bar. Sacar una vez resuelto.
+var int cntQuiebres   = 0  // quiebreAlto/quiebreBajo (la estructura SÍ rompe niveles)
+var int cntMecListo   = 0  // veces que mecListo pasa a true (pullback + continuación confirmados)
+var int cntMecBruto   = 0  // mecBuyBruto/mecSellBruto true (mecListo + patrón Envolvente/Start)
+var int cntMecGate    = 0  // mecBuyGate/mecSellGate true (lo que de verdad abre una orden)
+
 if quiebreAlto and (esCambioEstructuraAlto or na(extremoQuiebre))
     huboPullbackEnBusqueda := false
     extremoQuiebre := math.max(math.max(m3High, m3HighPrev1), math.max(m3HighPrev2, m3HighPrev3))
@@ -888,6 +899,7 @@ if finalVelaM3 and tendencia != "indefinida" and not na(extremoQuiebre)
 
     if huboPullbackEnBusqueda and esVelaAFavor and superaNivelAhora
         mecListo := true
+        cntMecListo := cntMecListo + 1
 
     extremoQuiebre := tendencia == "alcista" ? math.max(extremoQuiebre, m3High) : math.min(extremoQuiebre, m3Low)
 
@@ -895,6 +907,9 @@ esperandoContinuacion = tendencia != "indefinida" and not mecListo
 
 mecBuyBruto  = mecListo and tendencia == "alcista" and superaNivelAhora and (candidataEnvolventeBuy  or esStartBuy)
 mecSellBruto = mecListo and tendencia == "bajista" and superaNivelAhora and (candidataEnvolventeSell or esStartSell)
+
+if mecBuyBruto or mecSellBruto
+    cntMecBruto := cntMecBruto + 1
 
 bgcolor(mostrarZonaBusquedaMEC and esperandoContinuacion ? color.new(color.yellow, 85) : na, title="Esperando Continuación MEC (debug)")
 
@@ -1273,6 +1288,9 @@ filtroEMASellOk = not habilitarFiltroEMA or close < emaFiltro
 mecBuyGate  = mecBuyBruto  and barstate.isconfirmed and diaHabilitado and filtroEMABuyOk  and finalVelaM3 and ((candidataEnvolventeBuy  and habilitarEnvolvente) or (esStartBuy  and habilitarStart))
 mecSellGate = mecSellBruto and barstate.isconfirmed and diaHabilitado and filtroEMASellOk and finalVelaM3 and ((candidataEnvolventeSell and habilitarEnvolvente) or (esStartSell and habilitarStart))
 
+if mecBuyGate or mecSellGate
+    cntMecGate := cntMecGate + 1
+
 // ============================================================================
 // DEBUG — Distribución de distancias de SL (06/10): herramienta para calibrar
 // `UMBRAL_SL_PCT` por activo, a pedido de Fabián al notar que el valor
@@ -1520,7 +1538,7 @@ if abrirSellWallStreet and not na(qtySell)
 // ============================================================================
 // SECCIÓN 7 — PANEL DE ESTADO Y MÉTRICAS
 // ============================================================================
-var table panel = table.new(position.top_right, 1, 7, border_width=1)
+var table panel = table.new(position.top_right, 1, 8, border_width=1)
 if barstate.islast
     table.cell(panel, 0, 0, tendencia == "alcista" ? "Uptrend (BUY)" : tendencia == "bajista" ? "Downtrend (SELL)" : "Undefined", text_color=color.white, bgcolor=tendencia == "alcista" ? color.new(color.green, 40) : tendencia == "bajista" ? color.new(color.red, 40) : color.new(color.gray, 40))
     table.cell(panel, 0, 1, "Pre-NY: " + (na(dirPreNY) ? "sin trade" : dirPreNY + (not enPreNY ? " (arrastre)" : "")), text_color=color.white, bgcolor=color.new(color.blue, 60))
@@ -1535,3 +1553,14 @@ if barstate.islast
     pf = strategy.grossloss != 0 ? strategy.grossprofit / math.abs(strategy.grossloss) : na
     table.cell(panel, 0, 5, "Neto: " + str.tostring(netProfitPct, "#.##") + "% | Trades: " + str.tostring(strategy.closedtrades), text_color=color.white, bgcolor=color.new(color.gray, 40))
     table.cell(panel, 0, 6, "Win rate: " + str.tostring(winRate, "#.#") + "% | PF: " + (na(pf) ? "n/a" : str.tostring(pf, "#.##")), text_color=color.white, bgcolor=color.new(color.gray, 40))
+    // DEBUG temporal (10/10, diagnóstico "0 trades") -- contadores acumulados
+    // de todo el backtest, un escalón del embudo de entrada por campo:
+    // Quiebres = veces que la estructura rompió un nivel (si esto ya da 0,
+    // el problema está en la Sección 2/estructura, no en el MEC). Listo =
+    // veces que mecListo pasó a true (pullback+continuación confirmados).
+    // Bruto = mecBuyBruto/Sell true (listo + patrón Envolvente/Start).
+    // Gate = mecBuyGate/Sell true (el que de verdad manda strategy.entry).
+    // Si Gate > 0 pero Trades sigue en 0, el problema ya NO es de lógica de
+    // señal -- pasa a ser algo del lado del motor de backtest (qty/SL-TP
+    // inválidos, o datos históricos insuficientes para esa fecha).
+    table.cell(panel, 0, 7, "Quiebres:" + str.tostring(cntQuiebres) + " Listo:" + str.tostring(cntMecListo) + " Bruto:" + str.tostring(cntMecBruto) + " Gate:" + str.tostring(cntMecGate), text_color=color.white, bgcolor=color.new(color.orange, 40))
