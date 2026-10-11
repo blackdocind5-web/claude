@@ -1,0 +1,4 @@
+# Objetivo semanal +0,9% a +1,8% con escalera en Pre NY (investigación, 11/10/2026)
+
+- Cartera real (XAUUSD E, EURUSD ES, GBPUSD S; costos Multibank; sin enero; lunes a jueves). `semanal.py` → `grilla.json` (base 0,25–1,25%, tope 0–4, objetivo semanal 0,9/1,8%, escalera que vuelve a la base cada lunes o continua, freno −3R); `mc.py` → `mc.json` (1.000 simulaciones). Usa `../mec_diario/diario.py`.
+- Resultado: no se puede cerrar todas las semanas en positivo; en simulaciones el máximo es ~3 de 4 (tope 2), con 13–21% de probabilidad de un año negativo. Tope ideal: 1 (base → doble → vuelve a la base), objetivo +1,8% (el de +0,9% recorta rendimiento). 0,75% tope 1 + objetivo 1,8%: caída parecida a la actual, más semanas ≥ +0,9% (42% → 49%), menos rendimiento (31% → 25% mediana). 1% tope 1 + objetivo 1,8%: mismo rendimiento que la actual, más semanas buenas, colas más grandes. No se modificó ningún artefacto.

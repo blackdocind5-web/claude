@@ -82,6 +82,8 @@ def simular(ts, base=1.0, tope=0, obj=None, freno=2.7, escalera_dia=False, detal
                sem_pos=round(100 * sum(x > 0 for x in sems) / len(sems), 1), peor_sem=round(min(sems), 2), sem_med=round(st.median(sems), 2),
                sem_n=len(sems), sem_obj=round(100 * len(sem_ok) / len(sems), 1), sem_1a2=round(100 * sum(1 <= x <= 2.3 for x in sems) / len(sems), 1),
                sem_mas1=round(100 * sum(x >= 1 for x in sems) / len(sems), 1), sem_prom=round(st.mean(sems), 2),
+               sem_09=round(100 * sum(x >= 0.9 for x in sems) / len(sems), 1), sem_neg=round(100 * sum(x < 0 for x in sems) / len(sems), 1),
+               peor_sem_p10=round(sorted(sems)[len(sems) // 10], 2),
                sem_neg_prom=round(st.mean([x for x in sems if x < 0]), 2) if any(x < 0 for x in sems) else 0,
                mes_pos=round(100 * sum(x > 0 for x in meses) / len(meses), 1), peor_mes=round(min(meses), 2), mes_med=round(st.median(meses), 2),
                mes_geo=round(((E / 1000) ** (30.4375 / (D1 - D0).days) - 1) * 100, 2) if E > 0 else -100,
@@ -109,7 +111,7 @@ def montecarlo(ts, sims=1000, seed=7, **kw):
                 p_anio_neg=round(100 * sum(any(v < 0 for v in r["anios"].values()) for r in R) / sims, 1),
                 dias_pos_med=round(st.median([r["dias_pos"] for r in R]), 1), mes_pos_med=round(st.median([r["mes_pos"] for r in R]), 1),
                 sem_pos_med=round(st.median([r["sem_pos"] for r in R]), 1), sem_pos_p5=round(q([r["sem_pos"] for r in R], .05), 1),
-                sem_mas1_med=round(st.median([r.get("sem_mas1", 0) for r in R]), 1), peor_sem_p5=round(q([r["peor_sem"] for r in R], .05), 1),
+                sem_mas1_med=round(st.median([r.get("sem_mas1", 0) for r in R]), 1), sem_09_med=round(st.median([r.get("sem_09", 0) for r in R]), 1), sem_obj_med=round(st.median([r.get("sem_obj", 0) for r in R]), 1), peor_sem_p5=round(q([r["peor_sem"] for r in R], .05), 1),
                 peor_mes_p5=round(q([r["peor_mes"] for r in R], .05), 1))
 
 
