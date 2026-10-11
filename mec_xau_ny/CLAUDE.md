@@ -1,0 +1,5 @@
+# XAUUSD en la sesión de NY (09:00–11:00, m1) · investigación (11/10/2026)
+
+- Datos: `../mec_ny/datos/XAUUSD_NY_m1_0900_2025-2026_{Envolvente,START,Envolvente_y_START}.csv` (1.000 USD). `base_xau.py` lee con el calendario NY (`ny.leer`), límite de sesión y costo de 0,05 USD por operación contra el stop de cada una.
+- `estudio.py` → `estudio.json`; `gestion.py` → `grilla.json` (escalera, objetivo semanal +1,8%, freno semanal); `mc.py` → `mc.json`; `con_cartera.py` → `con_cartera.json`. Usa `../mec_diario/diario.py` (`obj_sem`, `escalera_sem`).
+- Resultado: ventaja muy chica. Mejor variante (entre ~54 filtros): Envolvente + START, entradas 09:00–09:59, sin FOMC, lunes a viernes, sin enero: 207 operaciones, +0,089R por operación neto (2025 +7,1R / 2026 +11,5R). Fijo 1%: +9,7% anual, 47% de semanas positivas, año negativo 33% en simulaciones. La escalera sube las semanas positivas a ~67% pero agranda las colas; el objetivo semanal y el freno semanal no ayudan. Sumada a la cartera real sube el anual (+34,8% → +42,8%) pero también la caída (−16,0% → −22,6%): no cumple la regla. No se recomienda operarla; no se modificó ningún artefacto.

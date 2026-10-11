@@ -22,12 +22,13 @@ D0, D1 = dt.date(2025, 1, 13), dt.date(2026, 10, 2)
 def lunes(d): return d - dt.timedelta(days=d.weekday())
 
 
-def simular(ts, base=1.0, tope=0, obj=None, freno=2.7, escalera_dia=False, detalle=False):
-    """ts ordenadas por entrada. obj y freno en % del capital. tope=0: riesgo fijo."""
+def simular(ts, base=1.0, tope=0, obj=None, freno=2.7, escalera_dia=False, detalle=False, obj_sem=None, escalera_sem=False):
+    """ts ordenadas por entrada. obj, obj_sem y freno en % del capital. tope=0: riesgo fijo.
+    obj_sem: objetivo semanal; al llegar, no se abren más operaciones hasta el lunes. escalera_sem: la escalera vuelve a la base cada lunes."""
     E = 1000.0; pk = E; mdd = 0.0; k = 0; L = 0.0
     abiertas = []; dia = None; e_dia = E; parado_dia = False; sem = None; e_sem = E; parado_sem = False
     res_dia = defaultdict(float); ini_dia = {}; res_sem = defaultdict(float); ini_sem = {}; res_mes = defaultdict(float); ini_mes = {}
-    obj_ok = set(); n = w = 0; max_r = 0.0; max_abierto = 0.0; curve = []; niveles = defaultdict(int); fin_anio = {}
+    obj_ok = set(); sem_ok = set(); n = w = 0; max_r = 0.0; max_abierto = 0.0; curve = []; niveles = defaultdict(int); fin_anio = {}
 
     def cerrar(hasta):
         nonlocal E, pk, mdd, k, L, abiertas, parado_dia, parado_sem
@@ -47,6 +48,7 @@ def simular(ts, base=1.0, tope=0, obj=None, freno=2.7, escalera_dia=False, detal
                 if obj is not None and d == dia and res_dia[d] >= obj / 100 * ini_dia[d] - 1e-9:
                     parado_dia = True; obj_ok.add(d)
                 if freno is not None and lunes(d) == sem and res_sem[sem] <= -freno / 100 * ini_sem[sem] + 1e-9: parado_sem = True
+                if obj_sem is not None and lunes(d) == sem and res_sem[sem] >= obj_sem / 100 * ini_sem[sem] - 1e-9: parado_sem = True; sem_ok.add(sem)
             else: quedan.append(t)
         abiertas = quedan
 
@@ -57,7 +59,9 @@ def simular(ts, base=1.0, tope=0, obj=None, freno=2.7, escalera_dia=False, detal
             cerrar(dt.datetime.combine(d, dt.time(0)))
             dia = d; parado_dia = False; ini_dia[d] = E
             if escalera_dia: k = 0; L = 0.0
-            if lunes(d) != sem: sem = lunes(d); parado_sem = False; ini_sem[sem] = E
+            if lunes(d) != sem:
+                sem = lunes(d); parado_sem = False; ini_sem[sem] = E
+                if escalera_sem: k = 0; L = 0.0
             ini_mes.setdefault(d.strftime("%Y-%m"), E)
         if parado_dia or parado_sem: continue
         r = base * 2 ** k; niveles[k] += 1
@@ -76,6 +80,9 @@ def simular(ts, base=1.0, tope=0, obj=None, freno=2.7, escalera_dia=False, detal
                dias=len(dias), dias_pos=round(100 * sum(x > 0 for x in dias) / len(dias), 1), dias_obj=round(100 * len(obj_ok) / len(dias), 1),
                dia_prom=round(st.mean(dias), 3), dia_med=round(st.median(dias), 3), peor_dia=round(min(dias), 2), mejor_dia=round(max(dias), 2),
                sem_pos=round(100 * sum(x > 0 for x in sems) / len(sems), 1), peor_sem=round(min(sems), 2), sem_med=round(st.median(sems), 2),
+               sem_n=len(sems), sem_obj=round(100 * len(sem_ok) / len(sems), 1), sem_1a2=round(100 * sum(1 <= x <= 2.3 for x in sems) / len(sems), 1),
+               sem_mas1=round(100 * sum(x >= 1 for x in sems) / len(sems), 1), sem_prom=round(st.mean(sems), 2),
+               sem_neg_prom=round(st.mean([x for x in sems if x < 0]), 2) if any(x < 0 for x in sems) else 0,
                mes_pos=round(100 * sum(x > 0 for x in meses) / len(meses), 1), peor_mes=round(min(meses), 2), mes_med=round(st.median(meses), 2),
                mes_geo=round(((E / 1000) ** (30.4375 / (D1 - D0).days) - 1) * 100, 2) if E > 0 else -100,
                max_riesgo=round(max_r, 2), max_abierto=round(max_abierto, 2), niveles=dict(niveles))
@@ -101,6 +108,8 @@ def montecarlo(ts, sims=1000, seed=7, **kw):
                 p_dd30=round(100 * sum(x >= 30 for x in dd) / sims, 1), p_dd50=round(100 * sum(x >= 50 for x in dd) / sims, 1),
                 p_anio_neg=round(100 * sum(any(v < 0 for v in r["anios"].values()) for r in R) / sims, 1),
                 dias_pos_med=round(st.median([r["dias_pos"] for r in R]), 1), mes_pos_med=round(st.median([r["mes_pos"] for r in R]), 1),
+                sem_pos_med=round(st.median([r["sem_pos"] for r in R]), 1), sem_pos_p5=round(q([r["sem_pos"] for r in R], .05), 1),
+                sem_mas1_med=round(st.median([r.get("sem_mas1", 0) for r in R]), 1), peor_sem_p5=round(q([r["peor_sem"] for r in R], .05), 1),
                 peor_mes_p5=round(q([r["peor_mes"] for r in R], .05), 1))
 
 
