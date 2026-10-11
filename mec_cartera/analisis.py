@@ -21,6 +21,34 @@ def recorta(m): return {k: m[k] for k in RES}
 def mejora(r, b): return all(r["anios"][y] > b["anios"][y] for y in ("2025", "2026")) and r["mdd"] <= b["mdd"] + 1e-9
 
 
+REAL = ["XAUUSD", "EURUSD", "GBPUSD"]     # cartera real: BTCUSD sale por costos (10/10/2026)
+
+
+def real():
+    """Del backtest a la práctica: costos de Multibank por operación, medidos contra el stop de cada una.
+    XAUUSD 0,02 + 0,03 USD; EURUSD 0,1 + 0,3 pip; GBPUSD 0,5 + 0,3 pip (comisión ECN 3 USD por lote ida y vuelta); BTCUSD CFD 50 USD."""
+    sys.path.insert(0, os.path.join(AQUI, "..", "mec_diario")); import costos as Co
+    S = Co.stops(); PIP = 0.0001
+    MB = dict(XAUUSD=0.05, EURUSD=0.4 * PIP, GBPUSD=0.8 * PIP, BTC_spread=50, fee_btc=0)
+    net = {a: Co.aplicar(T[a], MB, S) for a in PRE}
+    R = lambda xs, y=None: round(sum(t["u"] for t in xs if y is None or t["ent"].year == y) / 0.9, 1)
+    act = [dict(a=a, n=len(T[a]), costo_R=round(sum(t["costo"] for t in net[a]) / len(net[a]) / 0.9, 3),
+                R_op_bruto=round(R(T[a]) / len(T[a]), 3), R_op_neto=round(R(net[a]) / len(net[a]), 3),
+                R25=R(net[a], 2025), R26=R(net[a], 2026), R25_bruto=R(T[a], 2025), R26_bruto=R(T[a], 2026)) for a in PRE]
+    def m(ts, mc=True, **kw):
+        r = B.metricas(B.filtrar(ts, **kw), mc=mc, curva=mc)
+        return {k: v for k, v in r.items() if k not in ("sem_R", "mes_R", "semanas")}
+    ruta = [("Teórica: 4 activos, sin costos", [t for a in PRE for t in T[a]]),
+            ("Sin BTCUSD, sin costos", [t for a in REAL for t in T[a]]),
+            ("Real: 3 activos, con costos", [t for a in REAL for t in net[a]])]
+    out = dict(costos=dict(XAUUSD="0,02 + 0,03 USD", EURUSD="0,1 + 0,3 pip", GBPUSD="0,5 + 0,3 pip", BTCUSD="50 USD (CFD)"),
+               activos=act, ruta=[dict(nombre=n, **m(ts)) for n, ts in ruta])
+    out["con_btc_costos"] = m([t for a in PRE for t in net[a]], mc=False)
+    # riesgo 1,25%: mismos resultados en R, escalados (freno −3R igual)
+    out["r125"] = m([dict(t, u=t["u"] * 1.25) for a in REAL for t in net[a]])
+    return out
+
+
 def main():
     data = dict(nombres=B.NOMBRE)
     # 1) Pareto por activo
@@ -84,6 +112,7 @@ def main():
     dny = json.load(open(os.path.join(AQUI, "..", "mec_ny", "datos_ny.json"), encoding="utf-8"))
     data["ny"] = dict(robustez=dny["cartera_ny"]["robustez"],
                       activos={a: dny["activos"][a]["elegida"] for a in dny["activos"]})
+    data["real"] = real()
     json.dump(data, open(os.path.join(AQUI, "datos_cartera.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     return data
 

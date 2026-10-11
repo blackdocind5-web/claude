@@ -95,6 +95,10 @@ def main():
         g["curve"] = diaria(f["curve"]); g["meses"] = f["meses"]
         fin.append(g)
     out["finales"] = fin
+    rl = ca["real"]
+    out["real"] = dict(costos=rl["costos"], activos=rl["activos"], r125={k: rl["r125"][k] for k in ("cagr", "mdd", "anios", "mc")},
+                       con_btc={k: rl["con_btc_costos"][k] for k in ("cagr", "mdd", "anios")},
+                       ruta=[dict({k: v for k, v in x.items() if k not in ("curve", "meses")}, curve=diaria(x["curve"]), meses=x["meses"]) for x in rl["ruta"]])
     # etapa 3 = gestión híbrida tal como se diseñó (con enero); la etapa 4 la opera sin enero
     sys.path.insert(0, os.path.join(RAIZ, "mec_cartera")); import base as B
     T0 = B.cargar(meses_fuera=set()); ts0 = [t for a in ("XAUUSD", "EURUSD", "GBPUSD", "BTCUSD") for t in T0[a]]

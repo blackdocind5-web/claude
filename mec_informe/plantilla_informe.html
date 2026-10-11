@@ -50,11 +50,12 @@ a{color:var(--celeste)}
 /* ---------- portada ---------- */
 .hero{display:grid;gap:28px}
 .eyebrow{font-size:14px;color:var(--fg3);letter-spacing:.01em}
-.hero .hero-t{font-size:clamp(34px,5.6vw,60px);line-height:1.06;font-weight:600;max-width:17ch}
+.hero .hero-t{font-size:clamp(32px,5vw,56px);line-height:1.08;font-weight:600;max-width:22ch}
 .hero .lead{font-size:clamp(17px,2vw,20px);color:var(--fg2);max-width:60ch}
 .big{font-family:var(--ui);font-weight:300;font-size:clamp(64px,13vw,150px);line-height:.95;letter-spacing:-.04em}
 .hero-figs{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 28px}
 .hero-figs .arrow{font-size:clamp(28px,5vw,56px);font-weight:300;color:var(--fg3);padding-bottom:.25em}
+.hero-figs .big{font-size:clamp(44px,6.6vw,92px)}
 .hero-figs .cap{display:block;font-size:14px;color:var(--fg3);margin-top:8px;letter-spacing:0}
 .note-pill{border:1px solid var(--line);box-shadow:0 0 0 6px var(--halo);border-radius:999px;padding:12px 22px;max-width:max-content;color:var(--fg2);font-size:15px}
 @media (max-width:640px){.note-pill{border-radius:22px;max-width:none}}
@@ -105,6 +106,15 @@ section.stage{display:grid;gap:28px;scroll-margin-top:24px}
 .learn div{padding:18px 20px;border-radius:20px;border:1px solid var(--line);display:grid;gap:6px;align-content:start}
 .learn b{font-size:15px;font-weight:600}
 .learn p{font-size:14.5px;color:var(--fg2)}
+.ruta{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:12px;align-items:stretch}
+.ruta .paso{background:var(--surface);border-radius:24px;padding:20px 22px;display:grid;gap:6px;align-content:start;min-width:0}
+.ruta .paso.fin{background:linear-gradient(150deg,var(--surface2),var(--surface));outline:1px solid var(--violet);box-shadow:0 0 0 6px var(--halo)}
+.ruta .paso .l{font-size:13px;color:var(--fg3)}
+.ruta .paso .v{font-family:var(--num);font-weight:800;font-size:clamp(30px,4vw,44px);line-height:1}
+.ruta .paso p{font-size:14px;color:var(--fg2)}
+.ruta .flecha{display:grid;place-items:center;color:var(--fg3);font-size:13px;text-align:center;gap:4px;max-width:120px}
+.ruta .flecha b{font-family:var(--num);font-size:18px;color:var(--orange)}
+@media (max-width:820px){.ruta{grid-template-columns:1fr}.ruta .flecha{max-width:none;grid-auto-flow:column;gap:10px}}
 .panel.alt{border:1px dashed var(--line);background:transparent}
 .next{display:flex;gap:14px;align-items:center;padding:18px 22px;border-radius:999px;background:var(--surface2);font-size:15px;color:var(--fg2)}
 .next b{color:var(--fg)}
@@ -185,10 +195,12 @@ footer{display:grid;gap:8px;border-top:1px solid var(--grid);padding-top:24px}
 <section class="cover" aria-label="Portada"><h1>BACKTEST 2026</h1></section>
 
 <header class="hero">
-  <span class="eyebrow">Sistema MEC · primer informe de avance · 10/10/2026</span>
-  <h2 class="hero-t">Cómo pasamos de un activo a una cartera que rinde más de cinco veces más</h2>
+  <span class="eyebrow">Sistema MEC · primer informe de avance · 11/10/2026</span>
+  <h2 class="hero-t">Cómo pasamos de un activo a una cartera real que rinde el doble que el mercado</h2>
   <div class="hero-figs" aria-label="Rendimiento anual: de la primera etapa a la cartera elegida">
     <div><span class="big num" id="h-a"></span><span class="cap" id="h-a-c"></span></div>
+    <span class="arrow" aria-hidden="true">→</span>
+    <div><span class="big num" id="h-t" style="color:var(--fg3)"></span><span class="cap" id="h-t-c"></span></div>
     <span class="arrow" aria-hidden="true">→</span>
     <div><span class="big num grad" id="h-b"></span><span class="cap" id="h-b-c"></span></div>
   </div>
@@ -362,12 +374,33 @@ footer{display:grid;gap:8px;border-top:1px solid var(--grid);padding-top:24px}
   <div class="learn" id="l4"></div>
 
   <div class="st-head" style="margin-top:24px">
-    <span class="st-num grad" aria-hidden="true">✓</span>
-    <span class="st-kicker">La cartera elegida</span>
-    <h2>Pre NY sola: cuatro activos, dos horas por día</h2>
-    <p class="q">Los mismos cuatro activos de la etapa 3, que pasaron todas las pruebas de esta etapa, con un ajuste: enero no se opera.</p>
+    <span class="st-num grad" aria-hidden="true">→</span>
+    <span class="st-kicker">La cartera esencial</span>
+    <h2>De la teoría a la práctica</h2>
+    <p class="q">El backtest no descuenta el spread ni la comisión del broker. Al cargar los costos reales de Multibank, la cartera cambia.</p>
   </div>
   <div class="learn" id="l4b"></div>
+  <div class="ruta" id="ruta"></div>
+  <div class="cols3">
+    <div class="panel">
+      <h3>De la teoría a la cartera real</h3>
+      <p class="sub">1.000 USD iniciales · riesgo de 1% por operación · sin enero</p>
+      <div class="legend" id="lgr"></div>
+      <div class="chart" id="cr"></div>
+    </div>
+    <div class="panel">
+      <h3>Lo que cuesta operar cada activo</h3>
+      <p class="sub">Spread + comisión ECN (3 USD por lote ida y vuelta), en R por operación</p>
+      <div class="hbars" id="br"></div>
+      <p class="small" id="brn"></p>
+    </div>
+  </div>
+  <div class="st-head" style="margin-top:16px">
+    <span class="st-num grad" aria-hidden="true">✓</span>
+    <span class="st-kicker">La cartera elegida</span>
+    <h2>Tres activos, dos horas por día, neta de costos</h2>
+    <p class="q">Oro, euro y libra en Pre NY. Bitcoin queda afuera: con los costos reales pierde en cada operación.</p>
+  </div>
   <dl class="ficha" id="ficha"></dl>
   <div class="kpis" id="k4"></div>
   <div class="cols">
@@ -387,7 +420,7 @@ footer{display:grid;gap:8px;border-top:1px solid var(--grid);padding-top:24px}
 <section class="stage" id="conclusion" aria-labelledby="tc">
   <div class="final-claim">
     <span class="st-kicker">Conclusión</span>
-    <h2 id="tc" style="font-size:clamp(26px,3.4vw,38px);max-width:30ch;line-height:1.15">Cada etapa mejoró la anterior. La cartera recomendada da el mejor equilibrio entre resultado, riesgo y tiempo.</h2>
+    <h2 id="tc" style="font-size:clamp(26px,3.4vw,38px);max-width:30ch;line-height:1.15">Cada etapa mejoró la anterior. Con costos reales, la cartera rinde casi el doble que el mercado, con menos caída.</h2>
   </div>
   <div class="panel">
     <h3>Todas las gestiones estudiadas, sobre la misma cuenta</h3>
@@ -401,7 +434,7 @@ footer{display:grid;gap:8px;border-top:1px solid var(--grid);padding-top:24px}
   </div>
   <div class="learn" id="lc"></div>
   <footer>
-    <p class="caveat">Los resultados son de backtest: operaciones simuladas sobre datos pasados con las reglas actuales del sistema, sin costos de ejecución adicionales a los del simulador. Un resultado pasado no asegura el futuro. Por eso cada regla se aceptó solo si mejoraba 2025 y 2026 por separado, y por eso el próximo paso es validar en vivo con las mismas reglas.</p>
+    <p class="caveat">Los resultados son de backtest: operaciones simuladas sobre datos pasados con las reglas actuales del sistema. Las etapas 1 a 3 y la teoría de la etapa 4 no descuentan spread ni comisión; la cartera real descuenta los costos de Multibank (spread informado y comisión ECN de 3 USD por lote ida y vuelta). Un resultado pasado no asegura el futuro. Por eso cada regla se aceptó solo si mejoraba 2025 y 2026 por separado, y por eso el próximo paso es validar en vivo con las mismas reglas.</p>
     <p class="small">Fuentes: listas de operaciones del Strategy Tester de TradingView (sistema MEC, gráficos de 1 minuto) y los artefactos «XAUUSD | Backtest 2026», «XAUUSD | Escalera de riesgo», «Gestión híbrida», «Sesión NY» y «Cartera esencial».</p>
   </footer>
 </section>
@@ -430,7 +463,7 @@ const BS = D.bench.spx, BO = D.bench.oro;
 const bSpx = () => ({name: `S&P 500 (${pc(BS.ret)})`, short: 'S&P 500', color: css('--b-spx'), pts: BS.curve, w: 1.8, dot: true});
 const bOro = () => ({name: `Oro (${pc(BO.ret)})`, short: 'Oro (precio)', color: css('--b-oro'), pts: BO.curve, w: 1.8, dot: true});
 const E1 = D.etapa1, E2 = D.etapa2, H = D.hibrida, F = D.finales, NY = D.ny;
-const REC = F[0], SPX = F[1], PLA = F[3], H3 = D.etapa3, ENE = D.enero;
+const REC = F[0], SPX = F[1], PLA = F[3], H3 = D.etapa3, ENE = D.enero, RL = D.real, RT = RL.ruta[0], RS = RL.ruta[1], RE = RL.ruta[2];
 
 /* ---------------- gráficos ---------------- */
 const T0 = new Date('2025-01-13'), T1 = new Date('2026-10-02');
@@ -498,13 +531,14 @@ const hbars = (items, max) => items.map(it => `<div class="hbar"><span>${it.l}</
 
 /* ---------------- portada y ruta ---------------- */
 $('#h-a').textContent = pc(E1.total.cagr, 0); $('#h-a-c').textContent = 'anual · oro solo, etapa 1';
-$('#h-b').textContent = pc(REC.cagr, 0); $('#h-b-c').textContent = 'anual · cartera recomendada';
-$('#h-lead').innerHTML = `En cuatro etapas llevamos el sistema MEC de un solo activo a una cartera de cuatro mercados. El rendimiento anual pasó de ${pc(E1.total.cagr)} a ${pc(REC.cagr)}, con una caída máxima parecida (${pc(-E1.total.mdd)} contra ${pc(-REC.mdd)}). La mejora vino de sumar ventaja, no de arriesgar más. En el mismo período, comprar y mantener el S&P 500 rindió ${pc(BS.cagr)} anual con una caída de ${pc(-BS.mdd)}.`;
+$('#h-t').textContent = pc(REC.cagr, 0); $('#h-t-c').textContent = 'anual · cartera en teoría (sin costos)';
+$('#h-b').textContent = pc(RE.cagr, 0); $('#h-b-c').textContent = 'anual · cartera real, neta de costos';
+$('#h-lead').innerHTML = `En cuatro etapas llevamos el sistema MEC de un solo activo a una cartera de varios mercados. En teoría, la mejor cartera rendía ${pc(REC.cagr)} anual. Al descontar los costos reales del broker, bitcoin dejó de ser operable y la cartera real quedó en ${pc(RE.cagr)} anual con caída máxima de ${pc(-RE.mdd)}: casi el doble que comprar y mantener el S&P 500 en el mismo período (${pc(BS.cagr)} anual, caída de ${pc(-BS.mdd)}).`;
 const road = [
   ['etapa-1', 1, 'Backtest del oro', pc(E1.total.cagr), `anual · caída ${pc(-E1.total.mdd)}`],
   ['etapa-2', 2, 'Escalera de riesgo', pc(E2.escalera.cagr), `anual · ${nf(E2.escalera.meses_pos, 0)}% de meses positivos`],
   ['etapa-3', 3, 'Gestión híbrida', pc(H3.cagr), `anual · caída ${pc(-H3.mdd)}`],
-  ['etapa-4', 4, 'Cartera esencial', pc(REC.cagr), 'anual · sin NY y sin enero']];
+  ['etapa-4', 4, 'Cartera esencial', pc(RE.cagr), 'anual real · neto de costos']];
 $('#road').innerHTML = road.map(([id, n, t, r, d], i) => `<a href="#${id}" class="${i === 3 ? 'final' : ''}"><span class="n">${n}</span><span class="t">${t}</span><span class="r num ${i < 3 ? 'pos' : 'grad'}">${r}</span><span class="d">${d}</span></a>`).join('');
 
 /* ---------------- 1 ---------------- */
@@ -623,10 +657,12 @@ $('#l4').innerHTML = learn([
 
 $('#l4b').innerHTML = learn([
   ['Enero afuera', `Con el receso de fin de año (22/12 al 16/01), enero queda en dos semanas de operación, con bancos e instituciones todavía volviendo de vacaciones. Perdió los dos años: ${sg(ENE['2025'].R)}R en ${ENE['2025'].n} operaciones en 2025 y ${sg(ENE['2026'].R)}R en ${ENE['2026'].n} en 2026.`],
-  ['Efecto', `Sin enero, el rendimiento anual pasa de ${pc(H3.cagr)} a ${pc(REC.cagr)} y 2026 de ${pc(H3.anios['2026'])} a ${pc(REC.anios['2026'])}, con la misma caída máxima (${pc(-REC.mdd)}).`],
+  ['Efecto', `Sin enero (cifras sin costos), el rendimiento anual pasa de ${pc(H3.cagr)} a ${pc(REC.cagr)} y 2026 de ${pc(H3.anios['2026'])} a ${pc(REC.anios['2026'])}, con la misma caída máxima (${pc(-REC.mdd)}).`],
   ['A revisar', 'Son dos muestras chicas. Se revisa con enero de 2027: si vuelve a perder, la regla se confirma.']]);
 $('#ficha').innerHTML = [
-  ['Activos y patrones', `<div class="chips">${Object.entries(PATRON_PRE).map(([a, p]) => `<span class="chip">${NOM[a]} · ${PAT[p]}</span>`).join('')}</div>`, 'wide'],
+  ['Activos y patrones', `<div class="chips">${Object.entries(PATRON_PRE).filter(([a]) => a !== 'BTCUSD').map(([a, p]) => `<span class="chip">${NOM[a]} · ${PAT[p]}</span>`).join('')}</div>`, 'wide'],
+  ['Broker', 'Multibank, cuenta ECN: spread + 3 USD de comisión por lote ida y vuelta.'],
+  ['Costo por operación', 'Oro 0,05 USD · EURUSD 0,4 pip · GBPUSD 0,8 pip (spread + comisión).'],
   ['Horario', '07:00 a 09:00 de Nueva York (sesión Pre NY)'],
   ['Días', 'Lunes a jueves, de febrero a diciembre. Sin viernes ni enero.'],
   ['Riesgo por operación', '1% fijo de la cuenta. Ganadora completa: +0,9%.'],
@@ -634,52 +670,59 @@ $('#ficha').innerHTML = [
   ['Freno semanal', 'Si la semana llega a −3R (cerca de −2,7%), no se opera más hasta el lunes.'],
   ['Meta de ganancia', 'Ninguna. Las semanas buenas se dejan correr.'],
   ['Calendario', 'Sin operar en feriados, receso de fin de año (22/12 al 16/01) y noticias de alto impacto del calendario MEC.'],
-  ['Posiciones a la vez', `Hasta ${REC.max_conc}, una por activo.`]].map(([t, d, c]) => `<div class="${c || ''}"><dt>${t}</dt><dd>${d}</dd></div>`).join('');
-$('#k4').innerHTML = kpi('Rendimiento anual', pc(REC.cagr), `${pc(REC.mes_geo, 2)} por mes`, 'pos', true) +
-  kpi('Caída máxima', pc(-REC.mdd), `${REC.bajo_agua} días hasta recuperar el máximo`, 'neg') +
-  kpi('Win rate', nf(REC.wr) + '%', `${REC.n} operaciones · racha máx. ${REC.racha}`) +
-  kpi('Factor de beneficio', nf(REC.pf, 2), `${sg(REC.R)}R · ${sg(preRop, 2)}R por op.`) +
-  kpi('Sharpe', nf(REC.sharpe, 2), `Calmar ${nf(REC.calmar, 2)}`) +
-  kpi('Peor mes', pc(REC.peor_mes), `peor semana ${pc(REC.peor_sem)}`, 'neg') +
-  kpi('Semanas positivas', nf(REC.sem_pos, 0) + '%', `máx. ${REC.sem_neg_seg} negativas seguidas`) +
-  kpi('Meses positivos', nf(REC.mes_pos, 0) + '%', 'de todos los meses operados');
-const ys = REC.anios;
+  ['Posiciones a la vez', `Hasta ${RE.max_conc}, una por activo.`]].map(([t, d, c]) => `<div class="${c || ''}"><dt>${t}</dt><dd>${d}</dd></div>`).join('');
+$('#k4').innerHTML = kpi('Rendimiento anual, neto', pc(RE.cagr), `${pc(RE.mes_geo, 2)} por mes`, 'pos', true) +
+  kpi('Caída máxima', pc(-RE.mdd), `${RE.bajo_agua} días hasta recuperar el máximo`, 'neg') +
+  kpi('Win rate', nf(RE.wr) + '%', `${RE.n} operaciones · racha máx. ${RE.racha}`) +
+  kpi('Factor de beneficio', nf(RE.pf, 2), `${sg(RE.R)}R netos · ${sg(RE.R / RE.n, 2)}R por op.`) +
+  kpi('Sharpe', nf(RE.sharpe, 2), `Calmar ${nf(RE.calmar, 2)}`) +
+  kpi('Peor mes', pc(RE.peor_mes), `peor semana ${pc(RE.peor_sem)}`, 'neg') +
+  kpi('Semanas positivas', nf(RE.sem_pos, 0) + '%', `máx. ${RE.sem_neg_seg} negativas seguidas`) +
+  kpi('Meses positivos', nf(RE.mes_pos, 0) + '%', 'de todos los meses operados');
+const ys = RE.anios;
 $('#t4y').innerHTML = `<thead><tr><th>Año</th><th class="n">Rendimiento</th><th>Lectura</th></tr></thead><tbody>
-  <tr><td>2025</td><td class="n pos">${pc(ys['2025'])}</td><td>Año completo (13/01 al 19/12)</td></tr>
-  <tr><td>2026</td><td class="n pos">${pc(ys['2026'])}</td><td>Hasta el 02/10, sin el receso de enero</td></tr>
-  <tr class="hl"><td>Anual compuesto</td><td class="n pos">${pc(REC.cagr)}</td><td>Ritmo de todo el período</td></tr></tbody>`;
-const mc = REC.mc;
+  <tr><td>2025</td><td class="n pos">${pc(ys['2025'])}</td><td>De febrero al 19/12</td></tr>
+  <tr><td>2026</td><td class="n pos">${pc(ys['2026'])}</td><td>De febrero al 02/10</td></tr>
+  <tr class="hl"><td>Anual compuesto</td><td class="n pos">${pc(RE.cagr)}</td><td>Ritmo de todo el período, neto de costos</td></tr></tbody>`;
+const mc = RE.mc;
 $('#t4m').innerHTML = `<thead><tr><th>Escenario</th><th class="n">Anual</th><th class="n">Caída</th></tr></thead><tbody>
   <tr><td>Mediana (caso típico)</td><td class="n pos">${pc(mc.cagr_med)}</td><td class="n neg">${pc(-mc.dd_med)}</td></tr>
-  <tr><td>Peor 5%</td><td class="n pos">${pc(mc.cagr_p5)}</td><td class="n neg">${pc(-mc.dd_p95)}</td></tr>
+  <tr><td>Peor 5%</td><td class="n ${cl(mc.cagr_p5)}">${pc(mc.cagr_p5)}</td><td class="n neg">${pc(-mc.dd_p95)}</td></tr>
   <tr><td>Probabilidad de un año negativo</td><td class="n" colspan="2">${nf(mc.p_anio_neg)}%</td></tr>
   <tr><td>Peor racha perdedora esperable</td><td class="n" colspan="2">${mc.racha_p95} operaciones</td></tr></tbody>`;
+const AR = Object.fromEntries(RL.activos.map(x => [x.a, x])), btcR = AR.BTCUSD;
+$('#ruta').innerHTML = `<div class="paso"><span class="l">En teoría · 4 activos, sin costos</span><span class="v num">${pc(RT.cagr)}</span><p>Backtest de TradingView: sin spread ni comisión. Caída ${pc(-RT.mdd)}.</p></div>
+  <div class="flecha"><b>${sg(RS.cagr - RT.cagr)} pts</b>sale bitcoin</div>
+  <div class="paso"><span class="l">Sin BTCUSD · 3 activos</span><span class="v num">${pc(RS.cagr)}</span><p>El CFD de bitcoin cobra 50 USD de spread con stops de unos 100 USD: ${nf(btcR.costo_R, 2)}R de costo por operación contra ${sg(btcR.R_op_bruto, 2)}R de ventaja.</p></div>
+  <div class="flecha"><b>${sg(RE.cagr - RS.cagr)} pts</b>spread y comisión</div>
+  <div class="paso fin"><span class="l">En la práctica · cartera real</span><span class="v num grad">${pc(RE.cagr)}</span><p>Neta de costos de Multibank. Caída ${pc(-RE.mdd)}. Con 1,25% de riesgo: ${pc(RL.r125.cagr)} anual y caída de ${pc(-RL.r125.mdd)}.</p></div>`;
+const brItems = RL.activos.map(x => ({l: x.a, v: x.costo_R, t: nf(x.costo_R, 3) + 'R', c: x.a === 'BTCUSD' ? 'var(--orange)' : 'var(--violet)'}));
+$('#br').innerHTML = hbars(brItems, Math.max(...brItems.map(i => i.v)));
+$('#brn').innerHTML = `Ventaja neta por operación: oro ${sg(AR.XAUUSD.R_op_neto, 2)}R, euro ${sg(AR.EURUSD.R_op_neto, 2)}R, libra ${sg(AR.GBPUSD.R_op_neto, 2)}R, bitcoin <span class="neg">${sg(btcR.R_op_neto, 2)}R</span>. El oro casi no paga costos; el euro y la libra pierden un tercio de su ventaja.`;
 
 /* ---------------- conclusión ---------------- */
 const SER = () => [
   {name: 'Etapa 1 · oro, riesgo fijo 1%', short: 'Oro fijo', color: css('--s-xau'), pts: E1.curve, w: 1.6},
   {name: 'Etapa 2 · oro con escalera', short: 'Escalera', color: css('--s-esc'), pts: E2.curve, w: 1.6},
-  {name: 'Pre NY + S&P 500 (en observación)', short: '+ S&P 500', color: css('--s-spx'), pts: SPX.curve, w: 1.4, dash: true, op: .9},
-  {name: 'Pre NY + S&P 500 + BTCUSD NY', short: '+ S&P + BTC NY', color: css('--s-pla'), pts: PLA.curve, w: 1.4, dash: true, op: .9},
+  {name: `Teoría · 4 activos, sin costos (${pc(RT.cagr)} anual)`, short: 'Teoría', color: css('--s-spx'), pts: RT.curve, w: 1.6, dash: true},
   bSpx(),
-  {name: 'Recomendada · Pre NY, 4 activos, sin enero', short: 'Recomendada', color: css('--s-rec'), pts: REC.curve, w: 3, area: true}];
+  {name: `Cartera real · 3 activos, neta (${pc(RE.cagr)} anual)`, short: 'Real', color: css('--s-rec'), pts: RE.curve, w: 3, area: true}];
 $('#lgc').innerHTML = leg(SER());
 const rows = [
-  ['Etapa 1 · oro, riesgo fijo 1%', E1.total.cagr, E1.total.mdd, E1.total.calmar, 2, null, 'Punto de partida'],
-  ['Etapa 2 · oro con escalera', es.cagr, es.mdd, es.cagr / es.mdd, 2, null, 'Más estable'],
-  ['Etapa 3 · gestión híbrida (con enero)', H3.cagr, H3.mdd, H3.calmar, 2, H3.mc.cagr_p5, 'Base de la elegida'],
-  ['Recomendada · Pre NY, 4 activos, sin enero', REC.cagr, REC.mdd, REC.calmar, 2, REC.mc.cagr_p5, 'Elegida'],
-  ['Pre NY + S&P 500', SPX.cagr, SPX.mdd, SPX.calmar, 4, SPX.mc.cagr_p5, 'Aporte frágil'],
-  ['Pre NY + S&P 500 + BTCUSD NY', PLA.cagr, PLA.mdd, PLA.calmar, 4, PLA.mc.cagr_p5, 'Sube la caída'],
-  ['S&P 500', BS.cagr, BS.mdd, BS.cagr / BS.mdd, 0, null, 'Referencia de mercado'],
-  ['Oro', BO.cagr, BO.mdd, BO.cagr / BO.mdd, 0, null, 'Referencia de mercado']];
-$('#tc-t').innerHTML = `<thead><tr><th>Gestión</th><th class="n">Anual</th><th class="n">Caída máx.</th><th class="n">Calmar</th><th class="n">Horas por día</th><th class="n">Anual por hora diaria</th><th>Estado</th></tr></thead><tbody>` +
-  rows.map(r => `<tr${r[6] === 'Elegida' ? ' class="hl"' : ''}><td>${r[0]}</td><td class="n pos">${pc(r[1])}</td><td class="n neg">${pc(-r[2])}</td><td class="n">${nf(r[3], 2)}</td><td class="n">${r[4] || '—'}</td><td class="n">${r[4] ? pc(r[1] / r[4]) : '—'}</td><td><span class="tag ${r[6] === 'Elegida' ? 'g' : r[6].startsWith('Aporte') || r[6].startsWith('Referencia') || r[6].startsWith('Base') ? 'v' : 'o'}">${r[6]}</span></td></tr>`).join('') + '</tbody>';
-$('#tc-n').textContent = `Las dos variantes con NY quedan arriba en el pasado, pero piden el doble de horas y su ventaja extra no resistió las simulaciones. Por hora de pantalla, la recomendada rinde casi el doble. Contra el mercado, la recomendada rindió ${nf(REC.cagr / BS.cagr, 1)} veces lo que el S&P 500 por año, con menos caída (${pc(-REC.mdd)} contra ${pc(-BS.mdd)}).`;
+  ['Etapa 1 · oro, riesgo fijo 1%', E1.total.cagr, E1.total.mdd, E1.total.calmar, null, 'Punto de partida'],
+  ['Etapa 2 · oro con escalera', es.cagr, es.mdd, es.cagr / es.mdd, null, 'Más estable'],
+  ['Etapa 3 · gestión híbrida, 4 activos', H3.cagr, H3.mdd, H3.calmar, H3.mc.cagr_p5, 'Sin costos'],
+  ['Etapa 4 · teoría, 4 activos sin enero', RT.cagr, RT.mdd, RT.calmar, RT.mc.cagr_p5, 'Sin costos'],
+  ['Cartera real · 3 activos, neta de costos', RE.cagr, RE.mdd, RE.calmar, RE.mc.cagr_p5, 'Elegida'],
+  ['S&P 500', BS.cagr, BS.mdd, BS.cagr / BS.mdd, null, 'Referencia de mercado'],
+  ['Oro', BO.cagr, BO.mdd, BO.cagr / BO.mdd, null, 'Referencia de mercado']];
+$('#tc-t').innerHTML = `<thead><tr><th>Gestión</th><th class="n">Anual</th><th class="n">Caída máx.</th><th class="n">Calmar</th><th class="n">Peor 5% sim.</th><th>Estado</th></tr></thead><tbody>` +
+  rows.map(r => `<tr${r[5] === 'Elegida' ? ' class="hl"' : ''}><td>${r[0]}</td><td class="n pos">${pc(r[1])}</td><td class="n neg">${pc(-r[2])}</td><td class="n">${nf(r[3], 2)}</td><td class="n">${r[4] == null ? '—' : pc(r[4])}</td><td><span class="tag ${r[5] === 'Elegida' ? 'g' : r[5].startsWith('Referencia') || r[5].startsWith('Sin') ? 'v' : 'o'}">${r[5]}</span></td></tr>`).join('') + '</tbody>';
+$('#tc-n').textContent = `Las etapas 1 a 3 y la teoría de la etapa 4 son resultados de backtest sin spread ni comisión. La cartera real descuenta los costos de Multibank y saca bitcoin. Contra el mercado, la cartera real rindió ${nf(RE.cagr / BS.cagr, 1)} veces lo que el S&P 500 por año, con menos caída (${pc(-RE.mdd)} contra ${pc(-BS.mdd)}).`;
 $('#lc').innerHTML = learn([
-  ['Lo que logramos', `De ${pc(E1.total.cagr)} a ${pc(REC.cagr)} anual con una caída máxima similar, y con reglas que se cumplen en 2025 y en 2026 por separado.`],
-  ['Por qué esta y no otra', `Es la que más rinde por cada hora de trabajo y por cada punto de caída sin depender de la suerte del orden de las operaciones: en el peor 5% de las simulaciones gana ${pc(REC.mc.cagr_p5)} anual.`],
-  ['Próximos pasos', 'Operarla en vivo con estas reglas, revisar cada trimestre con los datos nuevos y seguir midiendo el S&P 500 sin operarlo.']]);
+  ['Lo que logramos', `Una cartera de tres mercados que gana en 2025 (${pc(RE.anios['2025'])}) y en 2026 (${pc(RE.anios['2026'])}) neta de costos, con reglas simples y dos horas de pantalla por día.`],
+  ['La lección', `El backtest sin costos mostraba ${pc(RT.cagr)} anual. Medir los costos reales antes de operar evitó incluir bitcoin, que en la práctica pierde en cada operación.`],
+  ['Próximos pasos', 'Operarla en vivo con riesgo de 1%, medir la ventaja real y pasar a 1,25% si se mantiene. Revisar cada trimestre y enero con los datos de 2027.']]);
 
 /* ---------------- dibujar ---------------- */
 function draw() {
@@ -698,6 +741,9 @@ function draw() {
   $('#m3lg').innerHTML = leg(sm3);
   lineChart($('#m3c'), sm3, {h: 260});
   lineChart($('#cc'), SER(), {h: 380, log: true});
+  const sr = [{name: `Teoría (${pc(RT.cagr)})`, short: 'Teoría', color: css('--s-spx'), pts: RT.curve, w: 1.6, dash: true}, {name: `Sin BTCUSD (${pc(RS.cagr)})`, short: 'Sin BTC', color: css('--s-esc'), pts: RS.curve, w: 1.6, dash: true}, {name: `Real, neta de costos (${pc(RE.cagr)})`, short: 'Real', color: css('--s-rec'), pts: RE.curve, w: 2.8, area: true}, bSpx()];
+  $('#lgr').innerHTML = leg(sr);
+  lineChart($('#cr'), sr, {h: 300});
 }
 draw();
 let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(draw, 150); });

@@ -24,11 +24,22 @@ __ESTILO_HIBRIDA__
     <span>Lunes a jueves · sin enero</span>
     <span>Freno de pérdida semanal <b>−3R</b></span>
   </div>
-  <div class="meta"><span class="chip">Recomendación: solo Pre NY, sin candado</span><span class="chip">Menos, pero mejor</span><span class="chip">Ley de Pareto: 20% de esfuerzos, 80% de resultados</span></div>
+  <div class="meta"><span class="chip">Cartera real: XAUUSD, EURUSD y GBPUSD · neta de costos</span><span class="chip">Menos, pero mejor</span><span class="chip">Ley de Pareto: 20% de esfuerzos, 80% de resultados</span></div>
 </header>
 
 <div class="verdict" id="verdict"></div>
 <div class="kpis" id="kpis"></div>
+
+<section>
+  <div class="sec-head"><h2>De la teoría a la práctica</h2><p>Costos reales de Multibank por operación, medidos contra el stop de cada una</p></div>
+  <div class="panel tbl"><table class="cmp" id="t-ruta"></table><p class="note" id="ruta-n"></p></div>
+  <div class="grid2">
+    <div class="panel"><div class="legend" id="ruta-leg"></div><div class="chart" id="c-ruta"></div></div>
+    <div class="panel tbl"><h3>Costo de cada activo</h3><table class="cmp" id="t-cost"></table><p class="note" id="cost-n"></p></div>
+  </div>
+</section>
+
+<p class="note" style="margin-top:8px"><b>Desde acá, el análisis es sin costos</b> (resultado del backtest de TradingView): sirve para comparar activos, sesiones y reglas entre sí. Las cifras para operar son las de la cartera real, arriba.</p>
 
 <section>
   <div class="sec-head"><h2>Pareto por activo</h2><p>Cartera planteada: 6 activos · días que se operan · R con riesgo 1%</p></div>
@@ -70,10 +81,10 @@ __ESTILO_HIBRIDA__
 </section>
 
 <section>
-  <div class="sec-head"><h2>Plan operativo</h2><p>Cartera recomendada: solo Pre NY · qué hacer cada semana</p></div>
+  <div class="sec-head"><h2>Plan operativo</h2><p>Cartera real · qué hacer cada semana</p></div>
   <ol class="plan" id="plan"></ol>
 </section>
-<p class="note">Fuente: listas de operaciones del Strategy Tester de TradingView. Pre NY: XAUUSD Envolvente, EURUSD Envolvente + START, GBPUSD START y BTCUSD Envolvente, con el calendario de restricciones y el receso de fin de año. NY (comparación): S&P 500 Envolvente y BTCUSD Envolvente + START desde las 09:00, sin días de noticia de alto impacto ni FOMC, con el calendario NY. Todas sin viernes y sin enero, con límite de 1 TP o 2 pérdidas por sesión y riesgo de 1% sobre el capital realizado al entrar.</p>
+<p class="note">Fuente: listas de operaciones del Strategy Tester de TradingView (sin spread ni comisión; la cartera real descuenta los costos de Multibank: XAUUSD 0,05 USD, EURUSD 0,4 pip y GBPUSD 0,8 pip por operación, spread más comisión ECN de 3 USD por lote ida y vuelta; BTCUSD como CFD, 50 USD de spread). Pre NY: XAUUSD Envolvente, EURUSD Envolvente + START, GBPUSD START y BTCUSD Envolvente, con el calendario de restricciones y el receso de fin de año. NY (comparación): S&P 500 Envolvente y BTCUSD Envolvente + START desde las 09:00, sin días de noticia de alto impacto ni FOMC, con el calendario NY. Todas sin viernes y sin enero, con límite de 1 TP o 2 pérdidas por sesión y riesgo de 1% sobre el capital realizado al entrar.</p>
 </div>
 
 <script>
@@ -87,12 +98,21 @@ const F=D.finales, PR=F[0], P5=F[1], PC=F[2], P6=F[3];
 const RB=Object.fromEntries(D.ny.robustez.map(x=>[x.activo,x])), rs=RB.SPX500;
 const EP=D.estabilidad.pre, e25=EP.find(e=>e.a===2.5&&e.c===0.5), e20=EP.find(e=>e.a===2&&e.c===0);
 
-$('#verdict').innerHTML=`<div class="big">Recomendación: operar solo Pre NY, sin candado. ${pc(PR.cagr)} anual con caída máxima de −${fmt(PR.mdd)}%, ${PR.n} operaciones en dos horas por día.</div>
-<p><b>Por qué no NY</b>: el S&P 500 suma en el orden histórico (${pc(P5.cagr)} con caída de −${fmt(P5.mdd)}%), pero de lunes a jueves deja apenas ${sg(rs.R_sin_viernes,1)}R en ${rs.n_sin_viernes} operaciones, y en los escenarios remuestreados baja la caída solo en ${fmt(rs.p_dd,0)}% de los casos y mejora el rendimiento por unidad de caída en ${fmt(rs.p_calmar,0)}%. La mejora histórica depende de cuándo cayeron las rachas, no de una ventaja firme. US100 y BTCUSD NY suben la caída; US30, EURUSD NY y GBPUSD NY no ganan en los dos años. <b>Dos horas más de pantalla por día no se justifican.</b></p>
-<p><b>¿Y el candado?</b> No se aplica a Pre NY sola. El candado (+2R → 0R) mejoraba la cartera con S&P 500 porque esa combinación devolvía ganancias a mitad de semana; en Pre NY sola no mejora los dos años en ninguna de las 12 variantes probadas: +2R → 0R deja ${pc(e20.cagr)} (2025 ${pc(e20.anios['2025'])} contra ${pc(PR.anios['2025'])}); la mejor, +2,5R → +0,5R, da ${pc(e25.cagr)} pero empata 2025 y las variantes vecinas no la sostienen. Ninguna baja la caída. Tampoco sirve un objetivo fijo: el 20% de las mejores semanas aporta ${fmt(D.concentracion.pre.top20,0)}% del R. <b>El único freno es el de pérdida: −3R por semana.</b></p>`;
+const RL=D.real, RU=RL.ruta, TE=RU[0], SB=RU[1], RE=RU[2], AB=Object.fromEntries(RL.activos.map(x=>[x.a,x])), btc=AB.BTCUSD;
+$('#verdict').innerHTML=`<div class="big">Cartera real: XAUUSD Envolvente, EURUSD Envolvente + START y GBPUSD START. ${pc(RE.cagr)} anual neto de costos, con caída máxima de −${fmt(RE.mdd)}%.</div>
+<p><b>De la teoría a la práctica</b>: en el backtest, la cartera de cuatro activos rendía ${pc(TE.cagr)} anual. Al descontar los costos reales de ejecución, BTCUSD deja de ser operable: el CFD cobra 50 USD de spread y su stop típico es de unos 100 USD, así que cada operación paga ${fmt(btc.costo_R,2)}R de costo contra una ventaja de ${sg(btc.R_op_bruto,2)}R. Sin BTCUSD la cartera rinde ${pc(SB.cagr)}, y con el spread y la comisión de los otros tres activos, ${pc(RE.cagr)}. Es menos que la teoría, pero es lo que se puede operar: casi el doble que el S&P 500 en el mismo período (+18,5% anual) con menos caída.</p>
+<p><b>Por qué solo Pre NY</b>: el S&P 500 suma en el orden histórico, pero de lunes a jueves deja apenas ${sg(rs.R_sin_viernes,1)}R en ${rs.n_sin_viernes} operaciones y en los escenarios remuestreados baja la caída solo en ${fmt(rs.p_dd,0)}% de los casos. <b>Sin candado ni objetivo de ganancia</b>: ninguna de las 12 variantes de candado mejora 2025 y 2026 a la vez, y el 20% de las mejores semanas aporta ${fmt(D.concentracion.pre.top20,0)}% del R. <b>El único freno es el de pérdida: −3R por semana.</b></p>`;
 const k=(l,v,s,c='',h='')=>`<div class="kpi${h}"><span class="l">${l}</span><span class="v ${c}">${v}</span><span class="s">${s}</span></div>`;
-$('#kpis').innerHTML=k('Anual compuesto',pc(PR.cagr),`2025 ${pc(PR.anios['2025'])} · 2026 ${pc(PR.anios['2026'])}`,'pos',' hero')+k('Caída máxima','−'+fmt(PR.mdd)+'%',`peor 5% sim. −${fmt(PR.mc.dd_p95)}%`,'neg')+k('Peor 5% de simulaciones',pc(PR.mc.cagr_p5),`año negativo ${fmt(PR.mc.p_anio_neg,1)}%`,'pos')+k('Operaciones',fmt(PR.n,0),`win rate ${fmt(PR.wr)}% · racha máx. ${PR.racha}`);
-
+$('#kpis').innerHTML=k('Anual compuesto, neto',pc(RE.cagr),`2025 ${pc(RE.anios['2025'])} · 2026 ${pc(RE.anios['2026'])}`,'pos',' hero')+k('Caída máxima','−'+fmt(RE.mdd)+'%',`peor 5% sim. −${fmt(RE.mc.dd_p95)}%`,'neg')+k('Peor 5% de simulaciones',pc(RE.mc.cagr_p5),`año negativo ${fmt(RE.mc.p_anio_neg,1)}%`,'pos')+k('Operaciones',fmt(RE.n,0),`win rate ${fmt(RE.wr)}% · factor ${fmt(RE.pf,2)}`);
+$('#t-ruta').innerHTML=`<thead><tr><th>Paso</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">2025</th><th class="n">2026</th><th class="n">Anual</th><th class="n">Mensual</th><th class="n">Caída máx.</th><th class="n">Factor</th><th class="n">Sharpe</th><th class="n">Peor 5% sim.</th><th class="n">Año negativo</th></tr></thead>`+
+  RU.map((x,i)=>`<tr${i===2?' class="best"':''}><td>${x.nombre}${i===2?' <span class="pill g">para operar</span>':''}</td>${td(x.n)}${td(fmt(x.wr)+'%')}${yrs(x)}${tdp(x.cagr)}${td(pc(x.mes_geo,2),cls(x.mes_geo))}${td('−'+fmt(x.mdd)+'%')}${td(fmt(x.pf,2))}${td(fmt(x.sharpe,2))}${tdp(x.mc.cagr_p5)}${td(fmt(x.mc.p_anio_neg,1)+'%')}</tr>`).join('')+
+  `<tr><td>Referencia: 4 activos con costos (BTCUSD como CFD)</td>${td(RL.con_btc_costos.n)}${td(fmt(RL.con_btc_costos.wr)+'%')}${yrs(RL.con_btc_costos)}${tdp(RL.con_btc_costos.cagr)}${td(pc(RL.con_btc_costos.mes_geo,2),cls(RL.con_btc_costos.mes_geo))}${td('−'+fmt(RL.con_btc_costos.mdd)+'%')}${td(fmt(RL.con_btc_costos.pf,2))}${td(fmt(RL.con_btc_costos.sharpe,2))}<td></td><td></td></tr>`;
+$('#ruta-n').textContent=`Con riesgo de 1,25% por operación, la cartera real rendiría ${pc(RL.r125.cagr)} anual con caída de −${fmt(RL.r125.mdd)}% (peor 5% sim. ${pc(RL.r125.mc.cagr_p5)}). Recomendación: empezar con 1% y subir a 1,25% si la ventaja se confirma en vivo.`;
+const serR=[{name:TE.nombre,color:'--fg3',pts:TE.curve,w:1.5,op:.8},{name:SB.nombre,color:'--a-eur',pts:SB.curve,w:1.5,op:.85},{name:RE.nombre,color:'--gain',pts:RE.curve,w:2.6,op:1}];
+$('#ruta-leg').innerHTML=serR.map(s=>`<span><i style="background:var(${s.color})"></i>${s.name} · ${pc(s===serR[0]?TE.cagr:s===serR[1]?SB.cagr:RE.cagr)} anual</span>`).join('');
+$('#t-cost').innerHTML=`<thead><tr><th>Activo</th><th>Spread + comisión</th><th class="n">Costo en R</th><th class="n">Ventaja bruta</th><th class="n">Ventaja neta</th><th class="n">R neto 2025</th><th class="n">R neto 2026</th></tr></thead>`+
+  RL.activos.map(x=>`<tr${x.a==='BTCUSD'?' class="fuera"':''}><td>${NOM[x.a]}${x.a==='BTCUSD'?' <span class="pill r">sale</span>':''}</td><td>${RL.costos[x.a]}</td>${td(sg(-x.costo_R,3),'neg')}${td(sg(x.R_op_bruto,3),cls(x.R_op_bruto))}${td(sg(x.R_op_neto,3),cls(x.R_op_neto))}${td(sg(x.R25),cls(x.R25))}${td(sg(x.R26),cls(x.R26))}</tr>`).join('');
+$('#cost-n').textContent=`Comisión ECN: 3 USD por lote ida y vuelta (0,3 pip en divisas, 0,03 USD por onza en oro). Costo en R = costo en precio dividido por el stop de cada operación. El oro casi no paga costos; el euro y la libra pierden un tercio de su ventaja; BTCUSD pasa a perder. Sin enero, XAUUSD queda en ${sg(AB.XAUUSD.R25)}R neto en 2025, pero sigue en la cartera porque sin él la cartera rinde mucho menos en 2026.`;
 const mx=Math.max(...D.activos.map(a=>Math.max(a.pct_ops,a.pct_R)));
 $('#t-par').innerHTML=`<thead><tr><th>Activo</th><th>Sesión</th><th class="n">Ops.</th><th class="n">% ops.</th><th class="n">R</th><th class="n">% del R</th><th>Ops. (gris) contra R (verde)</th><th class="n">R por op.</th><th class="n">Win rate</th><th class="n">R 2025</th><th class="n">R 2026</th></tr></thead>`+
   D.activos.map(a=>{const f=a.sesion==='NY';return `<tr${f?' class="fuera"':''}><td>${NOM[a.a]}${f?' <span class="pill r">sale</span>':''}</td><td>${a.sesion}</td>${td(a.n)}${td(fmt(a.pct_ops)+'%')}${td(sg(a.R),cls(a.R))}${td(fmt(a.pct_R)+'%')}<td><div class="pb"><div class="o" style="width:${a.pct_ops/mx*100}%"></div><div class="r" style="width:${a.pct_R/mx*100}%"></div></div></td>${td(sg(a.R_op,3),cls(a.R_op))}${td(fmt(a.wr)+'%')}${td(sg(a.R25),cls(a.R25))}${td(sg(a.R26),cls(a.R26))}</tr>`}).join('');
@@ -136,12 +156,14 @@ const col=['--gain','--a-spx','--a-gbp','--a-bny'];
 const ser=F.map((f,i)=>({name:f.nombre,color:col[i],pts:f.curve,w:f===PR?2.4:1.5,op:f===PR?1:.8}));
 $('#fin-leg').innerHTML=ser.map((s,i)=>`<span><i style="background:var(${s.color})"></i>${s.name} · ${pc(F[i].ret??((F[i].curve.at(-1).eq/1000-1)*100))}</span>`).join('');
 lineChart($('#c-fin'),ser,320);
+lineChart($('#c-ruta'),serR,300);
 $('#plan').innerHTML=[
-  `<b>Pre NY (07:00–09:00)</b>: XAUUSD Envolvente, EURUSD Envolvente + START, GBPUSD START y BTCUSD Envolvente, con el calendario de siempre. A las 09:00 se termina el día.`,
-  `<b>Días</b>: de lunes a jueves, de febrero a diciembre (enero no se opera). <b>Riesgo</b>: 1% fijo por operación; hasta ${PR.max_conc} posiciones abiertas a la vez. Límite de 1 TP o 2 pérdidas por activo y sesión (una pérdida por Reset cuenta).`,
+  `<b>Pre NY (07:00–09:00)</b>: XAUUSD Envolvente, EURUSD Envolvente + START y GBPUSD START, con el calendario de siempre. A las 09:00 se termina el día. BTCUSD no se opera.`,
+  `<b>Broker</b>: Multibank, cuenta ECN (spread más comisión de 3 USD por lote ida y vuelta). Si cambian los costos, recalcular: el euro y la libra son sensibles al spread.`,
+  `<b>Días</b>: de lunes a jueves, de febrero a diciembre (enero no se opera). <b>Riesgo</b>: 1% fijo por operación; hasta 3 posiciones abiertas a la vez. Límite de 1 TP o 2 pérdidas por activo y sesión (una pérdida por Reset cuenta).`,
   `<b>Freno de pérdida</b>: si la semana llega a −3R, no se abren más operaciones hasta el lunes.`,
-  `<b>Sin candado ni objetivo de ganancia</b>: las semanas que suben se dejan correr; en Pre NY sola ningún corte por ganancia mejora los dos años.`,
-  `<b>NY en observación</b>: el S&P 500 09:00 Envolvente se sigue registrando sin operarlo. Se reevalúa con un año más de datos si sostiene al menos +0,10R por operación de lunes a jueves.`,
-  `<b>Revisión</b>: cada trimestre, con los datos nuevos. Un activo que pierde en el año móvil o sube la caída de la cartera, sale.`].map(x=>`<li>${x}</li>`).join('');
-let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{lineChart($('#c-fin'),ser,320);barChart($('#c-sem'),cc.hist.map((v,i)=>({v,label:'',title:`Semana ${i+1} de ${cc.hist.length}`})),240,'R')},200)});
+  `<b>Sin candado ni objetivo de ganancia</b>: las semanas que suben se dejan correr.`,
+  `<b>Subir a 1,25%</b>: después de unos 3 meses en vivo, si la ventaja neta se mantiene en al menos +0,12R por operación.`,
+  `<b>Revisión</b>: cada trimestre, con los datos nuevos. Enero se revisa con los datos de 2027.`].map(x=>`<li>${x}</li>`).join('');
+let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{lineChart($('#c-fin'),ser,320);lineChart($('#c-ruta'),serR,300);barChart($('#c-sem'),cc.hist.map((v,i)=>({v,label:'',title:`Semana ${i+1} de ${cc.hist.length}`})),240,'R')},200)});
 </script>
