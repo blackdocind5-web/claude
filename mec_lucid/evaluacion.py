@@ -3,7 +3,9 @@
 - Pérdida máxima: 1.000 USD trailing sobre el saldo de cierre más alto. Se quema si el saldo cae a ese nivel o por debajo.
 - Pasa al llegar a +1.250 USD con el mejor día ≤ 50% de la ganancia total (si no, sigue operando)."""
 import json, statistics as st, fase1 as F
-OPS = [o for o in F.cargar() if o["ent"].hour == 9]
+import os
+CARPETA = os.environ.get("LUCID_DATOS", "datos")
+OPS = [o for o in F.cargar(CARPETA) if o["ent"].hour == 9]
 FUERA = ("Feriado o receso", "Discurso 09:00–11:00")
 
 def secuencia(hora, filtro):

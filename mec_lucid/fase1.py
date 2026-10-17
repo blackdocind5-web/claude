@@ -26,9 +26,9 @@ def categoria(d, cal):
     return "Día normal"
 
 
-def cargar():
+def cargar(carpeta="datos"):
     cal = calendario(); ops = []
-    for f in sorted(glob.glob(os.path.join(AQUI, "datos", "FASE_1-MNQ_*.csv"))):
+    for f in sorted(glob.glob(os.path.join(AQUI, carpeta, "FASE_1-MNQ_*.csv"))):
         m = re.search(r"MNQ_(Q[\w_]+?)_(\d{4})_(\d\d\.\d\d)h_SL_(\d+)_TP_(\d+)", os.path.basename(f))
         trim, anio, hora, sl, tp = m.group(1), int(m.group(2)), m.group(3).replace(".", ":"), int(m.group(4)), int(m.group(5))
         filas = list(csv.DictReader(open(f, encoding="utf-8-sig")))
@@ -38,7 +38,7 @@ def cargar():
             s = sal[k]; t = dt.datetime.strptime(e["Fecha y hora"], "%Y-%m-%d %H:%M"); pnl = float(e["PyG netas USD"])
             ops.append(dict(archivo=os.path.basename(f), trim=trim, anio=anio, hora=hora, sl=sl, tp=tp, ent=t,
                             sal=dt.datetime.strptime(s["Fecha y hora"], "%Y-%m-%d %H:%M"), pnl=pnl, gana=pnl > 0,
-                            normal=abs(pnl - tp * PUNTO) < 0.01 or abs(pnl + sl * PUNTO) < 0.01,
+                            normal=abs(pnl) <= sl * PUNTO + 3,
                             cat=categoria(t.date(), cal), lado="largo" if "largo" in e["Tipo"] else "corto"))
     return ops
 
