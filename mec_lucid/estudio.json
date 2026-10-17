@@ -1,0 +1,576 @@
+{
+ "09:30": {
+  "total": {
+   "n": 459,
+   "wr": 63.4,
+   "ww": 41.5,
+   "racha_perd": 5,
+   "anomalas": 1,
+   "peor": -106.0,
+   "mejor": 74.0
+  },
+  "anios": {
+   "2025": {
+    "n": 256,
+    "wr": 63.3,
+    "ww": 42.0,
+    "racha_perd": 4,
+    "anomalas": 0,
+    "peor": -86.0,
+    "mejor": 60.0
+   },
+   "2026": {
+    "n": 203,
+    "wr": 63.5,
+    "ww": 41.1,
+    "racha_perd": 5,
+    "anomalas": 1,
+    "peor": -106.0,
+    "mejor": 74.0
+   }
+  },
+  "trims": {
+   "Q1 2025": {
+    "n": 59,
+    "wr": 59.3,
+    "ww": 32.8,
+    "racha_perd": 4,
+    "anomalas": 0,
+    "peor": -74.0,
+    "mejor": 50.0
+   },
+   "Q1 2026": {
+    "n": 59,
+    "wr": 71.2,
+    "ww": 50.0,
+    "racha_perd": 4,
+    "anomalas": 1,
+    "peor": -96.0,
+    "mejor": 62.0
+   },
+   "Q2 2025": {
+    "n": 64,
+    "wr": 68.8,
+    "ww": 46.0,
+    "racha_perd": 3,
+    "anomalas": 0,
+    "peor": -68.0,
+    "mejor": 46.0
+   },
+   "Q2 2026": {
+    "n": 64,
+    "wr": 62.5,
+    "ww": 41.3,
+    "racha_perd": 5,
+    "anomalas": 0,
+    "peor": -84.0,
+    "mejor": 58.0
+   },
+   "Q3 2025": {
+    "n": 65,
+    "wr": 63.1,
+    "ww": 43.8,
+    "racha_perd": 4,
+    "anomalas": 0,
+    "peor": -80.0,
+    "mejor": 56.0
+   },
+   "Q3_y_Q4 2026": {
+    "n": 80,
+    "wr": 58.8,
+    "ww": 32.9,
+    "racha_perd": 4,
+    "anomalas": 0,
+    "peor": -106.0,
+    "mejor": 74.0
+   },
+   "Q4 2025": {
+    "n": 68,
+    "wr": 61.8,
+    "ww": 43.3,
+    "racha_perd": 3,
+    "anomalas": 0,
+    "peor": -86.0,
+    "mejor": 60.0
+   }
+  },
+  "cats": {
+   "Discurso 09:00–11:00": {
+    "n": 24,
+    "wr": 50.0,
+    "ww": 17.4,
+    "racha_perd": 3,
+    "anomalas": 0,
+    "peor": -106.0,
+    "mejor": 74.0,
+    "wr2025": 46.2,
+    "wr2026": 54.5
+   },
+   "Día normal": {
+    "n": 246,
+    "wr": 64.2,
+    "ww": 43.3,
+    "racha_perd": 6,
+    "anomalas": 0,
+    "peor": -106.0,
+    "mejor": 74.0,
+    "wr2025": 65.4,
+    "wr2026": 62.7
+   },
+   "FOMC": {
+    "n": 17,
+    "wr": 94.1,
+    "ww": 93.8,
+    "racha_perd": 1,
+    "anomalas": 0,
+    "peor": -74.0,
+    "mejor": 74.0,
+    "wr2025": 90.9,
+    "wr2026": 100.0
+   },
+   "Feriado o receso": {
+    "n": 53,
+    "wr": 56.6,
+    "ww": 36.5,
+    "racha_perd": 5,
+    "anomalas": 1,
+    "peor": -106.0,
+    "mejor": 74.0,
+    "wr2025": 58.1,
+    "wr2026": 54.5
+   },
+   "Noticia 08:30 (NFP, CPI, PPI, PIB)": {
+    "n": 76,
+    "wr": 57.9,
+    "ww": 32.0,
+    "racha_perd": 3,
+    "anomalas": 0,
+    "peor": -106.0,
+    "mejor": 74.0,
+    "wr2025": 59.5,
+    "wr2026": 55.9
+   },
+   "Noticia 10:00 (ISM, JOLTS, CB, PCE)": {
+    "n": 43,
+    "wr": 72.1,
+    "ww": 52.4,
+    "racha_perd": 3,
+    "anomalas": 0,
+    "peor": -106.0,
+    "mejor": 74.0,
+    "wr2025": 60.9,
+    "wr2026": 85.0
+   }
+  },
+  "dias": {
+   "Lunes": {
+    "n": 92,
+    "wr": 64.1,
+    "ww": 45.1,
+    "racha_perd": 5,
+    "anomalas": 0,
+    "peor": -106.0,
+    "mejor": 74.0,
+    "wr2025": 61.5,
+    "wr2026": 67.5
+   },
+   "Martes": {
+    "n": 93,
+    "wr": 58.1,
+    "ww": 38.0,
+    "racha_perd": 4,
+    "anomalas": 0,
+    "peor": -106.0,
+    "mejor": 74.0,
+    "wr2025": 61.5,
+    "wr2026": 53.7
+   },
+   "Miércoles": {
+    "n": 93,
+    "wr": 67.7,
+    "ww": 45.7,
+    "racha_perd": 3,
+    "anomalas": 0,
+    "peor": -106.0,
+    "mejor": 74.0,
+    "wr2025": 63.5,
+    "wr2026": 73.2
+   },
+   "Jueves": {
+    "n": 90,
+    "wr": 58.9,
+    "ww": 38.2,
+    "racha_perd": 5,
+    "anomalas": 0,
+    "peor": -106.0,
+    "mejor": 74.0,
+    "wr2025": 61.2,
+    "wr2026": 56.1
+   },
+   "Viernes": {
+    "n": 91,
+    "wr": 68.1,
+    "ww": 44.4,
+    "racha_perd": 3,
+    "anomalas": 1,
+    "peor": -106.0,
+    "mejor": 74.0,
+    "wr2025": 68.6,
+    "wr2026": 67.5
+   }
+  },
+  "lado": {
+   "largo": {
+    "n": 233,
+    "wr": 60.5,
+    "ww": 37.1,
+    "racha_perd": 5,
+    "anomalas": 1,
+    "peor": -106.0,
+    "mejor": 74.0
+   },
+   "corto": {
+    "n": 226,
+    "wr": 66.4,
+    "ww": 44.9,
+    "racha_perd": 4,
+    "anomalas": 0,
+    "peor": -106.0,
+    "mejor": 74.0
+   }
+  },
+  "filtros": {
+   "todos": {
+    "n": 459,
+    "wr": 63.4,
+    "ww": 41.5,
+    "racha_perd": 5,
+    "anomalas": 1,
+    "peor": -106.0,
+    "mejor": 74.0,
+    "ww2025": 42.0,
+    "ww2026": 41.1
+   },
+   "sin feriados/receso/discursos": {
+    "n": 382,
+    "wr": 65.2,
+    "ww": 43.3,
+    "racha_perd": 4,
+    "anomalas": 0,
+    "peor": -106.0,
+    "mejor": 74.0,
+    "ww2025": 44.1,
+    "ww2026": 42.0
+   },
+   "solo días normales": {
+    "n": 246,
+    "wr": 64.2,
+    "ww": 43.3,
+    "racha_perd": 6,
+    "anomalas": 0,
+    "peor": -106.0,
+    "mejor": 74.0,
+    "ww2025": 46.7,
+    "ww2026": 38.5
+   },
+   "sin 08:30 ni FOMC ni feriados": {
+    "n": 289,
+    "wr": 65.4,
+    "ww": 45.1,
+    "racha_perd": 4,
+    "anomalas": 0,
+    "peor": -106.0,
+    "mejor": 74.0,
+    "ww2025": 44.9,
+    "ww2026": 45.0
+   }
+  }
+ },
+ "09:45": {
+  "total": {
+   "n": 459,
+   "wr": 63.4,
+   "ww": 40.6,
+   "racha_perd": 6,
+   "anomalas": 24,
+   "peor": -151.5,
+   "mejor": 110.0
+  },
+  "anios": {
+   "2025": {
+    "n": 256,
+    "wr": 63.7,
+    "ww": 41.2,
+    "racha_perd": 6,
+    "anomalas": 12,
+    "peor": -129.0,
+    "mejor": 110.0
+   },
+   "2026": {
+    "n": 203,
+    "wr": 63.1,
+    "ww": 40.1,
+    "racha_perd": 6,
+    "anomalas": 12,
+    "peor": -151.5,
+    "mejor": 106.5
+   }
+  },
+  "trims": {
+   "Q1 2025": {
+    "n": 59,
+    "wr": 55.9,
+    "ww": 27.6,
+    "racha_perd": 3,
+    "anomalas": 2,
+    "peor": -129.0,
+    "mejor": 80.0
+   },
+   "Q1 2026": {
+    "n": 59,
+    "wr": 66.1,
+    "ww": 44.8,
+    "racha_perd": 2,
+    "anomalas": 4,
+    "peor": -132.0,
+    "mejor": 92.0
+   },
+   "Q2 2025": {
+    "n": 64,
+    "wr": 62.5,
+    "ww": 42.9,
+    "racha_perd": 4,
+    "anomalas": 7,
+    "peor": -76.5,
+    "mejor": 110.0
+   },
+   "Q2 2026": {
+    "n": 64,
+    "wr": 60.9,
+    "ww": 33.3,
+    "racha_perd": 4,
+    "anomalas": 4,
+    "peor": -151.5,
+    "mejor": 61.0
+   },
+   "Q3 2025": {
+    "n": 65,
+    "wr": 69.2,
+    "ww": 48.4,
+    "racha_perd": 2,
+    "anomalas": 1,
+    "peor": -80.0,
+    "mejor": 107.5
+   },
+   "Q3_y_Q4 2026": {
+    "n": 80,
+    "wr": 62.5,
+    "ww": 41.8,
+    "racha_perd": 6,
+    "anomalas": 4,
+    "peor": -119.0,
+    "mejor": 106.5
+   },
+   "Q4 2025": {
+    "n": 68,
+    "wr": 66.2,
+    "ww": 44.8,
+    "racha_perd": 6,
+    "anomalas": 2,
+    "peor": -86.0,
+    "mejor": 66.0
+   }
+  },
+  "cats": {
+   "Discurso 09:00–11:00": {
+    "n": 24,
+    "wr": 50.0,
+    "ww": 21.7,
+    "racha_perd": 3,
+    "anomalas": 1,
+    "peor": -106.0,
+    "mejor": 74.0,
+    "wr2025": 53.8,
+    "wr2026": 45.5
+   },
+   "Día normal": {
+    "n": 246,
+    "wr": 68.3,
+    "ww": 48.2,
+    "racha_perd": 8,
+    "anomalas": 15,
+    "peor": -151.5,
+    "mejor": 98.0,
+    "wr2025": 71.3,
+    "wr2026": 64.5
+   },
+   "FOMC": {
+    "n": 17,
+    "wr": 52.9,
+    "ww": 31.2,
+    "racha_perd": 3,
+    "anomalas": 2,
+    "peor": -90.0,
+    "mejor": 110.0,
+    "wr2025": 54.5,
+    "wr2026": 50.0
+   },
+   "Feriado o receso": {
+    "n": 53,
+    "wr": 54.7,
+    "ww": 30.8,
+    "racha_perd": 8,
+    "anomalas": 0,
+    "peor": -106.0,
+    "mejor": 74.0,
+    "wr2025": 51.6,
+    "wr2026": 59.1
+   },
+   "Noticia 08:30 (NFP, CPI, PPI, PIB)": {
+    "n": 76,
+    "wr": 64.5,
+    "ww": 38.7,
+    "racha_perd": 4,
+    "anomalas": 2,
+    "peor": -106.0,
+    "mejor": 107.5,
+    "wr2025": 64.3,
+    "wr2026": 64.7
+   },
+   "Noticia 10:00 (ISM, JOLTS, CB, PCE)": {
+    "n": 43,
+    "wr": 55.8,
+    "ww": 33.3,
+    "racha_perd": 7,
+    "anomalas": 4,
+    "peor": -106.0,
+    "mejor": 106.5,
+    "wr2025": 43.5,
+    "wr2026": 70.0
+   }
+  },
+  "dias": {
+   "Lunes": {
+    "n": 92,
+    "wr": 64.1,
+    "ww": 45.1,
+    "racha_perd": 5,
+    "anomalas": 9,
+    "peor": -151.5,
+    "mejor": 106.5,
+    "wr2025": 67.3,
+    "wr2026": 60.0
+   },
+   "Martes": {
+    "n": 93,
+    "wr": 57.0,
+    "ww": 33.7,
+    "racha_perd": 4,
+    "anomalas": 6,
+    "peor": -132.0,
+    "mejor": 107.5,
+    "wr2025": 55.8,
+    "wr2026": 58.5
+   },
+   "Miércoles": {
+    "n": 93,
+    "wr": 59.1,
+    "ww": 34.8,
+    "racha_perd": 5,
+    "anomalas": 5,
+    "peor": -106.0,
+    "mejor": 110.0,
+    "wr2025": 63.5,
+    "wr2026": 53.7
+   },
+   "Jueves": {
+    "n": 90,
+    "wr": 66.7,
+    "ww": 48.3,
+    "racha_perd": 4,
+    "anomalas": 0,
+    "peor": -106.0,
+    "mejor": 74.0,
+    "wr2025": 63.3,
+    "wr2026": 70.7
+   },
+   "Viernes": {
+    "n": 91,
+    "wr": 70.3,
+    "ww": 50.0,
+    "racha_perd": 3,
+    "anomalas": 4,
+    "peor": -106.0,
+    "mejor": 92.0,
+    "wr2025": 68.6,
+    "wr2026": 72.5
+   }
+  },
+  "lado": {
+   "largo": {
+    "n": 234,
+    "wr": 65.4,
+    "ww": 43.3,
+    "racha_perd": 5,
+    "anomalas": 9,
+    "peor": -132.0,
+    "mejor": 110.0
+   },
+   "corto": {
+    "n": 225,
+    "wr": 61.3,
+    "ww": 37.9,
+    "racha_perd": 6,
+    "anomalas": 15,
+    "peor": -151.5,
+    "mejor": 106.5
+   }
+  },
+  "filtros": {
+   "todos": {
+    "n": 459,
+    "wr": 63.4,
+    "ww": 40.6,
+    "racha_perd": 6,
+    "anomalas": 24,
+    "peor": -151.5,
+    "mejor": 110.0,
+    "ww2025": 41.2,
+    "ww2026": 40.1
+   },
+   "sin feriados/receso/discursos": {
+    "n": 382,
+    "wr": 65.4,
+    "ww": 42.3,
+    "racha_perd": 5,
+    "anomalas": 23,
+    "peor": -151.5,
+    "mejor": 110.0,
+    "ww2025": 43.6,
+    "ww2026": 40.8
+   },
+   "solo días normales": {
+    "n": 246,
+    "wr": 68.3,
+    "ww": 48.2,
+    "racha_perd": 8,
+    "anomalas": 15,
+    "peor": -151.5,
+    "mejor": 98.0,
+    "ww2025": 54.8,
+    "ww2026": 40.4
+   },
+   "sin 08:30 ni FOMC ni feriados": {
+    "n": 289,
+    "wr": 66.4,
+    "ww": 43.1,
+    "racha_perd": 5,
+    "anomalas": 19,
+    "peor": -151.5,
+    "mejor": 106.5,
+    "ww2025": 44.9,
+    "ww2026": 41.1
+   }
+  }
+ }
+}

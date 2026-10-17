@@ -1,0 +1,242 @@
+{
+ "09:30|todos los días|1000|0.0": {
+  "intentos": 457,
+  "p_pasa": 55.4,
+  "dias_med": 2,
+  "dias_quema": 3.0
+ },
+ "09:30|todos los días|1000|1.0": {
+  "intentos": 457,
+  "p_pasa": 53.0,
+  "dias_med": 2.0,
+  "dias_quema": 3
+ },
+ "09:30|todos los días|750|0.0": {
+  "intentos": 456,
+  "p_pasa": 48.9,
+  "dias_med": 3,
+  "dias_quema": 4
+ },
+ "09:30|todos los días|750|1.0": {
+  "intentos": 456,
+  "p_pasa": 47.1,
+  "dias_med": 3,
+  "dias_quema": 3
+ },
+ "09:30|todos los días|500|0.0": {
+  "intentos": 453,
+  "p_pasa": 48.6,
+  "dias_med": 7.0,
+  "dias_quema": 6
+ },
+ "09:30|todos los días|500|1.0": {
+  "intentos": 453,
+  "p_pasa": 47.7,
+  "dias_med": 7.0,
+  "dias_quema": 6
+ },
+ "09:30|todos los días|400|0.0": {
+  "intentos": 450,
+  "p_pasa": 49.6,
+  "dias_med": 11,
+  "dias_quema": 8
+ },
+ "09:30|todos los días|400|1.0": {
+  "intentos": 450,
+  "p_pasa": 47.1,
+  "dias_med": 11.0,
+  "dias_quema": 8.0
+ },
+ "09:30|todos los días|300|0.0": {
+  "intentos": 436,
+  "p_pasa": 45.2,
+  "dias_med": 17,
+  "dias_quema": 15
+ },
+ "09:30|todos los días|300|1.0": {
+  "intentos": 436,
+  "p_pasa": 40.8,
+  "dias_med": 17.0,
+  "dias_quema": 15.0
+ },
+ "09:30|sin feriados, receso ni discursos|1000|0.0": {
+  "intentos": 380,
+  "p_pasa": 59.5,
+  "dias_med": 2.0,
+  "dias_quema": 3.0
+ },
+ "09:30|sin feriados, receso ni discursos|1000|1.0": {
+  "intentos": 380,
+  "p_pasa": 57.1,
+  "dias_med": 2,
+  "dias_quema": 3
+ },
+ "09:30|sin feriados, receso ni discursos|750|0.0": {
+  "intentos": 379,
+  "p_pasa": 55.4,
+  "dias_med": 3.0,
+  "dias_quema": 4
+ },
+ "09:30|sin feriados, receso ni discursos|750|1.0": {
+  "intentos": 379,
+  "p_pasa": 51.5,
+  "dias_med": 3,
+  "dias_quema": 4.0
+ },
+ "09:30|sin feriados, receso ni discursos|500|0.0": {
+  "intentos": 376,
+  "p_pasa": 56.4,
+  "dias_med": 7.0,
+  "dias_quema": 6.0
+ },
+ "09:30|sin feriados, receso ni discursos|500|1.0": {
+  "intentos": 376,
+  "p_pasa": 54.0,
+  "dias_med": 7,
+  "dias_quema": 6
+ },
+ "09:30|sin feriados, receso ni discursos|400|0.0": {
+  "intentos": 372,
+  "p_pasa": 55.1,
+  "dias_med": 11,
+  "dias_quema": 8
+ },
+ "09:30|sin feriados, receso ni discursos|400|1.0": {
+  "intentos": 371,
+  "p_pasa": 54.2,
+  "dias_med": 11,
+  "dias_quema": 9.0
+ },
+ "09:30|sin feriados, receso ni discursos|300|0.0": {
+  "intentos": 351,
+  "p_pasa": 57.0,
+  "dias_med": 17.0,
+  "dias_quema": 15
+ },
+ "09:30|sin feriados, receso ni discursos|300|1.0": {
+  "intentos": 351,
+  "p_pasa": 55.0,
+  "dias_med": 18,
+  "dias_quema": 15.0
+ },
+ "09:45|todos los días|1000|0.0": {
+  "intentos": 455,
+  "p_pasa": 53.0,
+  "dias_med": 2,
+  "dias_quema": 3.0
+ },
+ "09:45|todos los días|1000|1.0": {
+  "intentos": 455,
+  "p_pasa": 49.9,
+  "dias_med": 2,
+  "dias_quema": 3.0
+ },
+ "09:45|todos los días|750|0.0": {
+  "intentos": 455,
+  "p_pasa": 45.7,
+  "dias_med": 3.0,
+  "dias_quema": 4
+ },
+ "09:45|todos los días|750|1.0": {
+  "intentos": 455,
+  "p_pasa": 44.2,
+  "dias_med": 3,
+  "dias_quema": 4.0
+ },
+ "09:45|todos los días|500|0.0": {
+  "intentos": 452,
+  "p_pasa": 47.8,
+  "dias_med": 7.0,
+  "dias_quema": 7.0
+ },
+ "09:45|todos los días|500|1.0": {
+  "intentos": 451,
+  "p_pasa": 45.5,
+  "dias_med": 7,
+  "dias_quema": 7.0
+ },
+ "09:45|todos los días|400|0.0": {
+  "intentos": 445,
+  "p_pasa": 49.7,
+  "dias_med": 11,
+  "dias_quema": 10.0
+ },
+ "09:45|todos los días|400|1.0": {
+  "intentos": 444,
+  "p_pasa": 46.6,
+  "dias_med": 12,
+  "dias_quema": 10
+ },
+ "09:45|todos los días|300|0.0": {
+  "intentos": 435,
+  "p_pasa": 54.3,
+  "dias_med": 20.0,
+  "dias_quema": 15
+ },
+ "09:45|todos los días|300|1.0": {
+  "intentos": 434,
+  "p_pasa": 53.5,
+  "dias_med": 21.0,
+  "dias_quema": 15.0
+ },
+ "09:45|sin feriados, receso ni discursos|1000|0.0": {
+  "intentos": 378,
+  "p_pasa": 55.0,
+  "dias_med": 2.0,
+  "dias_quema": 3.0
+ },
+ "09:45|sin feriados, receso ni discursos|1000|1.0": {
+  "intentos": 378,
+  "p_pasa": 51.3,
+  "dias_med": 2.0,
+  "dias_quema": 3.0
+ },
+ "09:45|sin feriados, receso ni discursos|750|0.0": {
+  "intentos": 378,
+  "p_pasa": 48.7,
+  "dias_med": 3.0,
+  "dias_quema": 4.0
+ },
+ "09:45|sin feriados, receso ni discursos|750|1.0": {
+  "intentos": 378,
+  "p_pasa": 46.6,
+  "dias_med": 3.0,
+  "dias_quema": 4.0
+ },
+ "09:45|sin feriados, receso ni discursos|500|0.0": {
+  "intentos": 375,
+  "p_pasa": 45.3,
+  "dias_med": 7.0,
+  "dias_quema": 8
+ },
+ "09:45|sin feriados, receso ni discursos|500|1.0": {
+  "intentos": 374,
+  "p_pasa": 44.1,
+  "dias_med": 7,
+  "dias_quema": 8
+ },
+ "09:45|sin feriados, receso ni discursos|400|0.0": {
+  "intentos": 368,
+  "p_pasa": 52.7,
+  "dias_med": 12.0,
+  "dias_quema": 11.0
+ },
+ "09:45|sin feriados, receso ni discursos|400|1.0": {
+  "intentos": 367,
+  "p_pasa": 51.0,
+  "dias_med": 11,
+  "dias_quema": 11.0
+ },
+ "09:45|sin feriados, receso ni discursos|300|0.0": {
+  "intentos": 351,
+  "p_pasa": 45.6,
+  "dias_med": 16.5,
+  "dias_quema": 21
+ },
+ "09:45|sin feriados, receso ni discursos|300|1.0": {
+  "intentos": 350,
+  "p_pasa": 43.1,
+  "dias_med": 16,
+  "dias_quema": 21
+ }
+}
