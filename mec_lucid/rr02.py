@@ -1,5 +1,5 @@
 """Estrategia RR 1:0,2 (datos_v3/, ya con comisión y deslizamiento): 09:30 o 09:45, SL 70/TP 14 o SL 60/TP 12.
-Periodos Jun–Oct 2025, Nov 2025–Abr 2026 y Mar–Oct 2026 (se solapan mar–abr 2026: se queda una sola operación por día)."""
+Periodos Ene–Jun 2025 (dic 2024 se ignora), Jun–Oct 2025, Nov 2025–Abr 2026 y Mar–Oct 2026 (se solapan mar–abr 2026: se queda una sola operación por día)."""
 import glob, os, re, csv, random, collections, datetime as dt
 import fase1 as F, evaluacion as E
 AQUI = os.path.dirname(os.path.abspath(__file__)); CAL = F.calendario()
@@ -13,6 +13,7 @@ def cargar():
         for r in filas:
             if not r["Tipo"].startswith("Entrada"): continue
             t = dt.datetime.strptime(r["Fecha y hora"], "%Y-%m-%d %H:%M"); pnl = float(r["PyG netas USD"])
+            if t.year < 2025 or t.hour != int(hora[:2]): continue   # Fabián: ignorar dic 2024; fuera de horario (09/01/2025 18:00)
             k = (hora, sl, t.date())
             if k in ops:
                 difs += ops[k]["pnl"] != pnl; continue
