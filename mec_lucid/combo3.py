@@ -69,8 +69,7 @@ def cadena(D, **kw):
 
 def nulo(D, reps=150, **kw):
     eqs = {h: R.eq([o for d in D for o in d if o["hora"] == h]) / 100 for h in {o["hora"] for d in D for o in d}}
-    G = {h: max(o["pnl"] for d in D for o in d if o["hora"] == h) for h in eqs}
-    G = {h: next(o["pnl"] for d in D for o in d if o["hora"] == h and o["gana"] and o["pnl"] < 40) for h in eqs}
+    G = {h: collections.Counter(o["pnl"] for d in D for o in d if o["hora"] == h and o["gana"]).most_common(1)[0][0] for h in eqs}
     P = {h: min(o["pnl"] for d in D for o in d if o["hora"] == h) for h in eqs}
     rs = sorted(evaluar([[dict(o, pnl=G[o["hora"]] if random.random() < eqs[o["hora"]] else P[o["hora"]]) for o in d] for d in D], **kw)["pasa"] for _ in range(reps))
     return st.mean(rs), rs[int(.95 * reps)]
