@@ -1,16 +1,23 @@
 {
-  "onboarding_completed": false,
-  "name": "",
+  "onboarding_completed": true,
+  "name": "Fabian Aldana",
   "email": "",
   "investments": {
-    "broker": "",
-    "risk_profile": "",
-    "investment_horizon": "",
-    "markets_of_interest": []
+    "broker": "Broker de CFDs (evaluando prop firm a futuro)",
+    "risk_profile": "Moderado-agresivo",
+    "investment_horizon": "Corto a mediano plazo",
+    "markets_of_interest": [
+      "XAUUSD (oro)",
+      "US30 (Dow Jones)",
+      "NAS100 (Nasdaq 100)",
+      "S&P 500",
+      "Mercado argentino: MELI, YPF y bancos",
+      "Bonos del Tesoro de EE. UU. y bonos argentinos"
+    ]
   },
   "reporting": {
     "daily_report_time": "08:00",
-    "report_frequency": "daily",
+    "report_frequency": "on_demand",
     "send_by_email": false,
     "email_to": ""
   },
@@ -20,5 +27,5 @@
     "chart_default_period": "6mo",
     "currency": "USD"
   },
-  "notes": ""
+  "notes": "Trader scalper discrecional de XAUUSD en 1m (sesiones Asia y Nueva York). Sin reportes por ahora; los pide cuando los necesite. Foco actual: desarrollar y backtestear su estrategia en Pine Script (TradingView)."
 }
