@@ -1,10 +1,24 @@
 {
-  "last_updated": "",
+  "last_updated": "20/10/2026",
   "lists": {
     "tech": ["AAPL", "MSFT", "NVDA", "GOOGL", "META", "AMZN", "TSLA"],
     "etfs": ["SPY", "QQQ", "VTI", "IWM", "EEM"],
     "latam": ["MELI", "NU", "GLOB", "DESP"],
     "macro": ["GLD", "SLV", "USO", "TLT", "UUP", "BTC-USD"],
-    "custom": []
+    "custom": [
+      "GC=F",
+      "^DJI",
+      "^NDX",
+      "^GSPC",
+      "MELI",
+      "YPF",
+      "GGAL",
+      "BMA",
+      "BBAR",
+      "SUPV",
+      "^TNX",
+      "AL30.BA",
+      "GD30.BA"
+    ]
   }
 }
