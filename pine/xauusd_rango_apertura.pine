@@ -1,0 +1,339 @@
+//@version=6
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  XAUUSD · Ruptura del rango de apertura (Asia / Nueva York) · gráfico de 1 minuto
+// ═══════════════════════════════════════════════════════════════════════════════════
+//
+//  RESUMEN DE LAS REGLAS
+//  ─────────────────────
+//  Horarios (siempre en hora de Nueva York, con cambio de horario de verano automático)
+//    · Asia : rango 18:04–20:00 · señales 20:00–22:00 · domingo a jueves (noche)
+//    · NY   : rango 08:30–09:30 · señales 09:30–11:00 · lunes a viernes (mañana)
+//    · Rango = máximo y mínimo (con mechas) de las velas que ABREN dentro de la ventana.
+//      La vela de apertura (20:00 / 09:30) ya no cuenta. Línea punteada al 50 %.
+//    · Una vela puede generar señal si ABRE dentro de la ventana de señales
+//      (última vela válida: 21:59 / 10:59).
+//
+//  Señal (vela de 1m ya cerrada)
+//    · COMPRA: cierra ≥ máximo del rango + ruptura mínima (0,200) y es alcista.
+//    · VENTA : cierra ≤ mínimo del rango − ruptura mínima (0,200) y es bajista.
+//    · Ejecución a mercado al CIERRE de la vela de señal.
+//    · Si la distancia entre ese cierre y el punto medio del rango es ≥ SL máximo
+//      (20,000), la señal se descarta (no cuenta como operación ni gasta cupo).
+//
+//  Cupos por sesión
+//    · Máximo 1 compra y 1 venta. La 2ª operación solo es válida en sentido contrario
+//      y solo si la 1ª terminó en SL o en break-even (si terminó en TP, no hay 2ª).
+//    · Si hay una posición abierta de otra sesión, solo se aceptan entradas en su mismo
+//      sentido (en paralelo); las señales contrarias se ignoran y no cuentan.
+//
+//  Salidas
+//    · SL en el punto medio del rango. Con "SL mínimo" activado, si esa distancia es
+//      menor al mínimo (6,000) el SL se amplía a esa distancia desde la entrada.
+//    · TP = RR × distancia real del SL (RR por defecto 1:1).
+//    · Break-even opcional (desactivado por defecto): al tocar 1:1 (1R real) el SL pasa
+//      a la entrada, desde la vela siguiente.
+//    · Trades de NY: cierre a mercado a las 16:00 NY si siguen abiertos.
+//    · Trades de Asia: sin límite de tiempo, salvo el viernes 16:00 NY, cuando se cierra
+//      cualquier posición abierta (para no pasar el fin de semana).
+//    · Si una misma vela toca SL y TP se asume SL primero (ver nota de limitaciones).
+//
+//  Riesgo (Multibank XAUUSD.ecn)
+//    · 1 % del capital actual por operación (interés compuesto), sobre el SL real.
+//    · 1 lote = 100 oz · lote mínimo 0,01 · paso 0,01 · máximo 10 · apalancamiento 1:500.
+//    · Tamaño redondeado hacia abajo al paso de lote.
+//
+//  COSTOS — se editan en Propiedades (no en Entradas)
+//    · Comisión por lado = 0,03 por onza (3 USD por lote por lado ÷ 100 oz)
+//      + mitad del spread (0,02 ÷ 2 = 0,01) = 0,04 por onza y por lado.
+//      Para cambiar el spread: Ajustes → Propiedades → Comisiones → valor =
+//      0,03 + spread ÷ 2. No se incluye slippage ni swap.
+//
+//  LIMITACIÓN CONOCIDA
+//    · Pine no permite saber qué se tocó primero dentro de una vela de 1m. Cuando una
+//      misma vela toca SL y TP, el emulador de TradingView decide con su propio
+//      criterio, que no siempre es "SL primero". Es poco frecuente con SL ≥ 1,000.
+// ═══════════════════════════════════════════════════════════════════════════════════
+strategy(title = "XAUUSD · Ruptura de Rango de Apertura (Asia / NY)",
+         shorttitle = "Rango Apertura XAUUSD",
+         overlay = true,
+         initial_capital = 10000,
+         currency = currency.USD,
+         default_qty_type = strategy.fixed,
+         default_qty_value = 1,
+         pyramiding = 5,
+         process_orders_on_close = true,
+         calc_on_every_tick = false,
+         commission_type = strategy.commission.cash_per_contract,
+         commission_value = 0.04,
+         margin_long = 0.2,
+         margin_short = 0.2,
+         max_lines_count = 500,
+         max_labels_count = 500,
+         max_boxes_count = 500)
+
+// ── Constantes ─────────────────────────────────────────────────────────────────────
+const string TZ     = "America/New_York"
+const int    BAR_MS = 60000
+
+const color C_BUY  = #2962FF
+const color C_SELL = #AB47BC
+const color C_TP   = #089981
+const color C_SL   = #F23645
+const color C_BE   = #FF9800
+const color C_OFF  = #787B86
+
+// ── Entradas ───────────────────────────────────────────────────────────────────────
+const string G_SES  = "1 · Sesiones"
+const string G_ENT  = "2 · Entrada"
+const string G_SLTP = "3 · Stop Loss / Take Profit"
+const string G_CIE  = "4 · Cierres forzados"
+const string G_RSK  = "5 · Riesgo y broker (Multibank)"
+const string G_VIS  = "6 · Visual"
+
+useAsia = input.bool(true, "Sesión Asia", group = G_SES, tooltip = "Rango 18:04–20:00 NY · señales 20:00–22:00 NY · domingo a jueves por la noche.")
+useNY   = input.bool(true, "Sesión Nueva York", group = G_SES, tooltip = "Rango 08:30–09:30 NY · señales 09:30–11:00 NY · lunes a viernes por la mañana.")
+
+minBreak = input.float(0.200, "Ruptura mínima (cierre fuera del rango)", minval = 0.0, step = 0.01, group = G_ENT, tooltip = "Diferencia de precio mínima entre el cierre de la vela de señal y el borde del rango.")
+maxSL    = input.float(20.0, "SL máximo permitido", minval = 0.1, step = 0.5, group = G_ENT, tooltip = "Si la distancia entre el cierre de la vela de señal y el punto medio del rango es mayor o igual a este valor, la entrada no se toma.")
+
+useMinSL = input.bool(false, "Activar SL mínimo", group = G_SLTP, tooltip = "Desactivado: el SL siempre va en el punto medio del rango. Activado: si la distancia al punto medio es menor al SL mínimo, el SL se coloca a esa distancia mínima de la entrada.")
+minSL    = input.float(6.0, "SL mínimo (distancia de precio)", minval = 0.1, step = 0.5, group = G_SLTP)
+rr       = input.float(1.0, "Ratio R:R (recompensa por cada 1 de riesgo)", minval = 0.1, step = 0.1, group = G_SLTP, tooltip = "1.0 = 1:1 · 2.0 = 1:2 · 3.0 = 1:3 · 0.7 = 1:0,7. El TP se mide sobre el SL real.")
+useBE    = input.bool(false, "Activar break-even al alcanzar 1:1", group = G_SLTP, tooltip = "Desactivado por defecto. Activado: cuando el precio toca 1R, el SL se mueve a la entrada desde la vela siguiente. Solo tiene sentido con R:R mayor a 1.")
+beOffset = input.float(0.0, "Desplazamiento del break-even (precio)", step = 0.01, group = G_SLTP, tooltip = "0 = break-even exacto en el precio de entrada. Un valor positivo lo mueve a favor de la operación.")
+
+closeHour = input.int(16, "Hora de cierre forzado (hora NY)", minval = 0, maxval = 23, group = G_CIE)
+closeMin  = input.int(0, "Minuto de cierre forzado", minval = 0, maxval = 59, group = G_CIE)
+fridayAll = input.bool(true, "Viernes: cerrar todas las posiciones a esa hora", group = G_CIE, tooltip = "Evita llevar una operación (por ejemplo de Asia del jueves) por el fin de semana. Los trades de NY siempre se cierran a esa hora.")
+
+riskPct  = input.float(1.0, "Riesgo por operación (% del capital actual)", minval = 0.01, maxval = 100.0, step = 0.1, group = G_RSK)
+leverage = input.int(500, "Apalancamiento (1:X)", minval = 1, group = G_RSK)
+ozPerLot = input.float(100.0, "Onzas por lote", minval = 0.01, group = G_RSK)
+minLot   = input.float(0.01, "Lote mínimo", minval = 0.0001, step = 0.01, group = G_RSK)
+lotStep  = input.float(0.01, "Paso de lote", minval = 0.0001, step = 0.01, group = G_RSK)
+maxLot   = input.float(10.0, "Lote máximo por orden", minval = 0.01, group = G_RSK)
+
+showRanges = input.bool(true, "Mostrar rangos de apertura", group = G_VIS)
+rangeCol   = input.color(color.new(color.gray, 70), "Color del rango", group = G_VIS)
+midCol     = input.color(color.new(color.gray, 20), "Color de la línea media", group = G_VIS)
+showMarks  = input.bool(true, "Mostrar entradas, salidas, SL y TP", group = G_VIS, tooltip = "TradingView conserva como máximo 500 líneas y 500 etiquetas: solo se ven las marcas de las operaciones más recientes. El backtest siempre cubre todo el período.")
+
+if timeframe.in_seconds() != 60
+    runtime.error("Esta estrategia está diseñada para el gráfico de 1 minuto (XAUUSD).")
+
+// ── Tiempo en hora de Nueva York ───────────────────────────────────────────────────
+int  mdOpen  = hour(time, TZ) * 60 + minute(time, TZ)   // minuto del día en que ABRE la vela
+int  mdClose = mdOpen + 1                               // minuto del día en que CIERRA la vela
+int  dow     = dayofweek(time, TZ)
+int  forceMD = closeHour * 60 + closeMin
+bool inForce = mdClose >= forceMD and mdClose <= forceMD + 60
+
+// ── Tipos ──────────────────────────────────────────────────────────────────────────
+type Sess
+    int    idx
+    string name
+    int    startMD
+    int    openMD
+    int    endMD
+    int    dowFrom
+    int    dowTo
+    float  hi          = na
+    float  lo          = na
+    bool   prevIn      = false
+    bool   ready       = false
+    int    nTrades     = 0
+    bool   buyUsed     = false
+    bool   sellUsed    = false
+    int    firstDir    = 0
+    string firstId     = ""
+    bool   firstClosed = false
+    bool   firstTP     = false
+    box    bx
+    line   ml
+
+type Trd
+    string id
+    int    dir
+    int    sess
+    float  entry
+    float  sl
+    float  tp
+    float  beLvl
+    float  beStop
+    bool   beDone = false
+    int    entryBar
+    line   lnEntry
+    line   lnSL
+    line   lnTP
+    line   lnBE
+
+var Sess asia = Sess.new(idx = 0, name = "Asia", startMD = 18 * 60 + 4, openMD = 20 * 60, endMD = 22 * 60, dowFrom = dayofweek.sunday, dowTo = dayofweek.thursday)
+var Sess nyS  = Sess.new(idx = 1, name = "NY", startMD = 8 * 60 + 30, openMD = 9 * 60 + 30, endMD = 11 * 60, dowFrom = dayofweek.monday, dowTo = dayofweek.friday)
+var array<Trd> trades = array.new<Trd>()
+var int lastClosed = 0
+
+// ── Utilidades ─────────────────────────────────────────────────────────────────────
+// Convierte una diferencia de precio a ticks enteros para comparar sin errores de decimales.
+tk(float x) => math.round(x / syminfo.mintick)
+
+// ── Operación cerrada: actualiza cupos de la sesión y las marcas del gráfico ──────
+markClosed(string eid, string why, float xp, int xt) =>
+    bool isTP = why == "TP"
+    if asia.firstId == eid
+        asia.firstClosed := true
+        asia.firstTP := isTP
+    if nyS.firstId == eid
+        nyS.firstClosed := true
+        nyS.firstTP := isTP
+    int found = -1
+    for [j, t] in trades
+        if t.id == eid
+            found := j
+    if found >= 0
+        Trd tr = trades.get(found)
+        if showMarks
+            color c = why == "TP" ? C_TP : why == "SL" ? C_SL : why == "BE" ? C_BE : C_OFF
+            string txt = (why == "TP" or why == "SL" or why == "BE") ? why : "Cierre"
+            line.set_x2(tr.lnEntry, xt)
+            line.set_x2(tr.lnTP, xt)
+            if tr.beDone
+                line.set_x2(tr.lnBE, xt)
+            else
+                line.set_x2(tr.lnSL, xt)
+            label.new(xt, xp, text = txt, xloc = xloc.bar_time, style = xp >= tr.entry ? label.style_label_down : label.style_label_up, color = c, textcolor = color.white, size = size.small, tooltip = "Salida: " + txt + "\nPrecio: " + str.tostring(xp, "#.###"))
+        trades.remove(found)
+    found >= 0
+
+// ── Operaciones abiertas: break-even, órdenes de salida, cierres forzados ─────────
+manageTrades() =>
+    for tr in trades
+        bool forceIt = inForce and (tr.sess == 1 or (fridayAll and dow == dayofweek.friday))
+        if forceIt
+            strategy.close(tr.id, comment = "Cierre forzado")
+        else
+            if useBE and not tr.beDone and bar_index > tr.entryBar
+                bool hit = tr.dir == 1 ? high >= tr.beLvl : low <= tr.beLvl
+                if hit
+                    tr.beDone := true
+                    if showMarks
+                        int bx = time + BAR_MS
+                        line.set_x2(tr.lnSL, bx)
+                        tr.lnBE := line.new(bx, tr.beStop, bx + BAR_MS, tr.beStop, xloc = xloc.bar_time, color = C_BE, width = 2)
+            float stopP = tr.beDone ? tr.beStop : tr.sl
+            strategy.exit("X-" + tr.id, from_entry = tr.id, stop = stopP, limit = tr.tp, comment_profit = "TP", comment_loss = tr.beDone ? "BE" : "SL")
+            if showMarks
+                int xr = time + BAR_MS
+                line.set_x2(tr.lnEntry, xr)
+                line.set_x2(tr.lnTP, xr)
+                if tr.beDone
+                    line.set_x2(tr.lnBE, xr)
+                else
+                    line.set_x2(tr.lnSL, xr)
+    true
+
+// ── Evaluación de la señal en la vela que acaba de cerrar ─────────────────────────
+tryEntry(Sess s) =>
+    float mid     = (s.hi + s.lo) / 2
+    bool  buySig  = tk(close - s.hi) >= tk(minBreak) and close > open
+    bool  sellSig = tk(s.lo - close) >= tk(minBreak) and close < open
+    int   dir     = buySig ? 1 : sellSig ? -1 : 0
+    if dir != 0
+        float pos      = strategy.position_size
+        bool  conflict = (dir == 1 and pos < 0) or (dir == -1 and pos > 0)
+        bool  used     = dir == 1 ? s.buyUsed : s.sellUsed
+        bool  seqOk    = s.nTrades == 0 or (s.nTrades == 1 and s.firstClosed and not s.firstTP)
+        if not conflict and not used and seqOk
+            float distMid = math.abs(close - mid)
+            if tk(distMid) < tk(maxSL)
+                float entry  = close
+                float slDist = useMinSL ? math.max(distMid, minSL) : distMid
+                float slP    = math.round_to_mintick(dir == 1 ? entry - slDist : entry + slDist)
+                float rDist  = math.abs(entry - slP)
+                float tpP    = math.round_to_mintick(dir == 1 ? entry + rr * rDist : entry - rr * rDist)
+                float beL    = math.round_to_mintick(dir == 1 ? entry + rDist : entry - rDist)
+                float beS    = math.round_to_mintick(dir == 1 ? entry + beOffset : entry - beOffset)
+
+                float balance  = strategy.initial_capital + strategy.netprofit
+                float lotsRisk = balance * riskPct / 100.0 / rDist / ozPerLot
+                float lotsMrg  = strategy.equity * leverage / (close * ozPerLot)
+                float lots     = math.min(math.min(lotsRisk, maxLot), lotsMrg)
+                lots := math.floor(lots / lotStep + 0.000000001) * lotStep
+
+                if balance > 0 and lots >= minLot - 0.000000001
+                    string tid = s.name + "-" + str.format_time(time, "yyyyMMdd-HHmm", TZ) + (dir == 1 ? "-C" : "-V")
+                    strategy.entry(tid, dir == 1 ? strategy.long : strategy.short, qty = lots * ozPerLot, comment = s.name + (dir == 1 ? " Compra" : " Venta"))
+                    strategy.exit("X-" + tid, from_entry = tid, stop = slP, limit = tpP, comment_profit = "TP", comment_loss = "SL")
+
+                    Trd tr = Trd.new(id = tid, dir = dir, sess = s.idx, entry = entry, sl = slP, tp = tpP, beLvl = beL, beStop = beS, entryBar = bar_index)
+                    if showMarks
+                        tr.lnEntry := line.new(time, entry, time + BAR_MS, entry, xloc = xloc.bar_time, color = color.new(C_OFF, 20), style = line.style_dotted, width = 1)
+                        tr.lnSL := line.new(time, slP, time + BAR_MS, slP, xloc = xloc.bar_time, color = C_SL, width = 1)
+                        tr.lnTP := line.new(time, tpP, time + BAR_MS, tpP, xloc = xloc.bar_time, color = C_TP, width = 1)
+                        string tip = "Sesión: " + s.name + "\nEntrada: " + str.tostring(entry, "#.###") + "\nSL: " + str.tostring(slP, "#.###") + " (" + str.tostring(rDist, "#.###") + ")\nTP: " + str.tostring(tpP, "#.###") + "\nLotes: " + str.tostring(lots, "#.##")
+                        label.new(time, entry, text = dir == 1 ? "COMPRA" : "VENTA", xloc = xloc.bar_time, style = dir == 1 ? label.style_label_up : label.style_label_down, color = dir == 1 ? C_BUY : C_SELL, textcolor = color.white, size = size.small, tooltip = tip)
+                    trades.push(tr)
+
+                    s.nTrades := s.nTrades + 1
+                    if dir == 1
+                        s.buyUsed := true
+                    else
+                        s.sellUsed := true
+                    if s.nTrades == 1
+                        s.firstDir := dir
+                        s.firstId := tid
+    s
+
+// ── Sesión: dibuja el rango y habilita las señales ────────────────────────────────
+processSession(Sess s, bool enabled) =>
+    bool dayOk    = dow >= s.dowFrom and dow <= s.dowTo
+    bool inRange  = enabled and dayOk and mdOpen >= s.startMD and mdOpen < s.openMD
+    bool inSignal = enabled and dayOk and mdOpen >= s.openMD and mdOpen < s.endMD
+
+    if inRange
+        if not s.prevIn
+            s.hi := high
+            s.lo := low
+            s.ready := false
+            s.nTrades := 0
+            s.buyUsed := false
+            s.sellUsed := false
+            s.firstDir := 0
+            s.firstId := ""
+            s.firstClosed := false
+            s.firstTP := false
+            if showRanges
+                s.bx := box.new(left = time, top = high, right = time + BAR_MS, bottom = low, xloc = xloc.bar_time, border_color = na, bgcolor = rangeCol)
+                s.ml := line.new(time, (high + low) / 2, time + BAR_MS, (high + low) / 2, xloc = xloc.bar_time, color = midCol, style = line.style_dotted, width = 1)
+        else
+            s.hi := math.max(s.hi, high)
+            s.lo := math.min(s.lo, low)
+        if showRanges
+            float m = (s.hi + s.lo) / 2
+            box.set_top(s.bx, s.hi)
+            box.set_bottom(s.bx, s.lo)
+            box.set_right(s.bx, time + BAR_MS)
+            line.set_y1(s.ml, m)
+            line.set_y2(s.ml, m)
+            line.set_x2(s.ml, time + BAR_MS)
+    else
+        if s.prevIn
+            s.ready := true
+        else if not inSignal
+            s.ready := false
+
+    if inSignal and s.ready
+        tryEntry(s)
+
+    s.prevIn := inRange
+    s
+
+// ── Orden de ejecución en cada vela ───────────────────────────────────────────────
+// 1) procesar operaciones cerradas  2) gestionar abiertas  3) buscar señales nuevas
+if strategy.closedtrades > lastClosed
+    for i = lastClosed to strategy.closedtrades - 1
+        markClosed(strategy.closedtrades.entry_id(i), strategy.closedtrades.exit_comment(i), strategy.closedtrades.exit_price(i), strategy.closedtrades.exit_time(i))
+    lastClosed := strategy.closedtrades
+
+manageTrades()
+processSession(asia, useAsia)
+processSession(nyS, useNY)
