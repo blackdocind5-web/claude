@@ -75,8 +75,6 @@ strategy(title = "XAUUSD · Ruptura de Rango de Apertura (Asia / NY)",
 const string TZ     = "America/New_York"
 const int    BAR_MS = 60000
 
-const color C_BUY  = #2962FF
-const color C_SELL = #AB47BC
 const color C_TP   = #089981
 const color C_SL   = #F23645
 const color C_BE   = #FF9800
@@ -116,7 +114,9 @@ maxLot   = input.float(10.0, "Lote máximo por orden", minval = 0.01, group = G_
 showRanges = input.bool(true, "Mostrar rangos de apertura", group = G_VIS)
 rangeCol   = input.color(color.new(color.gray, 70), "Color del rango", group = G_VIS)
 midCol     = input.color(color.new(color.gray, 20), "Color de la línea media", group = G_VIS)
-showMarks  = input.bool(true, "Mostrar entradas, salidas, SL y TP", group = G_VIS, tooltip = "TradingView conserva como máximo 500 líneas y 500 etiquetas: solo se ven las marcas de las operaciones más recientes. El backtest siempre cubre todo el período.")
+buyLblCol  = input.color(#5B5B5B, "Color de la etiqueta BUY", group = G_VIS)
+sellLblCol = input.color(#A9A9A9, "Color de la etiqueta SELL", group = G_VIS)
+showMarks  = input.bool(true, "Mostrar entradas, SL y TP", group = G_VIS, tooltip = "Etiqueta BUY (debajo de la vela de entrada) o SELL (encima), y líneas de entrada, SL y TP. TradingView conserva como máximo 500 líneas y 500 etiquetas: solo se ven las marcas de las operaciones más recientes. El backtest siempre cubre todo el período.")
 
 if timeframe.in_seconds() != 60
     runtime.error("Esta estrategia está diseñada para el gráfico de 1 minuto (XAUUSD).")
@@ -177,7 +177,7 @@ var int lastClosed = 0
 tk(float x) => math.round(x / syminfo.mintick)
 
 // ── Operación cerrada: actualiza cupos de la sesión y las marcas del gráfico ──────
-markClosed(string eid, string why, float xp, int xt) =>
+markClosed(string eid, string why, int xt) =>
     bool isTP = why == "TP"
     if asia.firstId == eid
         asia.firstClosed := true
@@ -192,15 +192,12 @@ markClosed(string eid, string why, float xp, int xt) =>
     if found >= 0
         Trd tr = trades.get(found)
         if showMarks
-            color c = why == "TP" ? C_TP : why == "SL" ? C_SL : why == "BE" ? C_BE : C_OFF
-            string txt = (why == "TP" or why == "SL" or why == "BE") ? why : "Cierre"
             line.set_x2(tr.lnEntry, xt)
             line.set_x2(tr.lnTP, xt)
             if tr.beDone
                 line.set_x2(tr.lnBE, xt)
             else
                 line.set_x2(tr.lnSL, xt)
-            label.new(xt, xp, text = txt, xloc = xloc.bar_time, style = xp >= tr.entry ? label.style_label_down : label.style_label_up, color = c, textcolor = color.white, size = size.small, tooltip = "Salida: " + txt + "\nPrecio: " + str.tostring(xp, "#.###"))
         trades.remove(found)
     found >= 0
 
@@ -270,7 +267,10 @@ tryEntry(Sess s) =>
                         tr.lnSL := line.new(time, slP, time + BAR_MS, slP, xloc = xloc.bar_time, color = C_SL, width = 1)
                         tr.lnTP := line.new(time, tpP, time + BAR_MS, tpP, xloc = xloc.bar_time, color = C_TP, width = 1)
                         string tip = "Sesión: " + s.name + "\nEntrada: " + str.tostring(entry, "#.###") + "\nSL: " + str.tostring(slP, "#.###") + " (" + str.tostring(rDist, "#.###") + ")\nTP: " + str.tostring(tpP, "#.###") + "\nLotes: " + str.tostring(lots, "#.##")
-                        label.new(time, entry, text = dir == 1 ? "COMPRA" : "VENTA", xloc = xloc.bar_time, style = dir == 1 ? label.style_label_up : label.style_label_down, color = dir == 1 ? C_BUY : C_SELL, textcolor = color.white, size = size.small, tooltip = tip)
+                        if dir == 1
+                            label.new(bar_index, na, text = "BUY", xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = buyLblCol, textcolor = color.white, size = size.small, tooltip = tip)
+                        else
+                            label.new(bar_index, na, text = "SELL", xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = sellLblCol, textcolor = color.white, size = size.small, tooltip = tip)
                     trades.push(tr)
 
                     s.nTrades := s.nTrades + 1
@@ -331,7 +331,7 @@ processSession(Sess s, bool enabled) =>
 // 1) procesar operaciones cerradas  2) gestionar abiertas  3) buscar señales nuevas
 if strategy.closedtrades > lastClosed
     for i = lastClosed to strategy.closedtrades - 1
-        markClosed(strategy.closedtrades.entry_id(i), strategy.closedtrades.exit_comment(i), strategy.closedtrades.exit_price(i), strategy.closedtrades.exit_time(i))
+        markClosed(strategy.closedtrades.entry_id(i), strategy.closedtrades.exit_comment(i), strategy.closedtrades.exit_time(i))
     lastClosed := strategy.closedtrades
 
 manageTrades()
