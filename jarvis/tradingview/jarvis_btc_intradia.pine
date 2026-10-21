@@ -1,0 +1,244 @@
+//@version=6
+// ============================================================================
+//  JARVIS — BTC Intradía: VWAP con bandas + Fibonacci + EMA 20/50
+//           + líneas de probabilidad (Monte Carlo) + zonas de liquidez
+//  Pensado para BINANCE:BTCUSDT o COINBASE:BTCUSD en 15 m (ejecución)
+//  y 1 h (sesgo). Las probabilidades se recalculan cada mañana con Jarvis.
+// ============================================================================
+indicator("Jarvis BTC Intradía", shorttitle="Jarvis BTC", overlay=true,
+     max_lines_count=500, max_labels_count=500, max_boxes_count=100)
+
+// ----------------------------------------------------------------------------
+// 1) EMAs
+// ----------------------------------------------------------------------------
+grpEma = "EMAs"
+lenFast = input.int(20, "EMA rápida", minval=1, group=grpEma)
+lenSlow = input.int(50, "EMA lenta", minval=1, group=grpEma)
+showDailyEma = input.bool(true, "Mostrar EMA 20/50 diarias (sesgo mayor)", group=grpEma)
+
+emaFast = ta.ema(close, lenFast)
+emaSlow = ta.ema(close, lenSlow)
+plot(emaFast, "EMA 20", color=color.new(#ffca28, 0), linewidth=2)
+plot(emaSlow, "EMA 50", color=color.new(#ce93d8, 0), linewidth=2)
+
+// EMAs del diario, para no operar contra la tendencia mayor
+emaFastD = request.security(syminfo.tickerid, "D", ta.ema(close, lenFast), lookahead=barmerge.lookahead_off)
+emaSlowD = request.security(syminfo.tickerid, "D", ta.ema(close, lenSlow), lookahead=barmerge.lookahead_off)
+plot(showDailyEma ? emaFastD : na, "EMA 20 diaria", color=color.new(#ffca28, 60), linewidth=1, style=plot.style_circles)
+plot(showDailyEma ? emaSlowD : na, "EMA 50 diaria", color=color.new(#ce93d8, 60), linewidth=1, style=plot.style_circles)
+
+// ----------------------------------------------------------------------------
+// 2) VWAP anclado con bandas de desvío estándar
+// ----------------------------------------------------------------------------
+grpVwap = "VWAP"
+anchorMode = input.string("Sesión diaria (00:00 UTC)", "Anclaje del VWAP",
+     options=["Sesión diaria (00:00 UTC)", "Apertura NY (13:30 UTC)", "Fecha manual"], group=grpVwap)
+anchorTime = input.time(timestamp("2026-10-16T00:00:00+0000"), "Fecha manual (ej. mínimo semanal 16/10)", group=grpVwap)
+band1 = input.float(1.0, "Banda 1 (σ)", step=0.25, group=grpVwap)
+band2 = input.float(2.0, "Banda 2 (σ)", step=0.25, group=grpVwap)
+
+// Detección del inicio del ancla
+newDay = timeframe.change("D")
+inNyOpen = not na(time(timeframe.period, "1300-1331:1234567", "UTC"))
+newNy = inNyOpen and not inNyOpen[1]
+newManual = time >= anchorTime and time[1] < anchorTime
+newAnchor = anchorMode == "Sesión diaria (00:00 UTC)" ? newDay :
+     anchorMode == "Apertura NY (13:30 UTC)" ? newNy : newManual
+
+var float cumPV = 0.0
+var float cumV = 0.0
+var float cumPV2 = 0.0
+src = hlc3
+if newAnchor
+    cumPV := 0.0
+    cumV := 0.0
+    cumPV2 := 0.0
+cumPV += src * volume
+cumV += volume
+cumPV2 += src * src * volume
+
+vwap = cumV > 0 ? cumPV / cumV : na
+variance = cumV > 0 ? math.max(cumPV2 / cumV - vwap * vwap, 0) : na
+sd = math.sqrt(variance)
+
+plot(vwap, "VWAP", color=color.new(#64b5f6, 0), linewidth=2)
+pU1 = plot(vwap + sd * band1, "VWAP +1σ", color=color.new(#64b5f6, 55))
+pL1 = plot(vwap - sd * band1, "VWAP -1σ", color=color.new(#64b5f6, 55))
+pU2 = plot(vwap + sd * band2, "VWAP +2σ", color=color.new(#ef5350, 65))
+pL2 = plot(vwap - sd * band2, "VWAP -2σ", color=color.new(#66bb6a, 65))
+fill(pU1, pL1, color=color.new(#64b5f6, 92))
+
+// ----------------------------------------------------------------------------
+// 3) Fibonacci automático de la última pierna (máximo/mínimo del lookback)
+// ----------------------------------------------------------------------------
+grpFib = "Fibonacci"
+fibLookback = input.int(96, "Velas de lookback (96 en 15 m = 24 h; 168 en 1 h = 1 semana)", minval=10, group=grpFib)
+showFib = input.bool(true, "Mostrar Fibonacci", group=grpFib)
+
+hh = ta.highest(high, fibLookback)
+ll = ta.lowest(low, fibLookback)
+hhBars = ta.highestbars(high, fibLookback)
+llBars = ta.lowestbars(low, fibLookback)
+legUp = hhBars > llBars  // el máximo es más reciente que el mínimo → pierna alcista
+
+var line[] fibLines = array.new<line>()
+var label[] fibLabels = array.new<label>()
+fibRatios = array.from(0.0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0)
+
+if barstate.islast and showFib
+    for ln in fibLines
+        line.delete(ln)
+    for lb in fibLabels
+        label.delete(lb)
+    array.clear(fibLines)
+    array.clear(fibLabels)
+    for i = 0 to array.size(fibRatios) - 1
+        r = array.get(fibRatios, i)
+        lvl = legUp ? hh - (hh - ll) * r : ll + (hh - ll) * r
+        col = r == 0.5 or r == 0.618 ? color.new(#ff9800, 20) : color.new(#9aa, 45)
+        ln = line.new(bar_index - fibLookback, lvl, bar_index + 20, lvl, color=col, style=line.style_dashed, width=1)
+        lb = label.new(bar_index + 20, lvl, "Fib " + str.tostring(r) + " · " + str.tostring(lvl, "#"),
+             style=label.style_label_left, color=color.new(#000000, 100), textcolor=col, size=size.small)
+        array.push(fibLines, ln)
+        array.push(fibLabels, lb)
+
+// ----------------------------------------------------------------------------
+// 4) Líneas de probabilidad (Monte Carlo de Jarvis) — punteadas
+//    Probabilidad de que el precio TOQUE el nivel en las próximas 24 h,
+//    calculada cada mañana. Cargá los valores del reporte del día.
+// ----------------------------------------------------------------------------
+grpMc = "Probabilidades Monte Carlo (24 h)"
+showMc = input.bool(true, "Mostrar líneas de probabilidad", group=grpMc)
+mcRef = input.float(83400, "Precio de referencia del cálculo", group=grpMc)
+// Niveles alcistas
+u1 = input.float(84000, "Alcista 1", group=grpMc), u1p = input.int(63, "  prob %", group=grpMc)
+u2 = input.float(84262, "Alcista 2", group=grpMc), u2p = input.int(50, "  prob %", group=grpMc)
+u3 = input.float(84714, "Alcista 3", group=grpMc), u3p = input.int(32, "  prob %", group=grpMc)
+u4 = input.float(85042, "Alcista 4", group=grpMc), u4p = input.int(22, "  prob %", group=grpMc)
+u5 = input.float(85754, "Alcista 5", group=grpMc), u5p = input.int(8, "  prob %", group=grpMc)
+// Niveles bajistas
+d1 = input.float(82951, "Bajista 1", group=grpMc), d1p = input.int(71, "  prob %", group=grpMc)
+d2 = input.float(82313, "Bajista 2", group=grpMc), d2p = input.int(40, "  prob %", group=grpMc)
+d3 = input.float(82000, "Bajista 3", group=grpMc), d3p = input.int(28, "  prob %", group=grpMc)
+d4 = input.float(81273, "Bajista 4", group=grpMc), d4p = input.int(11, "  prob %", group=grpMc)
+d5 = input.float(80531, "Bajista 5", group=grpMc), d5p = input.int(3, "  prob %", group=grpMc)
+
+var line[] mcLines = array.new<line>()
+var label[] mcLabels = array.new<label>()
+
+drawProb(float lvl, int p, bool up) =>
+    // Cuanto más probable, más opaco
+    alpha = math.max(10, 90 - p)
+    col = up ? color.new(#66bb6a, alpha) : color.new(#ef5350, alpha)
+    ln = line.new(bar_index - 50, lvl, bar_index + 40, lvl, color=col, style=line.style_dotted, width=p >= 50 ? 2 : 1)
+    lb = label.new(bar_index + 40, lvl, (up ? "▲ " : "▼ ") + str.tostring(lvl, "#") + " · toca " + str.tostring(p) + "%",
+         style=label.style_label_left, color=color.new(#000000, 100), textcolor=col, size=size.small)
+    array.push(mcLines, ln)
+    array.push(mcLabels, lb)
+
+if barstate.islast and showMc
+    for ln in mcLines
+        line.delete(ln)
+    for lb in mcLabels
+        label.delete(lb)
+    array.clear(mcLines)
+    array.clear(mcLabels)
+    drawProb(u1, u1p, true), drawProb(u2, u2p, true), drawProb(u3, u3p, true), drawProb(u4, u4p, true), drawProb(u5, u5p, true)
+    drawProb(d1, d1p, false), drawProb(d2, d2p, false), drawProb(d3, d3p, false), drawProb(d4, d4p, false), drawProb(d5, d5p, false)
+    refLn = line.new(bar_index - 50, mcRef, bar_index + 40, mcRef, color=color.new(#ffffff, 50), style=line.style_dotted)
+    array.push(mcLines, refLn)
+
+// ----------------------------------------------------------------------------
+// 5) Zonas de liquidez (clusters de liquidación / paredes del libro)
+// ----------------------------------------------------------------------------
+grpLiq = "Zonas de liquidez"
+showLiq = input.bool(true, "Mostrar zonas", group=grpLiq)
+sA1 = input.float(83300, "Shorts zona 1 desde", group=grpLiq), sA2 = input.float(83700, "  hasta", group=grpLiq)
+sB1 = input.float(84300, "Shorts zona 2 desde", group=grpLiq), sB2 = input.float(84714, "  hasta", group=grpLiq)
+sC1 = input.float(85000, "Pared de venta desde", group=grpLiq), sC2 = input.float(85500, "  hasta", group=grpLiq)
+lA1 = input.float(81146, "Longs zona 1 desde", group=grpLiq), lA2 = input.float(81428, "  hasta", group=grpLiq)
+lB1 = input.float(80000, "Longs zona 2 desde", group=grpLiq), lB2 = input.float(80531, "  hasta", group=grpLiq)
+
+var box[] liqBoxes = array.new<box>()
+drawZone(float a, float b, bool shorts, string txt) =>
+    col = shorts ? color.new(#ff9800, 82) : color.new(#26a69a, 82)
+    bx = box.new(bar_index - 50, math.max(a, b), bar_index + 40, math.min(a, b), border_color=color.new(col, 40),
+         bgcolor=col, text=txt, text_color=color.new(#ffffff, 30), text_size=size.tiny, text_halign=text.align_right)
+    array.push(liqBoxes, bx)
+
+if barstate.islast and showLiq
+    for bx in liqBoxes
+        box.delete(bx)
+    array.clear(liqBoxes)
+    drawZone(sA1, sA2, true, "Liq. SHORTS")
+    drawZone(sB1, sB2, true, "SHORTS + costo ETF")
+    drawZone(sC1, sC2, true, "Pared de venta")
+    drawZone(lA1, lA2, false, "Liq. LONGS")
+    drawZone(lB1, lB2, false, "LONGS + EMA50 D")
+
+// ----------------------------------------------------------------------------
+// 6) Horarios clave (UTC): apertura NY 13:30, EIA 14:30, fixing CF 15:00, cierre 20:00
+// ----------------------------------------------------------------------------
+grpSes = "Horarios"
+showSes = input.bool(true, "Marcar horarios clave", group=grpSes)
+nyOpen = not na(time(timeframe.period, "1330-1345:1234567", "UTC"))
+cfFix = not na(time(timeframe.period, "1500-1515:1234567", "UTC"))
+nyClose = not na(time(timeframe.period, "2000-2015:1234567", "UTC"))
+lunch = not na(time(timeframe.period, "1600-1830:1234567", "UTC"))
+bgcolor(showSes and nyOpen ? color.new(#64b5f6, 85) : na, title="Apertura NY")
+bgcolor(showSes and cfFix ? color.new(#ffca28, 85) : na, title="Fixing CF (ETF)")
+bgcolor(showSes and nyClose ? color.new(#ef5350, 88) : na, title="Cierre NY")
+bgcolor(showSes and lunch ? color.new(#9aa, 94) : na, title="Almuerzo NY (no operar)")
+
+// ----------------------------------------------------------------------------
+// 7) Sesgo y señales
+//    Long: precio sobre VWAP y EMA20 > EMA50. Short: lo contrario.
+// ----------------------------------------------------------------------------
+biasLong = close > vwap and emaFast > emaSlow
+biasShort = close < vwap and emaFast < emaSlow
+crossUpVwap = ta.crossover(close, vwap)
+crossDnVwap = ta.crossunder(close, vwap)
+emaBull = ta.crossover(emaFast, emaSlow)
+emaBear = ta.crossunder(emaFast, emaSlow)
+
+plotshape(crossUpVwap and emaFast > emaSlow, "Cruce VWAP alcista", style=shape.triangleup, location=location.belowbar,
+     color=color.new(#66bb6a, 0), size=size.small, text="VWAP▲")
+plotshape(crossDnVwap and emaFast < emaSlow, "Cruce VWAP bajista", style=shape.triangledown, location=location.abovebar,
+     color=color.new(#ef5350, 0), size=size.small, text="VWAP▼")
+plotshape(emaBull, "EMA 20 cruza 50 ▲", style=shape.labelup, location=location.belowbar, color=color.new(#ffca28, 0),
+     size=size.tiny, text="EMA▲", textcolor=color.black)
+plotshape(emaBear, "EMA 20 cruza 50 ▼", style=shape.labeldown, location=location.abovebar, color=color.new(#ce93d8, 0),
+     size=size.tiny, text="EMA▼", textcolor=color.black)
+
+// Tabla de estado
+var table t = table.new(position.top_right, 2, 7, bgcolor=color.new(#16213e, 10), border_width=1, border_color=color.new(#333333, 0))
+if barstate.islast
+    sesgo = biasLong ? "LONG" : biasShort ? "SHORT" : "NEUTRAL / RANGO"
+    sesgoCol = biasLong ? #66bb6a : biasShort ? #ef5350 : #ffca28
+    dist = (close / vwap - 1) * 100
+    table.cell(t, 0, 0, "Jarvis BTC", text_color=#64b5f6, text_size=size.small)
+    table.cell(t, 1, 0, sesgo, text_color=sesgoCol, text_size=size.small)
+    table.cell(t, 0, 1, "VWAP", text_color=#ddd, text_size=size.tiny)
+    table.cell(t, 1, 1, str.tostring(vwap, "#") + " (" + str.tostring(dist, "+#.##") + "%)", text_color=#ddd, text_size=size.tiny)
+    table.cell(t, 0, 2, "EMA 20 / 50", text_color=#ddd, text_size=size.tiny)
+    table.cell(t, 1, 2, str.tostring(emaFast, "#") + " / " + str.tostring(emaSlow, "#"), text_color=#ddd, text_size=size.tiny)
+    table.cell(t, 0, 3, "EMA 20 / 50 diarias", text_color=#ddd, text_size=size.tiny)
+    table.cell(t, 1, 3, str.tostring(emaFastD, "#") + " / " + str.tostring(emaSlowD, "#"), text_color=#ddd, text_size=size.tiny)
+    table.cell(t, 0, 4, "Fib pierna", text_color=#ddd, text_size=size.tiny)
+    table.cell(t, 1, 4, (legUp ? "alcista " : "bajista ") + str.tostring(ll, "#") + " → " + str.tostring(hh, "#"), text_color=#ddd, text_size=size.tiny)
+    table.cell(t, 0, 5, "σ VWAP", text_color=#ddd, text_size=size.tiny)
+    table.cell(t, 1, 5, str.tostring(sd, "#"), text_color=#ddd, text_size=size.tiny)
+    table.cell(t, 0, 6, "Referencia MC", text_color=#ddd, text_size=size.tiny)
+    table.cell(t, 1, 6, str.tostring(mcRef, "#"), text_color=#ddd, text_size=size.tiny)
+
+// ----------------------------------------------------------------------------
+// 8) Alertas (crear desde "Alertas" → condición "Jarvis BTC Intradía")
+// ----------------------------------------------------------------------------
+alertcondition(crossUpVwap, "Precio cruza VWAP hacia arriba", "BTC cruzó el VWAP al alza")
+alertcondition(crossDnVwap, "Precio cruza VWAP hacia abajo", "BTC cruzó el VWAP a la baja")
+alertcondition(emaBull, "EMA 20 cruza EMA 50 al alza", "Cruce alcista EMA 20/50")
+alertcondition(emaBear, "EMA 20 cruza EMA 50 a la baja", "Cruce bajista EMA 20/50")
+alertcondition(ta.crossover(close, u2), "Rompe Alcista 2 (máximo semanal)", "BTC superó el máximo semanal")
+alertcondition(ta.crossunder(close, d1), "Pierde Bajista 1 (gatillo)", "BTC perdió el gatillo de 82.951")
+alertcondition(ta.crossunder(low, lA1), "Barrida bajo Longs zona 1", "BTC barrió la zona de longs: buscar recuperación")
+alertcondition(ta.crossover(high, sA2), "Barrida sobre Shorts zona 1", "BTC barrió la zona de shorts: buscar rechazo")
