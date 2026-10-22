@@ -48,10 +48,23 @@
 //      Para cambiar el spread: Ajustes → Propiedades → Comisiones → valor =
 //      0,03 + spread ÷ 2. No se incluye slippage ni swap.
 //
-//  LIMITACIÓN CONOCIDA
-//    · Pine no permite saber qué se tocó primero dentro de una vela de 1m. Cuando una
-//      misma vela toca SL y TP, el emulador de TradingView decide con su propio
-//      criterio, que no siempre es "SL primero". Es poco frecuente con SL ≥ 1,000.
+//  PRECISIÓN DEL BACKTEST (plan Premium)
+//    · Bar Magnifier activado (use_bar_magnifier): el emulador usa datos de menor
+//      temporalidad para decidir qué se tocó primero dentro de una vela. En gráficos de
+//      1m su efecto depende de los datos disponibles: compara con y sin él (casilla en
+//      Propiedades). Sin él, cuando una misma vela toca SL y TP el emulador decide con
+//      su propio criterio, que no siempre es "SL primero".
+//    · Interés compuesto: interruptor en Entradas (activado por defecto). Desactivado,
+//      el 1 % de riesgo se calcula siempre sobre el capital inicial, lo que mide la
+//      ventaja de la estrategia sin el efecto bola de nieve.
+//    · Ejecución: por defecto al CIERRE de la vela de señal (Propiedades → Recalcular →
+//      casilla "Al cierre de la barra" / "On bar close" marcada). Si la desmarcas, las
+//      órdenes se ejecutan en la APERTURA de la vela siguiente y la estrategia recalcula
+//      SL, TP y break-even sobre el precio real de ejecución (el SL sigue en el punto
+//      medio del rango; con SL mínimo activado se mide desde el precio real). Durante la
+//      vela de ejecución rigen los niveles planeados con el cierre de la señal, y el lote
+//      se calcula con la distancia planeada, por lo que el riesgo real puede variar un
+//      poco respecto del 1 %.
 // ═══════════════════════════════════════════════════════════════════════════════════
 strategy(title = "XAUUSD · Ruptura de Rango de Apertura (Asia / NY)",
          shorttitle = "Rango Apertura XAUUSD",
@@ -62,6 +75,7 @@ strategy(title = "XAUUSD · Ruptura de Rango de Apertura (Asia / NY)",
          default_qty_value = 1,
          pyramiding = 5,
          process_orders_on_close = true,
+         use_bar_magnifier = true,
          calc_on_every_tick = false,
          commission_type = strategy.commission.cash_per_contract,
          commission_value = 0.04,
@@ -104,7 +118,8 @@ closeHour = input.int(16, "Hora de cierre forzado (hora NY)", minval = 0, maxval
 closeMin  = input.int(0, "Minuto de cierre forzado", minval = 0, maxval = 59, group = G_CIE)
 fridayAll = input.bool(true, "Viernes: cerrar todas las posiciones a esa hora", group = G_CIE, tooltip = "Evita llevar una operación (por ejemplo de Asia del jueves) por el fin de semana. Los trades de NY siempre se cierran a esa hora.")
 
-riskPct  = input.float(1.0, "Riesgo por operación (% del capital actual)", minval = 0.01, maxval = 100.0, step = 0.1, group = G_RSK)
+riskPct  = input.float(1.0, "Riesgo por operación (%)", minval = 0.01, maxval = 100.0, step = 0.1, group = G_RSK)
+compound = input.bool(true, "Interés compuesto", group = G_RSK, tooltip = "Activado: el riesgo se calcula sobre el capital actual (inicial + resultado cerrado). Desactivado: siempre sobre el capital inicial, lo que permite comparar la ventaja de la estrategia sin el efecto bola de nieve.")
 leverage = input.int(500, "Apalancamiento (1:X)", minval = 1, group = G_RSK)
 ozPerLot = input.float(100.0, "Onzas por lote", minval = 0.01, group = G_RSK)
 minLot   = input.float(0.01, "Lote mínimo", minval = 0.0001, step = 0.01, group = G_RSK)
@@ -156,11 +171,13 @@ type Trd
     int    dir
     int    sess
     float  entry
+    float  mid
     float  sl
     float  tp
     float  beLvl
     float  beStop
     bool   beDone = false
+    bool   filled = false
     int    entryBar
     line   lnEntry
     line   lnSL
@@ -175,6 +192,40 @@ var int lastClosed = 0
 // ── Utilidades ─────────────────────────────────────────────────────────────────────
 // Convierte una diferencia de precio a ticks enteros para comparar sin errores de decimales.
 tk(float x) => math.round(x / syminfo.mintick)
+
+// Precio de ejecución real de una operación abierta (na si todavía no se ejecutó).
+fillPrice(string eid) =>
+    float px = na
+    int   n  = strategy.opentrades
+    if n > 0
+        for k = 0 to n - 1
+            if strategy.opentrades.entry_id(k) == eid
+                px := strategy.opentrades.entry_price(k)
+    px
+
+// Primera vela con la operación abierta: si el precio real de ejecución difiere del cierre
+// planeado (ejecución en la apertura siguiente), recalcula SL, TP y break-even sobre ese precio.
+adjustToFill(Trd tr) =>
+    float f = fillPrice(tr.id)
+    if not na(f)
+        tr.filled := true
+        if math.abs(f - tr.entry) >= syminfo.mintick
+            float d  = math.abs(f - tr.mid)
+            float sd = useMinSL ? math.max(d, minSL) : d
+            tr.entry  := f
+            tr.sl     := math.round_to_mintick(tr.dir == 1 ? f - sd : f + sd)
+            float r    = math.abs(f - tr.sl)
+            tr.tp     := math.round_to_mintick(tr.dir == 1 ? f + rr * r : f - rr * r)
+            tr.beLvl  := math.round_to_mintick(tr.dir == 1 ? f + r : f - r)
+            tr.beStop := math.round_to_mintick(tr.dir == 1 ? f + beOffset : f - beOffset)
+            if showMarks
+                line.set_y1(tr.lnEntry, f)
+                line.set_y2(tr.lnEntry, f)
+                line.set_y1(tr.lnSL, tr.sl)
+                line.set_y2(tr.lnSL, tr.sl)
+                line.set_y1(tr.lnTP, tr.tp)
+                line.set_y2(tr.lnTP, tr.tp)
+    tr
 
 // ── Operación cerrada: actualiza cupos de la sesión y las marcas del gráfico ──────
 markClosed(string eid, string why, int xt) =>
@@ -204,6 +255,8 @@ markClosed(string eid, string why, int xt) =>
 // ── Operaciones abiertas: break-even, órdenes de salida, cierres forzados ─────────
 manageTrades() =>
     for tr in trades
+        if not tr.filled
+            adjustToFill(tr)
         bool forceIt = inForce and (tr.sess == 1 or (fridayAll and dow == dayofweek.friday))
         if forceIt
             strategy.close(tr.id, comment = "Cierre forzado")
@@ -250,7 +303,7 @@ tryEntry(Sess s) =>
                 float beL    = math.round_to_mintick(dir == 1 ? entry + rDist : entry - rDist)
                 float beS    = math.round_to_mintick(dir == 1 ? entry + beOffset : entry - beOffset)
 
-                float balance  = strategy.initial_capital + strategy.netprofit
+                float balance  = compound ? strategy.initial_capital + strategy.netprofit : strategy.initial_capital
                 float lotsRisk = balance * riskPct / 100.0 / rDist / ozPerLot
                 float lotsMrg  = strategy.equity * leverage / (close * ozPerLot)
                 float lots     = math.min(math.min(lotsRisk, maxLot), lotsMrg)
@@ -261,7 +314,7 @@ tryEntry(Sess s) =>
                     strategy.entry(tid, dir == 1 ? strategy.long : strategy.short, qty = lots * ozPerLot, comment = s.name + (dir == 1 ? " Compra" : " Venta"))
                     strategy.exit("X-" + tid, from_entry = tid, stop = slP, limit = tpP, comment_profit = "TP", comment_loss = "SL")
 
-                    Trd tr = Trd.new(id = tid, dir = dir, sess = s.idx, entry = entry, sl = slP, tp = tpP, beLvl = beL, beStop = beS, entryBar = bar_index)
+                    Trd tr = Trd.new(id = tid, dir = dir, sess = s.idx, entry = entry, mid = mid, sl = slP, tp = tpP, beLvl = beL, beStop = beS, entryBar = bar_index)
                     if showMarks
                         tr.lnEntry := line.new(time, entry, time + BAR_MS, entry, xloc = xloc.bar_time, color = color.new(C_OFF, 20), style = line.style_dotted, width = 1)
                         tr.lnSL := line.new(time, slP, time + BAR_MS, slP, xloc = xloc.bar_time, color = C_SL, width = 1)
