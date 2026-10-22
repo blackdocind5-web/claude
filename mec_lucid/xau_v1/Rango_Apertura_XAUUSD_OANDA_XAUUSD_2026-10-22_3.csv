@@ -1,0 +1,9 @@
+﻿Número de operación,Tipo,Fecha y hora,Señal,Precio USD,Tamaño (cant.),Tamaño de la posición (valor),PyG netas USD,Rentabilidad %,Comisión USD,Desviación favorable USD,Desviación favorable %,Desviación adversa USD,Desviación adversa %,PyG acumuladas USD,PyG acumuladas %,Duración (barras)
+1,Salida en corto,2026-08-31 09:47,TP,4427.734,11,48769.435,64.36,0.13,0,64.36,0.13,-9.79,-0.02,64.36,0.64,4
+1,Entrada en corto,2026-08-31 09:43,NY Venta,4433.585,11,48769.435,64.36,0.13,0,64.36,0.13,-9.79,-0.02,64.36,0.64,4
+2,Salida en largo,2026-09-02 09:43,TP,4374.143,5,21806.75,63.97,0.29,0,63.97,0.29,-21.22,-0.10,128.33,1.28,13
+2,Entrada en largo,2026-09-02 09:30,NY Compra,4361.35,5,21806.75,63.97,0.29,0,63.97,0.29,-21.22,-0.10,128.33,1.28,13
+3,Salida en largo,2026-09-07 10:43,TP,4409.702,16,70484.56,70.67,0.10,0,70.67,0.10,-66,-0.09,199,1.99,73
+3,Entrada en largo,2026-09-07 09:30,NY Compra,4405.285,16,70484.56,70.67,0.10,0,70.67,0.10,-66,-0.09,199,1.99,73
+4,Salida en corto,2026-09-08 09:54,SL,4404.3,8,35141.76,-92.64,-0.26,0,4.44,0.01,-92.64,-0.26,106.36,1.06,12
+4,Entrada en corto,2026-09-08 09:42,NY Venta,4392.72,8,35141.76,-92.64,-0.26,0,4.44,0.01,-92.64,-0.26,106.36,1.06,12
