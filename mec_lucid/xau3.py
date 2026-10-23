@@ -38,3 +38,10 @@ for k, v in T.items():   # registrar en el motor del cuadro comparativo
     K.ESTR[k] = ([dict(o, perd1=X.VAL * o["dist"] + X.COM + X.DESL) for o in v], K.usd_mica)
 
 def neto(o): return o["R"] - (X.COM + (X.DESL if o["R"] <= -0.99 else 0)) / (X.VAL * o["dist"])
+
+# Período completo (13/01/2025–22/10/2026): EMA 200 y VWAP con 1 entrada (exportaciones `_completo`) contra Mica original
+COMPLETO = {"Mica original": [dict(o, sl_hit=o["res"] == "SL") for o in BASE["Mica original · 1 entrada"]],
+            "EMA 200": cargar("EMA_200_1_entrada_completo"), "VWAP": cargar("VWAP_1_entrada_completo")}
+for k in COMPLETO: COMPLETO[k] = [o for o in COMPLETO[k] if o["ses"] <= HASTA]
+for k, v in COMPLETO.items():
+    K.ESTR[k + " (2025–2026)"] = ([dict(o, perd1=X.VAL * o["dist"] + X.COM + X.DESL) for o in v], K.usd_mica)
