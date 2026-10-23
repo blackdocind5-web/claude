@@ -20,6 +20,14 @@
 //    · Si la distancia entre ese cierre y el punto medio del rango es ≥ SL máximo
 //      (20,000), la señal se descarta (no cuenta como operación ni gasta cupo).
 //
+//  Filtros de dirección (ambos desactivados por defecto; se pueden combinar)
+//    · EMA 200: solo compras si la vela de señal CIERRA por encima de la EMA, y solo
+//      ventas si cierra por debajo (no hace falta que toda la vela esté de un lado).
+//    · VWAP (línea central): misma lógica que la EMA. Fuente hlc3, ponderado por volumen,
+//      con reinicio diario a las 18:00 NY (editable). En XAUUSD CFD el volumen es de ticks.
+//    · Una señal que no pasa un filtro se descarta: no cuenta como operación ni gasta cupo.
+//    · Se aplican igual a la 1ª y a la 2ª operación de la sesión.
+//
 //  Cupos por sesión
 //    · Máximo 1 compra y 1 venta. La 2ª operación solo es válida en sentido contrario
 //      y solo si la 1ª terminó en SL o en break-even (si terminó en TP, no hay 2ª).
@@ -97,6 +105,7 @@ const color C_OFF  = #787B86
 // ── Entradas ───────────────────────────────────────────────────────────────────────
 const string G_SES  = "1 · Sesiones"
 const string G_ENT  = "2 · Entrada"
+const string G_FIL  = "2b · Filtros de dirección"
 const string G_SLTP = "3 · Stop Loss / Take Profit"
 const string G_CIE  = "4 · Cierres forzados"
 const string G_RSK  = "5 · Riesgo y broker (Multibank)"
@@ -107,6 +116,12 @@ useNY   = input.bool(true, "Sesión Nueva York", group = G_SES, tooltip = "Rango
 
 minBreak = input.float(0.200, "Ruptura mínima (cierre fuera del rango)", minval = 0.0, step = 0.01, group = G_ENT, tooltip = "Diferencia de precio mínima entre el cierre de la vela de señal y el borde del rango.")
 maxSL    = input.float(20.0, "SL máximo permitido", minval = 0.1, step = 0.5, group = G_ENT, tooltip = "Si la distancia entre el cierre de la vela de señal y el punto medio del rango es mayor o igual a este valor, la entrada no se toma.")
+
+useEMA   = input.bool(false, "Filtro EMA", group = G_FIL, tooltip = "Activado: solo compras si la vela de señal cierra por encima de la EMA y solo ventas si cierra por debajo. Se calcula sobre el cierre del gráfico de 1m.")
+emaLen   = input.int(200, "Periodos de la EMA", minval = 1, group = G_FIL)
+useVWAP  = input.bool(false, "Filtro VWAP (línea central)", group = G_FIL, tooltip = "Activado: solo compras si la vela de señal cierra por encima del VWAP y solo ventas si cierra por debajo. Fuente hlc3 ponderada por volumen de ticks.")
+vwapHour = input.int(18, "Reinicio del VWAP · hora (NY)", minval = 0, maxval = 23, group = G_FIL, tooltip = "Por defecto 18:00 NY, el inicio de la jornada de metales. El VWAP acumula desde ese momento y se reinicia cada día a esa hora. Si lo anclas al inicio de cada rango, el VWAP queda dentro del rango y casi nunca bloquea una ruptura.")
+vwapMin  = input.int(0, "Reinicio del VWAP · minuto", minval = 0, maxval = 59, group = G_FIL)
 
 useMinSL = input.bool(false, "Activar SL mínimo", group = G_SLTP, tooltip = "Desactivado: el SL siempre va en el punto medio del rango. Activado: si la distancia al punto medio es menor al SL mínimo, el SL se coloca a esa distancia mínima de la entrada.")
 minSL    = input.float(6.0, "SL mínimo (distancia de precio)", minval = 0.1, step = 0.5, group = G_SLTP)
@@ -142,6 +157,25 @@ int  mdClose = mdOpen + 1                               // minuto del día en qu
 int  dow     = dayofweek(time, TZ)
 int  forceMD = closeHour * 60 + closeMin
 bool inForce = mdClose >= forceMD and mdClose <= forceMD + 60
+
+// ── Filtros de dirección: EMA y VWAP (línea central) ──────────────────────────────
+// Se calculan en todas las velas (aunque el filtro esté apagado) para que no pierdan continuidad.
+float emaVal = ta.ema(close, emaLen)
+
+// VWAP con reinicio diario a la hora indicada (hora NY). Fuente hlc3 ponderada por volumen.
+int  vwapMD = vwapHour * 60 + vwapMin
+bool vReset = mdOpen >= vwapMD and nz(mdOpen[1], -1) < vwapMD
+var float cumPV = 0.0
+var float cumV  = 0.0
+if vReset
+    cumPV := 0.0
+    cumV  := 0.0
+cumPV := cumPV + hlc3 * nz(volume)
+cumV  := cumV + nz(volume)
+float vwapVal = cumV > 0 ? cumPV / cumV : na
+
+plot(useEMA ? emaVal : na, title = "EMA", color = #2962FF, linewidth = 2)
+plot(useVWAP and not vReset ? vwapVal : na, title = "VWAP", color = #9C27B0, linewidth = 2, style = plot.style_linebr)
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────────
 type Sess
@@ -292,7 +326,9 @@ tryEntry(Sess s) =>
         bool  conflict = (dir == 1 and pos < 0) or (dir == -1 and pos > 0)
         bool  used     = dir == 1 ? s.buyUsed : s.sellUsed
         bool  seqOk    = s.nTrades == 0 or (s.nTrades == 1 and s.firstClosed and not s.firstTP)
-        if not conflict and not used and seqOk
+        bool  emaOk    = not useEMA or (dir == 1 ? close > emaVal : close < emaVal)
+        bool  vwapOk   = not useVWAP or (dir == 1 ? close > vwapVal : close < vwapVal)
+        if not conflict and not used and seqOk and emaOk and vwapOk
             float distMid = math.abs(close - mid)
             if tk(distMid) < tk(maxSL)
                 float entry  = close
