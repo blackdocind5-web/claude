@@ -276,4 +276,9 @@ fecha;regla;ventana_NY;divisa;evento;estado;fuente
 29/09/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;CB Consumer Confidence (dato 10:00);confirmado;Captura FF CB
 30/09/2026;ANALIZAR_NOTICIA;;USD;PIB final trimestral - Final GDP q/q (USD);confirmado;Captura FF Final GDP (Pre NY)
 01/10/2026;BLOQUEO_NOTICIA;09:50-10:03;USD;ISM Manufacturing PMI (dato 10:00);confirmado;Captura FF ISM
+02/10/2026;ANALIZAR_NOTICIA;;USD;NFP - Non-Farm Payrolls (USD);confirmado;Calendario BLS/ONS (búsqueda web, 23/10/2026)
 07/10/2026;ANALIZAR_FOMC;;USD;FOMC Meeting Minutes (14:00);confirmado;Captura FF FOMC
+12/10/2026;SIN_OPERAR;;USD;Feriado bancario EE. UU. (Columbus Day);confirmado;Calendario BLS/ONS (búsqueda web, 23/10/2026)
+14/10/2026;ANALIZAR_NOTICIA;;USD;CPI m/m (USD);confirmado;Calendario BLS/ONS (búsqueda web, 23/10/2026)
+15/10/2026;ANALIZAR_NOTICIA;;USD;PPI m/m y Core PPI m/m (USD);confirmado;Calendario BLS/ONS (búsqueda web, 23/10/2026)
+21/10/2026;ANALIZAR_NOTICIA;;GBP;CPI y/y (GBP);confirmado;Calendario BLS/ONS (búsqueda web, 23/10/2026)
