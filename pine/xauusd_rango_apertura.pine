@@ -18,19 +18,19 @@
 //    · VENTA : cierra ≤ mínimo del rango − ruptura mínima (0,200) y es bajista.
 //    · Ejecución a mercado al CIERRE de la vela de señal.
 //    · Si la distancia entre ese cierre y el punto medio del rango es ≥ SL máximo
-//      (20,000), la señal se descarta (no cuenta como operación ni gasta cupo).
+//      (20,000), la señal se descarta (no cuenta como operación).
 //
 //  Filtros de dirección (ambos desactivados por defecto; se pueden combinar)
 //    · EMA 200: solo compras si la vela de señal CIERRA por encima de la EMA, y solo
 //      ventas si cierra por debajo (no hace falta que toda la vela esté de un lado).
 //    · VWAP (línea central): misma lógica que la EMA. Fuente hlc3, ponderado por volumen,
 //      con reinicio diario a las 18:00 NY (editable). En XAUUSD CFD el volumen es de ticks.
-//    · Una señal que no pasa un filtro se descarta: no cuenta como operación ni gasta cupo.
-//    · Se aplican igual a la 1ª y a la 2ª operación de la sesión.
+//    · Una señal que no pasa un filtro se descarta: no cuenta como operación.
 //
-//  Cupos por sesión
-//    · Máximo 1 compra y 1 venta. La 2ª operación solo es válida en sentido contrario
-//      y solo si la 1ª terminó en SL o en break-even (si terminó en TP, no hay 2ª).
+//  Un solo trade por sesión
+//    · Solo se ejecuta la primera señal válida de la sesión (compra o venta); después
+//      no se abre ninguna otra operación en esa sesión, aunque la primera termine en SL.
+//      Las señales descartadas (filtros, SL máximo o posición contraria abierta) no cuentan.
 //    · Si hay una posición abierta de otra sesión, solo se aceptan entradas en su mismo
 //      sentido (en paralelo); las señales contrarias se ignoran y no cuentan.
 //
@@ -190,13 +190,7 @@ type Sess
     float  lo          = na
     bool   prevIn      = false
     bool   ready       = false
-    int    nTrades     = 0
-    bool   buyUsed     = false
-    bool   sellUsed    = false
-    int    firstDir    = 0
-    string firstId     = ""
-    bool   firstClosed = false
-    bool   firstTP     = false
+    bool   traded      = false
     box    bx
     line   ml
 
@@ -261,15 +255,8 @@ adjustToFill(Trd tr) =>
                 line.set_y2(tr.lnTP, tr.tp)
     tr
 
-// ── Operación cerrada: actualiza cupos de la sesión y las marcas del gráfico ──────
-markClosed(string eid, string why, int xt) =>
-    bool isTP = why == "TP"
-    if asia.firstId == eid
-        asia.firstClosed := true
-        asia.firstTP := isTP
-    if nyS.firstId == eid
-        nyS.firstClosed := true
-        nyS.firstTP := isTP
+// ── Operación cerrada: termina sus marcas en el gráfico y la quita del registro ──
+markClosed(string eid, int xt) =>
     int found = -1
     for [j, t] in trades
         if t.id == eid
@@ -324,11 +311,9 @@ tryEntry(Sess s) =>
     if dir != 0
         float pos      = strategy.position_size
         bool  conflict = (dir == 1 and pos < 0) or (dir == -1 and pos > 0)
-        bool  used     = dir == 1 ? s.buyUsed : s.sellUsed
-        bool  seqOk    = s.nTrades == 0 or (s.nTrades == 1 and s.firstClosed and not s.firstTP)
-        bool  emaOk    = not useEMA or (dir == 1 ? close > emaVal : close < emaVal)
+        bool  emaOk   = not useEMA or (dir == 1 ? close > emaVal : close < emaVal)
         bool  vwapOk   = not useVWAP or (dir == 1 ? close > vwapVal : close < vwapVal)
-        if not conflict and not used and seqOk and emaOk and vwapOk
+        if not conflict and not s.traded and emaOk and vwapOk
             float distMid = math.abs(close - mid)
             if tk(distMid) < tk(maxSL)
                 float entry  = close
@@ -362,14 +347,7 @@ tryEntry(Sess s) =>
                             label.new(bar_index, na, text = "SELL", xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = sellLblCol, textcolor = color.white, size = size.small, tooltip = tip)
                     trades.push(tr)
 
-                    s.nTrades := s.nTrades + 1
-                    if dir == 1
-                        s.buyUsed := true
-                    else
-                        s.sellUsed := true
-                    if s.nTrades == 1
-                        s.firstDir := dir
-                        s.firstId := tid
+                    s.traded := true
     s
 
 // ── Sesión: dibuja el rango y habilita las señales ────────────────────────────────
@@ -383,13 +361,7 @@ processSession(Sess s, bool enabled) =>
             s.hi := high
             s.lo := low
             s.ready := false
-            s.nTrades := 0
-            s.buyUsed := false
-            s.sellUsed := false
-            s.firstDir := 0
-            s.firstId := ""
-            s.firstClosed := false
-            s.firstTP := false
+            s.traded := false
             if showRanges
                 s.bx := box.new(left = time, top = high, right = time + BAR_MS, bottom = low, xloc = xloc.bar_time, border_color = na, bgcolor = rangeCol)
                 s.ml := line.new(time, (high + low) / 2, time + BAR_MS, (high + low) / 2, xloc = xloc.bar_time, color = midCol, style = line.style_dotted, width = 1)
@@ -420,7 +392,7 @@ processSession(Sess s, bool enabled) =>
 // 1) procesar operaciones cerradas  2) gestionar abiertas  3) buscar señales nuevas
 if strategy.closedtrades > lastClosed
     for i = lastClosed to strategy.closedtrades - 1
-        markClosed(strategy.closedtrades.entry_id(i), strategy.closedtrades.exit_comment(i), strategy.closedtrades.exit_time(i))
+        markClosed(strategy.closedtrades.entry_id(i), strategy.closedtrades.exit_time(i))
     lastClosed := strategy.closedtrades
 
 manageTrades()
