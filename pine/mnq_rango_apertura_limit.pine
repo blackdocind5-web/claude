@@ -1,0 +1,392 @@
+//@version=6
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  MNQ · Ruptura del rango de apertura de Wall Street con orden LIMIT · gráfico de 30s
+// ═══════════════════════════════════════════════════════════════════════════════════
+//
+//  RESUMEN DE LAS REGLAS
+//  ─────────────────────
+//  Horario (hora de Nueva York, con cambio de horario de verano automático) · lunes a viernes
+//    · Rango de apertura: 09:30–09:45. Máximo y mínimo (con mechas) de las velas que ABREN
+//      dentro de la ventana. Recuadro con contorno negro fino, sin relleno.
+//
+//  Quiebre válido (vela de 30s ya cerrada, desde las 09:45)
+//    · COMPRA: cierra ≥ máximo del rango + distancia mínima (10,00) y es alcista.
+//    · VENTA : cierra ≤ mínimo del rango − distancia mínima (10,00) y es bajista.
+//    · Solo cuentan los cierres. Una señal que no pasa los filtros (EMA / VWAP) se descarta
+//      y no cuenta: se espera la siguiente vela que cumpla todas las condiciones.
+//    · El primer quiebre válido fija la dirección. Los quiebres posteriores del lado
+//      contrario se ignoran. Una única orden por sesión.
+//
+//  Entrada
+//    · Orden LIMIT colocada al cierre de la vela que valida el quiebre y mantenida hasta
+//      que el precio retroceda al nivel elegido (interruptor: 38,2 % o 50 %).
+//    · Compra: nivel 0 % = máximo del rango, 100 % = mínimo. Entrada = máximo − nivel × rango.
+//    · Venta : nivel 0 % = mínimo del rango, 100 % = máximo. Entrada = mínimo + nivel × rango.
+//    · Retícula punteada (0, nivel de entrada, 1) desde el inicio del rango; se extiende a la
+//      derecha hasta que se ejecuta la orden o se cancela.
+//    · Hora límite (por defecto 10:05 NY): no se abren más órdenes. La orden pendiente se
+//      cancela al cierre de la vela que llega a esa hora y la última vela que puede validar
+//      un quiebre es la que cierra antes de esa hora.
+//
+//  Salidas
+//    · SL en el nivel 100 % (borde opuesto del rango). Con "SL mínimo" activado (12,00), si la
+//      distancia entrada–SL es menor, el SL se coloca a 12,00 de la entrada. No hay SL máximo.
+//    · TP = RR × distancia real del SL (RR por defecto 1:1).
+//    · Break-even opcional (desactivado por defecto): al tocar 1R real el SL pasa a la entrada,
+//      desde la vela siguiente.
+//    · Cierre forzado a mercado de cualquier posición abierta a la hora configurada (16:00 NY).
+//    · Si una misma vela toca SL y TP se asume SL primero (ver nota de precisión).
+//
+//  Filtros de dirección (ambos desactivados por defecto; se pueden combinar)
+//    · EMA: solo compras si la vela de quiebre cierra por encima de la EMA y solo ventas si
+//      cierra por debajo.
+//    · VWAP (línea central): misma lógica. Fuente hlc3 ponderada por volumen, con reinicio
+//      diario a las 18:00 NY (inicio de la sesión Globex), editable.
+//
+//  Riesgo
+//    · 1 % del capital por operación, calculado sobre la distancia real al SL. Contratos
+//      enteros, redondeados hacia abajo: si ni un contrato cabe en el riesgo, no se opera.
+//    · Interés compuesto opcional (desactivado por defecto: el riesgo se calcula sobre el
+//      capital inicial). Valor del punto: 2 USD por punto de MNQ (se toma del símbolo).
+//    · Esta primera fase NO incluye comisiones, spread, slippage ni margen. Se agregarán
+//      cuando se definan los costos de cada broker o prop firm.
+//
+//  PRECISIÓN DEL BACKTEST (plan Premium)
+//    · Bar Magnifier activado (use_bar_magnifier): ayuda a decidir qué se tocó primero dentro
+//      de una vela. Si TradingView no lo admite en gráficos de segundos, desmárcalo en
+//      Propiedades. Sin él, una vela que toca SL y TP la resuelve el emulador con su criterio.
+//    · Las órdenes limit se ejecutan en cuanto el precio las toca. Para una prueba más
+//      exigente usa Propiedades → "Verificar precio para órdenes limit" con 1 o más ticks.
+// ═══════════════════════════════════════════════════════════════════════════════════
+strategy(title = "MNQ · Ruptura de Rango de Apertura con orden limit (30s)",
+         shorttitle = "MNQ Rango Limit",
+         overlay = true,
+         initial_capital = 50000,
+         currency = currency.USD,
+         default_qty_type = strategy.fixed,
+         default_qty_value = 1,
+         pyramiding = 1,
+         process_orders_on_close = true,
+         use_bar_magnifier = true,
+         calc_on_every_tick = false,
+         margin_long = 0,
+         margin_short = 0,
+         max_lines_count = 500,
+         max_labels_count = 500,
+         max_boxes_count = 500)
+
+// ── Constantes ─────────────────────────────────────────────────────────────────────
+const string TZ          = "America/New_York"
+const int    BAR_SEC     = 30
+const int    BAR_MS      = 30000
+const int    RANGE_START = 9 * 3600 + 30 * 60      // 09:30:00 NY
+const int    RANGE_END   = 9 * 3600 + 45 * 60      // 09:45:00 NY
+
+const color C_TP  = #089981
+const color C_SL  = #F23645
+const color C_BE  = #FF9800
+const color C_OFF = #787B86
+
+// ── Entradas ───────────────────────────────────────────────────────────────────────
+const string G_ENT  = "1 · Rango y entrada"
+const string G_FIL  = "2 · Filtros de dirección"
+const string G_SLTP = "3 · Stop Loss / Take Profit"
+const string G_CIE  = "4 · Cierre forzado"
+const string G_RSK  = "5 · Riesgo (MNQ)"
+const string G_VIS  = "6 · Visual"
+
+minBreak = input.float(10.0, "Distancia mínima del quiebre (puntos de precio)", minval = 0.25, step = 0.25, group = G_ENT, tooltip = "Diferencia de precio mínima entre el cierre de la vela de quiebre y el borde del rango. Es la diferencia que mide la herramienta Rango de precios (1 tick de MNQ = 0,25).")
+lvlSel   = input.string("38,2%", "Nivel de entrada (orden limit)", options = ["38,2%", "50%"], group = G_ENT, tooltip = "Retroceso del rango en el que se ejecuta la orden limit. En compras el 0 % es el máximo del rango y el 100 % el mínimo. En ventas se invierte.")
+cutHour  = input.int(10, "Hora límite (NY): no se abren más órdenes", minval = 0, maxval = 23, group = G_ENT, tooltip = "Después de esta hora no se validan quiebres nuevos y se cancela la orden limit que siga pendiente.")
+cutMin   = input.int(5, "Minuto límite", minval = 0, maxval = 59, group = G_ENT)
+
+useEMA   = input.bool(false, "Filtro EMA", group = G_FIL, tooltip = "Activado: solo compras si la vela de quiebre cierra por encima de la EMA y solo ventas si cierra por debajo. Se calcula sobre el cierre del gráfico de 30s.")
+emaLen   = input.int(200, "Periodos de la EMA", minval = 1, group = G_FIL)
+useVWAP  = input.bool(false, "Filtro VWAP (línea central)", group = G_FIL, tooltip = "Activado: solo compras si la vela de quiebre cierra por encima del VWAP y solo ventas si cierra por debajo. Fuente hlc3 ponderada por volumen.")
+vwapHour = input.int(18, "Reinicio del VWAP · hora (NY)", minval = 0, maxval = 23, group = G_FIL, tooltip = "Por defecto 18:00 NY, el inicio de la sesión Globex. El VWAP acumula desde ese momento y se reinicia cada día a esa hora.")
+vwapMin  = input.int(0, "Reinicio del VWAP · minuto", minval = 0, maxval = 59, group = G_FIL)
+
+useMinSL = input.bool(true, "Activar SL mínimo", group = G_SLTP, tooltip = "Activado: si la distancia entre la entrada y el borde opuesto del rango es menor al SL mínimo, el SL se coloca a esa distancia mínima de la entrada.")
+minSL    = input.float(12.0, "SL mínimo (puntos de precio)", minval = 0.25, step = 0.25, group = G_SLTP)
+rr       = input.float(1.0, "Ratio R:R (recompensa por cada 1 de riesgo)", minval = 0.1, step = 0.1, group = G_SLTP, tooltip = "1.0 = 1:1 · 2.0 = 1:2 · 3.0 = 1:3 · 0.7 = 1:0,7. El TP se mide sobre el SL real.")
+useBE    = input.bool(false, "Activar break-even al alcanzar 1:1", group = G_SLTP, tooltip = "Desactivado por defecto. Activado: cuando el precio toca 1R, el SL se mueve a la entrada desde la vela siguiente. Solo tiene sentido con R:R mayor a 1.")
+beOffset = input.float(0.0, "Desplazamiento del break-even (puntos de precio)", step = 0.25, group = G_SLTP, tooltip = "0 = break-even exacto en el precio de entrada. Un valor positivo lo mueve a favor de la operación.")
+
+closeHour = input.int(16, "Hora de cierre forzado (hora NY)", minval = 0, maxval = 23, group = G_CIE, tooltip = "Cualquier posición que siga abierta se cierra a mercado a esta hora, antes del cierre diario de CME.")
+closeMin  = input.int(0, "Minuto de cierre forzado", minval = 0, maxval = 59, group = G_CIE)
+
+riskPct  = input.float(1.0, "Riesgo por operación (%)", minval = 0.01, maxval = 100.0, step = 0.1, group = G_RSK)
+compound = input.bool(false, "Interés compuesto", group = G_RSK, tooltip = "Activado: el riesgo se calcula sobre el capital actual (inicial + resultado cerrado). Desactivado: siempre sobre el capital inicial. El capital inicial se cambia en Propiedades.")
+
+showRange  = input.bool(true, "Mostrar el rango de apertura", group = G_VIS)
+rangeCol   = input.color(#000000, "Color del contorno del rango", group = G_VIS)
+showGrid   = input.bool(true, "Mostrar la retícula de niveles", group = G_VIS)
+gridCol    = input.color(#555555, "Color de la retícula", group = G_VIS)
+buyLblCol  = input.color(#5B5B5B, "Color de la etiqueta BUY", group = G_VIS)
+sellLblCol = input.color(#A9A9A9, "Color de la etiqueta SELL", group = G_VIS)
+showMarks  = input.bool(true, "Mostrar entrada, SL y TP", group = G_VIS, tooltip = "Etiqueta BUY (debajo de la vela de entrada) o SELL (encima), y líneas de entrada, SL y TP. TradingView conserva como máximo 500 líneas y 500 etiquetas: solo se ven las marcas de las operaciones más recientes. El backtest siempre cubre todo el período.")
+
+if timeframe.in_seconds() != 30
+    runtime.error("Esta estrategia está diseñada para el gráfico de 30 segundos (MNQ).")
+
+// ── Tiempo en hora de Nueva York (segundos desde la medianoche) ───────────────────
+int   sdOpen   = hour(time, TZ) * 3600 + minute(time, TZ) * 60 + second(time, TZ)   // ABRE la vela
+int   dow      = dayofweek(time, TZ)
+int   cutSec   = cutHour * 3600 + cutMin * 60
+int   forceSec = closeHour * 3600 + closeMin * 60
+bool  inForce  = sdOpen + BAR_SEC >= forceSec and sdOpen + BAR_SEC <= forceSec + 3600
+float lvl      = lvlSel == "50%" ? 0.5 : 0.382
+
+// ── Filtros de dirección: EMA y VWAP (línea central) ──────────────────────────────
+// Se calculan en todas las velas (aunque el filtro esté apagado) para que no pierdan continuidad.
+float emaVal = ta.ema(close, emaLen)
+
+int  vwapSec = vwapHour * 3600 + vwapMin * 60
+bool vReset  = sdOpen >= vwapSec and nz(sdOpen[1], -1) < vwapSec
+var float cumPV = 0.0
+var float cumV  = 0.0
+if vReset
+    cumPV := 0.0
+    cumV  := 0.0
+cumPV := cumPV + hlc3 * nz(volume)
+cumV  := cumV + nz(volume)
+float vwapVal = cumV > 0 ? cumPV / cumV : na
+
+plot(useEMA ? emaVal : na, title = "EMA", color = #2962FF, linewidth = 2)
+plot(useVWAP and not vReset ? vwapVal : na, title = "VWAP", color = #9C27B0, linewidth = 2, style = plot.style_linebr)
+
+// ── Tipos ──────────────────────────────────────────────────────────────────────────
+type Sess
+    float hi     = na
+    float lo     = na
+    int   t0     = na
+    bool  prevIn = false
+    bool  ready  = false
+    bool  done   = false
+    box   bx
+
+type Trd
+    string id
+    int    dir
+    float  hi
+    float  lo
+    int    t0
+    float  entry
+    float  sl
+    float  tp
+    float  beLvl
+    float  beStop
+    bool   beDone = false
+    bool   filled = false
+    int    fillBar
+    line   gr0
+    line   grL
+    line   gr1
+    label  lb0
+    label  lbL
+    label  lb1
+    line   lnEntry
+    line   lnSL
+    line   lnTP
+    line   lnBE
+
+var Sess ses = Sess.new()
+var array<Trd> trades = array.new<Trd>()
+var int lastClosed = 0
+
+// ── Utilidades ─────────────────────────────────────────────────────────────────────
+// Convierte una diferencia de precio a ticks enteros para comparar sin errores de decimales.
+tk(float x) => math.round(x / syminfo.mintick)
+
+// Texto de un nivel con coma decimal (0,382).
+lvlText(float x) => str.replace_all(str.tostring(x, "#.###"), ".", ",")
+
+// Precio de ejecución real de una operación abierta (na si todavía no se ejecutó).
+fillPrice(string eid) =>
+    float px = na
+    int   n  = strategy.opentrades
+    if n > 0
+        for k = 0 to n - 1
+            if strategy.opentrades.entry_id(k) == eid
+                px := strategy.opentrades.entry_price(k)
+    px
+
+// ── Retícula de niveles ───────────────────────────────────────────────────────────
+drawGrid(Trd tr) =>
+    float y0 = tr.dir == 1 ? tr.hi : tr.lo          // nivel 0 %
+    float y1 = tr.dir == 1 ? tr.lo : tr.hi          // nivel 100 %
+    int   xr = time + BAR_MS
+    color tc = color.new(color.white, 100)
+    tr.gr0 := line.new(tr.t0, y0, xr, y0, xloc = xloc.bar_time, color = gridCol, style = line.style_dotted, width = 1)
+    tr.grL := line.new(tr.t0, tr.entry, xr, tr.entry, xloc = xloc.bar_time, color = gridCol, style = line.style_dotted, width = 1)
+    tr.gr1 := line.new(tr.t0, y1, xr, y1, xloc = xloc.bar_time, color = gridCol, style = line.style_dotted, width = 1)
+    tr.lb0 := label.new(xr, y0, text = "0", xloc = xloc.bar_time, style = label.style_label_left, color = tc, textcolor = gridCol, size = size.small)
+    tr.lbL := label.new(xr, tr.entry, text = lvlText(lvl), xloc = xloc.bar_time, style = label.style_label_left, color = tc, textcolor = gridCol, size = size.small)
+    tr.lb1 := label.new(xr, y1, text = "1", xloc = xloc.bar_time, style = label.style_label_left, color = tc, textcolor = gridCol, size = size.small)
+    tr
+
+extendGrid(Trd tr) =>
+    int xr = time + BAR_MS
+    line.set_x2(tr.gr0, xr)
+    line.set_x2(tr.grL, xr)
+    line.set_x2(tr.gr1, xr)
+    label.set_x(tr.lb0, xr)
+    label.set_x(tr.lbL, xr)
+    label.set_x(tr.lb1, xr)
+    tr
+
+// ── La orden limit se ejecutó: marcas de entrada, SL y TP ─────────────────────────
+onFilled(Trd tr) =>
+    tr.filled := true
+    tr.fillBar := bar_index
+    if showGrid
+        extendGrid(tr)
+    if showMarks
+        int xr = time + BAR_MS
+        tr.lnEntry := line.new(time, tr.entry, xr, tr.entry, xloc = xloc.bar_time, color = color.new(C_OFF, 20), style = line.style_dotted, width = 1)
+        tr.lnSL := line.new(time, tr.sl, xr, tr.sl, xloc = xloc.bar_time, color = C_SL, width = 1)
+        tr.lnTP := line.new(time, tr.tp, xr, tr.tp, xloc = xloc.bar_time, color = C_TP, width = 1)
+        string tip = "Entrada: " + str.tostring(tr.entry, "#.##") + "\nSL: " + str.tostring(tr.sl, "#.##") + " (" + str.tostring(math.abs(tr.entry - tr.sl), "#.##") + ")\nTP: " + str.tostring(tr.tp, "#.##")
+        if tr.dir == 1
+            label.new(bar_index, na, text = "BUY", xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = buyLblCol, textcolor = color.white, size = size.small, tooltip = tip)
+        else
+            label.new(bar_index, na, text = "SELL", xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = sellLblCol, textcolor = color.white, size = size.small, tooltip = tip)
+    tr
+
+// ── Operación cerrada: termina sus marcas en el gráfico y la quita del registro ──
+markClosed(string eid, int xt) =>
+    int found = -1
+    for [j, t] in trades
+        if t.id == eid
+            found := j
+    if found >= 0
+        Trd tr = trades.get(found)
+        if not tr.filled
+            onFilled(tr)
+        if showMarks
+            line.set_x2(tr.lnEntry, xt)
+            line.set_x2(tr.lnTP, xt)
+            if tr.beDone
+                line.set_x2(tr.lnBE, xt)
+            else
+                line.set_x2(tr.lnSL, xt)
+        trades.remove(found)
+    found >= 0
+
+// ── Órdenes y posiciones: ejecución, cancelación, break-even, salidas, cierre forzado ──
+manageTrades() =>
+    int n = trades.size()
+    if n > 0
+        for i = n - 1 to 0
+            Trd tr = trades.get(i)
+            if not tr.filled and not na(fillPrice(tr.id))
+                onFilled(tr)
+            if tr.filled
+                if inForce
+                    strategy.close(tr.id, comment = "Cierre forzado")
+                else
+                    if useBE and not tr.beDone and bar_index > tr.fillBar
+                        bool hit = tr.dir == 1 ? high >= tr.beLvl : low <= tr.beLvl
+                        if hit
+                            tr.beDone := true
+                            if showMarks
+                                int bx = time + BAR_MS
+                                line.set_x2(tr.lnSL, bx)
+                                tr.lnBE := line.new(bx, tr.beStop, bx + BAR_MS, tr.beStop, xloc = xloc.bar_time, color = C_BE, width = 2)
+                    float stopP = tr.beDone ? tr.beStop : tr.sl
+                    strategy.exit("X-" + tr.id, from_entry = tr.id, stop = stopP, limit = tr.tp, comment_profit = "TP", comment_loss = tr.beDone ? "BE" : "SL")
+                    if showMarks
+                        int xr = time + BAR_MS
+                        line.set_x2(tr.lnEntry, xr)
+                        line.set_x2(tr.lnTP, xr)
+                        if tr.beDone
+                            line.set_x2(tr.lnBE, xr)
+                        else
+                            line.set_x2(tr.lnSL, xr)
+            else
+                // Hora límite alcanzada (o, por seguridad, orden de otro día si faltaron velas).
+                if sdOpen + BAR_SEC >= cutSec or time - tr.t0 > 6 * 3600 * 1000
+                    strategy.cancel(tr.id)
+                    strategy.cancel("X-" + tr.id)
+                    trades.remove(i)
+                else if showGrid
+                    extendGrid(tr)
+    true
+
+// ── Coloca la orden limit una vez validado el quiebre ─────────────────────────────
+placeOrder(Sess s, int dir) =>
+    float rng    = s.hi - s.lo
+    float entry  = math.round_to_mintick(dir == 1 ? s.hi - lvl * rng : s.lo + lvl * rng)
+    float edge   = dir == 1 ? s.lo : s.hi                        // nivel 100 %: SL natural
+    float dNat   = math.abs(entry - edge)
+    float slDist = useMinSL ? math.max(dNat, minSL) : dNat
+    float slP    = math.round_to_mintick(dir == 1 ? entry - slDist : entry + slDist)
+    float rDist  = math.abs(entry - slP)
+    float tpP    = math.round_to_mintick(dir == 1 ? entry + rr * rDist : entry - rr * rDist)
+    float beL    = math.round_to_mintick(dir == 1 ? entry + rDist : entry - rDist)
+    float beS    = math.round_to_mintick(dir == 1 ? entry + beOffset : entry - beOffset)
+
+    float balance = compound ? strategy.initial_capital + strategy.netprofit : strategy.initial_capital
+    int   qty     = balance > 0 and rDist > 0 ? math.floor(balance * riskPct / 100.0 / (rDist * syminfo.pointvalue)) : 0
+
+    s.done := true      // una única orden por sesión (haya o no contratos suficientes)
+    if qty >= 1
+        string tid = "NY-" + str.format_time(time, "yyyyMMdd-HHmmss", TZ) + (dir == 1 ? "-C" : "-V")
+        strategy.entry(tid, dir == 1 ? strategy.long : strategy.short, qty = qty, limit = entry, comment = dir == 1 ? "Buy limit" : "Sell limit")
+        strategy.exit("X-" + tid, from_entry = tid, stop = slP, limit = tpP, comment_profit = "TP", comment_loss = "SL")
+        Trd tr = Trd.new(id = tid, dir = dir, hi = s.hi, lo = s.lo, t0 = s.t0, entry = entry, sl = slP, tp = tpP, beLvl = beL, beStop = beS)
+        if showGrid
+            drawGrid(tr)
+        trades.push(tr)
+    s
+
+// ── Sesión: dibuja el rango y valida el quiebre ───────────────────────────────────
+processSession(Sess s) =>
+    bool dayOk    = dow >= dayofweek.monday and dow <= dayofweek.friday
+    bool inRange  = dayOk and sdOpen >= RANGE_START and sdOpen < RANGE_END
+    bool canBreak = dayOk and sdOpen >= RANGE_END and sdOpen + BAR_SEC < cutSec
+
+    if inRange
+        if not s.prevIn
+            s.hi := high
+            s.lo := low
+            s.t0 := time
+            s.ready := false
+            s.done := false
+            if showRange
+                s.bx := box.new(left = time, top = high, right = time + BAR_MS, bottom = low, xloc = xloc.bar_time, border_color = rangeCol, border_width = 1, bgcolor = na)
+        else
+            s.hi := math.max(s.hi, high)
+            s.lo := math.min(s.lo, low)
+        if showRange
+            box.set_top(s.bx, s.hi)
+            box.set_bottom(s.bx, s.lo)
+            box.set_right(s.bx, time + BAR_MS)
+    else
+        if s.prevIn
+            s.ready := true
+        else if not canBreak
+            s.ready := false
+
+    if canBreak and s.ready and not s.done
+        bool buySig  = tk(close - s.hi) >= tk(minBreak) and close > open
+        bool sellSig = tk(s.lo - close) >= tk(minBreak) and close < open
+        int  dir     = buySig ? 1 : sellSig ? -1 : 0
+        if dir != 0
+            bool emaOk  = not useEMA or (dir == 1 ? close > emaVal : close < emaVal)
+            bool vwapOk = not useVWAP or (dir == 1 ? close > vwapVal : close < vwapVal)
+            if emaOk and vwapOk
+                placeOrder(s, dir)
+
+    s.prevIn := inRange
+    s
+
+// ── Orden de ejecución en cada vela ───────────────────────────────────────────────
+// 1) procesar operaciones cerradas  2) gestionar órdenes y posiciones  3) buscar el quiebre
+if strategy.closedtrades > lastClosed
+    for i = lastClosed to strategy.closedtrades - 1
+        markClosed(strategy.closedtrades.entry_id(i), strategy.closedtrades.exit_time(i))
+    lastClosed := strategy.closedtrades
+
+manageTrades()
+processSession(ses)
