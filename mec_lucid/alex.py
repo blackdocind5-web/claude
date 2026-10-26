@@ -8,7 +8,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__)); PV = 2.0; COM = 1.0; DESL = 0
 
 def nombre(f):
     b = os.path.basename(f)[:-4]
-    filtro = "con EMA 200 + VWAP" if b.startswith("MNQ___con") else "sin filtro"
+    filtro = "sin filtro" if "sin_EMA200" in b else "con " + re.sub(r"_+", " ", re.search(r"MNQ_+(.*?)_+nivel", b).group(1)).strip().replace("EMA200", "EMA 200")
     fib = re.search(r"fibo_([\d.]+)", b).group(1); hora = re.search(r"hasta_las_([\d.]+)h", b).group(1)
     hora = hora.replace(".", ":") if ":" in hora.replace(".", ":") else hora + ":00"
     return f"Alex {filtro} · Fibo {fib.replace('.', ',')}% · hasta {hora}"
