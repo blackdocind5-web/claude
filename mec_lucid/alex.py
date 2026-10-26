@@ -33,3 +33,16 @@ def neto(o): return o["R"] - (COM + (DESL if o["sl_hit"] else 0)) / (PV * o["dis
 def usd(o, q): return q * (PV * o["dist"] * o["R"] - COM - (DESL if o["sl_hit"] else 0))
 
 T = {nombre(f): cargar(f) for f in sorted(glob.glob(os.path.join(AQUI, "alex", "*.csv")))}
+
+def dias(nombre, riesgo, maxq, filtro=lambda o: True):
+    """días con micros = piso(riesgo / pérdida por micro), máx. de la cuenta"""
+    d = collections.defaultdict(list)
+    for o in T[nombre]:
+        if not filtro(o): continue
+        q = min(maxq, int(riesgo / o["perd1"] + 1e-9))
+        if q: d[o["ses"]].append(dict(o, q=q, usd=usd(o, q)))
+    return [v for _, v in sorted(d.items())]
+
+def nulo(o, r):
+    """sin ventaja: TP o SL al 50% (RR 1:1), con los costos reales"""
+    return (o["q"] * (PV * o["dist"] - COM), False) if r.random() < .5 else (-o["q"] * (PV * o["dist"] + COM + DESL), True)
