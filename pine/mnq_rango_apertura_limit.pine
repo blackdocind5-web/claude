@@ -12,8 +12,8 @@
 //  Quiebre válido (vela de 30s ya cerrada, desde las 09:45)
 //    · COMPRA: cierra ≥ máximo del rango + distancia mínima (10,00) y es alcista.
 //    · VENTA : cierra ≤ mínimo del rango − distancia mínima (10,00) y es bajista.
-//    · Solo cuentan los cierres. Una señal que no pasa los filtros (EMA / VWAP) se descarta
-//      y no cuenta: se espera la siguiente vela que cumpla todas las condiciones.
+//    · Solo cuentan los cierres. Si el nivel de entrada no pasa los filtros (EMA / VWAP), esa
+//      vela se descarta y no cuenta: se espera la siguiente vela que cumpla todo.
 //    · El primer quiebre válido fija la dirección. Los quiebres posteriores del lado
 //      contrario se ignoran. Una única orden por sesión.
 //
@@ -38,14 +38,21 @@
 //    · Si una misma vela toca SL y TP se asume SL primero (ver nota de precisión).
 //
 //  Filtros de dirección (ambos desactivados por defecto; se pueden combinar)
-//    · EMA: solo compras si la vela de quiebre cierra por encima de la EMA y solo ventas si
-//      cierra por debajo.
-//    · VWAP (línea central): misma lógica. Fuente hlc3 ponderada por volumen, con reinicio
-//      diario a las 18:00 NY (inicio de la sesión Globex), editable.
+//    · Se aplican al NIVEL DE ENTRADA de la orden limit, no a la vela de quiebre: una compra
+//      solo es válida si el nivel de entrada está por encima de la EMA / del VWAP, y una venta
+//      solo si está por debajo. Se comprueba al colocar la orden (si no se cumple, esa vela se
+//      descarta) y en cada vela mientras la orden está pendiente: si deja de cumplirse (la EMA
+//      o el VWAP se desplazan hasta el otro lado del nivel), la orden se cancela y la sesión
+//      termina sin operación.
+//    · EMA: periodos editables (200). VWAP (línea central): fuente hlc3 ponderada por volumen,
+//      con reinicio diario a las 18:00 NY (inicio de la sesión Globex), editable.
 //
 //  Riesgo
 //    · 1 % del capital por operación, calculado sobre la distancia real al SL. Contratos
 //      enteros, redondeados hacia abajo: si ni un contrato cabe en el riesgo, no se opera.
+//    · El capital inicial por defecto es alto (1.000.000) a propósito: con un capital pequeño
+//      el redondeo a contratos enteros distorsiona el 1 % y puede dejar sin operar los días de
+//      SL grande. Para analizar la estrategia lee los resultados en %, no en dólares.
 //    · Interés compuesto opcional (desactivado por defecto: el riesgo se calcula sobre el
 //      capital inicial). Valor del punto: 2 USD por punto de MNQ (se toma del símbolo).
 //    · Esta primera fase NO incluye comisiones, spread, slippage ni margen. Se agregarán
@@ -61,7 +68,7 @@
 strategy(title = "MNQ · Ruptura de Rango de Apertura con orden limit (30s)",
          shorttitle = "MNQ Rango Limit",
          overlay = true,
-         initial_capital = 50000,
+         initial_capital = 1000000,
          currency = currency.USD,
          default_qty_type = strategy.fixed,
          default_qty_value = 1,
@@ -100,9 +107,9 @@ lvlSel   = input.string("38,2%", "Nivel de entrada (orden limit)", options = ["3
 cutHour  = input.int(10, "Hora límite (NY): no se abren más órdenes", minval = 0, maxval = 23, group = G_ENT, tooltip = "Después de esta hora no se validan quiebres nuevos y se cancela la orden limit que siga pendiente.")
 cutMin   = input.int(5, "Minuto límite", minval = 0, maxval = 59, group = G_ENT)
 
-useEMA   = input.bool(false, "Filtro EMA", group = G_FIL, tooltip = "Activado: solo compras si la vela de quiebre cierra por encima de la EMA y solo ventas si cierra por debajo. Se calcula sobre el cierre del gráfico de 30s.")
+useEMA   = input.bool(false, "Filtro EMA", group = G_FIL, tooltip = "Activado: solo compras si el nivel de entrada de la orden limit está por encima de la EMA y solo ventas si está por debajo. Se comprueba al colocar la orden y mientras esté pendiente (si deja de cumplirse, la orden se cancela). EMA sobre el cierre del gráfico de 30s.")
 emaLen   = input.int(200, "Periodos de la EMA", minval = 1, group = G_FIL)
-useVWAP  = input.bool(false, "Filtro VWAP (línea central)", group = G_FIL, tooltip = "Activado: solo compras si la vela de quiebre cierra por encima del VWAP y solo ventas si cierra por debajo. Fuente hlc3 ponderada por volumen.")
+useVWAP  = input.bool(false, "Filtro VWAP (línea central)", group = G_FIL, tooltip = "Activado: solo compras si el nivel de entrada de la orden limit está por encima del VWAP y solo ventas si está por debajo. Se comprueba al colocar la orden y mientras esté pendiente (si deja de cumplirse, la orden se cancela). Fuente hlc3 ponderada por volumen.")
 vwapHour = input.int(18, "Reinicio del VWAP · hora (NY)", minval = 0, maxval = 23, group = G_FIL, tooltip = "Por defecto 18:00 NY, el inicio de la sesión Globex. El VWAP acumula desde ese momento y se reinicia cada día a esa hora.")
 vwapMin  = input.int(0, "Reinicio del VWAP · minuto", minval = 0, maxval = 59, group = G_FIL)
 
@@ -200,6 +207,16 @@ tk(float x) => math.round(x / syminfo.mintick)
 
 // Texto de un nivel con coma decimal (0,382).
 lvlText(float x) => str.replace_all(str.tostring(x, "#.###"), ".", ",")
+
+// Nivel de entrada de la orden limit según la dirección del quiebre.
+entryLevel(Sess s, int dir) =>
+    math.round_to_mintick(dir == 1 ? s.hi - lvl * (s.hi - s.lo) : s.lo + lvl * (s.hi - s.lo))
+
+// Filtros EMA / VWAP aplicados al nivel de entrada: compras por encima, ventas por debajo.
+levelOk(int dir, float px) =>
+    bool emaOk  = not useEMA or (dir == 1 ? px > emaVal : px < emaVal)
+    bool vwapOk = not useVWAP or (dir == 1 ? px > vwapVal : px < vwapVal)
+    emaOk and vwapOk
 
 // Precio de ejecución real de una operación abierta (na si todavía no se ejecutó).
 fillPrice(string eid) =>
@@ -304,8 +321,9 @@ manageTrades() =>
                         else
                             line.set_x2(tr.lnSL, xr)
             else
-                // Hora límite alcanzada (o, por seguridad, orden de otro día si faltaron velas).
-                if sdOpen + BAR_SEC >= cutSec or time - tr.t0 > 6 * 3600 * 1000
+                // Se cancela la orden pendiente si: llegó la hora límite, es de otro día (por seguridad,
+                // si faltaron velas) o el nivel de entrada dejó de cumplir los filtros EMA / VWAP.
+                if sdOpen + BAR_SEC >= cutSec or time - tr.t0 > 6 * 3600 * 1000 or not levelOk(tr.dir, tr.entry)
                     strategy.cancel(tr.id)
                     strategy.cancel("X-" + tr.id)
                     trades.remove(i)
@@ -315,9 +333,8 @@ manageTrades() =>
 
 // ── Coloca la orden limit una vez validado el quiebre ─────────────────────────────
 placeOrder(Sess s, int dir) =>
-    float rng    = s.hi - s.lo
-    float entry  = math.round_to_mintick(dir == 1 ? s.hi - lvl * rng : s.lo + lvl * rng)
-    float edge   = dir == 1 ? s.lo : s.hi                        // nivel 100 %: SL natural
+    float entry  = entryLevel(s, dir)
+    float edge  = dir == 1 ? s.lo : s.hi                        // nivel 100 %: SL natural
     float dNat   = math.abs(entry - edge)
     float slDist = useMinSL ? math.max(dNat, minSL) : dNat
     float slP    = math.round_to_mintick(dir == 1 ? entry - slDist : entry + slDist)
@@ -373,9 +390,7 @@ processSession(Sess s) =>
         bool sellSig = tk(s.lo - close) >= tk(minBreak) and close < open
         int  dir     = buySig ? 1 : sellSig ? -1 : 0
         if dir != 0
-            bool emaOk  = not useEMA or (dir == 1 ? close > emaVal : close < emaVal)
-            bool vwapOk = not useVWAP or (dir == 1 ? close > vwapVal : close < vwapVal)
-            if emaOk and vwapOk
+            if levelOk(dir, entryLevel(s, dir))
                 placeOrder(s, dir)
 
     s.prevIn := inRange
