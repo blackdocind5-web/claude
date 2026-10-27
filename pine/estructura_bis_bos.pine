@@ -1,0 +1,107 @@
+//@version=6
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  Estructura de mercado · swings (altos y bajos), BIS y BOS · indicador de validación
+// ═══════════════════════════════════════════════════════════════════════════════════
+//
+//  Sirve para comprobar a ojo, en varios días, si el trazado de swings y las rupturas son
+//  confiables ANTES de integrarlos en las estrategias. Se puede añadir dos veces al gráfico
+//  con valores distintos de izquierda / derecha para compararlos.
+//
+//  SWING (pivote)
+//    · Swing high: una vela cuyo máximo es mayor que el de las N velas de la izquierda y el de
+//      las M velas de la derecha. Swing low: lo mismo con el mínimo (solo cuentan las mechas).
+//    · Se confirma M velas DESPUÉS de formarse (con M = 3 en M1, 3 minutos de retraso). El
+//      indicador lo marca sobre la vela del pivote, pero solo se usa desde que está confirmado.
+//      Así el backtest no ve el futuro.
+//
+//  RUPTURA
+//    · Una vela cuyo CIERRE (cuerpo) queda más allá del último swing confirmado. Un nivel roto
+//      se da por consumido hasta que se confirma un swing nuevo del mismo lado.
+//
+//  BIS  (break in structure)  = CONTINUACIÓN: rompe en la dirección de la tendencia actual.
+//  BOS  (break of structure)  = CAMBIO: rompe en contra de la tendencia actual (o cuando aún
+//                               no había tendencia) y la estructura pasa a la nueva dirección.
+//    En la jerga más extendida (Smart Money) la continuación se llama BOS y el cambio CHoCH.
+//
+//  La tendencia (estructura alcista / bajista) es la dirección de la última ruptura.
+// ═══════════════════════════════════════════════════════════════════════════════════
+indicator(title = "Estructura de mercado · swings, BIS y BOS",
+          shorttitle = "Estructura BIS/BOS",
+          overlay = true,
+          max_lines_count = 500,
+          max_labels_count = 500)
+
+// ── Entradas ───────────────────────────────────────────────────────────────────────
+const string G_SW  = "1 · Swings"
+const string G_VIS = "2 · Visual"
+
+leftBars   = input.int(5, "Velas a la izquierda", minval = 1, group = G_SW, tooltip = "El swing debe ser el máximo (o mínimo) de esta cantidad de velas anteriores.")
+rightBars  = input.int(3, "Velas a la derecha (retraso de confirmación)", minval = 1, group = G_SW, tooltip = "El swing debe ser el máximo (o mínimo) de esta cantidad de velas posteriores. También es el retraso, en velas, con que se confirma.")
+
+showSwings = input.bool(true, "Mostrar swings (HH, LH, HL, LL)", group = G_VIS)
+showBreaks = input.bool(true, "Mostrar rupturas (BIS / BOS)", group = G_VIS)
+showTable  = input.bool(true, "Mostrar tabla de estado", group = G_VIS)
+upCol      = input.color(#089981, "Color alcista", group = G_VIS)
+dnCol      = input.color(#F23645, "Color bajista", group = G_VIS)
+swCol      = input.color(#787B86, "Color de las etiquetas de swing", group = G_VIS)
+
+// ── Swings confirmados ─────────────────────────────────────────────────────────────
+// ph / pl traen el precio del pivote ocurrido "rightBars" velas atrás (na si no hay pivote).
+float ph = ta.pivothigh(high, leftBars, rightBars)
+float pl = ta.pivotlow(low, leftBars, rightBars)
+
+var float shLvl  = na      // último swing high confirmado
+var int   shBar  = na      // vela en que se formó
+var bool  shLive = false   // true mientras no haya sido roto
+var float slLvl  = na
+var int   slBar  = na
+var bool  slLive = false
+var int   trend  = 0       // 1 alcista · -1 bajista · 0 sin definir
+
+color noCol = color.new(color.white, 100)
+
+// 1) Rupturas con los niveles ya confirmados antes de esta vela
+bool brokeUp = shLive and close > shLvl
+bool brokeDn = slLive and close < slLvl
+
+if brokeUp
+    string kind = trend == 1 ? "BIS" : "BOS"
+    if showBreaks
+        line.new(shBar, shLvl, bar_index, shLvl, color = upCol, width = 1)
+        label.new(math.round((shBar + bar_index) / 2), shLvl, text = kind, style = label.style_label_down, color = noCol, textcolor = upCol, size = size.small)
+    trend  := 1
+    shLive := false
+
+if brokeDn
+    string kind = trend == -1 ? "BIS" : "BOS"
+    if showBreaks
+        line.new(slBar, slLvl, bar_index, slLvl, color = dnCol, width = 1)
+        label.new(math.round((slBar + bar_index) / 2), slLvl, text = kind, style = label.style_label_up, color = noCol, textcolor = dnCol, size = size.small)
+    trend  := -1
+    slLive := false
+
+// 2) Swings que se confirman en esta vela
+if not na(ph)
+    if showSwings
+        label.new(bar_index - rightBars, ph, text = na(shLvl) ? "SH" : ph > shLvl ? "HH" : "LH", style = label.style_label_down, color = noCol, textcolor = swCol, size = size.tiny)
+    shLvl  := ph
+    shBar  := bar_index - rightBars
+    shLive := true
+
+if not na(pl)
+    if showSwings
+        label.new(bar_index - rightBars, pl, text = na(slLvl) ? "SL" : pl > slLvl ? "HL" : "LL", style = label.style_label_up, color = noCol, textcolor = swCol, size = size.tiny)
+    slLvl  := pl
+    slBar  := bar_index - rightBars
+    slLive := true
+
+// ── Tabla de estado ────────────────────────────────────────────────────────────────
+var table tb = table.new(position.top_right, 2, 3, bgcolor = #2A2E39, border_width = 1)
+if showTable and barstate.islast
+    color tc = trend == 1 ? upCol : trend == -1 ? dnCol : color.gray
+    table.cell(tb, 0, 0, "Estructura", text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 0, trend == 1 ? "ALCISTA" : trend == -1 ? "BAJISTA" : "SIN DEFINIR", text_color = tc, text_size = size.small)
+    table.cell(tb, 0, 1, "Último swing high", text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 1, na(shLvl) ? "—" : str.tostring(shLvl, format.mintick), text_color = color.white, text_size = size.small)
+    table.cell(tb, 0, 2, "Último swing low", text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 2, na(slLvl) ? "—" : str.tostring(slLvl, format.mintick), text_color = color.white, text_size = size.small)
