@@ -75,6 +75,8 @@ var int   slBar  = na
 var bool  slLive = false
 var int   trend  = 0       // 1 alcista · -1 bajista · 0 sin definir
 
+color noCol = color.new(color.white, 100)   // transparente: etiquetas sin recuadro
+
 // 1) Rupturas con los niveles ya confirmados antes de esta vela
 bool brokeUp = shLive and close > shLvl
 bool brokeDn = slLive and close < slLvl
@@ -83,7 +85,7 @@ if brokeUp
     string kind = trend == 1 ? "BIS" : "BOS"
     if showBreaks and vis
         line.new(shBar, shLvl, bar_index, shLvl, color = upCol, width = 1)
-        label.new(math.round((shBar + bar_index) / 2), shLvl, text = kind, style = label.style_label_center, color = upCol, textcolor = color.white, size = size.small)
+        label.new(math.round((shBar + bar_index) / 2), shLvl, text = kind, style = label.style_label_center, color = noCol, textcolor = upCol, size = size.small)
     trend  := 1
     shLive := false
 
@@ -91,13 +93,11 @@ if brokeDn
     string kind = trend == -1 ? "BIS" : "BOS"
     if showBreaks and vis
         line.new(slBar, slLvl, bar_index, slLvl, color = dnCol, width = 1)
-        label.new(math.round((slBar + bar_index) / 2), slLvl, text = kind, style = label.style_label_center, color = dnCol, textcolor = color.white, size = size.small)
+        label.new(math.round((slBar + bar_index) / 2), slLvl, text = kind, style = label.style_label_center, color = noCol, textcolor = dnCol, size = size.small)
     trend  := -1
     slLive := false
 
 // 2) Swings que se confirman en esta vela (la etiqueta se dibuja sobre la vela del pivote)
-color noCol = color.new(color.white, 100)
-
 if not na(ph)
     if showSwings and vis[rightBars]
         label.new(bar_index - rightBars, ph, text = na(shLvl) ? "SH" : ph > shLvl ? "HH" : "LH", style = label.style_label_down, color = noCol, textcolor = swCol, size = size.tiny)

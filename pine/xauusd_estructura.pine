@@ -33,8 +33,10 @@
 //      activa mientras todo siga alineado; si algo deja de cumplirse se retira y se vuelve a
 //      colocar cuando se cumpla. Se cancela al final de la sesión.
 //    · BOS → entrada a mercado al cierre de la vela que rompe el nivel con cuerpo, siempre que
-//      sea la PRIMERA vela que toca ese nivel. Si la primera vela que lo toca solo lo supera
-//      con mecha, esa entrada BOS se descarta (se espera un BIS o un BOS posterior).
+//      sea la PRIMERA vela que toca ese nivel. Si esa primera vela lo supera solo con mecha, la
+//      entrada BOS se descarta (se espera un BIS o un BOS posterior). Si lo toca justo en el
+//      nivel sin superarlo, la vela SIGUIENTE tiene una segunda oportunidad: entra si cierra con
+//      cuerpo más allá del nivel; si no, el BOS de ese nivel se descarta.
 //    · Filtros VWAP / EMA (interruptores independientes, desactivados por defecto): una compra
 //      exige que el PRECIO DE ENTRADA esté por encima de la línea y una venta por debajo.
 //
@@ -179,22 +181,27 @@ float pl = ta.pivotlow(low, swLeft, swRight)
 
 var float shLvl     = na      // último swing high confirmado
 var bool  shLive    = false   // true mientras no haya sido roto con el cierre
-var bool  shTouched = false   // true si alguna vela ya tocó el nivel (aunque solo con mecha)
+var bool  shTouched = false   // true si alguna vela ya tocó el nivel
+var int   shTouchBar = na     // vela que tocó el nivel justo en él, SIN superarlo (da una 2ª oportunidad a la siguiente)
 var float slLvl     = na
 var bool  slLive    = false
 var bool  slTouched = false
+var int   slTouchBar = na
 var int   trend     = 0       // 1 alcista · -1 bajista · 0 sin definir
 
 bool brokeUp = shLive and close > shLvl
 bool brokeDn = slLive and close < slLvl
-// BOS válido para entrada: cambio de estructura, en la PRIMERA vela que toca el nivel y con cierre de cuerpo.
-bool bosUp = brokeUp and trend != 1 and not shTouched
-bool bosDn = brokeDn and trend != -1 and not slTouched
+// BOS válido para entrada: cambio de estructura con cierre de cuerpo más allá del nivel, en la PRIMERA vela
+// que lo toca o en la vela SIGUIENTE a un toque exacto del nivel (sin superarlo, ni con mecha ni con cuerpo).
+bool bosUp = brokeUp and trend != 1 and (not shTouched or shTouchBar == bar_index - 1)
+bool bosDn = brokeDn and trend != -1 and (not slTouched or slTouchBar == bar_index - 1)
 
-if shLive and not brokeUp and high >= shLvl
-    shTouched := true
-if slLive and not brokeDn and low <= slLvl
-    slTouched := true
+if shLive and not brokeUp and not shTouched and high >= shLvl
+    shTouched  := true
+    shTouchBar := math.round(high / syminfo.mintick) == math.round(shLvl / syminfo.mintick) ? bar_index : na
+if slLive and not brokeDn and not slTouched and low <= slLvl
+    slTouched  := true
+    slTouchBar := math.round(low / syminfo.mintick) == math.round(slLvl / syminfo.mintick) ? bar_index : na
 
 if brokeUp
     trend  := 1
@@ -204,13 +211,15 @@ if brokeDn
     slLive := false
 
 if not na(ph)
-    shLvl     := ph
-    shLive    := true
-    shTouched := false
+    shLvl      := ph
+    shLive     := true
+    shTouched  := false
+    shTouchBar := na
 if not na(pl)
-    slLvl     := pl
-    slLive    := true
-    slTouched := false
+    slLvl      := pl
+    slLive     := true
+    slTouched  := false
+    slTouchBar := na
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────────
 type Trd
