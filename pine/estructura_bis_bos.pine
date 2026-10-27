@@ -23,6 +23,9 @@
 //                               no había tendencia) y la estructura pasa a la nueva dirección.
 //    En la jerga más extendida (Smart Money) la continuación se llama BOS y el cambio CHoCH.
 //
+//  La línea de cada ruptura lleva un hueco en el centro, justo donde va la letra BIS / BOS
+//  (ancho editable). Como el hueco son dos líneas, cada ruptura gasta 2 del límite de 500.
+//
 //  La tendencia (estructura alcista / bajista) es la dirección de la última ruptura y es
 //  CONTINUA: el motor mide toda la jornada, sin reiniciarse. Lo que cambia con "Dibujar solo
 //  durante las sesiones" es únicamente qué se dibuja, para aprovechar mejor el límite de
@@ -52,6 +55,7 @@ s2       = input.session("0830-1100", "Sesión 2 · rango y operación (hora NY)
 
 showSwings = input.bool(true, "Mostrar swings (HH, LH, HL, LL)", group = G_VIS)
 showBreaks = input.bool(true, "Mostrar rupturas (BIS / BOS)", group = G_VIS)
+gapBars    = input.int(4, "Hueco de la línea para la letra (velas)", minval = 0, group = G_VIS, tooltip = "Ancho, en velas, del hueco que se deja en la línea justo donde va la letra BIS / BOS. El texto mide siempre lo mismo en píxeles, así que según el zoom del gráfico puede hacer falta un hueco mayor o menor. 0 = línea continua. Si la línea es muy corta no se le hace hueco.")
 showTable  = input.bool(true, "Mostrar tabla de estado", group = G_VIS)
 upCol      = input.color(#089981, "Color alcista", group = G_VIS)
 dnCol      = input.color(#F23645, "Color bajista", group = G_VIS)
@@ -84,16 +88,28 @@ bool brokeDn = slLive and close < slLvl
 if brokeUp
     string kind = trend == 1 ? "BIS" : "BOS"
     if showBreaks and vis
-        line.new(shBar, shLvl, bar_index, shLvl, color = upCol, width = 1)
-        label.new(math.round((shBar + bar_index) / 2), shLvl, text = kind, style = label.style_label_center, color = noCol, textcolor = upCol, size = size.small)
+        int midX = math.round((shBar + bar_index) / 2)
+        int half = math.round(gapBars / 2)
+        if gapBars > 0 and bar_index - shBar > gapBars + 2
+            line.new(shBar, shLvl, midX - half, shLvl, color = upCol, width = 1)
+            line.new(midX + half, shLvl, bar_index, shLvl, color = upCol, width = 1)
+        else
+            line.new(shBar, shLvl, bar_index, shLvl, color = upCol, width = 1)
+        label.new(midX, shLvl, text = kind, style = label.style_label_center, color = noCol, textcolor = upCol, size = size.small)
     trend  := 1
     shLive := false
 
 if brokeDn
     string kind = trend == -1 ? "BIS" : "BOS"
     if showBreaks and vis
-        line.new(slBar, slLvl, bar_index, slLvl, color = dnCol, width = 1)
-        label.new(math.round((slBar + bar_index) / 2), slLvl, text = kind, style = label.style_label_center, color = noCol, textcolor = dnCol, size = size.small)
+        int midX = math.round((slBar + bar_index) / 2)
+        int half = math.round(gapBars / 2)
+        if gapBars > 0 and bar_index - slBar > gapBars + 2
+            line.new(slBar, slLvl, midX - half, slLvl, color = dnCol, width = 1)
+            line.new(midX + half, slLvl, bar_index, slLvl, color = dnCol, width = 1)
+        else
+            line.new(slBar, slLvl, bar_index, slLvl, color = dnCol, width = 1)
+        label.new(midX, slLvl, text = kind, style = label.style_label_center, color = noCol, textcolor = dnCol, size = size.small)
     trend  := -1
     slLive := false
 
