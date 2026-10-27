@@ -4,15 +4,15 @@
 // ═══════════════════════════════════════════════════════════════════════════════════
 //
 //  Sirve para comprobar a ojo, en varios días, si el trazado de swings y las rupturas son
-//  confiables ANTES de integrarlos en las estrategias. Se puede añadir dos veces al gráfico
-//  con valores distintos de izquierda / derecha para compararlos.
+//  confiables, y para ver sobre el gráfico lo mismo que usan las estrategias (deben tener
+//  los mismos valores de izquierda / derecha). Se puede añadir dos veces al gráfico con
+//  valores distintos para compararlos.
 //
 //  SWING (pivote)
 //    · Swing high: una vela cuyo máximo es mayor que el de las N velas de la izquierda y el de
 //      las M velas de la derecha. Swing low: lo mismo con el mínimo (solo cuentan las mechas).
-//    · Se confirma M velas DESPUÉS de formarse (con M = 3 en M1, 3 minutos de retraso). El
+//    · Se confirma M velas DESPUÉS de formarse (con M = 5 en M1, 5 minutos de retraso). El
 //      indicador lo marca sobre la vela del pivote, pero solo se usa desde que está confirmado.
-//      Así el backtest no ve el futuro.
 //
 //  RUPTURA
 //    · Una vela cuyo CIERRE (cuerpo) queda más allá del último swing confirmado. Un nivel roto
@@ -23,7 +23,10 @@
 //                               no había tendencia) y la estructura pasa a la nueva dirección.
 //    En la jerga más extendida (Smart Money) la continuación se llama BOS y el cambio CHoCH.
 //
-//  La tendencia (estructura alcista / bajista) es la dirección de la última ruptura.
+//  La tendencia (estructura alcista / bajista) es la dirección de la última ruptura y es
+//  CONTINUA: el motor mide toda la jornada, sin reiniciarse. Lo que cambia con "Dibujar solo
+//  durante las sesiones" es únicamente qué se dibuja, para aprovechar mejor el límite de
+//  500 líneas y 500 etiquetas de TradingView.
 // ═══════════════════════════════════════════════════════════════════════════════════
 indicator(title = "Estructura de mercado · swings, BIS y BOS",
           shorttitle = "Estructura BIS/BOS",
@@ -31,12 +34,21 @@ indicator(title = "Estructura de mercado · swings, BIS y BOS",
           max_lines_count = 500,
           max_labels_count = 500)
 
+const string TZ = "America/New_York"
+
 // ── Entradas ───────────────────────────────────────────────────────────────────────
 const string G_SW  = "1 · Swings"
-const string G_VIS = "2 · Visual"
+const string G_SES = "2 · Sesiones visibles"
+const string G_VIS = "3 · Visual"
 
 leftBars   = input.int(5, "Velas a la izquierda", minval = 1, group = G_SW, tooltip = "El swing debe ser el máximo (o mínimo) de esta cantidad de velas anteriores.")
-rightBars  = input.int(3, "Velas a la derecha (retraso de confirmación)", minval = 1, group = G_SW, tooltip = "El swing debe ser el máximo (o mínimo) de esta cantidad de velas posteriores. También es el retraso, en velas, con que se confirma.")
+rightBars  = input.int(5, "Velas a la derecha (retraso de confirmación)", minval = 1, group = G_SW, tooltip = "El swing debe ser el máximo (o mínimo) de esta cantidad de velas posteriores. También es el retraso, en velas, con que se confirma.")
+
+onlySess = input.bool(true, "Dibujar solo durante las sesiones", group = G_SES, tooltip = "Los swings y las rupturas solo se dibujan dentro de las sesiones de abajo (desde que empieza el rango hasta el cierre de la sesión). El motor interno sigue midiendo todo el tiempo, así que la estructura no pierde continuidad.")
+s1On     = input.bool(true, "Sesión 1", group = G_SES)
+s1       = input.session("1804-2200", "Sesión 1 · rango y operación (hora NY)", group = G_SES, tooltip = "Por defecto Asia del XAUUSD. No puede cruzar la medianoche.")
+s2On     = input.bool(true, "Sesión 2", group = G_SES)
+s2       = input.session("0830-1100", "Sesión 2 · rango y operación (hora NY)", group = G_SES, tooltip = "Por defecto Nueva York del XAUUSD. Para el MNQ usa 0930-1100.")
 
 showSwings = input.bool(true, "Mostrar swings (HH, LH, HL, LL)", group = G_VIS)
 showBreaks = input.bool(true, "Mostrar rupturas (BIS / BOS)", group = G_VIS)
@@ -44,6 +56,11 @@ showTable  = input.bool(true, "Mostrar tabla de estado", group = G_VIS)
 upCol      = input.color(#089981, "Color alcista", group = G_VIS)
 dnCol      = input.color(#F23645, "Color bajista", group = G_VIS)
 swCol      = input.color(#787B86, "Color de las etiquetas de swing", group = G_VIS)
+
+// ── Visibilidad por sesión ─────────────────────────────────────────────────────────
+bool inS1 = s1On and not na(time(timeframe.period, s1, TZ))
+bool inS2 = s2On and not na(time(timeframe.period, s2, TZ))
+bool vis  = not onlySess or inS1 or inS2
 
 // ── Swings confirmados ─────────────────────────────────────────────────────────────
 // ph / pl traen el precio del pivote ocurrido "rightBars" velas atrás (na si no hay pivote).
@@ -58,38 +75,38 @@ var int   slBar  = na
 var bool  slLive = false
 var int   trend  = 0       // 1 alcista · -1 bajista · 0 sin definir
 
-color noCol = color.new(color.white, 100)
-
 // 1) Rupturas con los niveles ya confirmados antes de esta vela
 bool brokeUp = shLive and close > shLvl
 bool brokeDn = slLive and close < slLvl
 
 if brokeUp
     string kind = trend == 1 ? "BIS" : "BOS"
-    if showBreaks
+    if showBreaks and vis
         line.new(shBar, shLvl, bar_index, shLvl, color = upCol, width = 1)
-        label.new(math.round((shBar + bar_index) / 2), shLvl, text = kind, style = label.style_label_down, color = noCol, textcolor = upCol, size = size.small)
+        label.new(math.round((shBar + bar_index) / 2), shLvl, text = kind, style = label.style_label_center, color = upCol, textcolor = color.white, size = size.small)
     trend  := 1
     shLive := false
 
 if brokeDn
     string kind = trend == -1 ? "BIS" : "BOS"
-    if showBreaks
+    if showBreaks and vis
         line.new(slBar, slLvl, bar_index, slLvl, color = dnCol, width = 1)
-        label.new(math.round((slBar + bar_index) / 2), slLvl, text = kind, style = label.style_label_up, color = noCol, textcolor = dnCol, size = size.small)
+        label.new(math.round((slBar + bar_index) / 2), slLvl, text = kind, style = label.style_label_center, color = dnCol, textcolor = color.white, size = size.small)
     trend  := -1
     slLive := false
 
-// 2) Swings que se confirman en esta vela
+// 2) Swings que se confirman en esta vela (la etiqueta se dibuja sobre la vela del pivote)
+color noCol = color.new(color.white, 100)
+
 if not na(ph)
-    if showSwings
+    if showSwings and vis[rightBars]
         label.new(bar_index - rightBars, ph, text = na(shLvl) ? "SH" : ph > shLvl ? "HH" : "LH", style = label.style_label_down, color = noCol, textcolor = swCol, size = size.tiny)
     shLvl  := ph
     shBar  := bar_index - rightBars
     shLive := true
 
 if not na(pl)
-    if showSwings
+    if showSwings and vis[rightBars]
         label.new(bar_index - rightBars, pl, text = na(slLvl) ? "SL" : pl > slLvl ? "HL" : "LL", style = label.style_label_up, color = noCol, textcolor = swCol, size = size.tiny)
     slLvl  := pl
     slBar  := bar_index - rightBars
