@@ -14,8 +14,11 @@
 //  1) QUIEBRE DEL RANGO (fija la dirección de la sesión)
 //    · COMPRA: una vela cierra ≥ máximo del rango + distancia mínima (10,00) y es alcista.
 //    · VENTA : una vela cierra ≤ mínimo del rango − distancia mínima (10,00) y es bajista.
-//    · El primer quiebre válido fija la dirección hasta la hora límite; los quiebres del lado
-//      contrario se ignoran. Una única operación por sesión.
+//    · Mientras la sesión no haya operado, el último quiebre válido (de cualquiera de los dos
+//      lados) fija la dirección: si el primer lado no llega a operar y el precio quiebra el lado
+//      contrario, se busca la entrada en ese lado (también con VWAP / EMA y estructura alineados)
+//      y se retira la orden pendiente del lado anterior. Al producirse la operación, la sesión
+//      termina: una única operación por sesión.
 //
 //  2) ESTRUCTURA DE MERCADO (continua, nunca se reinicia)
 //    · Swings = pivotes con N velas a la izquierda y M a la derecha (5 / 5 por defecto). Se usan
@@ -452,12 +455,13 @@ processSession(Sess s) =>
         s.traded := true
         s.hasPend := false
 
-    // Primer quiebre válido del rango: fija la dirección de la sesión.
-    if canSig and s.ready and s.dirLock == 0 and not s.traded
-        if tk(close - s.hi) >= tk(minBreak) and close > open
-            s.dirLock := 1
-        else if tk(s.lo - close) >= tk(minBreak) and close < open
-            s.dirLock := -1
+    // Quiebre válido del rango: fija la dirección. Mientras la sesión no haya operado, un quiebre
+    // válido del lado contrario cambia la dirección y retira la orden pendiente del lado anterior.
+    if canSig and s.ready and not s.traded
+        int nd = tk(close - s.hi) >= tk(minBreak) and close > open ? 1 : tk(s.lo - close) >= tk(minBreak) and close < open ? -1 : 0
+        if nd != 0 and nd != s.dirLock
+            disarm(s)
+            s.dirLock := nd
 
     if canSig and s.dirLock != 0 and not s.traded
         int   dir      = s.dirLock

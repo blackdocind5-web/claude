@@ -10,12 +10,16 @@
 //    · Asia : rango 18:04–20:00 · operación 20:00–22:00 · domingo a jueves (noche)
 //    · NY   : rango 08:30–09:30 · operación 09:30–11:00 · lunes a viernes (mañana)
 //    · Rango = máximo y mínimo (con mechas) de las velas que ABREN dentro de la ventana.
+//      Recuadro con contorno negro fino, sin relleno y sin línea media.
 //
 //  1) QUIEBRE DEL RANGO (fija la dirección de la sesión)
 //    · COMPRA: una vela cierra ≥ máximo del rango + ruptura mínima (0,200) y es alcista.
 //    · VENTA : una vela cierra ≤ mínimo del rango − ruptura mínima (0,200) y es bajista.
-//    · El primer quiebre válido fija la dirección hasta el cierre de la sesión; los quiebres
-//      del lado contrario se ignoran. Una única operación por sesión.
+//    · Mientras la sesión no haya operado, el último quiebre válido (de cualquiera de los dos
+//      lados) fija la dirección: si el primer lado no llega a operar y el precio quiebra el lado
+//      contrario, se busca la entrada en ese lado (también con VWAP / EMA y estructura alineados)
+//      y se retira la orden pendiente del lado anterior. Al producirse la operación, la sesión
+//      termina: una única operación por sesión.
 //
 //  2) ESTRUCTURA DE MERCADO (continua, nunca se reinicia)
 //    · Swings = pivotes con N velas a la izquierda y M a la derecha (5 / 5 por defecto). Se usan
@@ -135,8 +139,7 @@ lotStep  = input.float(0.01, "Paso de lote", minval = 0.0001, step = 0.01, group
 maxLot   = input.float(10.0, "Lote máximo por orden", minval = 0.01, group = G_RSK)
 
 showRanges = input.bool(true, "Mostrar rangos de apertura", group = G_VIS)
-rangeCol   = input.color(color.new(color.gray, 70), "Color del rango", group = G_VIS)
-midCol     = input.color(color.new(color.gray, 20), "Color de la línea media", group = G_VIS)
+rangeCol   = input.color(#000000, "Color del contorno del rango", group = G_VIS)
 buyLblCol  = input.color(#5B5B5B, "Color de la etiqueta BUY", group = G_VIS)
 sellLblCol = input.color(#A9A9A9, "Color de la etiqueta SELL", group = G_VIS)
 showMarks  = input.bool(true, "Mostrar entradas, SL y TP", group = G_VIS, tooltip = "Etiqueta BUY (debajo de la vela de entrada) o SELL (encima), y líneas de entrada, SL y TP. TradingView conserva como máximo 500 líneas y 500 etiquetas: solo se ven las marcas de las operaciones más recientes. El backtest siempre cubre todo el período.")
@@ -250,7 +253,6 @@ type Sess
     bool   hasPend     = false
     Trd    pend
     box    bx
-    line   ml
 
 var Sess asia = Sess.new(idx = 0, name = "Asia", startMD = 18 * 60 + 4, openMD = 20 * 60, endMD = 22 * 60, dowFrom = dayofweek.sunday, dowTo = dayofweek.thursday)
 var Sess nyS  = Sess.new(idx = 1, name = "NY", startMD = 8 * 60 + 30, openMD = 9 * 60 + 30, endMD = 11 * 60, dowFrom = dayofweek.monday, dowTo = dayofweek.friday)
@@ -459,19 +461,14 @@ processSession(Sess s, bool enabled) =>
             s.dirLock := 0
             s.hasPend := false
             if showRanges
-                s.bx := box.new(left = time, top = high, right = time + BAR_MS, bottom = low, xloc = xloc.bar_time, border_color = na, bgcolor = rangeCol)
-                s.ml := line.new(time, (high + low) / 2, time + BAR_MS, (high + low) / 2, xloc = xloc.bar_time, color = midCol, style = line.style_dotted, width = 1)
+                s.bx := box.new(left = time, top = high, right = time + BAR_MS, bottom = low, xloc = xloc.bar_time, border_color = rangeCol, border_width = 1, bgcolor = na)
         else
             s.hi := math.max(s.hi, high)
             s.lo := math.min(s.lo, low)
         if showRanges
-            float m = (s.hi + s.lo) / 2
             box.set_top(s.bx, s.hi)
             box.set_bottom(s.bx, s.lo)
             box.set_right(s.bx, time + BAR_MS)
-            line.set_y1(s.ml, m)
-            line.set_y2(s.ml, m)
-            line.set_x2(s.ml, time + BAR_MS)
     else
         if s.prevIn
             s.ready := true
@@ -483,12 +480,13 @@ processSession(Sess s, bool enabled) =>
         s.traded := true
         s.hasPend := false
 
-    // Primer quiebre válido del rango: fija la dirección de la sesión.
-    if canSig and s.ready and s.dirLock == 0 and not s.traded
-        if tk(close - s.hi) >= tk(minBreak) and close > open
-            s.dirLock := 1
-        else if tk(s.lo - close) >= tk(minBreak) and close < open
-            s.dirLock := -1
+    // Quiebre válido del rango: fija la dirección. Mientras la sesión no haya operado, un quiebre
+    // válido del lado contrario cambia la dirección y retira la orden pendiente del lado anterior.
+    if canSig and s.ready and not s.traded
+        int nd = tk(close - s.hi) >= tk(minBreak) and close > open ? 1 : tk(s.lo - close) >= tk(minBreak) and close < open ? -1 : 0
+        if nd != 0 and nd != s.dirLock
+            disarm(s)
+            s.dirLock := nd
 
     if canSig and s.dirLock != 0 and not s.traded
         int   dir      = s.dirLock
