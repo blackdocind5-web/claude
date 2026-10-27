@@ -37,6 +37,8 @@
 //      entrada BOS se descarta (se espera un BIS o un BOS posterior). Si lo toca justo en el
 //      nivel sin superarlo, la vela SIGUIENTE tiene una segunda oportunidad: entra si cierra con
 //      cuerpo más allá del nivel; si no, el BOS de ese nivel se descarta.
+//      Interruptor opcional (desactivado): entra en la primera vela que cierra con cuerpo más
+//      allá del nivel, sin importar los intentos previos con mecha o toque.
 //    · Filtros VWAP / EMA (interruptores independientes, desactivados por defecto): una compra
 //      exige que el PRECIO DE ENTRADA esté por encima de la línea y una venta por debajo.
 //
@@ -115,6 +117,7 @@ minBreak = input.float(0.200, "Ruptura mínima del rango (cierre fuera)", minval
 
 swLeft  = input.int(5, "Velas a la izquierda del swing", minval = 1, group = G_EST, tooltip = "El swing debe ser el máximo (o mínimo) de esta cantidad de velas anteriores.")
 swRight = input.int(5, "Velas a la derecha del swing (retraso)", minval = 1, group = G_EST, tooltip = "El swing debe ser el máximo (o mínimo) de esta cantidad de velas posteriores. También es el retraso, en velas, con que se confirma.")
+bosFree = input.bool(false, "BOS: entrar en la primera vela que supere el nivel con cuerpo", group = G_EST, tooltip = "Desactivado (por defecto): regla actual. El BOS solo entra si es la primera vela que toca el nivel (o la siguiente a un toque exacto). Activado: el BOS entra en la primera vela que cierra con cuerpo más allá del nivel, sin importar los intentos previos fallidos (velas que lo superaron solo con mecha o lo tocaron).")
 
 useEMA   = input.bool(false, "Filtro EMA", group = G_FIL, tooltip = "Activado: solo compras si el precio de entrada está por encima de la EMA y solo ventas si está por debajo. Se comprueba al colocar la orden y mientras esté pendiente.")
 emaLen   = input.int(200, "Periodos de la EMA", minval = 1, group = G_FIL)
@@ -193,8 +196,9 @@ bool brokeUp = shLive and close > shLvl
 bool brokeDn = slLive and close < slLvl
 // BOS válido para entrada: cambio de estructura con cierre de cuerpo más allá del nivel, en la PRIMERA vela
 // que lo toca o en la vela SIGUIENTE a un toque exacto del nivel (sin superarlo, ni con mecha ni con cuerpo).
-bool bosUp = brokeUp and trend != 1 and (not shTouched or shTouchBar == bar_index - 1)
-bool bosDn = brokeDn and trend != -1 and (not slTouched or slTouchBar == bar_index - 1)
+// Con el interruptor "bosFree" basta con ser la primera vela que cierra con cuerpo más allá del nivel.
+bool bosUp = brokeUp and trend != 1 and (bosFree or not shTouched or shTouchBar == bar_index - 1)
+bool bosDn = brokeDn and trend != -1 and (bosFree or not slTouched or slTouchBar == bar_index - 1)
 
 if shLive and not brokeUp and not shTouched and high >= shLvl
     shTouched  := true
