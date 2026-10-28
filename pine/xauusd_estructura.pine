@@ -22,7 +22,12 @@
 //  2) ESTRUCTURA DE MERCADO (continua, nunca se reinicia)
 //    · Swings = pivotes con N velas a la izquierda y M a la derecha (5 / 5 por defecto). Se usan
 //      solo cuando ya están confirmados (M velas después de formarse).
-//    · Ruptura = una vela que CIERRA con cuerpo más allá del último swing confirmado.
+//    · Ruptura = una vela que CIERRA con cuerpo más allá del último swing confirmado. Opcional
+//      (desactivado): "La mecha también rompe la estructura" → basta con que el precio opere más
+//      allá del nivel. La entrada BOS sigue exigiendo la primera vela que lo supera con cuerpo:
+//      si fue solo con mecha, la estructura cambia pero esa entrada BOS se descarta (salvo que
+//      "BOS: entrar en la primera vela con cuerpo" esté activado, que permite entrar en una vela
+//      posterior que cierre con cuerpo más allá del nivel).
 //    · BIS (continuación): la ruptura va a favor de la tendencia actual.
 //      BOS (cambio): la ruptura va en contra de la tendencia actual (o no había tendencia).
 //
@@ -50,6 +55,8 @@
 //
 //  SALIDAS
 //    · SL en el último swing contrario confirmado (swing low en compras, swing high en ventas).
+//      Referencia (selector): swing de estructura (por defecto) o swing M1 menos exigente
+//      (2 / 2 por defecto, editable), que queda más cerca de la entrada.
 //      · Si no hay swing contrario confirmado → SL mínimo (6,000).
 //      · Si la distancia al swing supera 10,000 → SL mínimo (6,000).
 //      · Si la distancia al swing es menor a 6,000 → se extiende hasta el SL mínimo.
@@ -123,7 +130,8 @@ cutMin   = input.int(0, "Minuto límite", minval = 0, maxval = 59, group = G_ENT
 
 swLeft  = input.int(5, "Velas a la izquierda del swing", minval = 1, group = G_EST, tooltip = "El swing debe ser el máximo (o mínimo) de esta cantidad de velas anteriores.")
 swRight = input.int(5, "Velas a la derecha del swing (retraso)", minval = 1, group = G_EST, tooltip = "El swing debe ser el máximo (o mínimo) de esta cantidad de velas posteriores. También es el retraso, en velas, con que se confirma.")
-bosFree = input.bool(false, "BOS: entrar en la primera vela que supere el nivel con cuerpo", group = G_EST, tooltip = "Desactivado (por defecto): regla actual. El BOS solo entra si es la primera vela que toca el nivel (o la siguiente a un toque exacto). Activado: el BOS entra en la primera vela que cierra con cuerpo más allá del nivel, sin importar los intentos previos fallidos (velas que lo superaron solo con mecha o lo tocaron).")
+wickBreak = input.bool(false, "La mecha también rompe la estructura", group = G_EST, tooltip = "Desactivado (por defecto): un nivel solo se rompe cuando una vela CIERRA más allá de él. Activado: basta con que el precio opere más allá del nivel (mecha incluida) para cambiar la estructura. La entrada BOS sigue exigiendo que sea la primera vela que supera el nivel y que cierre con cuerpo: si la primera solo lo supera con mecha, la estructura cambia pero esa entrada BOS se descarta.")
+bosFree   = input.bool(false, "BOS: entrar en la primera vela que supere el nivel con cuerpo", group = G_EST, tooltip = "Desactivado (por defecto): regla actual. El BOS solo entra si es la primera vela que toca el nivel (o la siguiente a un toque exacto). Activado: el BOS entra en la primera vela que cierra con cuerpo más allá del nivel, sin importar los intentos previos fallidos (velas que lo superaron solo con mecha o lo tocaron). Con 'La mecha también rompe la estructura' activado, también se puede entrar en una vela posterior que cierre con cuerpo más allá de un nivel que ya se rompió con mecha.")
 
 multiTrade = input.bool(false, "Varias operaciones por sesión (una a la vez)", group = G_OPE, tooltip = "Desactivado (por defecto): una única operación por sesión. Activado: se ejecutan todas las oportunidades que se den dentro de la ventana operativa, pero solo con una operación abierta a la vez. Apenas una se cierra (SL, TP o break-even) se permite volver a entrar en una nueva oportunidad.")
 useBOS     = input.bool(true, "Entradas BOS (cambio de estructura)", group = G_OPE, tooltip = "Activado (por defecto): se operan las entradas BOS. Desactivado: no se ejecutan entradas BOS (la estructura se sigue midiendo).")
@@ -137,6 +145,9 @@ useVWAP  = input.bool(false, "Filtro VWAP (línea central)", group = G_FIL, tool
 vwapHour = input.int(18, "Reinicio del VWAP · hora (NY)", minval = 0, maxval = 23, group = G_FIL, tooltip = "Por defecto 18:00 NY, el inicio de la jornada de metales. El VWAP acumula desde ese momento y se reinicia cada día a esa hora.")
 vwapMin  = input.int(0, "Reinicio del VWAP · minuto", minval = 0, maxval = 59, group = G_FIL)
 
+slMode  = input.string("Swing de estructura", "Referencia del SL", options = ["Swing de estructura", "Swing M1 (menos exigente)"], group = G_SLTP, tooltip = "Swing de estructura (por defecto): el SL va en el último swing contrario de la estructura (el de las velas izquierda / derecha de la sección Estructura). Swing M1: el SL va en el último swing contrario menos exigente de abajo (2 / 2 por defecto), que se forma antes y queda más cerca de la entrada.")
+slLeft  = input.int(2, "Swing M1 del SL · velas a la izquierda", minval = 1, group = G_SLTP)
+slRight = input.int(2, "Swing M1 del SL · velas a la derecha", minval = 1, group = G_SLTP)
 minSL      = input.float(6.0, "SL mínimo (distancia de precio)", minval = 0.1, step = 0.5, group = G_SLTP, tooltip = "Se usa cuando no hay swing contrario confirmado, cuando la distancia al swing es mayor al máximo, y se extiende hasta este valor cuando la distancia al swing es menor. Se desactiva con el interruptor 'Sin SL mínimo'.")
 swingSLMax = input.float(10.0, "Distancia máxima al último swing contrario", minval = 0.1, step = 0.5, group = G_SLTP, tooltip = "Si la distancia entre la entrada y el último swing contrario supera este valor, el SL se coloca en el SL mínimo. Se desactiva con el interruptor 'Sin SL máximo'.")
 rr         = input.float(1.0, "Ratio R:R (recompensa por cada 1 de riesgo)", minval = 0.1, step = 0.1, group = G_SLTP, tooltip = "1.0 = 1:1 · 2.0 = 1:2 · 3.0 = 1:3 · 0.7 = 1:0,7. El TP se mide sobre el SL real.")
@@ -193,24 +204,42 @@ plot(useVWAP and not vReset ? vwapVal : na, title = "VWAP", color = #9C27B0, lin
 // ── Estructura de mercado: swings, BIS y BOS (continua, nunca se reinicia) ────────
 float ph = ta.pivothigh(high, swLeft, swRight)
 float pl = ta.pivotlow(low, swLeft, swRight)
+// Swings M1 menos exigentes: solo sirven para ubicar el SL, no forman parte de la estructura.
+float ph2 = ta.pivothigh(high, slLeft, slRight)
+float pl2 = ta.pivotlow(low, slLeft, slRight)
 
-var float shLvl     = na      // último swing high confirmado
-var bool  shLive    = false   // true mientras no haya sido roto con el cierre
-var bool  shTouched = false   // true si alguna vela ya tocó el nivel
+var float shLvl      = na     // último swing high confirmado
+var bool  shLive     = false  // true mientras no haya sido roto
+var bool  shTouched  = false  // true si alguna vela ya tocó el nivel
 var int   shTouchBar = na     // vela que tocó el nivel justo en él, SIN superarlo (da una 2ª oportunidad a la siguiente)
-var float slLvl     = na
-var bool  slLive    = false
-var bool  slTouched = false
+var float slLvl      = na
+var bool  slLive     = false
+var bool  slTouched  = false
 var int   slTouchBar = na
-var int   trend     = 0       // 1 alcista · -1 bajista · 0 sin definir
+var int   trend      = 0      // 1 alcista · -1 bajista · 0 sin definir
+var float sh2Lvl     = na     // último swing M1 (para el SL)
+var float sl2Lvl     = na
+var float bosLvlUp   = na     // nivel roto solo con mecha (estructura ya cambiada) que sigue disponible para un BOS posterior
+var float bosLvlDn   = na
 
-bool brokeUp = shLive and close > shLvl
-bool brokeDn = slLive and close < slLvl
-// BOS válido para entrada: cambio de estructura con cierre de cuerpo más allá del nivel, en la PRIMERA vela
-// que lo toca o en la vela SIGUIENTE a un toque exacto del nivel (sin superarlo, ni con mecha ni con cuerpo).
-// Con el interruptor "bosFree" basta con ser la primera vela que cierra con cuerpo más allá del nivel.
-bool bosUp = brokeUp and trend != 1 and (bosFree or not shTouched or shTouchBar == bar_index - 1)
-bool bosDn = brokeDn and trend != -1 and (bosFree or not slTouched or slTouchBar == bar_index - 1)
+// Un día nuevo no hereda niveles BOS de la jornada anterior.
+if vReset
+    bosLvlUp := na
+    bosLvlDn := na
+
+// Ruptura de un nivel: por CIERRE (base) o, con "La mecha también rompe la estructura", en cuanto el precio opera más allá.
+bool brokeUp = shLive and (wickBreak ? math.round(high / syminfo.mintick) > math.round(shLvl / syminfo.mintick) : close > shLvl)
+bool brokeDn = slLive and (wickBreak ? math.round(low / syminfo.mintick) < math.round(slLvl / syminfo.mintick) : close < slLvl)
+
+// BOS válido para entrada en la vela que rompe el nivel: cambio de estructura, cierre de cuerpo más allá del nivel y
+// PRIMERA vela que lo toca (o la siguiente a un toque exacto). Con "bosFree" no importan los intentos previos.
+bool bosUpFirst = brokeUp and trend != 1 and close > shLvl and (bosFree or not shTouched or shTouchBar == bar_index - 1)
+bool bosDnFirst = brokeDn and trend != -1 and close < slLvl and (bosFree or not slTouched or slTouchBar == bar_index - 1)
+// Con ruptura por mecha + "bosFree": también vale una vela POSTERIOR que cierre con cuerpo más allá de un nivel ya roto con mecha.
+bool bosUpLate = wickBreak and bosFree and not na(bosLvlUp) and trend == 1 and close > bosLvlUp
+bool bosDnLate = wickBreak and bosFree and not na(bosLvlDn) and trend == -1 and close < bosLvlDn
+bool bosUp = bosUpFirst or bosUpLate
+bool bosDn = bosDnFirst or bosDnLate
 
 if shLive and not brokeUp and not shTouched and high >= shLvl
     shTouched  := true
@@ -219,10 +248,26 @@ if slLive and not brokeDn and not slTouched and low <= slLvl
     slTouched  := true
     slTouchBar := math.round(low / syminfo.mintick) == math.round(slLvl / syminfo.mintick) ? bar_index : na
 
-if brokeUp
+// Nivel roto solo con mecha: sigue disponible para un BOS posterior (solo con "wickBreak" y "bosFree").
+if wickBreak and bosFree and brokeUp and trend != 1 and not (close > shLvl)
+    bosLvlUp := shLvl
+if wickBreak and bosFree and brokeDn and trend != -1 and not (close < slLvl)
+    bosLvlDn := slLvl
+// Se consume al entrar o cuando la estructura cambia en contra.
+if bosUpLate or brokeDn
+    bosLvlUp := na
+if bosDnLate or brokeUp
+    bosLvlDn := na
+
+if brokeUp and brokeDn
+    // Una misma vela perforó los dos niveles: la estructura queda en la dirección del cierre.
+    trend  := close >= open ? 1 : -1
+    shLive := false
+    slLive := false
+else if brokeUp
     trend  := 1
     shLive := false
-if brokeDn
+else if brokeDn
     trend  := -1
     slLive := false
 
@@ -236,6 +281,10 @@ if not na(pl)
     slLive     := true
     slTouched  := false
     slTouchBar := na
+if not na(ph2)
+    sh2Lvl := ph2
+if not na(pl2)
+    sl2Lvl := pl2
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────────
 type Trd
@@ -293,7 +342,8 @@ levelOk(int dir, float px) =>
 
 // Último swing contrario confirmado (na si no existe o quedó del lado equivocado de la entrada).
 swingRef(int dir, float entry) =>
-    float sw = dir == 1 ? slLvl : shLvl
+    bool  m1 = slMode == "Swing M1 (menos exigente)"
+    float sw = m1 ? (dir == 1 ? sl2Lvl : sh2Lvl) : (dir == 1 ? slLvl : shLvl)
     not na(sw) and (dir == 1 ? sw < entry : sw > entry) ? sw : na
 
 // Distancia del SL (na si no se puede fijar un SL y por tanto no se opera):
