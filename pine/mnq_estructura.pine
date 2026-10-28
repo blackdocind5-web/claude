@@ -14,11 +14,10 @@
 //  1) QUIEBRE DEL RANGO (fija la dirección de la sesión)
 //    · COMPRA: una vela cierra ≥ máximo del rango + distancia mínima (10,00) y es alcista.
 //    · VENTA : una vela cierra ≤ mínimo del rango − distancia mínima (10,00) y es bajista.
-//    · Mientras la sesión no haya operado, el último quiebre válido (de cualquiera de los dos
-//      lados) fija la dirección: si el primer lado no llega a operar y el precio quiebra el lado
-//      contrario, se busca la entrada en ese lado (también con VWAP / EMA y estructura alineados)
-//      y se retira la orden pendiente del lado anterior. Al producirse la operación, la sesión
-//      termina: una única operación por sesión.
+//    · Mientras no haya una operación en curso o hecha (ver interruptor de varias operaciones),
+//      el último quiebre válido (de cualquiera de los dos lados) fija la dirección: si el primer
+//      lado no llega a operar y el precio quiebra el lado contrario, se busca la entrada en ese
+//      lado (también con VWAP / EMA y estructura alineados) y se retira la orden pendiente.
 //
 //  2) ESTRUCTURA DE MERCADO (continua, nunca se reinicia)
 //    · Swings = pivotes con N velas a la izquierda y M a la derecha (5 / 5 por defecto). Se usan
@@ -40,6 +39,14 @@
 //      allá del nivel, sin importar los intentos previos con mecha o toque.
 //    · Filtros VWAP / EMA (interruptores independientes, desactivados por defecto): una compra
 //      exige que el PRECIO DE ENTRADA esté por encima de la línea y una venta por debajo.
+//
+//  VARIANTES PARA PRUEBAS (todas con el valor por defecto = la operativa base)
+//    · Varias operaciones por sesión (desactivado: una sola por sesión). Activado: se toman
+//      todas las oportunidades de la ventana operativa, pero con UNA sola operación abierta a la
+//      vez; apenas una se cierra (SL, TP o break-even) se permite entrar de nuevo.
+//    · Entradas BOS y entradas BIS (activadas las dos). Si se desactiva una, solo opera la otra.
+//    · Sin SL mínimo (desactivado: rige el SL mínimo editable). Activado, el SL queda siempre en
+//      el último swing contrario, sin ajustarlo; sin swing contrario confirmado no se opera.
 //
 //  SALIDAS
 //    · SL en el último swing contrario confirmado (swing low en compras, swing high en ventas).
@@ -97,11 +104,12 @@ const color C_OFF  = #787B86
 // ── Entradas ───────────────────────────────────────────────────────────────────────
 const string G_ENT  = "1 · Rango y quiebre"
 const string G_EST  = "2 · Estructura de mercado"
-const string G_FIL  = "3 · Filtros de dirección"
-const string G_SLTP = "4 · Stop Loss / Take Profit"
-const string G_CIE  = "5 · Cierre forzado"
-const string G_RSK  = "6 · Riesgo (MNQ)"
-const string G_VIS  = "7 · Visual"
+const string G_OPE  = "3 · Variantes de operativa (pruebas)"
+const string G_FIL  = "4 · Filtros de dirección"
+const string G_SLTP = "5 · Stop Loss / Take Profit"
+const string G_CIE  = "6 · Cierre forzado"
+const string G_RSK  = "7 · Riesgo (MNQ)"
+const string G_VIS  = "8 · Visual"
 
 minBreak = input.float(10.0, "Distancia mínima del quiebre (puntos de precio)", minval = 0.25, step = 0.25, group = G_ENT, tooltip = "Diferencia de precio mínima entre el cierre de la vela que quiebra el rango y el borde del rango. Es la diferencia que mide la herramienta Rango de precios (1 tick de MNQ = 0,25).")
 cutHour  = input.int(11, "Hora límite (NY): no se abren más órdenes", minval = 0, maxval = 23, group = G_ENT, tooltip = "Después de esta hora no se validan quiebres nuevos y se cancela la orden stop que siga pendiente.")
@@ -111,13 +119,18 @@ swLeft  = input.int(5, "Velas a la izquierda del swing", minval = 1, group = G_E
 swRight = input.int(5, "Velas a la derecha del swing (retraso)", minval = 1, group = G_EST, tooltip = "El swing debe ser el máximo (o mínimo) de esta cantidad de velas posteriores. También es el retraso, en velas, con que se confirma.")
 bosFree = input.bool(false, "BOS: entrar en la primera vela que supere el nivel con cuerpo", group = G_EST, tooltip = "Desactivado (por defecto): regla actual. El BOS solo entra si es la primera vela que toca el nivel (o la siguiente a un toque exacto). Activado: el BOS entra en la primera vela que cierra con cuerpo más allá del nivel, sin importar los intentos previos fallidos (velas que lo superaron solo con mecha o lo tocaron).")
 
+multiTrade = input.bool(false, "Varias operaciones por sesión (una a la vez)", group = G_OPE, tooltip = "Desactivado (por defecto): una única operación por sesión. Activado: se ejecutan todas las oportunidades que se den dentro de la ventana operativa, pero solo con una operación abierta a la vez. Apenas una se cierra (SL, TP o break-even) se permite volver a entrar en una nueva oportunidad.")
+useBOS     = input.bool(true, "Entradas BOS (cambio de estructura)", group = G_OPE, tooltip = "Activado (por defecto): se operan las entradas BOS. Desactivado: no se ejecutan entradas BOS (la estructura se sigue midiendo).")
+useBIS     = input.bool(true, "Entradas BIS (continuación)", group = G_OPE, tooltip = "Activado (por defecto): se operan las entradas BIS. Desactivado: no se ejecutan entradas BIS (la estructura se sigue midiendo).")
+noMinSL    = input.bool(false, "Sin SL mínimo", group = G_OPE, tooltip = "Desactivado (por defecto): rige el SL mínimo editable de abajo. Activado: el SL queda siempre en el último swing contrario, aunque esté muy cerca. Si no hay swing contrario confirmado, no se opera. En MNQ no existe SL máximo.")
+
 useEMA   = input.bool(false, "Filtro EMA", group = G_FIL, tooltip = "Activado: solo compras si el precio de entrada está por encima de la EMA y solo ventas si está por debajo. Se comprueba al colocar la orden y mientras esté pendiente.")
 emaLen   = input.int(200, "Periodos de la EMA", minval = 1, group = G_FIL)
 useVWAP  = input.bool(false, "Filtro VWAP (línea central)", group = G_FIL, tooltip = "Activado: solo compras si el precio de entrada está por encima del VWAP y solo ventas si está por debajo. Fuente hlc3 ponderada por volumen.")
 vwapHour = input.int(18, "Reinicio del VWAP · hora (NY)", minval = 0, maxval = 23, group = G_FIL, tooltip = "Por defecto 18:00 NY, el inicio de la sesión Globex. El VWAP acumula desde ese momento y se reinicia cada día a esa hora.")
 vwapMin  = input.int(0, "Reinicio del VWAP · minuto", minval = 0, maxval = 59, group = G_FIL)
 
-minSL    = input.float(12.0, "SL mínimo (puntos de precio)", minval = 0.25, step = 0.25, group = G_SLTP, tooltip = "Se usa cuando no hay swing contrario confirmado, y se extiende hasta este valor cuando el último swing contrario está más cerca. No existe SL máximo.")
+minSL    = input.float(12.0, "SL mínimo (puntos de precio)", minval = 0.25, step = 0.25, group = G_SLTP, tooltip = "Se usa cuando no hay swing contrario confirmado, y se extiende hasta este valor cuando el último swing contrario está más cerca. No existe SL máximo. Se desactiva con el interruptor 'Sin SL mínimo'.")
 rr       = input.float(1.0, "Ratio R:R (recompensa por cada 1 de riesgo)", minval = 0.1, step = 0.1, group = G_SLTP, tooltip = "1.0 = 1:1 · 2.0 = 1:2 · 3.0 = 1:3 · 0.7 = 1:0,7. El TP se mide sobre el SL real.")
 useBE    = input.bool(false, "Activar break-even al alcanzar 1:1", group = G_SLTP, tooltip = "Desactivado por defecto. Activado: cuando el precio toca 1R, el SL se mueve a la entrada desde la vela siguiente. Solo tiene sentido con R:R mayor a 1.")
 beOffset = input.float(0.0, "Desplazamiento del break-even (puntos de precio)", step = 0.25, group = G_SLTP, tooltip = "0 = break-even exacto en el precio de entrada. Un valor positivo lo mueve a favor de la operación.")
@@ -240,12 +253,14 @@ type Sess
     int    endMD
     float  hi      = na
     float  lo      = na
-    int    t0      = na
-    bool   prevIn  = false
-    bool   ready   = false
-    bool   traded  = false
-    int    dirLock = 0
-    bool   hasPend = false
+    int    t0        = na
+    bool   prevIn    = false
+    bool   ready     = false
+    bool   traded    = false
+    int    placedBar = na
+    int    seq       = 0
+    int    dirLock   = 0
+    bool   hasPend   = false
     Trd    pend
     box    bx
 
@@ -268,10 +283,17 @@ swingRef(int dir, float entry) =>
     float sw = dir == 1 ? slLvl : shLvl
     not na(sw) and (dir == 1 ? sw < entry : sw > entry) ? sw : na
 
-// Distancia del SL: hasta el último swing contrario; sin swing, o más cerca que el mínimo → SL mínimo.
+// Distancia del SL (na si no se puede fijar un SL y por tanto no se opera): hasta el último swing
+// contrario; sin swing, o más cerca que el mínimo → SL mínimo. Con "Sin SL mínimo" no se ajusta
+// (y sin swing contrario no hay SL). No existe SL máximo.
 slDistance(float entry, float sw) =>
-    float d = na(sw) ? minSL : math.abs(entry - sw)
-    math.max(d, minSL)
+    float r = na
+    if na(sw)
+        r := noMinSL ? na : minSL
+    else
+        float d = math.abs(entry - sw)
+        r := noMinSL ? d : math.max(d, minSL)
+    r
 
 // Precio de ejecución real de una operación abierta (na si todavía no se ejecutó).
 fillPrice(string eid) =>
@@ -304,19 +326,20 @@ adjustToFill(Trd tr) =>
     float f = fillPrice(tr.id)
     if not na(f) and math.abs(f - tr.entry) >= syminfo.mintick
         float d = slDistance(f, tr.swing)
-        tr.entry  := f
-        tr.sl     := math.round_to_mintick(tr.dir == 1 ? f - d : f + d)
-        float r    = math.abs(f - tr.sl)
-        tr.tp     := math.round_to_mintick(tr.dir == 1 ? f + rr * r : f - rr * r)
-        tr.beLvl  := math.round_to_mintick(tr.dir == 1 ? f + r : f - r)
-        tr.beStop := math.round_to_mintick(tr.dir == 1 ? f + beOffset : f - beOffset)
-        if showMarks and tr.shown
-            line.set_y1(tr.lnEntry, f)
-            line.set_y2(tr.lnEntry, f)
-            line.set_y1(tr.lnSL, tr.sl)
-            line.set_y2(tr.lnSL, tr.sl)
-            line.set_y1(tr.lnTP, tr.tp)
-            line.set_y2(tr.lnTP, tr.tp)
+        if not na(d)
+            tr.entry  := f
+            tr.sl     := math.round_to_mintick(tr.dir == 1 ? f - d : f + d)
+            float r    = math.abs(f - tr.sl)
+            tr.tp     := math.round_to_mintick(tr.dir == 1 ? f + rr * r : f - rr * r)
+            tr.beLvl  := math.round_to_mintick(tr.dir == 1 ? f + r : f - r)
+            tr.beStop := math.round_to_mintick(tr.dir == 1 ? f + beOffset : f - beOffset)
+            if showMarks and tr.shown
+                line.set_y1(tr.lnEntry, f)
+                line.set_y2(tr.lnEntry, f)
+                line.set_y1(tr.lnSL, tr.sl)
+                line.set_y2(tr.lnSL, tr.sl)
+                line.set_y1(tr.lnTP, tr.tp)
+                line.set_y2(tr.lnTP, tr.tp)
     tr
 
 // La orden se ejecutó: las órdenes stop fijan aquí la vela de entrada; las de mercado ya la tienen.
@@ -388,8 +411,8 @@ manageTrades() =>
                         line.set_x2(tr.lnSL, xr)
     true
 
-// ── Plan de la operación: niveles, tamaño y objeto Trd (qty = 0 si no cabe ni un contrato) ──
-buildTrd(Sess s, int dir, float entry, string tid, bool isStop) =>
+// ── Plan de la operación: niveles, tamaño y objeto Trd (qty = 0 si no hay SL válido o no cabe ni un contrato) ──
+buildTrd(int dir, float entry, string tid, bool isStop) =>
     float sw    = swingRef(dir, entry)
     float dist  = slDistance(entry, sw)
     float slP   = math.round_to_mintick(dir == 1 ? entry - dist : entry + dist)
@@ -399,7 +422,7 @@ buildTrd(Sess s, int dir, float entry, string tid, bool isStop) =>
     float beS   = math.round_to_mintick(dir == 1 ? entry + beOffset : entry - beOffset)
 
     float balance = compound ? strategy.initial_capital + strategy.netprofit : strategy.initial_capital
-    float qty     = balance > 0 and rDist > 0 ? math.floor(balance * riskPct / 100.0 / (rDist * syminfo.pointvalue)) : 0.0
+    float qty     = not na(dist) and balance > 0 and rDist > 0 ? math.floor(balance * riskPct / 100.0 / (rDist * syminfo.pointvalue)) : 0.0
 
     Trd.new(id = tid, dir = dir, isStop = isStop, entry = entry, swing = sw, sl = slP, tp = tpP, beLvl = beL, beStop = beS, qty = qty, entryBar = bar_index, fillBar = bar_index)
 
@@ -420,8 +443,8 @@ disarm(Sess s) =>
 
 // ── Coloca (o actualiza) la orden stop en el nivel del último swing ───────────────
 armBIS(Sess s, int dir, float lvl) =>
-    string tid = "BIS-" + str.format_time(s.t0, "yyyyMMdd-HHmm", TZ)
-    Trd tr = buildTrd(s, dir, lvl, tid, true)
+    string tid = "BIS-" + str.format_time(s.t0, "yyyyMMdd-HHmm", TZ) + "-" + str.tostring(s.seq)
+    Trd tr = buildTrd(dir, lvl, tid, true)
     if tr.qty > 0
         if s.hasPend
             dropTrd(s.pend.id)
@@ -463,33 +486,40 @@ processSession(Sess s) =>
         else if not canSig
             s.ready := false
 
-    // ¿Se ejecutó la orden stop pendiente? Entonces la sesión ya operó.
+    // ¿Se ejecutó la orden stop pendiente? Entonces ya hay una operación (y el siguiente BIS usará otro identificador).
     if s.hasPend and s.pend.filled
         s.traded := true
         s.hasPend := false
+        s.seq := s.seq + 1
 
-    // Quiebre válido del rango: fija la dirección. Mientras la sesión no haya operado, un quiebre
+    // Una operación a la vez. Base: una sola por sesión. Con varias operaciones por sesión:
+    // solo se bloquea mientras haya una posición abierta (o una orden a mercado recién enviada).
+    bool blocked = multiTrade ? (strategy.opentrades > 0 or s.placedBar == bar_index) : s.traded
+
+    // Quiebre válido del rango: fija la dirección. Mientras no haya operación (en curso o hecha), un quiebre
     // válido del lado contrario cambia la dirección y retira la orden pendiente del lado anterior.
-    if canSig and s.ready and not s.traded
+    if canSig and s.ready and not blocked
         int nd = tk(close - s.hi) >= tk(minBreak) and close > open ? 1 : tk(s.lo - close) >= tk(minBreak) and close < open ? -1 : 0
         if nd != 0 and nd != s.dirLock
             disarm(s)
             s.dirLock := nd
 
-    if canSig and s.dirLock != 0 and not s.traded
+    if canSig and s.dirLock != 0 and not blocked
         int   dir      = s.dirLock
-        bool  bos      = dir == 1 ? bosUp : bosDn
+        bool  bos      = useBOS and (dir == 1 ? bosUp : bosDn)
         float lvlBIS   = dir == 1 ? shLvl : slLvl
-        bool  bisReady = trend == dir and (dir == 1 ? shLive : slLive) and mdClose < s.endMD
+        bool  bisReady = useBIS and trend == dir and (dir == 1 ? shLive : slLive) and mdClose < s.endMD
         if bos and levelOk(dir, close)
             disarm(s)
-            string tid = "BOS-" + str.format_time(s.t0, "yyyyMMdd-HHmm", TZ)
-            Trd tr = buildTrd(s, dir, close, tid, false)
+            string tid = "BOS-" + str.format_time(s.t0, "yyyyMMdd-HHmm", TZ) + "-" + str.tostring(s.seq)
+            Trd tr = buildTrd(dir, close, tid, false)
             if tr.qty > 0
                 sendOrders(tr)
                 drawEntry(tr)
                 trades.push(tr)
                 s.traded := true
+                s.placedBar := bar_index
+                s.seq := s.seq + 1
         else if bisReady and levelOk(dir, lvlBIS)
             armBIS(s, dir, lvlBIS)
         else
