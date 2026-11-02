@@ -13,7 +13,7 @@ def leer_tv(f):
     for r in filas:
         if not r["Tipo"].startswith("Entrada"): continue
         s = sal[r["Número de operación"]]; p = lambda x: dt.datetime.strptime(x[:16], "%Y-%m-%d %H:%M")
-        yield dict(ent=p(r["Fecha y hora"]), sal=p(s["Fecha y hora"]), q=int(r["Tamaño (cant.)"]), res=s["Señal"],
+        yield dict(ent=p(r["Fecha y hora"]), sal=p(s["Fecha y hora"]), q=float(r["Tamaño (cant.)"]), res=s["Señal"],
                    lado=1 if "largo" in r["Tipo"] else -1, pe=float(r["Precio USD"]), ps=float(s["Precio USD"]),
                    mae=float(r["Desviación adversa USD"]), mfe=float(r["Desviación favorable USD"]), pnl=float(r["PyG netas USD"]))
 
@@ -121,3 +121,15 @@ def ficha(nombre, patas, cuenta="25K", cons=0.4, n=3000):
     return dict(nombre=nombre, cuenta=cuenta, pasa=p, sin_flot=p0, p25=y[2025], p26=y[2026], dias_trade=d, dias=len(D),
                 hab=round(d * 464 / len(D)) if d else None, hab_cad=pa[len(pa) // 2] if pa else None,
                 cadena=f"{len(pa)}/{len(res)}", peor=peor, costo=100 / p * cu["precio"] if p else None)
+
+def kala(archivo="kala/XAU_ATR.csv", obj=1.0, solo_primero=False):
+    """KALA (XAU NY, entradas 'BIS', RR 1:1; puede abrir un segundo trade tras un SL). MGC como Mica."""
+    v = []; n = collections.Counter()
+    for t in leer_tv(os.path.join(AQUI, archivo)):
+        ses = C.sesion(t["ent"]); n[ses] += 1
+        if solo_primero and n[ses] > 1: continue
+        mov = t["lado"] * (t["ps"] - t["pe"]); d = -mov if t["res"] == "SL" else mov / obj
+        Rr = mov / d; sl = t["res"] == "SL"; u1 = X.VAL * d * Rr - X.COM - (X.DESL if sl else 0)
+        v.append(dict(base(t, ses), ent=t["ent"], sal=t["sal"], R=Rr, res=t["res"], n=n[ses], dist=d, mfe=t["mfe"] / (t["q"] * d),
+                      u1=u1, m1=min(X.VAL * d * t["mae"] / (t["q"] * d), u1, 0.0), perd1=X.VAL * d + X.COM + X.DESL, sl_hit=sl, pata="Kala"))
+    return v
