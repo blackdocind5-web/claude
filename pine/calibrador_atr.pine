@@ -1,0 +1,358 @@
+//@version=6
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  Calibrador de SL por ATR · XAUUSD y MNQ · gráfico de 1 minuto
+// ═══════════════════════════════════════════════════════════════════════════════════
+//
+//  PARA QUÉ SIRVE
+//    Te ayuda a elegir el periodo y el multiplicador (k) del SL basado en ATR ANTES de gastar
+//    backtests. Mide, dentro de tu ventana operativa y con los datos cargados en el gráfico:
+//
+//    1) El ATR real: mediana y percentiles (en precio). Con eso sabes qué distancia produce
+//       cada k y desde qué k el ATR supera a tu SL mínimo (por debajo de ese k, manda el mínimo
+//       y el ATR no cambia nada).
+//    2) Qué k reproduce tu SL actual por swing: la distancia de la entrada al último swing
+//       contrario dividida por el ATR. La mediana es el k que "iguala" el SL típico del swing;
+//       el percentil 75 es un buen tope para el modo híbrido (recorta solo el 25 % de swings
+//       más lejanos). La distancia se mide desde el cierre de cada vela de la ventana (aproxima una
+//       entrada a mercado; en las entradas BIS la entrada es el nivel del swing, así que allí la
+//       distancia real saldrá algo distinta).
+//    3) Cómo se comporta cada k con operaciones virtuales: entradas a mercado cada N velas
+//       dentro de la ventana, en compra y en venta, con SL = k × ATR y TP = RR × SL. Muestra el
+//       SL medio, cuánto pesa el costo respecto del SL, el % que se resuelve (SL o TP) antes del
+//       cierre forzado y el % de paradas rápidas (SL tocado en pocas velas = ruido).
+//
+//  LO QUE NO HACE (importante)
+//    · Las entradas virtuales son AL AZAR: no tienen ventaja. Por eso la "esperanza" sale
+//      cercana a menos el costo y NO es la rentabilidad de tu estrategia. Sirve para comparar
+//      los k entre sí en costo y resolución, no para predecir ganancias.
+//    · El k que mejor rinde con TUS entradas solo se ve en el backtest de la estrategia. Usa
+//      este indicador para acotar el rango de k a probar (típicamente 3 o 4 valores) y luego
+//      haz el barrido allí, eligiendo la zona estable y no el pico.
+//    · La muestra es la que carga el gráfico en M1 (algunas semanas): la tabla indica cuántas
+//      sesiones y operaciones virtuales hay. Con pocas, trata los porcentajes como orientativos.
+//
+//  CONVENCIONES (iguales a las estrategias)
+//    · Hora de Nueva York. Ventana de entradas: XAUUSD 09:30–11:00 · MNQ 09:45–11:00.
+//    · Entrada virtual al cierre de la vela. SL primero si una misma vela toca SL y TP.
+//    · Las operaciones sin resolver se cierran al cierre forzado (16:00 NY por defecto).
+//    · El ATR es el de TradingView (ta.atr, media de Wilder) con el periodo elegido.
+// ═══════════════════════════════════════════════════════════════════════════════════
+indicator(title = "Calibrador de SL por ATR · XAUUSD / MNQ",
+          shorttitle = "Calibrador ATR",
+          overlay = false)
+
+const string TZ         = "America/New_York"
+const int    NK         = 6                       // cantidad de valores de k a comparar
+const int    MAX_AGE_MS = 20 * 3600 * 1000        // red de seguridad: una operación virtual no vive más de 20 h
+
+// ── Entradas ───────────────────────────────────────────────────────────────────────
+const string G_ACT = "1 · Activo y ventana"
+const string G_ATR = "2 · ATR y valores de k"
+const string G_SIM = "3 · Operaciones virtuales"
+const string G_SW  = "4 · Swings de referencia"
+const string G_CRI = "5 · Criterio del k sugerido"
+
+preset  = input.string("XAUUSD", "Activo (preset)", options = ["XAUUSD", "MNQ"], group = G_ACT, tooltip = "Elige el activo que tienes en el gráfico. Cada preset usa su ventana, su SL mínimo y su costo (editables abajo). Pon el indicador en un gráfico de 1 minuto del mismo activo.")
+xauWin  = input.session("0930-1100", "XAUUSD · ventana de entradas (hora NY)", group = G_ACT, tooltip = "Misma ventana operativa de la estrategia: desde la apertura de NY hasta la hora límite. No puede cruzar la medianoche.")
+xauMin  = input.float(6.0, "XAUUSD · SL mínimo (distancia de precio)", minval = 0.0, step = 0.5, group = G_ACT, tooltip = "Igual al SL mínimo de la estrategia. Se usa para ver cuántas veces el ATR queda por debajo y el mínimo manda.")
+xauMax  = input.float(10.0, "XAUUSD · distancia máxima al swing", minval = 0.0, step = 0.5, group = G_ACT, tooltip = "Igual a 'Distancia máxima al último swing contrario' de la estrategia. Solo se usa para contar qué % de los swings quedaría por encima. 0 = no contar.")
+xauCost = input.float(0.08, "XAUUSD · costo ida y vuelta (precio por onza)", minval = 0.0, step = 0.01, group = G_ACT, tooltip = "Comisión por lado de la estrategia (0,04) × 2 lados = 0,08 por onza, en las mismas unidades que el precio.")
+mnqWin  = input.session("0945-1100", "MNQ · ventana de entradas (hora NY)", group = G_ACT, tooltip = "Desde el final del rango de 15 minutos hasta la hora límite.")
+mnqMin  = input.float(12.0, "MNQ · SL mínimo (puntos)", minval = 0.0, step = 0.25, group = G_ACT, tooltip = "Igual al SL mínimo de la estrategia.")
+mnqCost = input.float(0.0, "MNQ · costo ida y vuelta (puntos)", minval = 0.0, step = 0.05, group = G_ACT, tooltip = "La estrategia MNQ no modela costos (0). Para ver cómo pesarían, prueba por ejemplo 0,75 puntos (≈ 1,50 USD por contrato ida y vuelta, solo como referencia).")
+
+atrLen = input.int(14, "Periodo del ATR", minval = 1, group = G_ATR, tooltip = "14 es el estándar. En M1 son los últimos 14 minutos. Más corto reacciona más rápido a la apertura; más largo suaviza.")
+k1 = input.float(1.0, "k · valor 1", minval = 0.1, step = 0.1, group = G_ATR)
+k2 = input.float(1.5, "k · valor 2", minval = 0.1, step = 0.1, group = G_ATR)
+k3 = input.float(2.0, "k · valor 3", minval = 0.1, step = 0.1, group = G_ATR)
+k4 = input.float(2.5, "k · valor 4", minval = 0.1, step = 0.1, group = G_ATR)
+k5 = input.float(3.0, "k · valor 5", minval = 0.1, step = 0.1, group = G_ATR)
+k6 = input.float(4.0, "k · valor 6", minval = 0.1, step = 0.1, group = G_ATR)
+
+rr          = input.float(1.0, "Ratio R:R de las operaciones virtuales", minval = 0.1, step = 0.1, group = G_SIM, tooltip = "Igual al R:R de la estrategia (1.0 = 1:1). El TP virtual se mide sobre el SL.")
+sampleEvery = input.int(5, "Una entrada virtual cada N velas", minval = 1, group = G_SIM, tooltip = "Dentro de la ventana se abre una operación virtual de compra y otra de venta, para cada k, cada N velas. Menos N = más muestra (pero muestras más correlacionadas) y más trabajo para el gráfico.")
+clampMin    = input.bool(true, "Aplicar el SL mínimo", group = G_SIM, tooltip = "Activado (por defecto, como la estrategia): si k × ATR queda por debajo del SL mínimo, se ensancha hasta el mínimo. Desactivado: se usa k × ATR tal cual (equivale a 'Sin SL mínimo').")
+fastBars    = input.int(5, "Parada rápida: SL tocado en N velas o menos", minval = 1, group = G_SIM, tooltip = "Una parada rápida suele ser ruido: el SL quedó dentro del vaivén normal del precio.")
+closeHour   = input.int(16, "Cierre forzado · hora (NY)", minval = 0, maxval = 23, group = G_SIM)
+closeMin    = input.int(0, "Cierre forzado · minuto", minval = 0, maxval = 59, group = G_SIM)
+
+swL  = input.int(5, "Swing de estructura · velas a la izquierda", minval = 1, group = G_SW, tooltip = "Mismos valores que la sección Estructura de la estrategia.")
+swR  = input.int(5, "Swing de estructura · velas a la derecha", minval = 1, group = G_SW)
+m1L  = input.int(2, "Swing M1 · velas a la izquierda", minval = 1, group = G_SW, tooltip = "Mismos valores que 'Swing M1 del SL' de la estrategia.")
+m1R  = input.int(2, "Swing M1 · velas a la derecha", minval = 1, group = G_SW)
+
+maxCostPct = input.float(5.0, "Costo máximo aceptable (% del SL)", minval = 0.0, step = 0.5, group = G_CRI, tooltip = "Un k se considera aceptable si el costo ida y vuelta pesa como máximo este % del SL (por ejemplo, 5 % = pierdes 0,05 R solo en costos en cada operación).")
+minResPct  = input.float(80.0, "Resolución mínima (% de operaciones con SL o TP)", minval = 0.0, maxval = 100.0, step = 5.0, group = G_CRI, tooltip = "Un k se considera aceptable si al menos este % de las operaciones termina en SL o TP antes del cierre forzado. Si la mayoría muere por horario, el TP queda demasiado lejos.")
+kRef       = input.float(2.0, "k de referencia para dibujar en el gráfico", minval = 0.1, step = 0.1, group = G_CRI, tooltip = "Solo para la línea naranja del gráfico (k × ATR) junto al ATR y al SL mínimo.")
+
+if timeframe.in_seconds() != 60
+    runtime.error("El calibrador está pensado para el gráfico de 1 minuto (las estrategias operan en M1).")
+
+// ── Parámetros según el activo ─────────────────────────────────────────────────────
+bool  isX   = preset == "XAUUSD"
+float minSL = isX ? xauMin : mnqMin
+float maxSw = isX ? xauMax : 0.0
+float cost  = isX ? xauCost : mnqCost
+
+bool inX   = not na(time(timeframe.period, xauWin, TZ))
+bool inM   = not na(time(timeframe.period, mnqWin, TZ))
+bool inWin = isX ? inX : inM
+
+int mdOpen  = hour(time, TZ) * 60 + minute(time, TZ)   // minuto del día en que ABRE la vela
+int mdClose = mdOpen + 1                               // minuto del día en que CIERRA la vela
+int forceMD = closeHour * 60 + closeMin
+
+// ── ATR y swings (se calculan en todas las velas) ──────────────────────────────────
+float atr = ta.atr(atrLen)
+float ph  = ta.pivothigh(high, swL, swR)
+float pl  = ta.pivotlow(low, swL, swR)
+float ph2 = ta.pivothigh(high, m1L, m1R)
+float pl2 = ta.pivotlow(low, m1L, m1R)
+
+var float shS  = na    // último swing high / low de estructura confirmado
+var float slS  = na
+var float sh2S = na    // último swing high / low M1 confirmado
+var float sl2S = na
+if not na(ph)
+    shS := ph
+if not na(pl)
+    slS := pl
+if not na(ph2)
+    sh2S := ph2
+if not na(pl2)
+    sl2S := pl2
+
+// ── Operaciones virtuales ──────────────────────────────────────────────────────────
+type VT
+    int     ki          // índice del k
+    int     dir         // 1 compra · -1 venta
+    float   entry
+    float   risk        // distancia real del SL (ya con el mínimo aplicado)
+    float   sl
+    float   tp
+    bool    clamped     // true si el mínimo ensanchó el SL
+    int     bar0
+    int     t0
+
+var array<float> kArr = array.from(k1, k2, k3, k4, k5, k6)
+var array<VT>    vts  = array.new<VT>()
+
+var array<int>   aWin   = array.new<int>(NK, 0)      // TP tocado
+var array<int>   aLoss  = array.new<int>(NK, 0)      // SL tocado
+var array<int>   aTime  = array.new<int>(NK, 0)      // cerradas por horario sin tocar SL ni TP
+var array<int>   aFast  = array.new<int>(NK, 0)      // SL tocado en ≤ fastBars velas
+var array<int>   aClamp = array.new<int>(NK, 0)      // SL ensanchado por el mínimo
+var array<float> aSumR  = array.new<float>(NK, 0.0)  // suma de R netos (con costo)
+var array<float> aSumSL = array.new<float>(NK, 0.0)  // suma de distancias de SL
+var array<float> aSumCo = array.new<float>(NK, 0.0)  // suma de costo / SL
+
+// Muestras dentro de la ventana (ATR y distancia al último swing contrario, en precio y en ATR)
+var array<float> atrW = array.new<float>()
+var array<float> dStr = array.new<float>()
+var array<float> rStr = array.new<float>()
+var array<float> dM1  = array.new<float>()
+var array<float> rM1  = array.new<float>()
+var int nBarsW   = 0
+var int nSess    = 0
+var int nInvStr  = 0   // muestras sin swing válido (no existe o quedó del lado equivocado)
+var int nInvM1   = 0
+var int nOverMax = 0   // distancias al swing de estructura mayores al máximo del activo
+var int winCnt   = 0
+
+bool winStart = inWin and not inWin[1]
+
+if barstate.isconfirmed
+    // 1) Resolver las operaciones virtuales abiertas (siempre antes de abrir las nuevas)
+    if vts.size() > 0
+        for i = vts.size() - 1 to 0
+            VT v = vts.get(i)
+            bool slHit = v.dir == 1 ? low <= v.sl : high >= v.sl
+            bool tpHit = v.dir == 1 ? high >= v.tp : low <= v.tp
+            bool timeUp = (mdClose >= forceMD and mdClose <= forceMD + 60) or (time - v.t0 > MAX_AGE_MS)
+            if slHit or tpHit or timeUp
+                int k = v.ki
+                float gross = slHit ? -1.0 : tpHit ? rr : (close - v.entry) * v.dir / v.risk
+                float costR = cost / v.risk
+                aSumR.set(k, aSumR.get(k) + gross - costR)
+                aSumSL.set(k, aSumSL.get(k) + v.risk)
+                aSumCo.set(k, aSumCo.get(k) + costR)
+                if v.clamped
+                    aClamp.set(k, aClamp.get(k) + 1)
+                if slHit
+                    aLoss.set(k, aLoss.get(k) + 1)
+                    if bar_index - v.bar0 <= fastBars
+                        aFast.set(k, aFast.get(k) + 1)
+                else if tpHit
+                    aWin.set(k, aWin.get(k) + 1)
+                else
+                    aTime.set(k, aTime.get(k) + 1)
+                vts.remove(i)
+
+    // 2) Contador de la ventana
+    winCnt := winStart ? 0 : inWin ? winCnt + 1 : 0
+    if winStart
+        nSess += 1
+
+    // 3) Muestras de ATR y de distancia al último swing contrario (compra y venta)
+    if inWin and not na(atr) and atr > 0
+        atrW.push(atr)
+        nBarsW += 1
+        for d = 0 to 1
+            int   dir = d == 0 ? 1 : -1
+            float s1  = dir == 1 ? slS : shS
+            float s2  = dir == 1 ? sl2S : sh2S
+            if not na(s1) and (dir == 1 ? s1 < close : s1 > close)
+                float dd = math.abs(close - s1)
+                dStr.push(dd)
+                rStr.push(dd / atr)
+                if maxSw > 0 and dd > maxSw
+                    nOverMax += 1
+            else
+                nInvStr += 1
+            if not na(s2) and (dir == 1 ? s2 < close : s2 > close)
+                float dd2 = math.abs(close - s2)
+                dM1.push(dd2)
+                rM1.push(dd2 / atr)
+            else
+                nInvM1 += 1
+
+    // 4) Operaciones virtuales nuevas: compra y venta, para cada k
+    if inWin and not na(atr) and atr > 0 and winCnt % sampleEvery == 0
+        for ki = 0 to NK - 1
+            float raw  = kArr.get(ki) * atr
+            bool  clp  = clampMin and raw < minSL
+            float risk = clp ? minSL : raw
+            for d = 0 to 1
+                int dir = d == 0 ? 1 : -1
+                vts.push(VT.new(ki = ki, dir = dir, entry = close, risk = risk, sl = close - dir * risk, tp = close + dir * rr * risk, clamped = clp, bar0 = bar_index, t0 = time))
+
+// ── Gráfico: ATR, k × ATR y SL mínimo ──────────────────────────────────────────────
+bgcolor(inWin ? color.new(color.blue, 90) : na, title = "Ventana de entradas")
+plot(atr, title = "ATR", color = #2962FF, linewidth = 2)
+plot(atr * kRef, title = "k de referencia × ATR", color = #FF9800, linewidth = 1)
+plot(minSL, title = "SL mínimo", color = #F23645, linewidth = 1, style = plot.style_stepline)
+
+// ── Utilidades de formato (coma decimal) ───────────────────────────────────────────
+fmtN(float x, int dec) =>
+    float p = math.pow(10, dec)
+    na(x) ? "—" : str.replace_all(str.tostring(math.round(x * p) / p), ".", ",")
+
+fmtP(float f) =>
+    na(f) ? "—" : fmtN(f * 100, 1) + " %"
+
+pctl(array<float> a, float p) =>
+    a.size() > 0 ? array.percentile_nearest_rank(a, p) : na
+
+med(array<float> a) =>
+    a.size() > 0 ? array.median(a) : na
+
+cell(table t, int c, int r, string txt, color bg, color tc) =>
+    table.cell(t, c, r, txt, text_color = tc, bgcolor = bg, text_size = size.small)
+
+// ── Tablas ─────────────────────────────────────────────────────────────────────────
+color C_BG   = #2A2E39
+color C_HEAD = #363A45
+color C_OK   = #1B5E3B
+color C_TXT  = color.white
+color C_DIM  = #B2B5BE
+
+var table tb1 = table.new(position.top_right, 9, 9, bgcolor = C_BG, border_width = 1)
+var table tb2 = table.new(position.bottom_right, 5, 12, bgcolor = C_BG, border_width = 1)
+var bool  merged = false
+
+if barstate.islast
+    // Primer k que cumple costo y resolución (en el orden en que los escribiste)
+    int kSug = -1
+    for ki = 0 to NK - 1
+        int nn = aWin.get(ki) + aLoss.get(ki) + aTime.get(ki)
+        if nn > 0 and kSug < 0
+            bool okCost = aSumCo.get(ki) / nn * 100 <= maxCostPct
+            bool okRes  = (aWin.get(ki) + aLoss.get(ki)) * 100.0 / nn >= minResPct
+            if okCost and okRes
+                kSug := ki
+
+    // Tabla 1 · resultados por k
+    cell(tb1, 0, 0, "Operaciones virtuales por k · " + preset + " · gráfico: " + syminfo.ticker + " · ATR(" + str.tostring(atrLen) + ") · R:R 1:" + fmtN(rr, 1), C_HEAD, C_TXT)
+    array<string> heads = array.from("k", "SL medio", "Ensanchado por mínimo", "Costo / SL", "Gana", "Pierde", "Sin resolver", "Parada rápida", "Esperanza (R)")
+    for c = 0 to 8
+        cell(tb1, c, 1, heads.get(c), C_HEAD, C_TXT)
+    for ki = 0 to NK - 1
+        int   n   = aWin.get(ki) + aLoss.get(ki) + aTime.get(ki)
+        color bg  = ki == kSug ? C_OK : C_BG
+        float fn  = n > 0 ? n * 1.0 : na
+        cell(tb1, 0, ki + 2, fmtN(kArr.get(ki), 1) + (ki == kSug ? "  ◄" : ""), bg, C_TXT)
+        cell(tb1, 1, ki + 2, fmtN(aSumSL.get(ki) / fn, 3), bg, C_TXT)
+        cell(tb1, 2, ki + 2, fmtP(aClamp.get(ki) / fn), bg, C_TXT)
+        cell(tb1, 3, ki + 2, fmtP(aSumCo.get(ki) / fn), bg, C_TXT)
+        cell(tb1, 4, ki + 2, fmtP(aWin.get(ki) / fn), bg, C_TXT)
+        cell(tb1, 5, ki + 2, fmtP(aLoss.get(ki) / fn), bg, C_TXT)
+        cell(tb1, 6, ki + 2, fmtP(aTime.get(ki) / fn), bg, C_TXT)
+        cell(tb1, 7, ki + 2, fmtP(aFast.get(ki) / fn), bg, C_TXT)
+        cell(tb1, 8, ki + 2, fmtN(aSumR.get(ki) / fn, 3), bg, C_TXT)
+    int nTot = aWin.get(0) + aLoss.get(0) + aTime.get(0)
+    string note1 = kSug >= 0 ? "◄ = primer k con costo ≤ " + fmtN(maxCostPct, 1) + " % del SL y ≥ " + fmtN(minResPct, 0) + " % resueltas" : "Ningún k cumple el costo y la resolución elegidos"
+    cell(tb1, 0, 8, note1 + "\nEntradas AL AZAR (sin ventaja): la esperanza ≈ −costo/SL.\nCompara los k entre sí; no es la rentabilidad. Muestra: " + str.tostring(nTot) + " operaciones por k.", C_BG, C_DIM)
+
+    // Tabla 2 · ATR y distancia a los swings
+    float atrMed = med(atrW)
+    cell(tb2, 0, 0, "Referencias en la ventana · " + str.tostring(nSess) + " sesiones · " + str.tostring(nBarsW) + " velas", C_HEAD, C_TXT)
+    array<string> h2 = array.from("", "Mediana", "P25", "P75", "P90")
+    for c = 0 to 4
+        cell(tb2, c, 1, h2.get(c), C_HEAD, C_TXT)
+
+    cell(tb2, 0, 2, "ATR (precio)", C_BG, C_TXT)
+    cell(tb2, 1, 2, fmtN(med(atrW), 3), C_BG, C_TXT)
+    cell(tb2, 2, 2, fmtN(pctl(atrW, 25), 3), C_BG, C_TXT)
+    cell(tb2, 3, 2, fmtN(pctl(atrW, 75), 3), C_BG, C_TXT)
+    cell(tb2, 4, 2, fmtN(pctl(atrW, 90), 3), C_BG, C_TXT)
+
+    cell(tb2, 0, 3, "Dist. al swing de estructura (precio)", C_BG, C_TXT)
+    cell(tb2, 1, 3, fmtN(med(dStr), 3), C_BG, C_TXT)
+    cell(tb2, 2, 3, fmtN(pctl(dStr, 25), 3), C_BG, C_TXT)
+    cell(tb2, 3, 3, fmtN(pctl(dStr, 75), 3), C_BG, C_TXT)
+    cell(tb2, 4, 3, fmtN(pctl(dStr, 90), 3), C_BG, C_TXT)
+
+    cell(tb2, 0, 4, "Dist. al swing M1 (precio)", C_BG, C_TXT)
+    cell(tb2, 1, 4, fmtN(med(dM1), 3), C_BG, C_TXT)
+    cell(tb2, 2, 4, fmtN(pctl(dM1, 25), 3), C_BG, C_TXT)
+    cell(tb2, 3, 4, fmtN(pctl(dM1, 75), 3), C_BG, C_TXT)
+    cell(tb2, 4, 4, fmtN(pctl(dM1, 90), 3), C_BG, C_TXT)
+
+    cell(tb2, 0, 5, "k equivalente · swing de estructura", C_BG, C_TXT)
+    cell(tb2, 1, 5, fmtN(med(rStr), 2), C_OK, C_TXT)
+    cell(tb2, 2, 5, fmtN(pctl(rStr, 25), 2), C_BG, C_TXT)
+    cell(tb2, 3, 5, fmtN(pctl(rStr, 75), 2), C_OK, C_TXT)
+    cell(tb2, 4, 5, fmtN(pctl(rStr, 90), 2), C_BG, C_TXT)
+
+    cell(tb2, 0, 6, "k equivalente · swing M1", C_BG, C_TXT)
+    cell(tb2, 1, 6, fmtN(med(rM1), 2), C_OK, C_TXT)
+    cell(tb2, 2, 6, fmtN(pctl(rM1, 25), 2), C_BG, C_TXT)
+    cell(tb2, 3, 6, fmtN(pctl(rM1, 75), 2), C_OK, C_TXT)
+    cell(tb2, 4, 6, fmtN(pctl(rM1, 90), 2), C_BG, C_TXT)
+
+    float nS = nBarsW > 0 ? nBarsW * 2.0 : na
+    cell(tb2, 0, 7, "Sin swing válido: estructura | M1", C_BG, C_TXT)
+    cell(tb2, 1, 7, fmtP(nInvStr / nS), C_BG, C_TXT)
+    cell(tb2, 2, 7, fmtP(nInvM1 / nS), C_BG, C_TXT)
+    cell(tb2, 3, 7, "", C_BG, C_TXT)
+    cell(tb2, 4, 7, "", C_BG, C_TXT)
+
+    cell(tb2, 0, 8, maxSw > 0 ? "Swing de estructura más lejos que " + fmtN(maxSw, 1) : "Distancia máxima al swing: no aplica", C_BG, C_TXT)
+    cell(tb2, 1, 8, maxSw > 0 and dStr.size() > 0 ? fmtP(nOverMax / (dStr.size() * 1.0)) : "—", C_BG, C_TXT)
+    cell(tb2, 2, 8, "", C_BG, C_TXT)
+    cell(tb2, 3, 8, "", C_BG, C_TXT)
+    cell(tb2, 4, 8, "", C_BG, C_TXT)
+
+    float kFloor = not na(atrMed) and atrMed > 0 ? minSL / atrMed : na
+    cell(tb2, 0, 9, "Lectura 1 · el ATR solo cambia el SL si k × ATR supera el SL mínimo (" + fmtN(minSL, 2) + ")\nes decir, con k > " + fmtN(kFloor, 1) + " (usando el ATR mediano). Por debajo manda el mínimo.", C_BG, C_DIM)
+    cell(tb2, 0, 10, "Lectura 2 · k que iguala el SL típico del swing (mediana):\n" + fmtN(med(rStr), 1) + " con swing de estructura · " + fmtN(med(rM1), 1) + " con swing M1.", C_BG, C_DIM)
+    cell(tb2, 0, 11, "Lectura 3 · tope del modo híbrido (recorta el 25 % de swings más lejanos):\nk ≈ " + fmtN(pctl(rStr, 75), 1) + " con swing de estructura · " + fmtN(pctl(rM1, 75), 1) + " con swing M1.", C_BG, C_DIM)
+
+    if not merged
+        table.merge_cells(tb1, 0, 0, 8, 0)
+        table.merge_cells(tb1, 0, 8, 8, 8)
+        table.merge_cells(tb2, 0, 0, 4, 0)
+        table.merge_cells(tb2, 0, 9, 4, 9)
+        table.merge_cells(tb2, 0, 10, 4, 10)
+        table.merge_cells(tb2, 0, 11, 4, 11)
+        merged := true

@@ -59,6 +59,12 @@
 //      (2 / 2 por defecto, editable), que queda más cerca de la entrada.
 //      Si no hay swing contrario confirmado, o está más cerca que el SL mínimo, el SL se coloca
 //      a la distancia del SL mínimo (12,00, editable). No existe SL máximo.
+//    · Referencia ATR (selector): el SL va a k × ATR de la entrada (2,0 × ATR de 14 velas por
+//      defecto, editables), sin depender de ningún swing. Se extiende hasta el SL mínimo (salvo con
+//      "Sin SL mínimo").
+//    · Híbrido (interruptor, desactivado): con referencia de swing, la distancia al swing se limita
+//      a k × ATR (rige la menor de las dos) y, si no hay swing contrario, el SL es k × ATR; en ese
+//      caso "Sin SL mínimo" ya no impide operar. Para elegir k usa el indicador "Calibrador ATR".
 //    · TP = RR × distancia real del SL (RR por defecto 1:1).
 //    · Break-even opcional (desactivado): al tocar 1R real el SL pasa a la entrada.
 //    · Cierre forzado a mercado de cualquier posición abierta a las 16:00 NY (editable).
@@ -138,10 +144,13 @@ useVWAP  = input.bool(false, "Filtro VWAP (línea central)", group = G_FIL, tool
 vwapHour = input.int(18, "Reinicio del VWAP · hora (NY)", minval = 0, maxval = 23, group = G_FIL, tooltip = "Por defecto 18:00 NY, el inicio de la sesión Globex. El VWAP acumula desde ese momento y se reinicia cada día a esa hora.")
 vwapMin  = input.int(0, "Reinicio del VWAP · minuto", minval = 0, maxval = 59, group = G_FIL)
 
-slMode  = input.string("Swing de estructura", "Referencia del SL", options = ["Swing de estructura", "Swing M1 (menos exigente)"], group = G_SLTP, tooltip = "Swing de estructura (por defecto): el SL va en el último swing contrario de la estructura (el de las velas izquierda / derecha de la sección Estructura). Swing M1: el SL va en el último swing contrario menos exigente de abajo (2 / 2 por defecto), que se forma antes y queda más cerca de la entrada.")
+slMode  = input.string("Swing de estructura", "Referencia del SL", options = ["Swing de estructura", "Swing M1 (menos exigente)", "ATR (volatilidad)"], group = G_SLTP, tooltip = "Swing de estructura (por defecto): el SL va en el último swing contrario de la estructura (el de las velas izquierda / derecha de la sección Estructura). Swing M1: el SL va en el último swing contrario menos exigente de abajo (2 / 2 por defecto), que se forma antes y queda más cerca de la entrada. ATR: el SL va a k × ATR de la entrada, sin depender de ningún swing (periodo y k abajo).")
 slLeft  = input.int(2, "Swing M1 del SL · velas a la izquierda", minval = 1, group = G_SLTP)
 slRight = input.int(2, "Swing M1 del SL · velas a la derecha", minval = 1, group = G_SLTP)
-minSL    = input.float(12.0, "SL mínimo (puntos de precio)", minval = 0.25, step = 0.25, group = G_SLTP, tooltip = "Se usa cuando no hay swing contrario confirmado, y se extiende hasta este valor cuando el último swing contrario está más cerca. No existe SL máximo. Se desactiva con el interruptor 'Sin SL mínimo'.")
+atrLen  = input.int(14, "ATR · periodo", minval = 1, group = G_SLTP, tooltip = "Velas que promedia el ATR (rango verdadero medio, media de Wilder). 14 = los últimos 14 minutos. Se usa con la referencia ATR y con el híbrido.")
+atrK    = input.float(2.0, "ATR · multiplicador (k)", minval = 0.1, step = 0.1, group = G_SLTP, tooltip = "Distancia del SL = k × ATR, en puntos. Para elegir k usa el indicador 'Calibrador ATR' y luego un barrido de k en el Strategy Tester (elige una zona estable, no el pico). Esta fase del MNQ no modela costos: los SL cortos salen favorecidos de forma irreal.")
+atrCap  = input.bool(false, "Híbrido: limitar el swing a k × ATR", group = G_SLTP, tooltip = "Desactivado (por defecto). Activado: con referencia de swing (estructura o M1), si el swing queda más lejos que k × ATR el SL va a k × ATR; y si no hay swing contrario, el SL es k × ATR (en ese caso 'Sin SL mínimo' ya no impide operar). No tiene efecto con la referencia ATR.")
+minSL    = input.float(12.0, "SL mínimo (puntos de precio)", minval = 0.25, step = 0.25, group = G_SLTP, tooltip = "Se usa cuando no hay swing contrario confirmado, y se extiende hasta este valor cuando el último swing contrario está más cerca. También se aplica al SL por ATR y al híbrido. No existe SL máximo. Se desactiva con el interruptor 'Sin SL mínimo'.")
 rr       = input.float(1.0, "Ratio R:R (recompensa por cada 1 de riesgo)", minval = 0.1, step = 0.1, group = G_SLTP, tooltip = "1.0 = 1:1 · 2.0 = 1:2 · 3.0 = 1:3 · 0.7 = 1:0,7. El TP se mide sobre el SL real.")
 useBE    = input.bool(false, "Activar break-even al alcanzar 1:1", group = G_SLTP, tooltip = "Desactivado por defecto. Activado: cuando el precio toca 1R, el SL se mueve a la entrada desde la vela siguiente. Solo tiene sentido con R:R mayor a 1.")
 beOffset = input.float(0.0, "Desplazamiento del break-even (puntos de precio)", step = 0.25, group = G_SLTP, tooltip = "0 = break-even exacto en el precio de entrada. Un valor positivo lo mueve a favor de la operación.")
@@ -172,6 +181,7 @@ bool inForce = mdClose >= forceMD and mdClose <= forceMD + 60
 // ── Filtros de dirección: EMA y VWAP (línea central) ──────────────────────────────
 // Se calculan en todas las velas (aunque el filtro esté apagado) para que no pierdan continuidad.
 float emaVal = ta.ema(close, emaLen)
+float atrVal = ta.atr(atrLen)   // para el SL por ATR (también en todas las velas)
 
 // VWAP con reinicio diario a la hora indicada (hora NY). Fuente hlc3 ponderada por volumen.
 int  vwapMD = vwapHour * 60 + vwapMin
@@ -280,6 +290,7 @@ type Trd
     bool   isStop
     float  entry
     float  swing
+    float  atr
     float  sl
     float  tp
     float  beLvl
@@ -333,12 +344,21 @@ swingRef(int dir, float entry) =>
     float sw = m1 ? (dir == 1 ? sl2Lvl : sh2Lvl) : (dir == 1 ? slLvl : shLvl)
     not na(sw) and (dir == 1 ? sw < entry : sw > entry) ? sw : na
 
-// Distancia del SL (na si no se puede fijar un SL y por tanto no se opera): hasta el último swing
-// contrario; sin swing, o más cerca que el mínimo → SL mínimo. Con "Sin SL mínimo" no se ajusta
-// (y sin swing contrario no hay SL). No existe SL máximo.
-slDistance(float entry, float sw) =>
-    float r = na
-    if na(sw)
+// Distancia del SL (na si no se puede fijar un SL y por tanto no se opera):
+//  · referencia ATR → k × ATR;
+//  · híbrido → la menor entre la distancia al swing y k × ATR (sin swing contrario, k × ATR);
+//  · swing sin híbrido → hasta el último swing contrario; sin swing → SL mínimo (con "Sin SL mínimo" no hay SL).
+// En todos los casos la distancia menor al mínimo se extiende hasta el SL mínimo (con "Sin SL mínimo"
+// no se ajusta). No existe SL máximo.
+slDistance(float entry, float sw, float atrV) =>
+    float r  = na
+    float ad = na(atrV) ? na : atrK * atrV
+    if slMode == "ATR (volatilidad)"
+        r := na(ad) ? na : noMinSL ? ad : math.max(ad, minSL)
+    else if atrCap and not na(ad)
+        float dh = na(sw) ? ad : math.min(math.abs(entry - sw), ad)
+        r := noMinSL ? dh : math.max(dh, minSL)
+    else if na(sw)
         r := noMinSL ? na : minSL
     else
         float d = math.abs(entry - sw)
@@ -375,7 +395,7 @@ drawEntry(Trd tr) =>
 adjustToFill(Trd tr) =>
     float f = fillPrice(tr.id)
     if not na(f) and math.abs(f - tr.entry) >= syminfo.mintick
-        float d = slDistance(f, tr.swing)
+        float d = slDistance(f, tr.swing, tr.atr)
         if not na(d)
             tr.entry  := f
             tr.sl     := math.round_to_mintick(tr.dir == 1 ? f - d : f + d)
@@ -464,7 +484,7 @@ manageTrades() =>
 // ── Plan de la operación: niveles, tamaño y objeto Trd (qty = 0 si no hay SL válido o no cabe ni un contrato) ──
 buildTrd(int dir, float entry, string tid, bool isStop) =>
     float sw    = swingRef(dir, entry)
-    float dist  = slDistance(entry, sw)
+    float dist  = slDistance(entry, sw, atrVal)
     float slP   = math.round_to_mintick(dir == 1 ? entry - dist : entry + dist)
     float rDist = math.abs(entry - slP)
     float tpP   = math.round_to_mintick(dir == 1 ? entry + rr * rDist : entry - rr * rDist)
@@ -474,7 +494,7 @@ buildTrd(int dir, float entry, string tid, bool isStop) =>
     float balance = compound ? strategy.initial_capital + strategy.netprofit : strategy.initial_capital
     float qty     = not na(dist) and balance > 0 and rDist > 0 ? math.floor(balance * riskPct / 100.0 / (rDist * syminfo.pointvalue)) : 0.0
 
-    Trd.new(id = tid, dir = dir, isStop = isStop, entry = entry, swing = sw, sl = slP, tp = tpP, beLvl = beL, beStop = beS, qty = qty, entryBar = bar_index, fillBar = bar_index)
+    Trd.new(id = tid, dir = dir, isStop = isStop, entry = entry, swing = sw, atr = atrVal, sl = slP, tp = tpP, beLvl = beL, beStop = beS, qty = qty, entryBar = bar_index, fillBar = bar_index)
 
 // ── Envía la orden de entrada (stop o a mercado) con su salida ────────────────────
 sendOrders(Trd tr) =>
