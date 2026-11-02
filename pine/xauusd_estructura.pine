@@ -49,6 +49,12 @@
 //    · Varias operaciones por sesión (desactivado: una sola por sesión). Activado: se toman
 //      todas las oportunidades de la ventana operativa, pero con UNA sola operación abierta a la
 //      vez; apenas una se cierra (SL, TP o break-even) se permite entrar de nuevo.
+//    · Re-entrar solo tras un SL (desactivado). Activado: si una operación se cierra por SL se
+//      permite volver a entrar en la misma sesión (una a la vez) hasta su propia hora límite de
+//      re-entrada (11:00 por defecto, editable); tras un TP, un break-even o un cierre forzado la
+//      sesión termina. La PRIMERA entrada de la sesión sigue limitada por la hora límite general
+//      (por ejemplo 10:00). Si "Varias operaciones por sesión" también está activado, este
+//      interruptor lo restringe a re-entradas tras un SL.
 //    · Entradas BOS y entradas BIS (activadas las dos). Si se desactiva una, solo opera la otra.
 //    · Sin SL mínimo / Sin SL máximo (desactivados: rigen los parámetros editables). Activados,
 //      el SL queda siempre en el último swing contrario, sin ajustarlo.
@@ -181,6 +187,10 @@ buyLblCol  = input.color(#5B5B5B, "Color de la etiqueta BUY", group = G_VIS)
 sellLblCol = input.color(#A9A9A9, "Color de la etiqueta SELL", group = G_VIS)
 showMarks  = input.bool(true, "Mostrar entradas, SL y TP", group = G_VIS, tooltip = "Etiqueta BUY (debajo de la vela de entrada) o SELL (encima), y líneas de entrada, SL y TP. TradingView conserva como máximo 500 líneas y 500 etiquetas: solo se ven las marcas de las operaciones más recientes. El backtest siempre cubre todo el período.")
 
+reAfterSL  = input.bool(false, "Re-entrar solo tras un SL", group = G_OPE, tooltip = "Desactivado (por defecto). Activado: si una operación se cierra por SL, se permite volver a entrar en la misma sesión (una a la vez) hasta la hora límite de re-entrada de abajo; si se cierra por TP, break-even o cierre forzado, la sesión termina. La primera entrada de la sesión sigue limitada por la hora límite general de la sección Rango y quiebre. Si 'Varias operaciones por sesión' también está activado, este interruptor lo restringe a re-entradas tras un SL.")
+reCutHour  = input.int(11, "Re-entrada tras SL · hora límite (NY)", minval = 0, maxval = 23, group = G_OPE, tooltip = "No se abren re-entradas después de esta hora. Solo se usa con 'Re-entrar solo tras un SL'. Puede ser posterior a la hora límite de la primera entrada.")
+reCutMin   = input.int(0, "Re-entrada tras SL · minuto límite", minval = 0, maxval = 59, group = G_OPE)
+
 if timeframe.in_seconds() != 60
     runtime.error("Esta estrategia está diseñada para el gráfico de 1 minuto (XAUUSD).")
 
@@ -190,6 +200,7 @@ int  mdClose = mdOpen + 1                               // minuto del día en qu
 int  dow     = dayofweek(time, TZ)
 int  cutMD   = cutHour * 60 + cutMin
 int  forceMD = closeHour * 60 + closeMin
+int  reMD    = reCutHour * 60 + reCutMin
 bool inForce = mdClose >= forceMD and mdClose <= forceMD + 60
 
 // ── Filtros de dirección: EMA y VWAP (línea central) ──────────────────────────────
@@ -334,6 +345,7 @@ type Sess
     int    placedBar = na
     int    seq       = 0
     int    dirLock   = 0
+    bool   lastSL    = false
     bool   hasPend   = false
     Trd    pend
     box    bx
@@ -557,7 +569,9 @@ armBIS(Sess s, int dir, float lvl) =>
 processSession(Sess s) =>
     bool dayOk   = dow >= dayofweek.monday and dow <= dayofweek.friday
     bool inRange = dayOk and mdOpen >= s.startMD and mdOpen < s.openMD
-    bool canSig  = dayOk and mdOpen >= s.openMD and mdOpen < s.endMD
+    // Con "Re-entrar solo tras un SL", una vez hecha la primera operación la ventana llega hasta la hora límite de re-entrada.
+    int  effEnd  = reAfterSL and s.traded ? math.max(s.endMD, reMD) : s.endMD
+    bool canSig  = dayOk and mdOpen >= s.openMD and mdOpen < effEnd
 
     if inRange
         if not s.prevIn
@@ -567,6 +581,7 @@ processSession(Sess s) =>
             s.ready := false
             s.traded := false
             s.dirLock := 0
+            s.lastSL := false
             s.hasPend := false
             if showRanges
                 s.bx := box.new(left = time, top = high, right = time + BAR_MS, bottom = low, xloc = xloc.bar_time, border_color = rangeCol, border_width = 1, bgcolor = na)
@@ -591,7 +606,9 @@ processSession(Sess s) =>
 
     // Una operación a la vez. Base: una sola por sesión. Con varias operaciones por sesión:
     // solo se bloquea mientras haya una posición abierta (o una orden a mercado recién enviada).
-    bool blocked = multiTrade ? (strategy.opentrades > 0 or s.placedBar == bar_index) : s.traded
+    // Con "Re-entrar solo tras un SL", tras una operación que no cerró por SL la sesión termina.
+    bool oneAtATime = strategy.opentrades > 0 or s.placedBar == bar_index
+    bool blocked    = (multiTrade or reAfterSL) ? (oneAtATime or (reAfterSL and s.traded and not s.lastSL)) : s.traded
 
     // Quiebre válido del rango: fija la dirección. Mientras no haya operación (en curso o hecha), un quiebre
     // válido del lado contrario cambia la dirección y retira la orden pendiente del lado anterior.
@@ -605,7 +622,7 @@ processSession(Sess s) =>
         int   dir      = s.dirLock
         bool  bos      = useBOS and (dir == 1 ? bosUp : bosDn)
         float lvlBIS   = dir == 1 ? shLvl : slLvl
-        bool  bisReady = useBIS and trend == dir and (dir == 1 ? shLive : slLive) and mdClose < s.endMD
+        bool  bisReady = useBIS and trend == dir and (dir == 1 ? shLive : slLive) and mdClose < effEnd
         if bos and levelOk(dir, close)
             disarm(s)
             string tid = "BOS-" + str.format_time(s.t0, "yyyyMMdd-HHmm", TZ) + "-" + str.tostring(s.seq)
@@ -632,6 +649,7 @@ processSession(Sess s) =>
 if strategy.closedtrades > lastClosed
     for i = lastClosed to strategy.closedtrades - 1
         markClosed(strategy.closedtrades.entry_id(i), strategy.closedtrades.exit_time(i))
+        ses.lastSL := strategy.closedtrades.exit_comment(i) == "SL"
     lastClosed := strategy.closedtrades
 
 manageTrades()
