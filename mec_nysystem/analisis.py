@@ -118,20 +118,24 @@ def tabla(ts, clave):
         out.append(b)
     return out
 
-def precio(patrones, pv=1):
+HOY = dt.date(2026, 11, 3)
+def precio(patrones, p_ini, p_fin):
+    """Camino diario con precios de las exportaciones de TradingView; anclado al precio de enero de 2025 (p_ini)
+    y al precio actual del 03/11/2026 (p_fin), ambos informados por Fabián."""
     px = {}
     for pat in patrones:
         for f in glob.glob(os.path.join(RAIZ, pat)):
             for r in csv.DictReader(open(f, encoding="utf-8-sig")):
                 t = r["Fecha y hora"][:16]
-                if T0.isoformat() <= t[:10] <= T1.isoformat(): px[t] = float(r["Precio USD"])
-    ts = sorted(px); p0 = px[ts[0]]
-    cur = diaria([dict(t=t[:10], eq=round(CAP0 * px[t] / p0, 2)) for t in ts])
+                if T0.isoformat() <= t[:10] <= HOY.isoformat(): px[t] = float(r["Precio USD"])
+    cur = diaria([dict(t=t[:10], eq=round(CAP0 * px[t] / p_ini, 2)) for t in sorted(px)])
+    cur.append(dict(t=HOY.isoformat(), eq=round(CAP0 * p_fin / p_ini, 2)))
     pk = CAP0; m = 0
     for c in cur: pk = max(pk, c["eq"]); m = max(m, (pk - c["eq"]) / pk)
-    anos = (T1 - T0).days / 365.25; e25 = [c["eq"] for c in cur if c["t"][:4] == "2025"][-1]
+    anos = (HOY - T0).days / 365.25; e25 = [c["eq"] for c in cur if c["t"][:4] == "2025"][-1]
     return dict(curve=cur, ret=round((cur[-1]["eq"] / CAP0 - 1) * 100, 1), cagr=round(((cur[-1]["eq"] / CAP0) ** (1 / anos) - 1) * 100, 1),
-                mdd=round(m * 100, 1), anios={"2025": round((e25 / CAP0 - 1) * 100, 1), "2026": round((cur[-1]["eq"] / e25 - 1) * 100, 1)}, fin=cur[-1]["t"])
+                mdd=round(m * 100, 1), anios={"2025": round((e25 / CAP0 - 1) * 100, 1), "2026": round((cur[-1]["eq"] / e25 - 1) * 100, 1)},
+                fin=HOY.isoformat(), p_ini=p_ini, p_fin=p_fin)
 
 FILTROS = {
     "Sin filtro": lambda t: True,
@@ -159,8 +163,8 @@ def main():
         sel = [t for t in ts if f(t)]
         out["perfiles"][nf] = dict(base=basicas(sel), anios={str(y): basicas([t for t in sel if t["anio"] == y]) for y in (2025, 2026)},
                                    p=[dict(nombre=n, p=p, **simular(sel, p, curva=True), mc=montecarlo(sel, p)) for n, p in PERFILES])
-    out["bench"] = dict(oro=precio(["mec_lucid/kala/*.csv", "mec_lucid/xau_v2/*.csv", "mec_lucid/xau_v4/*.csv"]),
-                        nasdaq=precio(["mec_lucid/alex/*.csv", "mec_lucid/datos_v7/*.csv"]))
+    out["bench"] = dict(oro=precio(["mec_lucid/kala/*.csv", "mec_lucid/xau_v2/*.csv", "mec_lucid/xau_v4/*.csv"], 2659.92, 3962.66),
+                        nasdaq=precio(["mec_lucid/alex/*.csv"], 22890.25, 28360.00))  # solo alex: datos_v7 es una serie ajustada por vencimientos (otro nivel de precios)
     sug = [t for t in ts if FILTROS["Filtro sugerido"](t)]
     mr = collections.defaultdict(float)
     for t in sug: mr[t["sal"].strftime("%Y-%m")] += t["R"]

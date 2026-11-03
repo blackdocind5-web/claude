@@ -282,7 +282,7 @@ footer{display:grid;gap:8px;border-top:1px solid var(--grid);padding-top:24px}
   <div class="answer"><span class="lbl">Respuesta</span><p id="a3"></p></div>
   <div class="panel">
     <h3>Evolución de la cuenta por perfil</h3>
-    <p class="sub">1.000 USD iniciales · interés compuesto · escala logarítmica · comparado con comprar y mantener oro o el Nasdaq</p>
+    <p class="sub">1.000 USD iniciales · interés compuesto · escala logarítmica · comparado con el oro y el Nasdaq</p>
     <div class="legend" id="lg3"></div>
     <div class="chart" id="c3"></div>
   </div>
@@ -371,11 +371,11 @@ const B = D.base, A25 = D.anios['2025'], A26 = D.anios['2026'];
 const PS = D.perfiles['Filtro sugerido'], PN = D.perfiles['Sin filtro'], PR = D.perfiles['Regla MNQ (Rascacielos)'];
 const P1 = PS.p.find(p => p.p === 1), P1n = PN.p.find(p => p.p === 1), P1r = PR.p.find(p => p.p === 1);
 const BO = D.bench.oro, BN = D.bench.nasdaq;
-const bOro = () => ({name: `Oro, comprar y mantener (${pc(BO.ret)})`, short: 'Oro', color: css('--b-oro'), pts: BO.curve, w: 1.8, dot: true});
-const bNas = () => ({name: `Nasdaq, comprar y mantener (${pc(BN.ret)})`, short: 'Nasdaq', color: css('--b-spx'), pts: BN.curve, w: 1.8, dot: true});
+const bOro = () => ({name: `Oro (${pc(BO.ret)})`, short: 'Oro', color: css('--b-oro'), pts: BO.curve, w: 1.8, dot: true});
+const bNas = () => ({name: `Nasdaq (${pc(BN.ret)})`, short: 'Nasdaq', color: css('--b-spx'), pts: BN.curve, w: 1.8, dot: true});
 
 /* ---------------- gráficos ---------------- */
-const T0 = new Date('2025-01-08'), T1 = new Date('2026-10-26');
+const T0 = new Date('2025-01-08'), T1 = new Date('2026-11-03');
 function niceTicks(lo, hi, n = 5) {
   const span = hi - lo, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
   const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => span / s <= n) || 10 * mag;
@@ -543,15 +543,15 @@ $('#l4').innerHTML = learn([
 $('#tc').textContent = 'Sí, conviene incorporarla: rinde más que el mercado con una fracción de su caída. Empezar con 1% y validar 2023–2024 antes de subir el riesgo.';
 $('#tc-s').textContent = `1.000 USD iniciales · ${D.meta.desde} al ${D.meta.hasta} · NY SYSTEM con filtro sugerido y costos de Multibank`;
 const rows = PS.p.map(p => [`NY SYSTEM · ${pn(p)}`, p.cagr, p.ret, p.mdd, p.calmar, p.mc.cagr_p5, p.p === 1 ? 'Recomendado' : 'Alternativa'])
-  .concat([['Oro · comprar y mantener', BO.cagr, BO.ret, BO.mdd, BO.cagr / BO.mdd, null, 'Mercado'], ['Nasdaq · comprar y mantener', BN.cagr, BN.ret, BN.mdd, BN.cagr / BN.mdd, null, 'Mercado']]);
+  .concat([['Oro', BO.cagr, BO.ret, BO.mdd, BO.cagr / BO.mdd, null, 'Mercado'], ['Nasdaq', BN.cagr, BN.ret, BN.mdd, BN.cagr / BN.mdd, null, 'Mercado']]);
 $('#tc-t').innerHTML = `<thead><tr><th>Gestión</th><th class="n">Anual</th><th class="n">Total</th><th class="n">Caída máx.</th><th class="n">Calmar</th><th class="n">Peor 5% sim.</th><th></th></tr></thead><tbody>` +
   rows.map(r => `<tr${r[6] === 'Recomendado' ? ' class="hl"' : ''}><td>${r[0]}</td><td class="n pos">${pc(r[1])}</td><td class="n pos">${pc(r[2])}</td><td class="n neg">${pc(-r[3])}</td><td class="n">${nf(r[4], 2)}</td><td class="n">${r[5] == null ? '—' : pc(r[5])}</td><td><span class="tag ${r[6] === 'Recomendado' ? 'g' : r[6] === 'Mercado' ? 'v' : 'o'}">${r[6]}</span></td></tr>`).join('') + '</tbody>';
-$('#tc-n').innerHTML = `Correlación mensual con riesgo de 1%: ${sg(BO.corr, 2)} con el oro y ${sg(BN.corr, 2)} con el Nasdaq. Los meses de NY SYSTEM no siguen al mercado, y eso es lo que más vale en una cartera. Nasdaq medido hasta el ${BN.fin.split('-').reverse().join('/')}.`;
+$('#tc-n').innerHTML = `Correlación mensual con riesgo de 1%: ${sg(BO.corr, 2)} con el oro y ${sg(BN.corr, 2)} con el Nasdaq. Los meses de NY SYSTEM no siguen al mercado, y eso es lo que más vale en una cartera. Oro y Nasdaq: del 08/01/2025 al ${BN.fin.split('-').reverse().join('/')}, anclados a ${nf(BO.p_ini, 2)} → ${nf(BO.p_fin, 2)} USD (oro) y ${nf(BN.p_ini, 2)} → ${nf(BN.p_fin, 2)} puntos (Nasdaq).`;
 $('#lc').innerHTML = learn([
   ['A favor', `Por cada punto de caída gana ${nf(P1.calmar, 1)} puntos de rendimiento anual; el oro y el Nasdaq, menos de 1. Además no se mueve con el mercado: suma a la cartera en vez de repetirla.`],
   ['En contra', `Son ${PS.base.n} operaciones en 22 meses, y 2026 rinde la mitad que 2025. Si la ventaja sigue cayendo, el 1% quedaría cerca de ${pc(PS.p[1].anios['2026'] * 12 / 10, 0)} anual, todavía por encima del Nasdaq pero sin margen.`],
   ['Próximos pasos', 'Exportar 2023 y 2024 con los mismos parámetros. Si la ventaja se sostiene, operarla en vivo con 1% y no operar CPI ni NFP. Revisar cada trimestre y sumar la estrategia del Nasdaq.']]);
-$('#ft').textContent = `Fuentes: lista de operaciones del Strategy Tester de TradingView (XAU_ATR, ${B.n} operaciones), calendario económico de Nueva York 2025–2026 (cargado hasta el ${D.meta.cal_hasta}) y precios de oro y Nasdaq tomados de las mismas exportaciones.`;
+$('#ft').textContent = `Fuentes: lista de operaciones del Strategy Tester de TradingView (XAU_ATR, ${B.n} operaciones), calendario económico de Nueva York 2025–2026 (cargado hasta el ${D.meta.cal_hasta}) y precios de oro (XAUUSD) y Nasdaq (MNQ) de las exportaciones de TradingView, anclados al precio de enero de 2025 y al del 03/11/2026.`;
 
 /* ---------------- dibujar ---------------- */
 function draw() {
