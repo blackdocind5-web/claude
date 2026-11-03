@@ -1,6 +1,6 @@
 //@version=6
 // ═══════════════════════════════════════════════════════════════════════════════════
-//  Estructura de mercado · swings, BIS y BOS · + señales de entrada ANTICIPADAS (XAUUSD / MNQ)
+//  Estructura de mercado · swings, BIS y BOS · + orden stop BIS anticipada (XAUUSD / MNQ)
 // ═══════════════════════════════════════════════════════════════════════════════════
 //
 //  PARA QUÉ SIRVE
@@ -8,35 +8,28 @@
 //       de izquierda / derecha que la estrategia.
 //    2) Operar en vivo con la estrategia "XAUUSD · Rango + Estructura (BIS/BOS)": muestra el
 //       rango de apertura y, apenas existe un nivel BIS válido, la ORDEN STOP ya armada con su
-//       SL y su TP (y los lotes), ANTES de que el precio toque el nivel. Así puedes colocar la
-//       orden stop con su SL y TP en MT5 y esperar a que se active sola.
+//       SL, su TP y los lotes, ANTES de que el precio toque el nivel, para colocarla en MT5.
 //
-//  SEÑAL ANTICIPADA (réplica literal de la lógica de la estrategia)
+//  ORDEN ANTICIPADA (réplica literal de la lógica de la estrategia; solo entradas BIS)
 //    · Quiebre del rango: una vela cierra fuera del rango de apertura por al menos la ruptura
 //      mínima y con el color de la dirección (alcista para compra, bajista para venta). El último
 //      quiebre válido fija la dirección mientras no haya operación.
 //    · BIS válido: la estructura va en esa dirección y el último swing (alto para compras, bajo
 //      para ventas) sigue sin romperse. La orden es BUY STOP / SELL STOP en el nivel de ese swing.
-//    · La orden se mantiene mientras todo siga alineado. Si el nivel cambia (swing nuevo) se
-//      muestra ORDEN ACTUALIZADA: mueve o reemplaza tu orden. Si deja de ser válida (cambia la
-//      dirección o la estructura, o llega la hora límite) se muestra ORDEN ANULADA: cancélala.
+//    · La orden se mantiene mientras todo siga alineado. Si el nivel cambia (swing nuevo) la
+//      orden se redibuja en el nivel nuevo: mueve o reemplaza la tuya. Si deja de ser válida
+//      (cambia la dirección o la estructura, o llega la hora límite) aparece "✕ ANULAR".
 //    · SL y TP se calculan igual que en la estrategia (ATR / swing, mínimo, R:R). Pueden moverse
-//      unos centavos de una vela a otra porque el ATR cambia: la tabla siempre muestra el último.
-//    · Una vez activada, la operación teórica se sigue vela a vela: SL primero si una vela toca SL
-//      y TP; cierre forzado a la hora indicada. Tras un SL se permite la re-entrada (si está
-//      activada) hasta su hora límite; tras un TP la sesión termina.
-//    · Las señales se calculan al CIERRE de cada vela, igual que la estrategia, y solo en M1.
-//
-//  AVISOS
-//    · Crea una alerta sobre este indicador con la condición "Cualquier llamada a alert()" y recibirás el
-//      mensaje completo (tipo, nivel, SL, TP, lotes) cuando haya orden nueva, actualizada o anulada,
-//      cuando se active y cuando se cierre.
-//    · Los niveles son los del gráfico de TradingView (OANDA). En MT5 el precio de tu broker puede
-//      diferir unos centavos o dólares: compara antes de colocar la orden.
+//      unos centavos de una vela a otra porque el ATR cambia.
+//    · Una vez activada, la operación teórica se sigue vela a vela (SL primero si una vela toca SL
+//      y TP; cierre forzado a la hora indicada) para aplicar las reglas de sesión: tras un SL se
+//      permite la re-entrada (si está activada) hasta su hora límite; tras un TP la sesión termina.
+//    · Se calcula al CIERRE de cada vela, igual que la estrategia, y solo en M1.
+//    · Los niveles son los del gráfico de TradingView. En MT5 el precio de tu broker puede diferir.
 //
 //  IMPORTANTE: los valores de este indicador deben ser IGUALES a los de la estrategia. Hay
-//  interruptores que TradingView no muestra en la barra de estado (mecha, BOS, sin SL mínimo,
-//  re-entrada...): revísalos en los dos. La tabla "Parámetros" resume lo que usa el indicador.
+//  interruptores que TradingView no muestra en la barra de estado (mecha, sin SL mínimo,
+//  re-entrada...): revísalos en los dos.
 //
 //  SWING (pivote)
 //    · Swing high: una vela cuyo máximo es mayor que el de las N velas de la izquierda y el de
@@ -54,6 +47,7 @@
 //  BOS  (break of structure)  = CAMBIO: rompe en contra de la tendencia actual (o cuando aún
 //                               no había tendencia) y la estructura pasa a la nueva dirección.
 //    En la jerga más extendida (Smart Money) la continuación se llama BOS y el cambio CHoCH.
+//    El indicador dibuja los dos, pero SOLO los BIS generan orden: no hay entradas por BOS.
 //
 //  La línea de cada ruptura lleva un hueco en el centro, justo donde va la letra BIS / BOS
 //  (ancho editable). Como el hueco son dos líneas, cada ruptura gasta 2 del límite de 500.
@@ -97,16 +91,14 @@ upCol      = input.color(#089981, "Color alcista", group = G_VIS)
 dnCol      = input.color(#F23645, "Color bajista", group = G_VIS)
 swCol      = input.color(#787B86, "Color de las etiquetas de swing", group = G_VIS)
 
-// Entradas nuevas (van al final de la lista para no mover los valores que ya tenías guardados)
-const string G_SIG = "4 · Señales de entrada (réplica de la estrategia)"
+// Entradas de la orden anticipada (van al final de la lista para no mover los valores que ya tenías guardados)
+const string G_SIG = "4 · Orden anticipada (réplica de la estrategia)"
 const string G_VAR = "5 · Variantes y filtros (igual que la estrategia)"
 const string G_SLX = "6 · Stop Loss / Take Profit (igual que la estrategia)"
 const string G_ACC = "7 · Cuenta (para calcular los lotes)"
 
-showSig      = input.bool(true, "Mostrar señales de entrada (orden stop anticipada), SL y TP", group = G_SIG, tooltip = "Solo funciona en el gráfico de 1 minuto. Muestra la orden BUY STOP / SELL STOP ya armada, con su SL y su TP, en cuanto hay un BIS válido.")
+showSig      = input.bool(true, "Mostrar la orden stop anticipada (con SL y TP)", group = G_SIG, tooltip = "Solo funciona en el gráfico de 1 minuto. Muestra la orden BUY STOP / SELL STOP ya armada, con su SL y su TP, en cuanto hay un BIS válido.")
 showRngBox   = input.bool(true, "Mostrar el rango de apertura", group = G_SIG)
-showOrdTbl   = input.bool(true, "Mostrar la tabla de la orden para MT5", group = G_SIG)
-showParTbl   = input.bool(true, "Mostrar la tabla de parámetros", group = G_SIG, tooltip = "Resume los valores que usa el indicador para que los compares con los de la estrategia.")
 rngStartH    = input.int(8, "Rango · inicio · hora (NY)", minval = 0, maxval = 23, group = G_SIG, tooltip = "XAUUSD: el rango va de 08:30 a 09:30. MNQ: de 09:30 a 09:45.")
 rngStartM    = input.int(30, "Rango · inicio · minuto", minval = 0, maxval = 59, group = G_SIG)
 rngEndH      = input.int(9, "Rango · fin (inicio de la ventana de entrada) · hora (NY)", minval = 0, maxval = 23, group = G_SIG)
@@ -121,9 +113,6 @@ multiTrade   = input.bool(false, "Varias operaciones por sesión (una a la vez)"
 reAfterSL    = input.bool(true, "Re-entrar solo tras un SL", group = G_VAR, tooltip = "Tras una operación cerrada por SL se permite volver a entrar hasta la hora límite de re-entrada; tras un TP la sesión termina.")
 reCutHour    = input.int(11, "Re-entrada tras SL · hora límite (NY)", minval = 0, maxval = 23, group = G_VAR)
 reCutMin     = input.int(0, "Re-entrada tras SL · minuto límite", minval = 0, maxval = 59, group = G_VAR)
-useBIS       = input.bool(true, "Entradas BIS (continuación)", group = G_VAR)
-useBOS       = input.bool(false, "Entradas BOS (cambio de estructura)", group = G_VAR, tooltip = "Las entradas BOS son a mercado al cierre de la vela que rompe: NO se pueden anticipar con una orden stop. Si las activas, el indicador avisa al cierre de esa vela, con el SL y el TP.")
-bosFree      = input.bool(false, "BOS: entrar en la primera vela que supere el nivel con cuerpo", group = G_VAR)
 useEMA       = input.bool(false, "Filtro EMA", group = G_VAR)
 emaLen       = input.int(200, "Periodos de la EMA", minval = 1, group = G_VAR)
 useVWAP      = input.bool(false, "Filtro VWAP", group = G_VAR)
@@ -193,61 +182,23 @@ float pl = ta.pivotlow(low, leftBars, rightBars)
 float ph2 = ta.pivothigh(high, slLeft, slRight)
 float pl2 = ta.pivotlow(low, slLeft, slRight)
 
-var float shLvl      = na      // último swing high confirmado
-var int   shBar      = na      // vela en que se formó
-var bool  shLive     = false   // true mientras no haya sido roto
-var bool  shTouched  = false   // true si alguna vela ya tocó el nivel
-var int   shTouchBar = na      // vela que tocó el nivel justo en él, SIN superarlo (da una 2ª oportunidad a la siguiente)
-var float slLvl      = na
-var int   slBar      = na
-var bool  slLive     = false
-var bool  slTouched  = false
-var int   slTouchBar = na
-var int   trend      = 0       // 1 alcista · -1 bajista · 0 sin definir
-var float sh2Lvl     = na      // último swing M1 (para el SL)
-var float sl2Lvl     = na
-var float bosLvlUp   = na      // nivel roto solo con mecha que sigue disponible para un BOS posterior
-var float bosLvlDn   = na
+var float shLvl  = na      // último swing high confirmado
+var int   shBar  = na      // vela en que se formó
+var bool  shLive = false   // true mientras no haya sido roto
+var float slLvl  = na
+var int   slBar  = na
+var bool  slLive = false
+var int   trend  = 0       // 1 alcista · -1 bajista · 0 sin definir
+var float sh2Lvl = na      // último swing M1 (para el SL)
+var float sl2Lvl = na
 
 color noCol = color.new(color.white, 100)   // transparente: etiquetas sin recuadro
-
-// Un día nuevo no hereda niveles BOS de la jornada anterior.
-if vReset
-    bosLvlUp := na
-    bosLvlDn := na
 
 // 1) Rupturas con los niveles ya confirmados antes de esta vela: por cierre (base) o, con
 // "La mecha también rompe la estructura", en cuanto el precio opera más allá del nivel.
 bool brokeUp = shLive and (wickBreak ? math.round(high / syminfo.mintick) > math.round(shLvl / syminfo.mintick) : close > shLvl)
 bool brokeDn = slLive and (wickBreak ? math.round(low / syminfo.mintick) < math.round(slLvl / syminfo.mintick) : close < slLvl)
 int  trendBefore = trend
-
-// BOS válido para entrada en la vela que rompe el nivel (réplica de la estrategia): cambio de estructura, cierre de cuerpo
-// más allá del nivel y PRIMERA vela que lo toca (o la siguiente a un toque exacto). Con "bosFree" no importan los intentos previos.
-bool bosUpFirst = brokeUp and trend != 1 and close > shLvl and (bosFree or not shTouched or shTouchBar == bar_index - 1)
-bool bosDnFirst = brokeDn and trend != -1 and close < slLvl and (bosFree or not slTouched or slTouchBar == bar_index - 1)
-bool bosUpLate  = wickBreak and bosFree and not na(bosLvlUp) and trend == 1 and close > bosLvlUp
-bool bosDnLate  = wickBreak and bosFree and not na(bosLvlDn) and trend == -1 and close < bosLvlDn
-bool bosUp = bosUpFirst or bosUpLate
-bool bosDn = bosDnFirst or bosDnLate
-
-if shLive and not brokeUp and not shTouched and high >= shLvl
-    shTouched  := true
-    shTouchBar := math.round(high / syminfo.mintick) == math.round(shLvl / syminfo.mintick) ? bar_index : na
-if slLive and not brokeDn and not slTouched and low <= slLvl
-    slTouched  := true
-    slTouchBar := math.round(low / syminfo.mintick) == math.round(slLvl / syminfo.mintick) ? bar_index : na
-
-// Nivel roto solo con mecha: sigue disponible para un BOS posterior (solo con "wickBreak" y "bosFree").
-if wickBreak and bosFree and brokeUp and trend != 1 and not (close > shLvl)
-    bosLvlUp := shLvl
-if wickBreak and bosFree and brokeDn and trend != -1 and not (close < slLvl)
-    bosLvlDn := slLvl
-// Se consume al entrar o cuando la estructura cambia en contra.
-if bosUpLate or brokeDn
-    bosLvlUp := na
-if bosDnLate or brokeUp
-    bosLvlDn := na
 
 if brokeUp
     string kind = trendBefore == 1 ? "BIS" : "BOS"
@@ -285,20 +236,16 @@ if brokeUp and brokeDn
 if not na(ph)
     if showSwings and vis[rightBars]
         label.new(bar_index - rightBars, ph, text = na(shLvl) ? "SH" : ph > shLvl ? "HH" : "LH", style = label.style_label_down, color = noCol, textcolor = swCol, size = size.tiny)
-    shLvl      := ph
-    shBar      := bar_index - rightBars
-    shLive     := true
-    shTouched  := false
-    shTouchBar := na
+    shLvl  := ph
+    shBar  := bar_index - rightBars
+    shLive := true
 
 if not na(pl)
     if showSwings and vis[rightBars]
         label.new(bar_index - rightBars, pl, text = na(slLvl) ? "SL" : pl > slLvl ? "HL" : "LL", style = label.style_label_up, color = noCol, textcolor = swCol, size = size.tiny)
-    slLvl      := pl
-    slBar      := bar_index - rightBars
-    slLive     := true
-    slTouched  := false
-    slTouchBar := na
+    slLvl  := pl
+    slBar  := bar_index - rightBars
+    slLive := true
 
 if not na(ph2)
     sh2Lvl := ph2
@@ -306,7 +253,7 @@ if not na(pl2)
     sl2Lvl := pl2
 
 // ═══════════════════════════════════════════════════════════════════════════════════
-//  SEÑALES DE ENTRADA ANTICIPADAS · réplica de la estrategia (solo en M1)
+//  ORDEN STOP BIS ANTICIPADA · réplica de la estrategia (solo en M1)
 // ═══════════════════════════════════════════════════════════════════════════════════
 bool sigOn = showSig and timeframe.in_seconds() == 60
 
@@ -370,20 +317,17 @@ planOrder(int dir, float entry) =>
     [sw, rDist, slP, tpP, lots]
 
 ptxt(float v) => na(v) ? "—" : str.tostring(v, format.mintick)
-hhmm(int md) => str.tostring(math.floor(md / 60), "00") + ":" + str.tostring(md % 60, "00")
 
 // ── Estado de la réplica ───────────────────────────────────────────────────────────
-var float rngHi     = na       // rango de apertura
-var float rngLo     = na
-var int   rngT0     = na
-var bool  prevIn    = false
-var bool  ready     = false    // el rango ya terminó
-var bool  traded    = false    // ya hubo una operación en esta sesión
-var int   dirLock   = 0        // dirección fijada por el último quiebre válido del rango
-var bool  lastSL    = false    // la última operación de la sesión cerró por SL
-var int   placedBar = na
+var float rngHi   = na       // rango de apertura
+var float rngLo   = na
+var bool  prevIn  = false
+var bool  ready   = false    // el rango ya terminó
+var bool  traded  = false    // ya hubo una operación en esta sesión
+var int   dirLock = 0        // dirección fijada por el último quiebre válido del rango
+var bool  lastSL  = false    // la última operación de la sesión cerró por SL
 
-var bool  hasPend    = false   // hay una orden stop armada (colocada al cierre de la vela anterior)
+var bool  hasPend    = false // hay una orden stop armada (colocada al cierre de la vela anterior)
 var bool  pendFilled = false
 var int   armDir     = 0
 var float armLvl     = na
@@ -393,16 +337,12 @@ var float armLots    = na
 var float armSw      = na
 var float armAtr     = na
 
-var bool  tOpen  = false       // operación teórica abierta
+var bool  tOpen  = false     // operación teórica abierta
 var int   tDir   = 0
 var float tEntry = na
 var float tSL    = na
 var float tTP    = na
 var int   tBar   = na
-var float tLots  = na
-
-var string stMsg   = "—"
-var string lastMsg = "—"
 
 var box   rngBox = na
 var line  lnE    = na
@@ -415,13 +355,11 @@ var label lbT    = na
 color C_SELLP = #FF6D00
 
 if sigOn and barstate.isconfirmed
-    bool   hadPend    = hasPend
-    float  lvlBefore  = armLvl
-    int    dirBefore  = armDir
-    bool   filledNow  = false
-    bool   bosNow     = false
-    bool   closedNow  = false
-    string closeWhy   = ""
+    bool  hadPend   = hasPend
+    float lvlBefore = armLvl
+    int   dirBefore = armDir
+    bool  filledNow = false
+    bool  closedNow = false
 
     // 1) Operación teórica abierta: ¿cerró en esta vela? SL primero si una vela toca SL y TP.
     if tOpen and bar_index > tBar
@@ -429,12 +367,10 @@ if sigOn and barstate.isconfirmed
         bool tpHit = tDir == 1 ? high >= tTP : low <= tTP
         if slHit or tpHit
             lastSL    := slHit
-            closeWhy  := slHit ? "SL" : "TP"
             tOpen     := false
             closedNow := true
         else if inForce
             lastSL    := false
-            closeWhy  := "Cierre forzado"
             tOpen     := false
             closedNow := true
 
@@ -449,7 +385,6 @@ if sigOn and barstate.isconfirmed
             tSL    := armSL
             tTP    := armTP
             tBar   := bar_index
-            tLots  := armLots
             if math.abs(fp - armLvl) >= syminfo.mintick
                 // Gap: se recalcula el SL y el TP sobre el precio real de ejecución (como la estrategia).
                 float dg = slDistance(fp, armSw, armAtr)
@@ -465,7 +400,6 @@ if sigOn and barstate.isconfirmed
             bool sl0 = tDir == 1 ? low <= tSL : high >= tSL
             if tp0
                 lastSL    := sl0
-                closeWhy  := sl0 ? "SL" : "TP"
                 tOpen     := false
                 closedNow := true
 
@@ -475,14 +409,13 @@ if sigOn and barstate.isconfirmed
 
     if inRange
         if not prevIn
-            rngHi    := high
-            rngLo    := low
-            rngT0    := time
-            ready    := false
-            traded   := false
-            dirLock  := 0
-            lastSL   := false
-            hasPend  := false
+            rngHi   := high
+            rngLo   := low
+            ready   := false
+            traded  := false
+            dirLock := 0
+            lastSL  := false
+            hasPend := false
             if showRngBox
                 rngBox := box.new(left = time, top = high, right = time + BAR_MS, bottom = low, xloc = xloc.bar_time, border_color = #000000, border_width = 1, bgcolor = na)
         else
@@ -506,8 +439,7 @@ if sigOn and barstate.isconfirmed
 
     // Una operación a la vez. Base: una sola por sesión. Con "Re-entrar solo tras un SL": tras una operación
     // que no cerró por SL la sesión termina.
-    bool oneAtATime = tOpen or placedBar == bar_index
-    bool blocked    = (multiTrade or reAfterSL) ? (oneAtATime or (reAfterSL and traded and not lastSL)) : traded
+    bool blocked = (multiTrade or reAfterSL) ? (tOpen or (reAfterSL and traded and not lastSL)) : traded
 
     // Quiebre válido del rango: fija la dirección. Mientras no haya operación, un quiebre válido del lado
     // contrario cambia la dirección y retira la orden pendiente del lado anterior.
@@ -517,36 +449,11 @@ if sigOn and barstate.isconfirmed
             hasPend := false
             dirLock := nd
 
-    string whyNot = ""
     if canSig and dirLock != 0 and not blocked
         int   dir      = dirLock
-        bool  bos      = useBOS and (dir == 1 ? bosUp : bosDn)
         float lvlBIS   = dir == 1 ? shLvl : slLvl
-        bool  stOk     = trend == dir
-        bool  lvlLive  = dir == 1 ? shLive : slLive
-        bool  bisReady = useBIS and stOk and lvlLive and mdClose < effEnd
-        if bos and levelOk(dir, close)
-            hasPend := false
-            [swB, rdB, slB, tpB, lotsB] = planOrder(dir, close)
-            if lotsB > 0
-                // BOS: entrada a mercado al cierre de esta vela (no se puede anticipar).
-                tOpen     := true
-                tDir      := dir
-                tEntry    := close
-                tSL       := slB
-                tTP       := tpB
-                tBar      := bar_index
-                tLots     := lotsB
-                traded    := true
-                placedBar := bar_index
-                filledNow := true
-                bosNow    := true
-                armDir    := dir
-                armLvl    := close
-                armSL     := slB
-                armTP     := tpB
-                armLots   := lotsB
-        else if bisReady and levelOk(dir, lvlBIS)
+        bool  bisReady = trend == dir and (dir == 1 ? shLive : slLive) and mdClose < effEnd
+        if bisReady and levelOk(dir, lvlBIS)
             [swA, rdA, slA, tpA, lotsA] = planOrder(dir, lvlBIS)
             if lotsA > 0
                 hasPend    := true
@@ -560,10 +467,8 @@ if sigOn and barstate.isconfirmed
                 armAtr     := atrVal
             else
                 hasPend := false
-                whyNot  := "el SL no es válido o el riesgo no alcanza el lote mínimo"
         else
             hasPend := false
-            whyNot  := not useBIS ? "BIS desactivado" : not stOk ? "la estructura aún no es " + (dir == 1 ? "alcista" : "bajista") : not lvlLive ? "el último swing ya se rompió: espera uno nuevo" : "el filtro EMA/VWAP no lo permite"
     else
         hasPend := false
 
@@ -571,30 +476,10 @@ if sigOn and barstate.isconfirmed
     // en la estrategia). En MT5 una orden stop por el lado "equivocado" del mercado se rechaza: hay que entrar a mercado.
     bool imm = hasPend and (armDir == 1 ? close >= armLvl : close <= armLvl)
 
-    // Mensaje de estado (para la tabla)
-    if hasPend
-        stMsg := imm ? "ORDEN ACTIVA · el precio YA superó el nivel: entra a mercado" : "ORDEN ACTIVA · colócala en MT5"
-    else if tOpen
-        stMsg := "Operación teórica abierta"
-    else if not dayOk
-        stMsg := "Fuera de lunes a viernes"
-    else if inRange
-        stMsg := "Rango de apertura en formación"
-    else if mdOpen < rngOpenMD
-        stMsg := "Esperando el rango de apertura"
-    else if blocked
-        stMsg := traded ? ((multiTrade or reAfterSL) ? "Sesión terminada: la última operación no cerró por SL" : "Sesión terminada: ya hubo una operación") : "Bloqueada"
-    else if not canSig
-        stMsg := "Fuera de la ventana de entrada (hasta " + hhmm(effEnd) + ")"
-    else if dirLock == 0
-        stMsg := "Esperando el quiebre del rango (≥ " + str.tostring(minBreak, "#.##") + ")"
-    else
-        stMsg := (dirLock == 1 ? "COMPRA" : "VENTA") + ": esperando un BIS válido" + (whyNot == "" ? "" : " · " + whyNot)
-
     string side = armDir == 1 ? "BUY" : "SELL"
 
-    // ── Dibujo y avisos ────────────────────────────────────────────────────────────
-    // a) Se activó la orden (o entró el BOS): la entrada pasa a gris punteado y se marca BUY / SELL.
+    // ── Dibujo ─────────────────────────────────────────────────────────────────────
+    // a) Se activó la orden: la entrada pasa a gris punteado y se marca BUY / SELL.
     if filledNow
         if not na(lnE) and not na(lnS) and not na(lnT)
             line.set_xy1(lnE, bar_index, tEntry)
@@ -624,8 +509,6 @@ if sigOn and barstate.isconfirmed
             label.new(bar_index, na, text = "BUY", xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = #5B5B5B, textcolor = color.white, size = size.small)
         else
             label.new(bar_index, na, text = "SELL", xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = #A9A9A9, textcolor = color.white, size = size.small)
-        lastMsg := (tDir == 1 ? "BUY" : "SELL") + (bosNow ? " BOS a mercado @ " : " activada @ ") + ptxt(tEntry) + " · " + hhmm(mdOpen)
-        alert("XAU · " + (tDir == 1 ? "BUY" : "SELL") + (bosNow ? " A MERCADO (BOS)" : " ACTIVADA") + " @ " + ptxt(tEntry) + " | SL " + ptxt(tSL) + " | TP " + ptxt(tTP) + " | " + str.tostring(tLots, "#.##") + " lotes" + (bosNow and hadPend ? ". ANULA el stop pendiente @ " + ptxt(lvlBefore) : ""), alert.freq_all)
 
     // b) Se cerró la operación teórica: se termina el dibujo (como la estrategia).
     if closedNow
@@ -641,10 +524,8 @@ if sigOn and barstate.isconfirmed
         lnE := na
         lnS := na
         lnT := na
-        lastMsg := closeWhy + " @ " + hhmm(mdOpen) + (closeWhy == "SL" and reAfterSL ? " · re-entrada permitida hasta " + hhmm(math.max(cutMD, reMD)) : "")
-        alert("XAU · Operación teórica cerrada por " + closeWhy + (closeWhy == "SL" and reAfterSL ? ". Puedes esperar una re-entrada hasta " + hhmm(math.max(cutMD, reMD)) : ". La sesión termina."), alert.freq_all)
 
-    // c) Orden stop armada: nueva, actualizada o sin cambios.
+    // c) Orden stop armada: nueva, con el nivel cambiado o sin cambios.
     if hasPend
         bool isNew = not hadPend
         bool isUpd = hadPend and (armDir != dirBefore or tk(armLvl) != tk(lvlBefore))
@@ -671,13 +552,6 @@ if sigOn and barstate.isconfirmed
             lbE := label.new(bar_index + 1, armLvl, text = ent, style = label.style_label_left, color = tagCol, textcolor = color.white, size = size.small)
             lbS := label.new(bar_index + 1, armSL, text = slTxt, style = label.style_label_left, color = #F23645, textcolor = color.white, size = size.small)
             lbT := label.new(bar_index + 1, armTP, text = tpTxt, style = label.style_label_left, color = #089981, textcolor = color.white, size = size.small)
-            string msg = side + " STOP @ " + ptxt(armLvl) + " | SL " + ptxt(armSL) + " | TP " + ptxt(armTP) + " | " + str.tostring(armLots, "#.##") + " lotes | válida hasta " + hhmm(effEnd) + (imm ? " | ATENCIÓN: el precio ya superó el nivel, entra a mercado" : "")
-            if isUpd
-                lastMsg := "Orden actualizada " + hhmm(mdOpen) + " (antes " + ptxt(lvlBefore) + ")"
-                alert("XAU · ORDEN ACTUALIZADA: " + msg + " (antes " + ptxt(lvlBefore) + "). Mueve o reemplaza tu orden.", alert.freq_all)
-            else
-                lastMsg := "Orden nueva " + hhmm(mdOpen)
-                alert("XAU · NUEVA ORDEN: " + msg, alert.freq_all)
         else
             // Sin cambios de nivel: el SL y el TP pueden moverse unos centavos con el ATR.
             if not na(lnS) and not na(lnT) and not na(lbE) and not na(lbS) and not na(lbT)
@@ -692,7 +566,7 @@ if sigOn and barstate.isconfirmed
                 label.set_xy(lbT, bar_index + 1, armTP)
                 label.set_text(lbT, tpTxt)
     else if hadPend and not filledNow
-        // La orden armada ya no es válida: se borra y se avisa.
+        // La orden armada ya no es válida: se borra y se marca "✕ ANULAR".
         string oldSide = dirBefore == 1 ? "BUY" : "SELL"
         if not na(lnE)
             line.delete(lnE)
@@ -716,8 +590,6 @@ if sigOn and barstate.isconfirmed
             label.new(bar_index, na, text = "✕ ANULAR " + oldSide + " STOP " + ptxt(lvlBefore), xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = #787B86, textcolor = color.white, size = size.small)
         else
             label.new(bar_index, na, text = "✕ ANULAR " + oldSide + " STOP " + ptxt(lvlBefore), xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = #787B86, textcolor = color.white, size = size.small)
-        lastMsg := "Orden anulada " + hhmm(mdOpen)
-        alert("XAU · ORDEN ANULADA: cancela el " + oldSide + " STOP @ " + ptxt(lvlBefore) + ". Motivo: " + stMsg, alert.freq_all)
 
     prevIn := inRange
 
@@ -731,62 +603,3 @@ if showTable and barstate.islast
     table.cell(tb, 1, 1, na(shLvl) ? "—" : str.tostring(shLvl, format.mintick), text_color = color.white, text_size = size.small)
     table.cell(tb, 0, 2, "Último swing low", text_color = color.white, text_size = size.small)
     table.cell(tb, 1, 2, na(slLvl) ? "—" : str.tostring(slLvl, format.mintick), text_color = color.white, text_size = size.small)
-
-// ── Tabla de la orden para MT5 ─────────────────────────────────────────────────────
-var table ot = table.new(position.bottom_right, 2, 8, bgcolor = #2A2E39, border_width = 1)
-if showOrdTbl and barstate.islast
-    if not sigOn
-        table.cell(ot, 0, 0, "Señales", text_color = color.white, text_size = size.small, bgcolor = #787B86)
-        table.cell(ot, 1, 0, showSig ? "Solo en el gráfico de 1 minuto" : "Desactivadas", text_color = color.white, text_size = size.small, bgcolor = #787B86)
-        for r = 1 to 7
-            table.cell(ot, 0, r, "", text_size = size.tiny)
-            table.cell(ot, 1, r, "", text_size = size.tiny)
-    else
-        bool   act   = hasPend
-        bool   opn   = tOpen
-        color  hc    = act ? (armDir == 1 ? #2962FF : C_SELLP) : opn ? #5B5B5B : #787B86
-        string title = act ? (armDir == 1 ? "BUY STOP" : "SELL STOP") : opn ? (tDir == 1 ? "BUY activada" : "SELL activada") : "Sin orden"
-        float  e     = act ? armLvl : opn ? tEntry : na
-        float  s     = act ? armSL : opn ? tSL : na
-        float  t     = act ? armTP : opn ? tTP : na
-        float  l     = act ? armLots : opn ? tLots : na
-        int    endM  = reAfterSL and traded ? math.max(cutMD, reMD) : cutMD
-        table.cell(ot, 0, 0, "MT5 · orden", text_color = color.white, text_size = size.small, bgcolor = hc)
-        table.cell(ot, 1, 0, title, text_color = color.white, text_size = size.small, bgcolor = hc)
-        table.cell(ot, 0, 1, "Entrada", text_color = color.white, text_size = size.small)
-        table.cell(ot, 1, 1, ptxt(e), text_color = color.white, text_size = size.small)
-        table.cell(ot, 0, 2, "Stop Loss", text_color = color.white, text_size = size.small)
-        table.cell(ot, 1, 2, na(s) ? "—" : ptxt(s) + "  (" + str.tostring(math.abs(e - s), "#.###") + ")", text_color = #F23645, text_size = size.small)
-        table.cell(ot, 0, 3, "Take Profit", text_color = color.white, text_size = size.small)
-        table.cell(ot, 1, 3, na(t) ? "—" : ptxt(t) + "  (" + str.tostring(math.abs(t - e), "#.###") + ")", text_color = #089981, text_size = size.small)
-        table.cell(ot, 0, 4, "Lotes", text_color = color.white, text_size = size.small)
-        table.cell(ot, 1, 4, na(l) ? "—" : str.tostring(l, "#.##"), text_color = color.white, text_size = size.small)
-        table.cell(ot, 0, 5, "Válida hasta", text_color = color.white, text_size = size.small)
-        table.cell(ot, 1, 5, act ? hhmm(endM) + " (cancela si no se activó)" : "—", text_color = color.white, text_size = size.small)
-        table.cell(ot, 0, 6, "Estado", text_color = color.white, text_size = size.small)
-        table.cell(ot, 1, 6, stMsg, text_color = color.white, text_size = size.small)
-        table.cell(ot, 0, 7, "Último evento", text_color = color.white, text_size = size.small)
-        table.cell(ot, 1, 7, lastMsg, text_color = color.white, text_size = size.small)
-
-// ── Tabla de parámetros (para compararlos con los de la estrategia) ────────────────
-var table pt = table.new(position.top_left, 2, 9, bgcolor = #2A2E39, border_width = 1)
-if showParTbl and barstate.islast
-    string slTxt0 = slMode == "ATR (volatilidad)" ? "ATR(" + str.tostring(atrLen) + ") × " + str.tostring(atrK, "#.##") : slMode
-    table.cell(pt, 0, 0, "Parámetros", text_color = color.white, text_size = size.small, bgcolor = #363A45)
-    table.cell(pt, 1, 0, "comparar con la estrategia", text_color = color.gray, text_size = size.small, bgcolor = #363A45)
-    table.cell(pt, 0, 1, "Swings (izq / der)", text_color = color.white, text_size = size.small)
-    table.cell(pt, 1, 1, str.tostring(leftBars) + " / " + str.tostring(rightBars) + (wickBreak ? " · MECHA ON" : " · mecha off"), text_color = color.white, text_size = size.small)
-    table.cell(pt, 0, 2, "Rango", text_color = color.white, text_size = size.small)
-    table.cell(pt, 1, 2, hhmm(rngStartMD) + "–" + hhmm(rngOpenMD) + " · ruptura ≥ " + str.tostring(minBreak, "#.##"), text_color = color.white, text_size = size.small)
-    table.cell(pt, 0, 3, "1.ª entrada hasta", text_color = color.white, text_size = size.small)
-    table.cell(pt, 1, 3, hhmm(cutMD), text_color = color.white, text_size = size.small)
-    table.cell(pt, 0, 4, "Re-entrada tras SL", text_color = color.white, text_size = size.small)
-    table.cell(pt, 1, 4, reAfterSL ? "sí · hasta " + hhmm(reMD) : "no", text_color = color.white, text_size = size.small)
-    table.cell(pt, 0, 5, "SL", text_color = color.white, text_size = size.small)
-    table.cell(pt, 1, 5, slTxt0 + (noMinSL ? " · sin mínimo" : " · mín " + str.tostring(minSL, "#.##")) + " · R:R " + str.tostring(rr, "#.##"), text_color = color.white, text_size = size.small)
-    table.cell(pt, 0, 6, "Entradas", text_color = color.white, text_size = size.small)
-    table.cell(pt, 1, 6, (useBIS ? "BIS" : "") + (useBIS and useBOS ? " + " : "") + (useBOS ? "BOS" : "") + (multiTrade ? " · varias/sesión" : ""), text_color = color.white, text_size = size.small)
-    table.cell(pt, 0, 7, "Filtros", text_color = color.white, text_size = size.small)
-    table.cell(pt, 1, 7, (useEMA ? "EMA " + str.tostring(emaLen) + " " : "") + (useVWAP ? "VWAP" : "") + (not useEMA and not useVWAP ? "ninguno" : ""), text_color = color.white, text_size = size.small)
-    table.cell(pt, 0, 8, "Lotes", text_color = color.white, text_size = size.small)
-    table.cell(pt, 1, 8, str.tostring(acctCapital, "#") + " USD · " + str.tostring(riskPct, "#.##") + " %", text_color = color.white, text_size = size.small)
