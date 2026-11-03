@@ -1,0 +1,568 @@
+<title>NY SYSTEM</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&family=Nunito:wght@600;700;800&display=swap">
+<style>
+/* Layout: una sola columna con aire, cuatro paradas numeradas (la secuencia real del trabajo) y una conclusión.
+   Marcos redondeados con contorno luminoso violeta; números en tipografía redondeada; sin mayúsculas. */
+:root{
+  --bg:#0A0712; --surface:#120D1F; --surface2:#1A1430; --line:rgba(123,101,240,.30); --halo:rgba(97,73,218,.10); --grid:rgba(250,249,255,.07);
+  --fg:#FAF9FF; --fg2:#BDB7D0; --fg3:#857F99;
+  --violet:#7B65F0; --violet-solid:#6149DA; --celeste:#50ACEA; --green:#3EDB9C; --orange:#F4AA44; --lila:#F0DAFF;
+  --s-xau:#F4AA44; --s-esc:#50ACEA; --s-rec:#3EDB9C; --s-spx:#B9A8FF; --s-pla:#857F99; --b-spx:#D9D5E6; --b-oro:#E77FD8;
+  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",Inter,system-ui,"Segoe UI",sans-serif;
+  --num:"Proxima Nova Soft",Nunito,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --bg:#EFECFB; --surface:#FAF9FF; --surface2:#F3F0FD; --line:rgba(97,73,218,.24); --halo:rgba(97,73,218,.07); --grid:rgba(52,52,75,.09);
+  --fg:#22222F; --fg2:#4A4960; --fg3:#73718A;
+  --violet:#6149DA; --violet-solid:#6149DA; --celeste:#1F86CC; --green:#0E9E6B; --orange:#C77A12; --lila:#6149DA;
+  --s-xau:#D98A1C; --s-esc:#1F86CC; --s-rec:#0E9E6B; --s-spx:#8B76F2; --s-pla:#9C99AE; --b-spx:#4A4960; --b-oro:#A54BB8;
+  color-scheme:light;
+}}
+:root[data-theme="light"]{
+  --bg:#EFECFB; --surface:#FAF9FF; --surface2:#F3F0FD; --line:rgba(97,73,218,.24); --halo:rgba(97,73,218,.07); --grid:rgba(52,52,75,.09);
+  --fg:#22222F; --fg2:#4A4960; --fg3:#73718A;
+  --violet:#6149DA; --violet-solid:#6149DA; --celeste:#1F86CC; --green:#0E9E6B; --orange:#C77A12; --lila:#6149DA;
+  --s-xau:#D98A1C; --s-esc:#1F86CC; --s-rec:#0E9E6B; --s-spx:#8B76F2; --s-pla:#9C99AE; --b-spx:#4A4960; --b-oro:#A54BB8;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:24px;padding-block:56px 72px;display:grid;gap:96px}
+@media (max-width:640px){.wrap{padding-inline:16px;padding-block:32px 48px;gap:72px}}
+h1,h2,h3{margin:0;text-wrap:balance;font-weight:600;letter-spacing:-.01em}
+p{margin:0}
+.muted{color:var(--fg2)} .small{font-size:13px;color:var(--fg3)}
+.num{font-family:var(--num);font-variant-numeric:tabular-nums}
+.pos{color:var(--green)} .neg{color:var(--orange)}
+.grad{background:linear-gradient(100deg,var(--violet) 0%,var(--celeste) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+a{color:var(--celeste)}
+:focus-visible{outline:2px solid var(--celeste);outline-offset:3px;border-radius:8px}
+
+/* ---------- portada (siempre oscura, como la portada de la guía) ---------- */
+.cover{--cv-bg:#0A0612;background:var(--cv-bg);border-radius:32px;min-height:min(86vh,820px);display:grid;place-items:center;padding:48px 24px;position:relative;overflow:hidden;box-shadow:0 0 0 1px rgba(123,101,240,.22)}
+.cover::after{content:"";position:absolute;inset:auto -20% -60% -20%;height:80%;background:radial-gradient(closest-side,rgba(97,73,218,.22),transparent);pointer-events:none}
+.cover h1{position:relative;z-index:1;margin:0;font-family:var(--ui);font-weight:300;font-size:clamp(44px,8.6vw,116px);line-height:1.02;letter-spacing:-.02em;text-align:center;
+  background:linear-gradient(118deg,#A6B8F7 0%,#7488D2 40%,#3E519A 75%,#25356C 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+@media (max-width:640px){.cover{min-height:62vh;border-radius:24px}}
+/* ---------- portada ---------- */
+.hero{display:grid;gap:28px}
+.eyebrow{font-size:14px;color:var(--fg3);letter-spacing:.01em}
+.hero .hero-t{font-size:clamp(32px,5vw,56px);line-height:1.08;font-weight:600;max-width:22ch}
+.hero .lead{font-size:clamp(17px,2vw,20px);color:var(--fg2);max-width:60ch}
+.big{font-family:var(--ui);font-weight:300;font-size:clamp(64px,13vw,150px);line-height:.95;letter-spacing:-.04em}
+.hero-figs{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 28px}
+.hero-figs .arrow{font-size:clamp(28px,5vw,56px);font-weight:300;color:var(--fg3);padding-bottom:.25em}
+.hero-figs .big{font-size:clamp(44px,6.6vw,92px)}
+.hero-figs .cap{display:block;font-size:14px;color:var(--fg3);margin-top:8px;letter-spacing:0}
+.note-pill{border:1px solid var(--line);box-shadow:0 0 0 6px var(--halo);border-radius:999px;padding:12px 22px;max-width:max-content;color:var(--fg2);font-size:15px}
+@media (max-width:640px){.note-pill{border-radius:22px;max-width:none}}
+
+/* ---------- hoja de ruta ---------- */
+.road{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;position:relative}
+.road a{text-decoration:none;color:inherit;display:grid;gap:10px;padding:20px;border-radius:24px;background:var(--surface);border:1px solid var(--line);transition:transform .2s ease,border-color .2s ease;min-width:0}
+.road a:hover{transform:translateY(-3px);border-color:var(--violet)}
+.road .n{font-family:var(--num);font-weight:800;font-size:13px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--violet-solid);color:#FAF9FF}
+.road .t{font-weight:600;font-size:16px;line-height:1.25}
+.road .r{font-family:var(--num);font-weight:800;font-size:28px;line-height:1}
+.road .d{font-size:13px;color:var(--fg3)}
+.road a.final{background:linear-gradient(160deg,var(--surface2),var(--surface));border-color:var(--violet);box-shadow:0 0 0 6px var(--halo)}
+@media (max-width:860px){.road{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ---------- glosario ---------- */
+.gloss{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:24px;overflow:hidden}
+.gloss div{background:var(--surface);padding:18px 18px 20px;display:grid;gap:6px;align-content:start;min-width:0}
+.gloss b{font-weight:600;font-size:15px}
+.gloss span{font-size:14px;color:var(--fg2);line-height:1.45}
+@media (max-width:860px){.gloss{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:460px){.gloss{grid-template-columns:1fr}}
+
+/* ---------- etapas ---------- */
+section.stage{display:grid;gap:28px;scroll-margin-top:24px}
+.st-head{display:grid;grid-template-columns:auto 1fr;gap:6px 20px;align-items:start}
+.st-num{font-family:var(--ui);font-weight:300;font-size:clamp(56px,8vw,96px);line-height:.85;letter-spacing:-.04em;grid-row:span 3}
+.st-kicker{font-size:14px;color:var(--fg3)}
+.st-head h2{font-size:clamp(26px,3.4vw,38px);line-height:1.12}
+.st-head .q{font-size:17px;color:var(--fg2);max-width:62ch}
+@media (max-width:560px){.st-head{grid-template-columns:1fr}.st-num{grid-row:auto}}
+.answer{display:grid;gap:6px;padding:22px 26px;border-radius:28px;border:1px solid var(--line);box-shadow:0 0 0 6px var(--halo);background:var(--surface)}
+.answer .lbl{font-size:13px;color:var(--fg3)}
+.answer p{font-size:clamp(18px,2.2vw,22px);line-height:1.35;font-weight:500;max-width:60ch;text-wrap:pretty}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border-radius:20px;padding:16px 18px;display:grid;gap:4px;align-content:start;min-width:0}
+.kpi .l{font-size:13px;color:var(--fg3);line-height:1.3}
+.kpi .v{font-family:var(--num);font-weight:800;font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:12.5px;color:var(--fg3);line-height:1.35}
+.kpi.hero-k{background:linear-gradient(150deg,var(--surface2),var(--surface));outline:1px solid var(--line)}
+.panel{background:var(--surface);border-radius:24px;padding:22px;display:grid;gap:14px;min-width:0;align-content:start}
+.panel h3{font-size:17px}
+.panel .sub{font-size:13.5px;color:var(--fg3);margin-top:-8px}
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cols3{display:grid;grid-template-columns:1.4fr 1fr;gap:12px}
+@media (max-width:820px){.cols,.cols3{grid-template-columns:1fr}}
+.learn{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.learn div{padding:18px 20px;border-radius:20px;border:1px solid var(--line);display:grid;gap:6px;align-content:start}
+.learn b{font-size:15px;font-weight:600}
+.learn p{font-size:14.5px;color:var(--fg2)}
+.ruta{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:12px;align-items:stretch}
+.ruta .paso{background:var(--surface);border-radius:24px;padding:20px 22px;display:grid;gap:6px;align-content:start;min-width:0}
+.ruta .paso.fin{background:linear-gradient(150deg,var(--surface2),var(--surface));outline:1px solid var(--violet);box-shadow:0 0 0 6px var(--halo)}
+.ruta .paso .l{font-size:13px;color:var(--fg3)}
+.ruta .paso .v{font-family:var(--num);font-weight:800;font-size:clamp(30px,4vw,44px);line-height:1}
+.ruta .paso p{font-size:14px;color:var(--fg2)}
+.ruta .flecha{display:grid;place-items:center;color:var(--fg3);font-size:13px;text-align:center;gap:4px;max-width:120px}
+.ruta .flecha b{font-family:var(--num);font-size:18px;color:var(--orange)}
+@media (max-width:820px){.ruta{grid-template-columns:1fr}.ruta .flecha{max-width:none;grid-auto-flow:column;gap:10px}}
+.panel.alt{border:1px dashed var(--line);background:transparent}
+.next{display:flex;gap:14px;align-items:center;padding:18px 22px;border-radius:999px;background:var(--surface2);font-size:15px;color:var(--fg2)}
+.next b{color:var(--fg)}
+.next .go{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--violet-solid);color:#FAF9FF;font-weight:700}
+@media (max-width:640px){.next{border-radius:22px;align-items:flex-start}}
+
+/* ---------- años lado a lado ---------- */
+.years{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.year{background:var(--surface);border-radius:24px;padding:20px 22px;display:grid;gap:14px;min-width:0}
+.year .yh{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.year .yh b{font-size:18px;font-weight:600}
+.year .yh .num{font-size:30px;font-weight:800}
+.year dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 14px;margin:0}
+.year dt{font-size:12.5px;color:var(--fg3)}
+.year dd{margin:0;font-family:var(--num);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums}
+@media (max-width:640px){.years{grid-template-columns:1fr}}
+
+/* ---------- tablas ---------- */
+.tbl{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:14.5px;font-variant-numeric:tabular-nums}
+th{font-weight:500;color:var(--fg3);font-size:12.5px;text-align:left;padding:0 12px 10px;white-space:nowrap}
+td{padding:11px 12px;border-top:1px solid var(--grid);white-space:nowrap}
+.wrapt td{white-space:normal}
+th.n,td.n{text-align:right}
+td.n{font-family:var(--num);font-weight:700}
+tr.hl td{background:var(--halo)}
+tr.hl td:first-child{border-radius:12px 0 0 12px} tr.hl td:last-child{border-radius:0 12px 12px 0}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.tag.g{background:color-mix(in srgb,var(--green) 16%,transparent);color:var(--green)}
+.tag.o{background:color-mix(in srgb,var(--orange) 16%,transparent);color:var(--orange)}
+.tag.v{background:color-mix(in srgb,var(--violet) 18%,transparent);color:var(--lila)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;vertical-align:1px}
+
+/* ---------- escalera ---------- */
+.steps{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.step{font-family:var(--num);font-weight:800;font-size:20px;padding:10px 18px;border-radius:999px;border:1px solid var(--line);background:var(--surface2)}
+.steps .ar{color:var(--fg3)}
+.hbars{display:grid;gap:10px}
+.hbar{display:grid;grid-template-columns:110px 1fr 56px;align-items:center;gap:12px;font-size:14px}
+.hbar .tr{height:12px;border-radius:999px;background:var(--grid);overflow:hidden}
+.hbar .fl{height:100%;border-radius:999px}
+.hbar .vv{text-align:right;font-family:var(--num);font-weight:700}
+@media (max-width:460px){.hbar{grid-template-columns:86px 1fr 48px}}
+
+/* ---------- ficha ---------- */
+.ficha{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:24px;overflow:hidden}
+.ficha>div{background:var(--surface);padding:16px 20px;display:grid;gap:4px;min-width:0}
+.ficha dt{font-size:13px;color:var(--fg3)} .ficha dd{margin:0;font-size:15.5px;font-weight:500}
+.ficha>.wide{grid-column:1/-1}
+@media (max-width:640px){.ficha{grid-template-columns:1fr}}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:500;padding:6px 14px;border-radius:999px;background:var(--surface2);border:1px solid var(--line)}
+
+/* ---------- gráficos ---------- */
+.chart{position:relative;width:100%}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{fill:var(--fg3);font-family:var(--ui);font-size:11px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13.5px;color:var(--fg2)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+.legend i{width:16px;height:3px;border-radius:2px;display:inline-block}
+.legend i.dot{background:repeating-linear-gradient(90deg,currentColor 0 2px,transparent 2px 5px)!important}
+.legend i.dash{background:repeating-linear-gradient(90deg,currentColor 0 5px,transparent 5px 8px)!important}
+.tip{position:absolute;pointer-events:none;background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:12.5px;line-height:1.5;min-width:170px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:2}
+.tip b{font-weight:600}
+.tip .row{display:flex;justify-content:space-between;gap:14px}
+.tip .row span:last-child{font-family:var(--num);font-weight:700}
+
+/* ---------- conclusión ---------- */
+.final-claim{display:grid;gap:16px;text-align:left}
+.final-claim .big{font-size:clamp(52px,10vw,120px)}
+.caveat{font-size:13px;color:var(--fg3);max-width:80ch;line-height:1.55}
+footer{display:grid;gap:8px;border-top:1px solid var(--grid);padding-top:24px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* ---------- NY SYSTEM: ruta de 6 paradas, la última pendiente ---------- */
+.road{grid-template-columns:repeat(3,minmax(0,1fr))}
+.road a.soon{background:transparent;border:1px dashed var(--line);cursor:default}
+.road a.soon:hover{transform:none;border-color:var(--line)}
+.road a.soon .n{background:var(--surface2);color:var(--fg3)}
+@media (max-width:860px){.road{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+@media (min-width:641px){.wrap{padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}}
+</style>
+
+<div class="wrap">
+
+<section class="cover" aria-label="Portada"><h1>NY SYSTEM</h1></section>
+
+<header class="hero">
+  <span class="eyebrow">Capital propio · XAUUSD · informe de avance · 03/11/2026</span>
+  <h2 class="hero-t">¿Merece NY SYSTEM un lugar en la cartera?</h2>
+  <div class="hero-figs" aria-label="Rendimiento anual de NY SYSTEM frente al mercado">
+    <div><span class="big num grad" id="h-a"></span><span class="cap" id="h-a-c"></span></div>
+    <span class="arrow" aria-hidden="true">vs</span>
+    <div><span class="big num" id="h-o" style="color:var(--fg3)"></span><span class="cap" id="h-o-c"></span></div>
+    <div><span class="big num" id="h-n" style="color:var(--fg3)"></span><span class="cap" id="h-n-c"></span></div>
+  </div>
+  <p class="lead" id="h-lead"></p>
+  <p class="note-pill" id="h-pill"></p>
+</header>
+
+<nav aria-label="Hoja de ruta">
+  <div class="road" id="road"></div>
+</nav>
+
+<section aria-labelledby="g-t" style="display:grid;gap:18px">
+  <h2 id="g-t" style="font-size:22px">Cómo leer los números</h2>
+  <div class="gloss">
+    <div><b>R</b><span>Unidad de resultado: 1R es lo que se arriesga en una operación. Con riesgo de 1%, +1R suma 1% a la cuenta.</span></div>
+    <div><b>Rendimiento anual</b><span>Cuánto crece la cuenta por año, reinvirtiendo lo ganado (interés compuesto).</span></div>
+    <div><b>Caída máxima</b><span>La peor baja desde un máximo hasta un mínimo, con operaciones cerradas. La «flotante» suma lo que llegó a ir en contra antes de cerrar.</span></div>
+    <div><b>Factor de beneficio</b><span>Lo ganado dividido por lo perdido. Por encima de 1 el sistema gana; por encima de 2 es muy sólido.</span></div>
+    <div><b>Calmar</b><span>Rendimiento anual dividido por la caída máxima: cuánto se gana por cada punto de caída.</span></div>
+    <div><b>Sharpe y Sortino</b><span>Rendimiento contra la oscilación semanal de la cuenta. Sortino solo castiga las semanas negativas. Más de 2 es muy bueno.</span></div>
+    <div><b>Valor t</b><span>Qué tan lejos de cero está la ventaja por operación. Por encima de 2, es difícil que sea suerte.</span></div>
+    <div><b>Simulaciones</b><span>Mezclamos al azar las mismas operaciones 5.000 veces. El «peor 5%» es el escenario desfavorable; «caída 95%» es la caída que no se superó en 95 de cada 100.</span></div>
+  </div>
+</section>
+
+<!-- 1 -->
+<section class="stage" id="etapa-1" aria-labelledby="tt1">
+  <div class="st-head">
+    <span class="st-num grad">1</span>
+    <span class="st-kicker">XAUUSD | NY SYSTEM · la estrategia tal cual, sin filtros</span>
+    <h2 id="tt1">Qué es y qué ventaja tiene</h2>
+    <p class="q">¿Hay una ventaja real, una vez descontado el costo de Multibank?</p>
+  </div>
+  <div class="answer"><span class="lbl">Respuesta</span><p id="a1"></p></div>
+  <dl class="ficha" id="f1"></dl>
+  <div class="kpis" id="k1"></div>
+  <div class="years" id="y1"></div>
+  <div class="learn" id="l1"></div>
+</section>
+
+<!-- 2 -->
+<section class="stage" id="etapa-2" aria-labelledby="tt2">
+  <div class="st-head">
+    <span class="st-num grad">2</span>
+    <span class="st-kicker">XAUUSD | Filtro por noticias · calendario económico 2025–2026</span>
+    <h2 id="tt2">Qué noticias respetar y cuáles no</h2>
+    <p class="q">¿Conviene dejar de operar algunos días según el calendario económico?</p>
+  </div>
+  <div class="answer"><span class="lbl">Respuesta</span><p id="a2"></p></div>
+  <div class="panel">
+    <h3>Resultado según la noticia del día</h3>
+    <p class="sub">Todas las operaciones · una operación puede caer en más de una categoría · R por operación neto de costos</p>
+    <div class="tbl wrapt"><table id="t2"></table></div>
+  </div>
+  <div class="panel">
+    <h3>Tres maneras de filtrar, con riesgo de 1%</h3>
+    <p class="sub">1.000 USD iniciales · interés compuesto · mismo período</p>
+    <div class="tbl"><table id="t2b"></table></div>
+  </div>
+  <div class="learn" id="l2"></div>
+</section>
+
+<!-- 3 -->
+<section class="stage" id="etapa-3" aria-labelledby="tt3">
+  <div class="st-head">
+    <span class="st-num grad">3</span>
+    <span class="st-kicker">XAUUSD | Perfiles de riesgo · con el filtro sugerido</span>
+    <h2 id="tt3">Cuánto arriesgar por operación</h2>
+    <p class="q">¿Qué rinde y cuánto cae cada perfil: conservador, moderado y arriesgado?</p>
+  </div>
+  <div class="answer"><span class="lbl">Respuesta</span><p id="a3"></p></div>
+  <div class="panel">
+    <h3>Evolución de la cuenta por perfil</h3>
+    <p class="sub">1.000 USD iniciales · interés compuesto · escala logarítmica · comparado con comprar y mantener oro o el Nasdaq</p>
+    <div class="legend" id="lg3"></div>
+    <div class="chart" id="c3"></div>
+  </div>
+  <div class="panel">
+    <h3>Ficha de cada perfil</h3>
+    <div class="tbl"><table id="t3"></table></div>
+    <p class="small">Caída flotante: incluye lo que la operación llegó a ir en contra antes de cerrar. Simulaciones: 5.000 mezclas al azar de las mismas operaciones.</p>
+  </div>
+  <div class="panel">
+    <h3>Capital mínimo para ejecutar cada perfil</h3>
+    <p class="sub">En Multibank el lote mínimo de XAUUSD es 0,01 (1 onza). Si el stop mide 9,4 USD, una operación arriesga como mínimo 9,4 USD.</p>
+    <div class="tbl"><table id="t3b"></table></div>
+    <p class="small" id="t3b-n"></p>
+  </div>
+  <div class="learn" id="l3"></div>
+</section>
+
+<!-- 4 -->
+<section class="stage" id="etapa-4" aria-labelledby="tt4">
+  <div class="st-head">
+    <span class="st-num grad">4</span>
+    <span class="st-kicker">XAUUSD | Robustez y patrones</span>
+    <h2 id="tt4">Qué tan firme es la ventaja</h2>
+    <p class="q">¿Funciona parejo en el tiempo, o depende de unos pocos días buenos?</p>
+  </div>
+  <div class="answer"><span class="lbl">Respuesta</span><p id="a4"></p></div>
+  <div class="years" id="y4"></div>
+  <div class="panel">
+    <h3>Resultado de cada mes (R)</h3>
+    <p class="sub">Con el filtro sugerido · verde: mes ganador · naranja: mes perdedor</p>
+    <div class="chart" id="m4"></div>
+  </div>
+  <div class="cols">
+    <div class="panel"><h3>Por día de la semana</h3><p class="sub">R por operación · todas las operaciones</p><div class="hbars" id="hb-dia"></div></div>
+    <div class="panel"><h3>Por hora de entrada (Nueva York)</h3><p class="sub">R por operación · todas las operaciones</p><div class="hbars" id="hb-hora"></div></div>
+  </div>
+  <div class="panel">
+    <h3>Detalle de patrones</h3>
+    <div class="tbl"><table id="t4"></table></div>
+  </div>
+  <div class="learn" id="l4"></div>
+</section>
+
+<!-- 5 -->
+<section class="stage" id="veredicto" aria-labelledby="tc">
+  <div class="final-claim">
+    <span class="st-kicker">Veredicto</span>
+    <h2 id="tc" style="font-size:clamp(26px,3.4vw,38px);max-width:32ch;line-height:1.15"></h2>
+  </div>
+  <div class="panel">
+    <h3>NY SYSTEM frente al mercado</h3>
+    <p class="sub" id="tc-s"></p>
+    <div class="tbl"><table id="tc-t"></table></div>
+    <p class="small" id="tc-n"></p>
+  </div>
+  <div class="learn" id="lc"></div>
+  <div class="panel alt">
+    <h3>Próxima etapa: Nasdaq (MNQ)</h3>
+    <p class="muted">Este informe crece por etapas. Cuando sumemos la estrategia del Nasdaq, la comparamos con NY SYSTEM y medimos si operar los dos juntos baja la caída sin resignar rendimiento. Un dato a favor: los meses de NY SYSTEM casi no se mueven con los del oro ni con los del Nasdaq.</p>
+  </div>
+  <footer>
+    <p class="caveat">Resultados de backtest: operaciones de TradingView reproducidas con interés compuesto. Cada operación descuenta el costo de Multibank para XAUUSD (0,05 USD por onza ida y vuelta: spread más comisión), medido contra la distancia del stop. No se modeló deslizamiento extra en noticias. Un resultado pasado no asegura el futuro.</p>
+    <p class="small" id="ft"></p>
+  </footer>
+</section>
+
+</div>
+
+<script>
+const D = __DATA__;
+const $ = s => document.querySelector(s);
+const nf = (v, d = 1) => Number(v).toLocaleString('es-AR', {minimumFractionDigits: d, maximumFractionDigits: d});
+const sg = (v, d = 1) => (v > 0 ? '+' : v < 0 ? '−' : '') + nf(Math.abs(v), d);
+const pc = (v, d = 1) => sg(v, d) + '%';
+const cl = v => v > 0 ? 'pos' : v < 0 ? 'neg' : '';
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const usd = v => nf(v, 0);
+const MES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const kpi = (l, v, s = '', c = '', h = false) => `<div class="kpi${h ? ' hero-k' : ''}"><span class="l">${l}</span><span class="v ${c}">${v}</span>${s ? `<span class="s">${s}</span>` : ''}</div>`;
+const leg = ss => ss.map(s => `<span><i class="${s.dot ? 'dot' : s.dash ? 'dash' : ''}" style="background:${s.color};color:${s.color}"></i>${s.name}</span>`).join('');
+const learn = xs => xs.map(([b, p]) => `<div><b>${b}</b><p>${p}</p></div>`).join('');
+const NOMP = {Conservador: 'Conservador', Moderado: 'Moderado', 'Moderado+': 'Moderado alto', Arriesgado: 'Arriesgado'};
+const pn = p => `${NOMP[p.nombre]} · ${nf(p.p, p.p % 1 ? 1 : 0)}%`;
+
+const B = D.base, A25 = D.anios['2025'], A26 = D.anios['2026'];
+const PS = D.perfiles['Filtro sugerido'], PN = D.perfiles['Sin filtro'], PR = D.perfiles['Regla MNQ (Rascacielos)'];
+const P1 = PS.p.find(p => p.p === 1), P1n = PN.p.find(p => p.p === 1), P1r = PR.p.find(p => p.p === 1);
+const BO = D.bench.oro, BN = D.bench.nasdaq;
+const bOro = () => ({name: `Oro, comprar y mantener (${pc(BO.ret)})`, short: 'Oro', color: css('--b-oro'), pts: BO.curve, w: 1.8, dot: true});
+const bNas = () => ({name: `Nasdaq, comprar y mantener (${pc(BN.ret)})`, short: 'Nasdaq', color: css('--b-spx'), pts: BN.curve, w: 1.8, dot: true});
+
+/* ---------------- gráficos ---------------- */
+const T0 = new Date('2025-01-08'), T1 = new Date('2026-10-26');
+function niceTicks(lo, hi, n = 5) {
+  const span = hi - lo, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => span / s <= n) || 10 * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(6)); return out;
+}
+function lineChart(el, series, {h = 300, log = false} = {}) {
+  const W = Math.max(320, el.clientWidth || 800), H = h, m = {l: 52, r: 14, t: 12, b: 28};
+  const all = series.flatMap(s => s.pts.map(p => p.eq)).concat([1000]);
+  let lo = Math.min(...all), hi = Math.max(...all);
+  const f = log ? Math.log : (x => x);
+  if (!log) { const pad = (hi - lo) * .06; lo -= pad; hi += pad; } else { lo *= .96; hi *= 1.04; }
+  const x = d => m.l + (d - T0) / (T1 - T0) * (W - m.l - m.r);
+  const y = v => m.t + (1 - (f(v) - f(lo)) / (f(hi) - f(lo))) * (H - m.t - m.b);
+  let ticks = log ? [800, 1000, 1250, 1500, 2000, 2500, 3000].filter(v => v >= lo && v <= hi) : niceTicks(lo, hi);
+  let g = '';
+  ticks.forEach(v => { g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end">${usd(v)}</text>`; });
+  g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(1000)}" y2="${y(1000)}" stroke="var(--fg3)" stroke-dasharray="2 4" opacity=".7"/>`;
+  for (let yy = 2025, mm = 1; yy < 2027; mm += 3) { if (mm > 12) { mm -= 12; yy++; } if (yy > 2026) break; const d = new Date(yy, mm - 1, 1); if (d < T0 || d > T1) continue;
+    g += `<text x="${x(d)}" y="${H - 8}" text-anchor="middle">${MES[mm - 1]}${mm === 1 ? ' ' + yy : ''}</text>`; }
+  series.forEach(s => {
+    const pts = [{t: '2025-01-08', eq: 1000}].concat(s.pts);
+    const dpath = pts.map((p, i) => `${i ? 'L' : 'M'}${x(new Date(p.t)).toFixed(1)},${y(p.eq).toFixed(1)}`).join('');
+    if (s.area) g += `<path d="${dpath}L${x(new Date(pts.at(-1).t))},${H - m.b}L${m.l},${H - m.b}Z" fill="${s.color}" opacity=".08"/>`;
+    g += `<path d="${dpath}" fill="none" stroke="${s.color}" stroke-width="${s.w || 2}" stroke-linejoin="round" ${s.dot ? 'stroke-dasharray="1.5 3.5" stroke-linecap="round"' : s.dash ? 'stroke-dasharray="5 4"' : ''}/>`;
+    const lp = pts.at(-1); g += `<circle cx="${x(new Date(lp.t))}" cy="${y(lp.eq)}" r="${s.w > 2 ? 4.5 : 3}" fill="${s.color}"/>`;
+  });
+  g += `<line class="cx" x1="0" x2="0" y1="${m.t}" y2="${H - m.b}" stroke="var(--fg3)" opacity="0"/>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Curva de capital">${g}</svg><div class="tip" hidden></div>`;
+  const svg = el.querySelector('svg'), tip = el.querySelector('.tip'), cx = svg.querySelector('.cx');
+  const at = (s, d) => { let r = 1000; for (const p of s.pts) { if (new Date(p.t) <= d) r = p.eq; else break; } return r; };
+  const move = ev => {
+    const b = svg.getBoundingClientRect(), px = (ev.clientX - b.left) * W / b.width;
+    if (px < m.l || px > W - m.r) { tip.hidden = true; cx.setAttribute('opacity', 0); return; }
+    const d = new Date(+T0 + (px - m.l) / (W - m.l - m.r) * (T1 - T0));
+    cx.setAttribute('x1', px); cx.setAttribute('x2', px); cx.setAttribute('opacity', .5);
+    tip.innerHTML = `<b>${d.toLocaleDateString('es-AR', {day: '2-digit', month: '2-digit', year: 'numeric'})}</b>` +
+      series.map(s => `<div class="row"><span><i class="dot" style="background:${s.color}"></i>${s.short || s.name}</span><span>${usd(at(s, d))}</span></div>`).join('');
+    tip.hidden = false;
+    const left = (ev.clientX - b.left), tw = tip.offsetWidth;
+    tip.style.left = Math.min(Math.max(0, left + 14), b.width - tw) + 'px'; tip.style.top = '8px';
+  };
+  svg.addEventListener('pointermove', move); svg.addEventListener('pointerleave', () => { tip.hidden = true; cx.setAttribute('opacity', 0); });
+}
+function barChart(el, items, {h = 200, unit = 'R', dec = 1} = {}) {
+  const W = Math.max(320, el.clientWidth || 800), H = h, m = {l: 40, r: 8, t: 10, b: 34};
+  const vs = items.map(i => i.v), hi = Math.max(0, ...vs), lo = Math.min(0, ...vs);
+  const pad = (hi - lo) * .08, Y0 = lo - (lo < 0 ? pad : 0), Y1 = hi + pad;
+  const y = v => m.t + (1 - (v - Y0) / (Y1 - Y0)) * (H - m.t - m.b);
+  const bw = (W - m.l - m.r) / items.length;
+  let g = '';
+  niceTicks(Y0, Y1, 4).forEach(v => { g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${m.l - 6}" y="${y(v) + 4}" text-anchor="end">${sg(v, Math.abs(v) < 10 && v % 1 ? 1 : 0)}</text>`; });
+  items.forEach((it, i) => {
+    const x0 = m.l + i * bw + bw * .18, w = bw * .64, top = y(Math.max(0, it.v)), hh = Math.abs(y(it.v) - y(0));
+    g += `<rect x="${x0}" y="${top}" width="${w}" height="${Math.max(1, hh)}" rx="${Math.min(4, w / 2)}" fill="${it.v >= 0 ? 'var(--green)' : 'var(--orange)'}"><title>${it.title}: ${sg(it.v, dec)}${unit}</title></rect>`;
+    if (bw > 15 || i % 2 === 0) g += `<text x="${x0 + w / 2}" y="${H - 18}" text-anchor="middle">${it.label}</text>`;
+    if (it.year) g += `<text x="${x0 + w / 2}" y="${H - 3}" text-anchor="middle" style="font-weight:600">${it.year}</text>`;
+  });
+  g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(0)}" y2="${y(0)}" stroke="var(--fg3)"/>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Resultado mensual">${g}</svg>`;
+}
+const hbars = (items, max) => items.map(it => `<div class="hbar"><span>${it.l}</span><div class="tr"><div class="fl" style="width:${Math.max(1.5, Math.abs(it.v) / max * 100)}%;background:${it.v >= 0 ? 'var(--green)' : 'var(--orange)'}"></div></div><span class="vv ${cl(it.v)}">${sg(it.v, 2)}</span></div>`).join('');
+
+/* ---------------- portada y ruta ---------------- */
+$('#h-a').textContent = pc(P1.cagr, 0); $('#h-a-c').textContent = `anual · NY SYSTEM con riesgo de 1% · caída máx. ${pc(-P1.mdd)}`;
+$('#h-o').textContent = pc(BO.cagr, 0); $('#h-o-c').textContent = `anual · oro · caída máx. ${pc(-BO.mdd)}`;
+$('#h-n').textContent = pc(BN.cagr, 0); $('#h-n-c').textContent = `anual · Nasdaq · caída máx. ${pc(-BN.mdd)}`;
+$('#h-lead').innerHTML = `Con riesgo de 1% por operación, NY SYSTEM llevó 1.000 USD a ${usd(P1.final)} USD (${pc(P1.ret)}), con una caída máxima de ${pc(-P1.mdd)}. Comprar oro y esperar rindió ${pc(BO.ret)}, pero con una caída de ${pc(-BO.mdd)}. La estrategia gana por riesgo asumido, no por rendimiento bruto. La advertencia: en 2026 la ventaja por operación se redujo a la mitad.`;
+$('#h-pill').textContent = `Mismo punto de partida para todo: 1.000 USD, operaciones del backtest entre el ${D.meta.desde} y el ${D.meta.hasta}, en horario de Nueva York, netas del costo de Multibank.`;
+const road = [
+  ['etapa-1', 1, 'La estrategia', sg(B.R_op, 2) + 'R', `por operación · win rate ${nf(B.wr)}%`],
+  ['etapa-2', 2, 'Filtro por noticias', sg(PS.base.R_op, 2) + 'R', `por operación · sin CPI ni NFP`],
+  ['etapa-3', 3, 'Perfiles de riesgo', pc(P1.cagr), `anual con riesgo de 1%`],
+  ['etapa-4', 4, 'Robustez', sg(PS.anios['2026'].R_op, 2) + 'R', `por operación en 2026 · era ${sg(PS.anios['2025'].R_op, 2)}R`],
+  ['veredicto', 5, 'Veredicto', 'Sí, con 1%', 'y validando 2023–2024'],
+  ['', 6, 'Nasdaq (MNQ)', 'Próximamente', 'diversificación de la cartera']];
+$('#road').innerHTML = road.map(([id, n, t, r, d], i) => i === 5
+  ? `<a class="soon" aria-disabled="true"><span class="n">${n}</span><span class="t">${t}</span><span class="r num" style="color:var(--fg3);font-size:22px">${r}</span><span class="d">${d}</span></a>`
+  : `<a href="#${id}" class="${i === 4 ? 'final' : ''}"><span class="n">${n}</span><span class="t">${t}</span><span class="r num ${i === 4 ? 'grad' : 'pos'}">${r}</span><span class="d">${d}</span></a>`).join('');
+
+/* ---------------- 1 ---------------- */
+$('#a1').innerHTML = `Sí. En ${B.n} operaciones ganó ${nf(B.wr)}% de las veces, con riesgo y objetivo iguales (1:1). Eso deja ${sg(B.R_op, 2)}R por operación y ${sg(B.R, 1)}R en total, con un valor t de ${nf(B.t)}: difícil que sea azar. El costo de Multibank casi no pesa: ${nf(B.costo_R * 100, 1)}% de R por operación.`;
+$('#f1').innerHTML = [
+  ['Activo', 'XAUUSD (oro contra dólar), CFD en Multibank'],
+  ['Horario', 'Sesión de Nueva York, entradas entre 09:30 y 10:45'],
+  ['Señal', 'Patrón «BIS» con stop medido por ATR'],
+  ['Salida', 'Stop o objetivo, relación 1:1. Sin break even ni salida por tiempo'],
+  ['Frecuencia', `${nf(B.por_sem, 1)} operaciones por semana · ${B.dias} días operados de ${Math.round((new Date(2026, 9, 26) - new Date(2025, 0, 8)) / 864e5 / 7 * 5)} hábiles`],
+  ['Segunda operación', 'Solo si la primera del día tocó el stop'],
+  ['Duración típica', `${B.dur} minutos (mediana)`],
+  ['Stop típico', `${nf(D.meta.dist_med, 2)} USD por onza (mediana) · ${nf(D.meta.dist_p90, 2)} USD en el 90% de los casos`],
+  ['Período', `${D.meta.desde} al ${D.meta.hasta}`, true]
+].map(([a, b, w]) => `<div${w ? ' class="wide"' : ''}><dt>${a}</dt><dd>${b}</dd></div>`).join('');
+$('#k1').innerHTML = kpi('Win rate', nf(B.wr) + '%', `${B.n} operaciones`, '', true) +
+  kpi('R por operación', sg(B.R_op, 2), `valor t ${nf(B.t)}`, 'pos', true) +
+  kpi('Resultado total', sg(B.R) + 'R', `${sg(B.R_sem, 2)}R por semana`, 'pos') +
+  kpi('Factor de beneficio', nf(B.pf, 2), `gana ${nf(B.pf, 2)} por cada 1 que pierde`) +
+  kpi('Payoff', nf(B.payoff, 2), 'ganancia media / pérdida media') +
+  kpi('Peor racha', B.racha_p + ' pérdidas', 'seguidas') +
+  kpi('Mejor racha', B.racha_g + ' ganadas', 'seguidas') +
+  kpi('Costo por operación', nf(B.costo_R, 3) + 'R', '0,05 USD por onza');
+const yr = (y, o, extra = '') => `<div class="year"><div class="yh"><b>${y}</b><span class="num ${cl(o.R_op)}">${sg(o.R_op, 2)}R <span class="small">por op.</span></span></div><dl>
+  <div><dt>Win rate</dt><dd>${nf(o.wr)}%</dd></div><div><dt>Factor de beneficio</dt><dd>${nf(o.pf, 2)}</dd></div><div><dt>Valor t</dt><dd>${nf(o.t)}</dd></div>
+  <div><dt>Operaciones</dt><dd>${o.n}</dd></div><div><dt>Resultado</dt><dd class="${cl(o.R)}">${sg(o.R)}R</dd></div><div><dt>Peor racha</dt><dd>${o.racha_p}</dd></div>${extra}</dl></div>`;
+$('#y1').innerHTML = yr('2025', A25) + yr('2026 (hasta el 26/10)', A26);
+$('#l1').innerHTML = learn([
+  ['Lo fuerte', `Gana dos de cada tres operaciones con riesgo y objetivo iguales. La peor racha fue de ${B.racha_p} pérdidas seguidas en casi dos años.`],
+  ['Lo que preocupa', `2026 rinde la mitad que 2025: ${sg(A26.R_op, 2)}R contra ${sg(A25.R_op, 2)}R por operación, con un valor t de ${nf(A26.t)}. Sigue ganando, pero con menos margen.`],
+  ['El costo', `El stop típico mide ${nf(D.meta.dist_med, 1)} USD por onza, así que el costo de 0,05 USD es menos de 1% de R. A diferencia de otros activos, acá el costo no cambia la conclusión.`]]);
+
+/* ---------------- 2 ---------------- */
+const REC = {
+  'CPI EE. UU.': ['o', 'No operar', 'Dato de inflación a las 08:30, una hora antes de la entrada. Perdió las 3 veces.'],
+  'NFP': ['o', 'No operar', 'Dato de empleo a las 08:30: el que más mueve el oro. 2 de 4, sin ventaja.'],
+  'Minutas FOMC': ['g', 'Operar', 'Salen a las 14:00, horas después de la operación. El resultado plano es azar.'],
+  'FOMC (decisión)': ['g', 'Operar', 'La decisión sale a las 14:00, después de la operación. 3 de 3.'],
+  'PCE': ['v', 'Observar', 'Solo 2 casos. Sin datos para decidir.'],
+  'PIB': ['v', 'Observar', 'Solo 1 caso.'],
+  'Feriado EE. UU.': ['v', 'Observar', 'Solo 1 caso.'],
+  'Sin noticias': ['g', 'Operar', 'El grueso de la ventaja.']};
+const t2rows = D.noticias.slice().sort((a, b) => (a.k === 'Sin noticias') - (b.k === 'Sin noticias') || b.n - a.n);
+$('#t2').innerHTML = `<thead><tr><th>Noticia del día</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">R por op.</th><th class="n">2025</th><th class="n">2026</th><th>Sugerencia</th><th>Por qué</th></tr></thead><tbody>` +
+  t2rows.map(x => { const r = REC[x.k] || ['g', 'Operar', 'Resultado positivo en ambos años.'];
+    return `<tr${r[0] === 'o' ? ' class="hl"' : ''}><td>${x.k}</td><td class="n">${x.n}</td><td class="n">${nf(x.wr, 0)}%</td><td class="n ${cl(x.R_op)}">${sg(x.R_op, 2)}</td><td class="n ${cl(x.R2025)}">${sg(x.R2025)}R</td><td class="n ${cl(x.R2026)}">${sg(x.R2026)}R</td><td><span class="tag ${r[0]}">${r[1]}</span></td><td class="small" style="min-width:220px">${r[2]}</td></tr>`; }).join('') + '</tbody>';
+const fr = [['Sin filtro', PN, P1n, 'Todas las operaciones'], ['Filtro sugerido', PS, P1, 'Sin CPI de EE. UU. ni NFP'], ['Regla del Nasdaq', PR, P1r, 'La regla de Rascacielos (MNQ)']];
+$('#t2b').innerHTML = `<thead><tr><th>Filtro</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">R por op.</th><th class="n">Anual</th><th class="n">Caída máx.</th><th class="n">Calmar</th><th class="n">Sharpe</th><th></th></tr></thead><tbody>` +
+  fr.map(([n, F, p, d], i) => `<tr${i === 1 ? ' class="hl"' : ''}><td>${n}<div class="small">${d}</div></td><td class="n">${F.base.n}</td><td class="n">${nf(F.base.wr)}%</td><td class="n pos">${sg(F.base.R_op, 2)}</td><td class="n pos">${pc(p.cagr)}</td><td class="n neg">${pc(-p.mdd)}</td><td class="n">${nf(p.calmar, 2)}</td><td class="n">${nf(p.sharpe, 2)}</td><td>${i === 1 ? '<span class="tag g">Elegido</span>' : i === 2 ? '<span class="tag o">Descartado</span>' : '<span class="tag v">Referencia</span>'}</td></tr>`).join('') + '</tbody>';
+$('#a2').innerHTML = `Solo dos: no operar los días de CPI de EE. UU. ni de NFP. Son los datos que más mueven el oro y salen a las 08:30, justo antes de la entrada. Sacarlos quita ${PN.base.n - PS.base.n} operaciones y sube el rendimiento anual con 1% de ${pc(P1n.cagr)} a ${pc(P1.cagr)}, con menos caída (${pc(-P1.mdd)} contra ${pc(-P1n.mdd)}). La regla completa del Nasdaq no sirve acá: deja afuera días buenos y baja el anual a ${pc(P1r.cagr)}.`;
+$('#l2').innerHTML = learn([
+  ['Por qué tan pocos', 'Cada categoría tiene entre 1 y 9 operaciones. Con tan pocos casos, filtrar por resultado sería ajustar el pasado. Solo excluimos lo que tiene una razón de mercado y además salió mal.'],
+  ['Noticias de la tarde', 'FOMC y minutas salen a las 14:00, horas después de que la operación cerró (dura unos 15 minutos). No tienen cómo afectarla.'],
+  ['Feriados y receso', 'A diferencia del Nasdaq, el oro rinde bien en feriados europeos y en el receso de fin de año. No hace falta dejar de operar esos días.']]);
+
+/* ---------------- 3 ---------------- */
+$('#a3').innerHTML = `El perfil Moderado (1%) es el equilibrio: ${pc(P1.cagr)} anual con caída máxima de ${pc(-P1.mdd)}, y aun en el peor 5% de las simulaciones rinde ${pc(P1.mc.cagr_p5)} anual. Duplicar el riesgo a 2% duplica la caída: el riesgo escala casi en línea recta. El límite real es el capital: con 1.000 USD el perfil Conservador no se puede ejecutar.`;
+$('#t3').innerHTML = `<thead><tr><th>Perfil</th><th class="n">Anual</th><th class="n">Total</th><th class="n">2025</th><th class="n">2026</th><th class="n">Caída máx.</th><th class="n">Flotante</th><th class="n">Calmar</th><th class="n">Sharpe</th><th class="n">Sortino</th><th class="n">Peor mes</th><th class="n">Peor semana</th><th class="n">Meses +</th><th class="n">Sin máximo</th><th class="n">Peor 5% sim.</th><th class="n">Caída 95% sim.</th><th class="n">P(caída &gt; 20%)</th></tr></thead><tbody>` +
+  PS.p.map(p => `<tr${p.p === 1 ? ' class="hl"' : ''}><td>${pn(p)}</td><td class="n pos">${pc(p.cagr)}</td><td class="n pos">${pc(p.ret)}</td><td class="n pos">${pc(p.anios['2025'])}</td><td class="n pos">${pc(p.anios['2026'])}</td><td class="n neg">${pc(-p.mdd)}</td><td class="n neg">${pc(-p.mdd_flot)}</td><td class="n">${nf(p.calmar, 2)}</td><td class="n">${nf(p.sharpe, 2)}</td><td class="n">${nf(p.sortino, 2)}</td><td class="n neg">${pc(p.peor_mes)}</td><td class="n neg">${pc(p.peor_sem)}</td><td class="n">${nf(p.mes_pos, 0)}%</td><td class="n">${p.bajo_agua} días</td><td class="n pos">${pc(p.mc.cagr_p5)}</td><td class="n neg">${pc(-p.mc.dd_p95)}</td><td class="n">${nf(p.mc.p_dd20)}%</td></tr>`).join('') + '</tbody>';
+$('#t3b').innerHTML = `<thead><tr><th>Perfil</th><th class="n">Riesgo con 1.000 USD</th><th class="n">Operaciones ejecutables con 1.000 USD</th><th class="n">Capital mínimo (stop típico)</th><th class="n">Capital mínimo (90% de los stops)</th><th class="n">Capital sugerido</th></tr></thead><tbody>` +
+  D.capital.map(c => `<tr${c.p === 1 ? ' class="hl"' : ''}><td>${NOMP[c.nombre]} · ${nf(c.p, c.p % 1 ? 1 : 0)}%</td><td class="n">${nf(10 * c.p, 0)} USD</td><td class="n ${c.ok1000 < 80 ? 'neg' : ''}">${nf(c.ok1000, 0)}%</td><td class="n">${usd(c.med)} USD</td><td class="n">${usd(c.p90)} USD</td><td class="n">${usd(c.rec)} USD</td></tr>`).join('') + '</tbody>';
+$('#t3b-n').textContent = 'Capital sugerido: el que permite operar al menos 5 onzas con el stop típico, para que redondear el lote a 0,01 no cambie el riesgo más de 20%. Debajo del capital mínimo, el lote más chico ya arriesga más que el perfil elegido.';
+$('#l3').innerHTML = learn([
+  ['Conservador · 0,5%', `${pc(PS.p[0].cagr)} anual, caída de ${pc(-PS.p[0].mdd)}. Es el más cómodo, pero necesita unos ${usd(D.capital[0].p90)} USD para que el lote mínimo no lo convierta en otro perfil.`],
+  ['Moderado · 1% y 1,5%', `${pc(PS.p[1].cagr)} y ${pc(PS.p[2].cagr)} anual, con caídas de ${pc(-PS.p[1].mdd)} y ${pc(-PS.p[2].mdd)}. El 1% es el punto de partida recomendado mientras se valida en vivo.`],
+  ['Arriesgado · 2%', `${pc(PS.p[3].cagr)} anual con caída de ${pc(-PS.p[3].mdd)} en el backtest. En las simulaciones la caída llega a ${pc(-PS.p[3].mc.dd_p95)}, y si 2026 es el nuevo normal, el rendimiento sería bastante menor.`]]);
+
+/* ---------------- 4 ---------------- */
+const S25 = PS.anios['2025'], S26 = PS.anios['2026'];
+$('#a4').innerHTML = `Parejo mes a mes, pero perdiendo fuerza. Con el filtro, ganó ${D.meses_R.filter(m => m.R > 0).length} de ${D.meses_R.length} meses, y el único mes claramente negativo fue agosto de 2026 (${sg(D.meses_R.find(m => m.mes === '2026-08').R)}R). El problema es la tendencia: la ventaja por operación bajó de ${sg(S25.R_op, 2)}R en 2025 a ${sg(S26.R_op, 2)}R en 2026.`;
+$('#y4').innerHTML = yr('2025 · con filtro', S25) + yr('2026 · con filtro', S26);
+const MR = D.meses_R.map(m => ({v: m.R, label: MES[+m.mes.slice(5) - 1], year: m.mes.endsWith('-01') ? m.mes.slice(0, 4) : '', title: `${MES[+m.mes.slice(5) - 1]} ${m.mes.slice(0, 4)}`}));
+const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+const dia = DIAS.map(d => D.dia.find(x => x.k === d)), hora = ['09:30–09:44', '09:45–09:59', '10:00–10:29', '10:30 o más'].map(h => D.franja.find(x => x.k === h));
+const mx = Math.max(...dia.concat(hora).map(x => Math.abs(x.R_op)));
+$('#hb-dia').innerHTML = hbars(dia.map(x => ({l: x.k, v: x.R_op})), mx);
+$('#hb-hora').innerHTML = hbars(hora.map(x => ({l: x.k, v: x.R_op})), mx);
+const pat = [['Día', dia], ['Hora de entrada', hora], ['Orden en el día', D.orden]];
+$('#t4').innerHTML = `<thead><tr><th>Grupo</th><th class="n">Ops.</th><th class="n">Win rate</th><th class="n">R por op.</th><th class="n">Resultado</th><th class="n">2025</th><th class="n">2026</th><th class="n">Peor racha</th></tr></thead><tbody>` +
+  pat.map(([g, xs]) => `<tr><td colspan="8" class="small" style="padding-top:18px">${g}</td></tr>` + xs.map(x => `<tr><td>${x.k}</td><td class="n">${x.n}</td><td class="n">${nf(x.wr, 0)}%</td><td class="n ${cl(x.R_op)}">${sg(x.R_op, 2)}</td><td class="n ${cl(x.R)}">${sg(x.R)}R</td><td class="n ${cl(x.R2025)}">${sg(x.R2025)}R</td><td class="n ${cl(x.R2026)}">${sg(x.R2026)}R</td><td class="n">${x.racha_p}</td></tr>`).join('')).join('') + '</tbody>';
+const lun = D.dia.find(x => x.k === 'Lunes'), seg = D.orden.find(x => x.k.startsWith('2'));
+$('#l4').innerHTML = learn([
+  ['La segunda operación suma', `Después de un stop, la segunda del día ganó ${nf(seg.wr, 0)}% de las veces (${sg(seg.R_op, 2)}R por operación, ${seg.n} casos). Conviene mantenerla.`],
+  ['Los lunes, a vigilar', `Es el día más flojo (${sg(lun.R_op, 2)}R) y en 2026 resta ${sg(lun.R2026)}R. Con ${lun.n} operaciones no alcanza para sacarlo; lo seguimos mirando.`],
+  ['Riesgo de sobreajuste', 'Los parámetros del ATR y la señal se eligieron mirando estos mismos datos. La prueba de fuego es correr la estrategia sin cambios en 2023 y 2024.']]);
+
+/* ---------------- veredicto ---------------- */
+$('#tc').textContent = 'Sí, conviene incorporarla: rinde más que el mercado con una fracción de su caída. Empezar con 1% y validar 2023–2024 antes de subir el riesgo.';
+$('#tc-s').textContent = `1.000 USD iniciales · ${D.meta.desde} al ${D.meta.hasta} · NY SYSTEM con filtro sugerido y costos de Multibank`;
+const rows = PS.p.map(p => [`NY SYSTEM · ${pn(p)}`, p.cagr, p.ret, p.mdd, p.calmar, p.mc.cagr_p5, p.p === 1 ? 'Recomendado' : 'Alternativa'])
+  .concat([['Oro · comprar y mantener', BO.cagr, BO.ret, BO.mdd, BO.cagr / BO.mdd, null, 'Mercado'], ['Nasdaq · comprar y mantener', BN.cagr, BN.ret, BN.mdd, BN.cagr / BN.mdd, null, 'Mercado']]);
+$('#tc-t').innerHTML = `<thead><tr><th>Gestión</th><th class="n">Anual</th><th class="n">Total</th><th class="n">Caída máx.</th><th class="n">Calmar</th><th class="n">Peor 5% sim.</th><th></th></tr></thead><tbody>` +
+  rows.map(r => `<tr${r[6] === 'Recomendado' ? ' class="hl"' : ''}><td>${r[0]}</td><td class="n pos">${pc(r[1])}</td><td class="n pos">${pc(r[2])}</td><td class="n neg">${pc(-r[3])}</td><td class="n">${nf(r[4], 2)}</td><td class="n">${r[5] == null ? '—' : pc(r[5])}</td><td><span class="tag ${r[6] === 'Recomendado' ? 'g' : r[6] === 'Mercado' ? 'v' : 'o'}">${r[6]}</span></td></tr>`).join('') + '</tbody>';
+$('#tc-n').innerHTML = `Correlación mensual con riesgo de 1%: ${sg(BO.corr, 2)} con el oro y ${sg(BN.corr, 2)} con el Nasdaq. Los meses de NY SYSTEM no siguen al mercado, y eso es lo que más vale en una cartera. Nasdaq medido hasta el ${BN.fin.split('-').reverse().join('/')}.`;
+$('#lc').innerHTML = learn([
+  ['A favor', `Por cada punto de caída gana ${nf(P1.calmar, 1)} puntos de rendimiento anual; el oro y el Nasdaq, menos de 1. Además no se mueve con el mercado: suma a la cartera en vez de repetirla.`],
+  ['En contra', `Son ${PS.base.n} operaciones en 22 meses, y 2026 rinde la mitad que 2025. Si la ventaja sigue cayendo, el 1% quedaría cerca de ${pc(PS.p[1].anios['2026'] * 12 / 10, 0)} anual, todavía por encima del Nasdaq pero sin margen.`],
+  ['Próximos pasos', 'Exportar 2023 y 2024 con los mismos parámetros. Si la ventaja se sostiene, operarla en vivo con 1% y no operar CPI ni NFP. Revisar cada trimestre y sumar la estrategia del Nasdaq.']]);
+$('#ft').textContent = `Fuentes: lista de operaciones del Strategy Tester de TradingView (XAU_ATR, ${B.n} operaciones), calendario económico de Nueva York 2025–2026 (cargado hasta el ${D.meta.cal_hasta}) y precios de oro y Nasdaq tomados de las mismas exportaciones.`;
+
+/* ---------------- dibujar ---------------- */
+function draw() {
+  const col = ['--s-esc', '--s-rec', '--s-xau', '--orange'];
+  const s3 = PS.p.map((p, i) => ({name: `${pn(p)} (${pc(p.ret)})`, short: pn(p), color: css(col[i]), pts: p.curve, w: p.p === 1 ? 3 : 1.7, area: p.p === 1, dash: i === 3})).concat([bOro(), bNas()]);
+  $('#lg3').innerHTML = leg(s3);
+  lineChart($('#c3'), s3, {h: 360, log: true});
+  barChart($('#m4'), MR, {h: 210});
+}
+draw();
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(draw, 150); });
+matchMedia('(prefers-color-scheme: light)').addEventListener?.('change', draw);
+new MutationObserver(draw).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
+</script>
