@@ -18,7 +18,8 @@
 //      para ventas) sigue sin romperse. La orden es BUY STOP / SELL STOP en el nivel de ese swing.
 //    · La orden se mantiene mientras todo siga alineado. Si el nivel cambia (swing nuevo) la
 //      orden se redibuja en el nivel nuevo: mueve o reemplaza la tuya. Si deja de ser válida
-//      (cambia la dirección o la estructura, o llega la hora límite) aparece "✕ ANULAR".
+//      (cambia la dirección o la estructura, o llega la hora límite) simplemente desaparece del
+//      gráfico: si la ves desaparecer sin que se haya activado (sin marca BUY / SELL), cancela la tuya.
 //    · SL y TP se calculan igual que en la estrategia (ATR / swing, mínimo, R:R). Pueden moverse
 //      unos centavos de una vela a otra porque el ATR cambia.
 //    · Una vez activada, la operación teórica se sigue vela a vela (SL primero si una vela toca SL
@@ -566,8 +567,7 @@ if sigOn and barstate.isconfirmed
                 label.set_xy(lbT, bar_index + 1, armTP)
                 label.set_text(lbT, tpTxt)
     else if hadPend and not filledNow
-        // La orden armada ya no es válida: se borra y se marca "✕ ANULAR".
-        string oldSide = dirBefore == 1 ? "BUY" : "SELL"
+        // La orden armada ya no es válida: se borra del gráfico.
         if not na(lnE)
             line.delete(lnE)
         if not na(lnS)
@@ -586,10 +586,6 @@ if sigOn and barstate.isconfirmed
         lbE := na
         lbS := na
         lbT := na
-        if dirBefore == 1
-            label.new(bar_index, na, text = "✕ ANULAR " + oldSide + " STOP " + ptxt(lvlBefore), xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = #787B86, textcolor = color.white, size = size.small)
-        else
-            label.new(bar_index, na, text = "✕ ANULAR " + oldSide + " STOP " + ptxt(lvlBefore), xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = #787B86, textcolor = color.white, size = size.small)
 
     prevIn := inRange
 
