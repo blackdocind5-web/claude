@@ -1,0 +1,293 @@
+//@version=6
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  XAUUSD · Bias del día + entrada en la apertura de Nueva York · gráfico de 1 minuto
+// ═══════════════════════════════════════════════════════════════════════════════════
+//
+//  HIPÓTESIS A PROBAR — no es un sistema validado. Máximo UN trade por día.
+//
+//  Idea
+//    Antes de la apertura de Wall Street (09:30 NY) se calcula el BIAS del día con tres
+//    módulos independientes. Si coinciden lo suficiente, se entra a mercado a las 09:30
+//    en esa dirección, con SL por ATR (o por el extremo del barrido) y TP = RR × riesgo.
+//    Si no coinciden, ese día no se opera. Todo se decide con datos cerrados antes de
+//    las 09:30: no mira el futuro.
+//
+//  Horarios (siempre hora de Nueva York, con cambio de horario de verano automático)
+//    · "Día" de trading: empieza a las 18:00 NY (reinicio del VWAP y de la vela diaria).
+//    · Decisión y entrada: 09:30 NY. Se evalúa al cierre de la vela de 1m de las 09:29 y
+//      se entra a ese cierre (≈ precio de las 09:30:00).
+//    · Cierre forzado: 16:00 NY si la operación sigue abierta.
+//
+//  Módulos del bias (cada uno vota ▲ +1 / ▼ −1 / neutro 0)
+//    1) CRT — barrido del día anterior (Candle Range Theory aplicada al día)
+//         · Vela 1 = rango del día anterior (máximo PDH y mínimo PDL, jornada 18:00→18:00).
+//         · Vela 2 = lo que va del día. Si barrió el PDH (superó el máximo) y volvió a
+//           cerrar DENTRO del rango → voto VENTA. Si barrió el PDL y volvió a cerrar
+//           dentro → voto COMPRA. Si barrió ambos lados o ninguno → neutro.
+//         · Vale el DOBLE (2 puntos): es la señal de evento, las otras son de contexto.
+//    2) Tendencia — EMA rápida vs EMA lenta en una temporalidad mayor (por defecto H1,
+//       EMA 50 vs EMA 200), usando solo velas H1 YA CERRADAS (sin repintado).
+//    3) VWAP — precio vs VWAP de la jornada (hlc3 ponderado por volumen de ticks,
+//       reinicio 18:00 NY).
+//    Puntaje = 2×CRT + Tendencia + VWAP (de −4 a +4). Se opera si |puntaje| ≥ mínimo.
+//    Si los módulos se contradicen el puntaje se anula y no se opera: "operar menos".
+//
+//  Salidas
+//    · SL por ATR (ATR de 15m × múltiplo) o, si hay barrido CRT a favor, más allá del
+//      extremo del barrido. Siempre acotado entre un mínimo y un máximo en múltiplos de
+//      ATR; si el SL necesario supera el máximo, no se opera.
+//    · TP = RR × distancia real del SL (por defecto 1:2).
+//
+//  MODOS DE CONTROL — imprescindibles para saber si el bias aporta algo
+//    · "Bias"                      → la estrategia.
+//    · "Control: siempre compra"   → compra todos los días a las 09:30, mismas salidas.
+//    · "Control: siempre venta"    → vende todos los días a las 09:30, mismas salidas.
+//    · "Control: bias invertido"   → opera los mismos días que el bias pero al revés.
+//    Si "Bias" no supera claramente a los controles, el bias no tiene ventaja.
+//
+//  Riesgo (Multibank XAUUSD.ecn, igual que tus otras estrategias)
+//    · 1 lote = 100 oz · lote mínimo 0,01 · paso 0,01 · máximo 10 · apalancamiento 1:500.
+//    · Riesgo por defecto 0,5 % del capital por operación, sobre el SL real.
+//
+//  COSTOS — en Propiedades. Comisión por lado 0,04 por onza (0,03 comisión + 0,01 mitad
+//  del spread). No incluye slippage ni swap.
+//
+//  PARA ANALIZAR FUERA DE TRADINGVIEW: el puntaje y cada voto quedan en la Ventana de
+//  datos y se exportan con "Exportar datos del gráfico", junto con las velas.
+//
+//  AVISO: escrito sin poder compilarlo en TradingView. Si aparece un error al cargarlo,
+//  pega el mensaje y se corrige.
+// ═══════════════════════════════════════════════════════════════════════════════════
+strategy(title = "XAUUSD · Bias del Día + Apertura NY (CRT / Tendencia / VWAP)",
+         shorttitle = "Bias Apertura NY",
+         overlay = true,
+         initial_capital = 10000,
+         currency = currency.USD,
+         default_qty_type = strategy.fixed,
+         default_qty_value = 1,
+         pyramiding = 1,
+         process_orders_on_close = true,
+         use_bar_magnifier = true,
+         calc_on_every_tick = false,
+         commission_type = strategy.commission.cash_per_contract,
+         commission_value = 0.04,
+         margin_long = 0.2,
+         margin_short = 0.2,
+         max_lines_count = 500,
+         max_labels_count = 500,
+         max_boxes_count = 500)
+
+// ── Constantes ─────────────────────────────────────────────────────────────────────
+const string TZ = "America/New_York"
+
+const color C_TP  = #089981
+const color C_SL  = #F23645
+const color C_OFF = #787B86
+
+const string M_BIAS  = "Bias"
+const string M_LONG  = "Control: siempre compra"
+const string M_SHORT = "Control: siempre venta"
+const string M_INV   = "Control: bias invertido"
+
+const string SL_ATR = "ATR"
+const string SL_CRT = "Extremo del barrido CRT"
+
+// ── Entradas ───────────────────────────────────────────────────────────────────────
+const string G_MOD  = "0 · Modo"
+const string G_DIA  = "1 · Día y horarios"
+const string G_BIAS = "2 · Bias del día"
+const string G_SLTP = "3 · Stop Loss / Take Profit"
+const string G_RSK  = "4 · Riesgo y broker (Multibank)"
+const string G_ALR  = "5 · Alerta previa"
+const string G_VIS  = "6 · Visual"
+
+testMode = input.string("Bias", "Modo de la estrategia", options = ["Bias", "Control: siempre compra", "Control: siempre venta", "Control: bias invertido"], group = G_MOD, tooltip = "Bias = la estrategia. Los tres modos de control usan EXACTAMENTE las mismas salidas: sirven para comprobar si el bias aporta ventaja real.")
+
+entryHour = input.int(9, "Hora de entrada (NY)", minval = 0, maxval = 23, group = G_DIA)
+entryMin  = input.int(30, "Minuto de entrada", minval = 0, maxval = 59, group = G_DIA, tooltip = "La decisión se toma con la vela anterior cerrada y se entra a ese cierre (≈ precio de la hora indicada).")
+dayHour   = input.int(18, "Inicio de la jornada · hora (NY)", minval = 0, maxval = 23, group = G_DIA, tooltip = "Reinicia el VWAP y define la 'vela diaria' del CRT. 18:00 NY = apertura de la jornada de metales.")
+dayMin    = input.int(0, "Inicio de la jornada · minuto", minval = 0, maxval = 59, group = G_DIA)
+closeHour = input.int(16, "Cierre forzado · hora (NY)", minval = 0, maxval = 23, group = G_DIA)
+closeMin  = input.int(0, "Cierre forzado · minuto", minval = 0, maxval = 59, group = G_DIA)
+skipNFP   = input.bool(false, "No operar el primer viernes del mes (NFP)", group = G_DIA, tooltip = "El NFP sale a las 08:30 NY, una hora antes de la entrada. Otros eventos (CPI, FOMC) requieren un calendario y no se filtran aquí.")
+
+useCRT   = input.bool(true, "Módulo 1 · CRT (barrido del día anterior)", group = G_BIAS)
+sweepATR = input.float(0.10, "Barrido mínimo (× ATR)", minval = 0.0, step = 0.05, group = G_BIAS, tooltip = "Cuánto debe superar el máximo/mínimo del día anterior para contar como barrido. 0 = cualquier toque.")
+useTrend = input.bool(true, "Módulo 2 · Tendencia (EMA rápida vs lenta)", group = G_BIAS)
+trendTF  = input.timeframe("60", "Temporalidad de la tendencia", group = G_BIAS)
+emaFastLen = input.int(50, "EMA rápida", minval = 1, group = G_BIAS)
+emaSlowLen = input.int(200, "EMA lenta", minval = 2, group = G_BIAS)
+useVWAP  = input.bool(true, "Módulo 3 · VWAP de la jornada", group = G_BIAS)
+minScore = input.int(2, "Puntaje mínimo para operar (1 a 4)", minval = 1, maxval = 4, group = G_BIAS, tooltip = "CRT vale 2 puntos; tendencia y VWAP, 1 cada uno. Con 2: CRT solo (sin contradicciones) o tendencia + VWAP alineados. Con 3: exige CRT + al menos otro módulo a favor. Con 4: los tres.")
+
+atrTF   = input.timeframe("15", "Temporalidad del ATR", group = G_SLTP)
+atrLen  = input.int(14, "Periodos del ATR", minval = 1, group = G_SLTP)
+slMode  = input.string("ATR", "Modo del SL", options = ["ATR", "Extremo del barrido CRT"], group = G_SLTP, tooltip = "ATR: SL a (múltiplo × ATR) de la entrada. Extremo del barrido CRT: si hay barrido a favor, el SL va más allá del extremo del barrido; si no, usa el ATR.")
+slMult  = input.float(1.5, "SL en modo ATR (× ATR)", minval = 0.1, step = 0.1, group = G_SLTP)
+sweepBuf = input.float(0.10, "Margen sobre el extremo del barrido (× ATR)", minval = 0.0, step = 0.05, group = G_SLTP)
+minRiskMult = input.float(0.75, "SL mínimo (× ATR)", minval = 0.1, step = 0.05, group = G_SLTP)
+maxRiskMult = input.float(3.0, "SL máximo (× ATR): si lo supera, no se opera", minval = 0.1, step = 0.1, group = G_SLTP)
+rr      = input.float(2.0, "Ratio R:R (recompensa por cada 1 de riesgo)", minval = 0.1, step = 0.1, group = G_SLTP, tooltip = "2.0 = 1:2 · 3.0 = 1:3. El TP se mide sobre el SL real.")
+
+riskPct  = input.float(0.5, "Riesgo por operación (%)", minval = 0.01, maxval = 100.0, step = 0.1, group = G_RSK)
+compound = input.bool(true, "Interés compuesto", group = G_RSK, tooltip = "Activado: riesgo sobre el capital actual. Desactivado: siempre sobre el capital inicial (mide la ventaja sin el efecto bola de nieve).")
+leverage = input.int(500, "Apalancamiento (1:X)", minval = 1, group = G_RSK)
+ozPerLot = input.float(100.0, "Onzas por lote", minval = 0.01, group = G_RSK)
+minLot   = input.float(0.01, "Lote mínimo", minval = 0.0001, step = 0.01, group = G_RSK)
+lotStep  = input.float(0.01, "Paso de lote", minval = 0.0001, step = 0.01, group = G_RSK)
+maxLot   = input.float(10.0, "Lote máximo por orden", minval = 0.01, group = G_RSK)
+
+sendAlert = input.bool(true, "Alerta del bias previo a la apertura", group = G_ALR, tooltip = "Crea la alerta desde el menú de alertas de TradingView eligiendo esta estrategia y 'Cualquier llamada a alert()'. Te avisa el bias y los niveles antes de abrir; después no hay nada más que mirar.")
+alertHour = input.int(9, "Hora de la alerta (NY)", minval = 0, maxval = 23, group = G_ALR)
+alertMin  = input.int(25, "Minuto de la alerta", minval = 0, maxval = 59, group = G_ALR)
+
+showLevels = input.bool(true, "Mostrar máximo y mínimo del día anterior (PDH / PDL)", group = G_VIS)
+showVWAP   = input.bool(true, "Mostrar VWAP", group = G_VIS)
+showPanel  = input.bool(true, "Mostrar panel del bias", group = G_VIS)
+buyLblCol  = input.color(#089981, "Color de la etiqueta BUY", group = G_VIS)
+sellLblCol = input.color(#F23645, "Color de la etiqueta SELL", group = G_VIS)
+
+if timeframe.in_seconds() != 60
+    runtime.error("Esta estrategia está diseñada para el gráfico de 1 minuto (XAUUSD).")
+
+// ── Tiempo en hora de Nueva York ───────────────────────────────────────────────────
+int  mdOpen  = hour(time, TZ) * 60 + minute(time, TZ)   // minuto del día en que ABRE la vela
+int  mdClose = mdOpen + 1                               // minuto del día en que CIERRA la vela
+int  dow     = dayofweek(time, TZ)
+int  dom     = dayofmonth(time, TZ)
+int  entryMD = entryHour * 60 + entryMin
+int  forceMD = closeHour * 60 + closeMin
+int  alertMD = alertHour * 60 + alertMin
+int  dayMD   = dayHour * 60 + dayMin
+bool newDay  = mdOpen >= dayMD and nz(mdOpen[1], -1) < dayMD
+bool dayOk   = dow >= dayofweek.monday and dow <= dayofweek.friday
+bool nfpDay  = dow == dayofweek.friday and dom <= 7
+
+// Convierte una diferencia de precio a ticks enteros para comparar sin errores de decimales.
+tk(float x) => math.round(x / syminfo.mintick)
+
+dirTxt(int d) =>
+    d == 1 ? "▲ Compra" : d == -1 ? "▼ Venta" : "— Neutro"
+
+dirCol(int d) =>
+    d == 1 ? C_TP : d == -1 ? C_SL : C_OFF
+
+// ── VWAP de la jornada (reinicio a la hora de inicio de jornada) ──────────────────
+var float cumPV = 0.0
+var float cumV  = 0.0
+if newDay
+    cumPV := 0.0
+    cumV  := 0.0
+cumPV := cumPV + hlc3 * nz(volume)
+cumV  := cumV + nz(volume)
+float vwapVal = cumV > 0 ? cumPV / cumV : na
+
+// ── Rango del día en curso y del día anterior (jornada 18:00 → 18:00 NY) ──────────
+var float dayHi  = na
+var float dayLo  = na
+var float prevHi = na
+var float prevLo = na
+if newDay
+    prevHi := dayHi
+    prevLo := dayLo
+    dayHi  := high
+    dayLo  := low
+else
+    dayHi := na(dayHi) ? high : math.max(dayHi, high)
+    dayLo := na(dayLo) ? low : math.min(dayLo, low)
+
+// ── Datos de temporalidad mayor, solo con velas YA CERRADAS (sin repintado) ───────
+[emaF, emaS] = request.security(syminfo.tickerid, trendTF, [ta.ema(close, emaFastLen)[1], ta.ema(close, emaSlowLen)[1]], lookahead = barmerge.lookahead_on)
+float atrVal = request.security(syminfo.tickerid, atrTF, ta.atr(atrLen)[1], lookahead = barmerge.lookahead_on)
+
+// ── Bias del día ───────────────────────────────────────────────────────────────────
+float swpMin  = sweepATR * nz(atrVal)
+bool  bearCRT = not na(prevHi) and dayHi > prevHi + swpMin and close < prevHi
+bool  bullCRT = not na(prevLo) and dayLo < prevLo - swpMin and close > prevLo
+int   crtDir   = bearCRT and not bullCRT ? -1 : bullCRT and not bearCRT ? 1 : 0
+int   trendDir = emaF > emaS ? 1 : emaF < emaS ? -1 : 0
+int   vwapDir  = na(vwapVal) ? 0 : close > vwapVal ? 1 : close < vwapVal ? -1 : 0
+int   score    = (useCRT ? 2 * crtDir : 0) + (useTrend ? trendDir : 0) + (useVWAP ? vwapDir : 0)
+int   biasDir  = score >= minScore ? 1 : score <= -minScore ? -1 : 0
+
+// ── Visual ─────────────────────────────────────────────────────────────────────────
+plot(showLevels and not newDay ? prevHi : na, title = "Máximo del día anterior (PDH)", color = color.new(C_SL, 30), style = plot.style_linebr)
+plot(showLevels and not newDay ? prevLo : na, title = "Mínimo del día anterior (PDL)", color = color.new(C_TP, 30), style = plot.style_linebr)
+plot(showVWAP and not newDay ? vwapVal : na, title = "VWAP", color = #9C27B0, linewidth = 2, style = plot.style_linebr)
+
+// Para exportar con "Exportar datos del gráfico" y replicar el cálculo fuera de TradingView.
+plot(score,    title = "Puntaje del bias", display = display.data_window)
+plot(crtDir,   title = "Voto CRT", display = display.data_window)
+plot(trendDir, title = "Voto tendencia", display = display.data_window)
+plot(vwapDir,  title = "Voto VWAP", display = display.data_window)
+plot(atrVal,   title = "ATR (temporalidad elegida)", display = display.data_window)
+
+var table panel = table.new(position.top_right, 2, 6, frame_color = color.gray, frame_width = 1, border_width = 1)
+if showPanel and barstate.islast
+    table.cell(panel, 0, 0, "Bias del día", text_color = color.white, bgcolor = color.new(color.gray, 20), text_size = size.small)
+    table.cell(panel, 1, 0, str.format_time(time, "dd/MM HH:mm", TZ), text_color = color.white, bgcolor = color.new(color.gray, 20), text_size = size.small)
+    table.cell(panel, 0, 1, "CRT (×2)", text_color = color.white, bgcolor = color.new(color.gray, 40), text_size = size.small)
+    table.cell(panel, 1, 1, dirTxt(crtDir), text_color = color.white, bgcolor = dirCol(crtDir), text_size = size.small)
+    table.cell(panel, 0, 2, "Tendencia", text_color = color.white, bgcolor = color.new(color.gray, 40), text_size = size.small)
+    table.cell(panel, 1, 2, dirTxt(trendDir), text_color = color.white, bgcolor = dirCol(trendDir), text_size = size.small)
+    table.cell(panel, 0, 3, "VWAP", text_color = color.white, bgcolor = color.new(color.gray, 40), text_size = size.small)
+    table.cell(panel, 1, 3, dirTxt(vwapDir), text_color = color.white, bgcolor = dirCol(vwapDir), text_size = size.small)
+    table.cell(panel, 0, 4, "Puntaje", text_color = color.white, bgcolor = color.new(color.gray, 40), text_size = size.small)
+    table.cell(panel, 1, 4, str.tostring(score) + " (mín. " + str.tostring(minScore) + ")", text_color = color.white, bgcolor = color.new(color.gray, 40), text_size = size.small)
+    table.cell(panel, 0, 5, "Decisión", text_color = color.white, bgcolor = color.new(color.gray, 20), text_size = size.small)
+    table.cell(panel, 1, 5, biasDir == 0 ? "No operar" : dirTxt(biasDir), text_color = color.white, bgcolor = biasDir == 0 ? C_OFF : dirCol(biasDir), text_size = size.small)
+
+// ── Alerta previa: una sola mirada antes de la apertura ───────────────────────────
+if sendAlert and mdClose == alertMD and dayOk and not (skipNFP and nfpDay)
+    string aMsg = "XAUUSD · bias previo a la apertura NY: " + (biasDir == 0 ? "NO OPERAR" : dirTxt(biasDir)) + " · puntaje " + str.tostring(score) + " (CRT " + str.tostring(crtDir) + ", tendencia " + str.tostring(trendDir) + ", VWAP " + str.tostring(vwapDir) + ") · PDH " + str.tostring(prevHi, "#.##") + " · PDL " + str.tostring(prevLo, "#.##") + " · ATR " + str.tostring(atrVal, "#.##")
+    alert(aMsg, alert.freq_once_per_bar_close)
+
+// ── Operación: se evalúa solo en la vela que cierra a la hora de entrada ─────────
+var string curId = ""
+var float  curSL = na
+var float  curTP = na
+
+int dirSel = testMode == M_BIAS ? biasDir : testMode == M_LONG ? 1 : testMode == M_SHORT ? -1 : -biasDir
+
+if mdClose == entryMD and dayOk and not (skipNFP and nfpDay) and strategy.position_size == 0 and not na(atrVal) and dirSel != 0
+    int   dir    = dirSel
+    float entry  = close
+    float slDist = slMult * atrVal
+    if slMode == SL_CRT and crtDir == dir
+        float ext = dir == 1 ? dayLo : dayHi
+        slDist := math.abs(entry - ext) + sweepBuf * atrVal
+    slDist := math.max(slDist, minRiskMult * atrVal)
+    if tk(slDist) <= tk(maxRiskMult * atrVal)
+        float slP   = math.round_to_mintick(dir == 1 ? entry - slDist : entry + slDist)
+        float rDist = math.abs(entry - slP)
+        float tpP   = math.round_to_mintick(dir == 1 ? entry + rr * rDist : entry - rr * rDist)
+
+        float balance  = compound ? strategy.initial_capital + strategy.netprofit : strategy.initial_capital
+        float lotsRisk = balance * riskPct / 100.0 / rDist / ozPerLot
+        float lotsMrg  = strategy.equity * leverage / (close * ozPerLot)
+        float lots     = math.min(math.min(lotsRisk, maxLot), lotsMrg)
+        lots := math.floor(lots / lotStep + 0.000000001) * lotStep
+
+        if balance > 0 and lots >= minLot - 0.000000001
+            string tid = str.format_time(time, "yyyyMMdd", TZ) + (dir == 1 ? "-C" : "-V")
+            strategy.entry(tid, dir == 1 ? strategy.long : strategy.short, qty = lots * ozPerLot, comment = dir == 1 ? "Compra" : "Venta")
+            strategy.exit("X-" + tid, from_entry = tid, stop = slP, limit = tpP, comment_profit = "TP", comment_loss = "SL")
+            curId := tid
+            curSL := slP
+            curTP := tpP
+
+            string tip = "Modo: " + testMode + "\nPuntaje: " + str.tostring(score) + " (CRT " + str.tostring(crtDir) + ", tendencia " + str.tostring(trendDir) + ", VWAP " + str.tostring(vwapDir) + ")\nEntrada: " + str.tostring(entry, "#.###") + "\nSL: " + str.tostring(slP, "#.###") + " (" + str.tostring(rDist, "#.###") + ")\nTP: " + str.tostring(tpP, "#.###") + "\nLotes: " + str.tostring(lots, "#.##")
+            if dir == 1
+                label.new(bar_index, na, text = "BUY", xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = buyLblCol, textcolor = color.white, size = size.small, tooltip = tip)
+            else
+                label.new(bar_index, na, text = "SELL", xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = sellLblCol, textcolor = color.white, size = size.small, tooltip = tip)
+
+// ── Posición abierta: salidas y cierre forzado ────────────────────────────────────
+if strategy.position_size != 0 and curId != ""
+    if mdClose >= forceMD and mdClose <= forceMD + 60
+        strategy.close_all(comment = "Cierre horario")
+    else
+        strategy.exit("X-" + curId, from_entry = curId, stop = curSL, limit = curTP, comment_profit = "TP", comment_loss = "SL")
+
+plot(strategy.position_size != 0 ? curSL : na, title = "SL en curso", color = C_SL, style = plot.style_linebr)
+plot(strategy.position_size != 0 ? curTP : na, title = "TP en curso", color = C_TP, style = plot.style_linebr)
