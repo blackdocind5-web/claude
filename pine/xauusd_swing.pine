@@ -1,0 +1,180 @@
+//@version=6
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  XAUUSD · SWING TRADING · Diario (D1) · una orden por día, a la hora del cierre
+// ═══════════════════════════════════════════════════════════════════════════════════
+//
+//  OBJETIVO: pocas operaciones (unas 8–15 al año), con recompensa mayor que el riesgo (1:2 o 1:3)
+//  y un proceso que se puede automatizar en MT5. Todas las reglas se evalúan UNA VEZ AL DÍA, al
+//  cierre de la vela diaria (17:00 Nueva York, que es el cierre estándar del oro), y se resuelven
+//  con una orden pendiente + SL + TP. No hace falta mirar la pantalla durante el día.
+//
+//  ⚠ ESTO ES UNA HIPÓTESIS A PROBAR, NO UN SISTEMA VALIDADO. Los parámetros por defecto son
+//  valores redondos y estándar, elegidos ANTES de ver resultados, para no sobreajustar.
+//
+//  TENDENCIA (filtro de régimen)
+//    · COMPRAS solo si EMA rápida (50) > EMA lenta (200). VENTAS solo si EMA rápida < EMA lenta.
+//
+//  MODO 1 · PULLBACK EN TENDENCIA (por defecto)
+//    · Contexto: en las últimas 5 velas (incluida la actual) el precio tocó la EMA de pullback (20):
+//      el mínimo ≤ EMA20 en compras, el máximo ≥ EMA20 en ventas.
+//    · Señal (al cierre de la vela): la vela cierra de nuevo del lado de la tendencia de la EMA20
+//      (por encima en compras, por debajo en ventas) y es una vela a favor (alcista / bajista).
+//    · Orden: BUY STOP un tick por encima del máximo de la vela de señal (SELL STOP un tick por
+//      debajo del mínimo). Vale 3 velas; si no se activa, se cancela.
+//
+//  MODO 2 · RUPTURA DONCHIAN (comparación)
+//    · Con la tendencia a favor, cada día se coloca una orden stop un tick más allá del máximo
+//      (mínimo) de las últimas 55 velas. Vale 1 vela y se renueva cada día.
+//
+//  STOP LOSS Y TAKE PROFIT (iguales en los dos modos)
+//    · SL: mínimo (máximo) de las últimas 5 velas ∓ 0,5 × ATR(14).
+//    · Si la distancia al SL supera 3 × ATR → NO se opera (riesgo demasiado ancho).
+//      Si es menor que 1 × ATR → se amplía a 1 × ATR (evita stops dentro del ruido).
+//    · TP = R:R × distancia al SL (2,0 por defecto; prueba 3,0).
+//    · Cierre por tiempo: si pasan 30 velas sin tocar SL ni TP, se cierra a mercado.
+//
+//  RIESGO: 1 % del capital inicial por operación (sin interés compuesto por defecto). Lotes =
+//  riesgo / (distancia al SL × onzas por lote), redondeados hacia abajo. Una sola posición a la vez.
+//
+//  COSTOS: el backtest incluye 0,25 USD por onza y por lado (≈ 0,50 USD de ida y vuelta: spread +
+//  deslizamiento). NO incluye el swap (financiación nocturna) de tu broker: mídelo aparte, en
+//  operaciones de varias semanas puede ser relevante.
+//
+//  USO: gráfico XAUUSD en D1. Con la alerta de esta estrategia recibes cada orden nueva (precio de
+//  entrada, SL, TP y lotes) al cierre de la vela; la colocas una vez y te olvidas.
+// ═══════════════════════════════════════════════════════════════════════════════════
+strategy(title = "XAUUSD · Swing D1 · Pullback / Donchian",
+         shorttitle = "XAU Swing",
+         overlay = true,
+         initial_capital = 10000,
+         currency = currency.USD,
+         default_qty_type = strategy.fixed,
+         default_qty_value = 1,
+         pyramiding = 0,
+         process_orders_on_close = false,
+         calc_on_every_tick = false,
+         commission_type = strategy.commission.cash_per_contract,
+         commission_value = 0.25,
+         slippage = 0,
+         margin_long = 0.2,
+         margin_short = 0.2)
+
+// ── Entradas ───────────────────────────────────────────────────────────────────────
+const string G_MOD = "1 · Modo y dirección"
+const string G_TRD = "2 · Tendencia"
+const string G_PBK = "3 · Pullback"
+const string G_DON = "4 · Ruptura Donchian"
+const string G_SLT = "5 · Stop Loss / Take Profit"
+const string G_RSK = "6 · Riesgo y broker"
+
+mode       = input.string("Pullback en tendencia", "Modo de entrada", options = ["Pullback en tendencia", "Ruptura Donchian"], group = G_MOD, tooltip = "Pullback en tendencia (por defecto): entra cuando el precio retrocede a la EMA de pullback y recupera. Ruptura Donchian: entra en la ruptura del máximo (mínimo) de N velas, con la tendencia a favor.")
+allowLong  = input.bool(true, "Permitir compras", group = G_MOD)
+allowShort = input.bool(true, "Permitir ventas", group = G_MOD)
+startTime  = input.time(timestamp(2005, 1, 1, 0, 0), "Inicio del backtest", group = G_MOD, tooltip = "No se abren operaciones antes de esta fecha. Útil para separar un tramo de ajuste (p. ej. hasta 2018) de uno de validación (desde 2019).")
+endTime    = input.time(timestamp(2100, 1, 1, 0, 0), "Fin del backtest", group = G_MOD, tooltip = "No se abren operaciones desde esta fecha.")
+
+fastLen = input.int(50, "EMA rápida de tendencia", minval = 2, group = G_TRD)
+slowLen = input.int(200, "EMA lenta de tendencia", minval = 2, group = G_TRD)
+
+pbLen      = input.int(20, "EMA de pullback", minval = 2, group = G_PBK)
+pbLook     = input.int(5, "Velas para buscar el toque de la EMA", minval = 1, group = G_PBK, tooltip = "Cuántas velas (incluida la actual) se miran hacia atrás para ver si el precio tocó la EMA de pullback.")
+needCandle = input.bool(true, "La vela de señal debe ser a favor (alcista en compras, bajista en ventas)", group = G_PBK)
+
+donLen = input.int(55, "Velas del canal Donchian", minval = 2, group = G_DON)
+
+atrLen   = input.int(14, "ATR · periodo", minval = 1, group = G_SLT)
+slLook   = input.int(5, "SL · velas para el mínimo / máximo", minval = 1, group = G_SLT)
+slBuf    = input.float(0.5, "SL · margen extra (× ATR)", minval = 0.0, step = 0.1, group = G_SLT)
+minSLatr = input.float(1.0, "SL mínimo (× ATR)", minval = 0.1, step = 0.1, group = G_SLT, tooltip = "Si el SL queda más cerca que esto, se aleja hasta esta distancia.")
+maxSLatr = input.float(3.0, "SL máximo (× ATR): si lo supera no se opera", minval = 0.1, step = 0.1, group = G_SLT)
+rr       = input.float(2.0, "Ratio R:R (recompensa por cada 1 de riesgo)", minval = 0.1, step = 0.5, group = G_SLT, tooltip = "2.0 = 1:2 · 3.0 = 1:3. El TP se mide sobre el SL real.")
+validity = input.int(3, "Validez de la orden pendiente (velas)", minval = 1, group = G_SLT, tooltip = "Solo en el modo Pullback. En el modo Donchian la orden vale 1 vela y se renueva cada día.")
+maxBars  = input.int(30, "Cierre por tiempo (velas)", minval = 1, group = G_SLT, tooltip = "Si pasan tantas velas desde la entrada sin tocar SL ni TP, se cierra a mercado.")
+
+riskPct  = input.float(1.0, "Riesgo por operación (%)", minval = 0.01, maxval = 100.0, step = 0.1, group = G_RSK)
+compound = input.bool(false, "Interés compuesto", group = G_RSK, tooltip = "Activado: el riesgo se calcula sobre el capital actual (inicial + resultado cerrado). Desactivado: siempre sobre el capital inicial.")
+ozPerLot = input.float(100.0, "Onzas por lote", minval = 0.01, group = G_RSK)
+lotStep  = input.float(0.01, "Paso de lote", minval = 0.0001, step = 0.01, group = G_RSK)
+minLot   = input.float(0.01, "Lote mínimo", minval = 0.0001, step = 0.01, group = G_RSK)
+maxLot   = input.float(10.0, "Lote máximo por orden", minval = 0.01, group = G_RSK)
+
+// ── Indicadores (se calculan en todas las velas) ───────────────────────────────────
+emaF = ta.ema(close, fastLen)
+emaS = ta.ema(close, slowLen)
+emaP = ta.ema(close, pbLen)
+atrV = ta.atr(atrLen)
+hhD  = ta.highest(high, donLen)
+llD  = ta.lowest(low, donLen)
+swLo = ta.lowest(low, slLook)
+swHi = ta.highest(high, slLook)
+
+bool upTrend = emaF > emaS
+bool dnTrend = emaF < emaS
+
+bool touchedUp = ta.barssince(low <= emaP) < pbLook
+bool touchedDn = ta.barssince(high >= emaP) < pbLook
+bool isPull    = mode == "Pullback en tendencia"
+
+bool setupL = upTrend and (isPull ? (touchedUp and close > emaP and (not needCandle or close > open)) : not na(hhD))
+bool setupS = dnTrend and (isPull ? (touchedDn and close < emaP and (not needCandle or close < open)) : not na(llD))
+
+// ── Plan de la orden (precio de entrada, SL, TP y lotes) ────────────────────────────
+float tick = syminfo.mintick
+float entL = isPull ? high + tick : hhD + tick
+float entS = isPull ? low - tick : llD - tick
+
+float rawL = entL - (swLo - slBuf * atrV)
+float rawS = (swHi + slBuf * atrV) - entS
+float dL   = math.max(rawL, minSLatr * atrV)
+float dS   = math.max(rawS, minSLatr * atrV)
+bool  okL  = not na(atrV) and rawL > 0 and rawL <= maxSLatr * atrV
+bool  okS  = not na(atrV) and rawS > 0 and rawS <= maxSLatr * atrV
+
+float slL = entL - dL
+float tpL = entL + rr * dL
+float slS = entS + dS
+float tpS = entS - rr * dS
+
+float balance = compound ? strategy.initial_capital + strategy.netprofit : strategy.initial_capital
+float riskUSD = balance * riskPct / 100.0
+float lotsL   = math.round(math.min(maxLot, math.floor(riskUSD / dL / ozPerLot / lotStep + 1e-9) * lotStep), 4)
+float lotsS   = math.round(math.min(maxLot, math.floor(riskUSD / dS / ozPerLot / lotStep + 1e-9) * lotStep), 4)
+
+// ── Gestión de órdenes (una vez por vela, al cierre) ───────────────────────────────
+var int sigBar = na
+int  valid     = isPull ? validity : 1
+
+if barstate.isconfirmed
+    // 1) Cancelar la orden pendiente que ya venció sin activarse.
+    if strategy.position_size == 0 and not na(sigBar) and bar_index - sigBar >= valid
+        strategy.cancel("L")
+        strategy.cancel("S")
+        strategy.cancel("XL")
+        strategy.cancel("XS")
+        sigBar := na
+
+    // 2) Cierre por tiempo.
+    if strategy.opentrades > 0
+        if bar_index - strategy.opentrades.entry_bar_index(0) >= maxBars
+            strategy.close_all(comment = "Tiempo")
+
+    // 3) Nueva señal (solo sin posición abierta y dentro del periodo elegido).
+    bool inRange = time >= startTime and time < endTime
+    bool sigL = inRange and strategy.position_size == 0 and allowLong and setupL and okL and lotsL >= minLot
+    bool sigS = inRange and strategy.position_size == 0 and allowShort and setupS and okS and lotsS >= minLot
+
+    if sigL
+        strategy.entry("L", strategy.long, qty = lotsL * ozPerLot, stop = entL, comment = "BUY STOP")
+        strategy.exit("XL", from_entry = "L", stop = slL, limit = tpL, comment_loss = "SL", comment_profit = "TP")
+        sigBar := bar_index
+        alert("XAU SWING · BUY STOP " + str.tostring(entL, "#.##") + " | SL " + str.tostring(slL, "#.##") + " | TP " + str.tostring(tpL, "#.##") + " | Lotes " + str.tostring(lotsL, "#.##") + " | Vale " + str.tostring(valid) + " vela(s)", alert.freq_all)
+    if sigS
+        strategy.entry("S", strategy.short, qty = lotsS * ozPerLot, stop = entS, comment = "SELL STOP")
+        strategy.exit("XS", from_entry = "S", stop = slS, limit = tpS, comment_loss = "SL", comment_profit = "TP")
+        sigBar := bar_index
+        alert("XAU SWING · SELL STOP " + str.tostring(entS, "#.##") + " | SL " + str.tostring(slS, "#.##") + " | TP " + str.tostring(tpS, "#.##") + " | Lotes " + str.tostring(lotsS, "#.##") + " | Vale " + str.tostring(valid) + " vela(s)", alert.freq_all)
+
+// ── Gráfico ────────────────────────────────────────────────────────────────────────
+plot(emaF, "EMA rápida", color = color.new(#2962FF, 10), linewidth = 1)
+plot(emaS, "EMA lenta", color = color.new(#FF6D00, 10), linewidth = 2)
+plot(isPull ? emaP : na, "EMA de pullback", color = color.new(#787B86, 30), linewidth = 1)
