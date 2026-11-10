@@ -1,0 +1,193 @@
+//@version=6
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  NASDAQ-100 · Patrones ENVOLVENTE y START · 1 minuto · sesión de Nueva York
+//  Para MNQ, NQ y NAS100 (CFD): mismo código, la cantidad se calcula con el valor del punto.
+// ═══════════════════════════════════════════════════════════════════════════════════
+//
+//  HORARIO (hora de Nueva York, lunes a viernes)
+//    · La vela de ENTRADA debe abrir desde las 09:30 y antes de la hora límite (11:00 por defecto,
+//      editable). Las velas previas del patrón pueden ser anteriores a las 09:30.
+//    · Cierre forzado a las 16:00: lo que siga abierto se cierra a mercado.
+//
+//  COLOR DE LAS VELAS: alcista = cierra por encima de su apertura; bajista = cierra por debajo.
+//
+//  PATRÓN 1 · ENVOLVENTE (2 velas)
+//    · COMPRA: vela bajista + vela alcista de entrada cuyo CIERRE supera la APERTURA de la bajista
+//      en al menos "Diferencia del envolvente" (5 puntos).
+//    · VENTA : vela alcista + vela bajista de entrada cuyo CIERRE queda por debajo de la APERTURA
+//      de la alcista en al menos esa diferencia.
+//
+//  PATRÓN 2 · START (3 velas)
+//    · COMPRA: vela bajista + vela alcista de INDECISIÓN + vela alcista de entrada. La indecisión
+//      tiene un cuerpo menor al 50 % de su rango (máximo − mínimo). El CIERRE de la entrada supera
+//      la APERTURA de la vela de indecisión en al menos "Diferencia del START" (5 puntos).
+//    · VENTA : vela alcista + vela bajista de indecisión + vela bajista de entrada (espejo).
+//    · No vale que la entrada sea la tercera vela seguida del mismo color: como el patrón exige que
+//      la primera vela sea del color contrario, esos casos quedan fuera automáticamente.
+//
+//  ENTRADA: a mercado, al precio de CIERRE de la vela de entrada.
+//  SL: el punto más bajo (compras) o más alto (ventas) de las velas del patrón, mechas incluidas
+//      (2 velas en el envolvente, 3 en el START).
+//  TP: R:R × la distancia al SL (1,0 por defecto, editable).
+//  Un solo trade abierto a la vez. No hay límite de trades por día.
+//
+//  INTERRUPTOR DE PRUEBA · "Bloquear entrada en la misma vela del cierre anterior"
+//    · Desactivado (por defecto): se permite otro trade aunque la vela de entrada sea la misma en
+//      la que el precio tocó el SL o el TP del trade anterior.
+//    · Activado: en ese caso NO se ejecuta el nuevo trade.
+//
+//  FILTRO VWAP (desactivado por defecto): compras solo si el precio de entrada está sobre el VWAP,
+//  ventas solo si está bajo el VWAP. Fuente hlc3 ponderada por volumen, reinicio a las 18:00 NY.
+//
+//  CANTIDAD: riesgo % × capital / (distancia al SL × valor del punto). En futuros se redondea hacia
+//  abajo a contratos enteros; en CFD, a fracciones (0,01 por defecto).
+//
+//  COSTOS: no se incluyen. Configúralos en Propiedades de TradingView para cada instrumento
+//  (comisión por contrato y deslizamiento en futuros; spread en el CFD).
+// ═══════════════════════════════════════════════════════════════════════════════════
+strategy(title = "NASDAQ · Envolvente + START · 1m",
+         shorttitle = "NAS Env/START",
+         overlay = true,
+         initial_capital = 1000000,
+         currency = currency.USD,
+         default_qty_type = strategy.fixed,
+         default_qty_value = 1,
+         pyramiding = 1,
+         process_orders_on_close = true,
+         use_bar_magnifier = true,
+         calc_on_every_tick = false,
+         margin_long = 0,
+         margin_short = 0,
+         max_labels_count = 500)
+
+// ── Constantes ─────────────────────────────────────────────────────────────────────
+const string TZ       = "America/New_York"
+const int    START_MD = 9 * 60 + 30     // la vela de entrada abre desde las 09:30
+
+// ── Entradas ───────────────────────────────────────────────────────────────────────
+const string G_HOR = "1 · Horario"
+const string G_PAT = "2 · Patrones de entrada"
+const string G_SAL = "3 · Salida"
+const string G_OPE = "4 · Gestión de trades (pruebas)"
+const string G_FIL = "5 · Filtro VWAP"
+const string G_CIE = "6 · Cierre forzado"
+const string G_RSK = "7 · Riesgo"
+const string G_VIS = "8 · Visual"
+
+cutHour = input.int(11, "Hora límite (NY): no se abren más entradas", minval = 0, maxval = 23, group = G_HOR, tooltip = "La vela de entrada debe abrir antes de esta hora. Con 11:00, la última vela de entrada es la de las 10:59. El trade abierto sigue hasta su SL, su TP o el cierre forzado.")
+cutMin  = input.int(0, "Minuto límite", minval = 0, maxval = 59, group = G_HOR)
+
+useEnv    = input.bool(true, "Operar el patrón ENVOLVENTE", group = G_PAT)
+envDiff   = input.float(5.0, "Diferencia del envolvente (puntos de precio)", minval = 0.0, step = 0.25, group = G_PAT, tooltip = "Compras: el cierre de la vela de entrada debe superar la apertura de la vela bajista en al menos esta cantidad. Ventas: espejo.")
+useStart  = input.bool(true, "Operar el patrón START", group = G_PAT)
+startDiff = input.float(5.0, "Diferencia del START (puntos de precio)", minval = 0.0, step = 0.25, group = G_PAT, tooltip = "Compras: el cierre de la vela de entrada debe superar la apertura de la vela de indecisión en al menos esta cantidad. Ventas: espejo.")
+indecPct  = input.float(50.0, "Indecisión: cuerpo menor a este % del rango", minval = 1.0, maxval = 100.0, step = 5.0, group = G_PAT, tooltip = "La vela de indecisión del START debe tener un cuerpo (|cierre − apertura|) menor a este porcentaje de su rango (máximo − mínimo).")
+
+rr = input.float(1.0, "Ratio R:R (recompensa por cada 1 de riesgo)", minval = 0.1, step = 0.1, group = G_SAL, tooltip = "1.0 = 1:1 · 2.0 = 1:2. El TP se mide sobre la distancia real al SL.")
+
+blockSameBar = input.bool(false, "Bloquear entrada en la misma vela del cierre anterior", group = G_OPE, tooltip = "Desactivado (por defecto): se permite otro trade aunque la vela de entrada sea la misma en la que el precio tocó el SL o el TP del trade anterior. Activado: en ese caso no se ejecuta el nuevo trade.")
+
+useVWAP  = input.bool(false, "Filtro VWAP (línea central)", group = G_FIL, tooltip = "Activado: solo compras si el precio de entrada está por encima del VWAP y solo ventas si está por debajo. Fuente hlc3 ponderada por volumen.")
+vwapHour = input.int(18, "Reinicio del VWAP · hora (NY)", minval = 0, maxval = 23, group = G_FIL, tooltip = "Por defecto 18:00 NY, el inicio de la sesión Globex. El VWAP acumula desde ese momento y se reinicia cada día a esa hora.")
+vwapMin  = input.int(0, "Reinicio del VWAP · minuto", minval = 0, maxval = 59, group = G_FIL)
+
+closeHour = input.int(16, "Hora de cierre forzado (hora NY)", minval = 0, maxval = 23, group = G_CIE, tooltip = "Cualquier posición que siga abierta se cierra a mercado a esta hora.")
+closeMin  = input.int(0, "Minuto de cierre forzado", minval = 0, maxval = 59, group = G_CIE)
+
+riskPct   = input.float(1.0, "Riesgo por operación (%)", minval = 0.01, maxval = 100.0, step = 0.1, group = G_RSK)
+compound  = input.bool(false, "Interés compuesto", group = G_RSK, tooltip = "Activado: el riesgo se calcula sobre el capital actual (inicial + resultado cerrado). Desactivado: siempre sobre el capital inicial (Propiedades).")
+qtyStepIn = input.float(0.0, "Paso de cantidad (0 = automático)", minval = 0.0, step = 0.01, group = G_RSK, tooltip = "0 = automático: 1 contrato en futuros (MNQ, NQ) y 0,01 en el resto (CFD NAS100). Pon el paso de tu broker si es distinto.")
+
+buyLblCol  = input.color(#5B5B5B, "Color de la etiqueta BUY", group = G_VIS)
+sellLblCol = input.color(#A9A9A9, "Color de la etiqueta SELL", group = G_VIS)
+showMarks  = input.bool(true, "Mostrar etiqueta con el patrón en la vela de entrada", group = G_VIS, tooltip = "Etiqueta BUY o SELL con el patrón (ENV o START). El detalle (entrada, SL, TP y cantidad) está en el tooltip de la etiqueta. TradingView conserva como máximo 500 etiquetas.")
+
+if timeframe.in_seconds() != 60
+    runtime.error("Esta estrategia está diseñada para el gráfico de 1 minuto.")
+
+// ── Tiempo en hora de Nueva York ───────────────────────────────────────────────────
+int  mdOpen  = hour(time, TZ) * 60 + minute(time, TZ)   // minuto del día en que ABRE la vela
+int  mdClose = mdOpen + 1                               // minuto del día en que CIERRA la vela
+int  dow     = dayofweek(time, TZ)
+int  cutMD   = cutHour * 60 + cutMin
+int  forceMD = closeHour * 60 + closeMin
+bool inForce = mdClose >= forceMD and mdClose <= forceMD + 60
+bool inWin   = dow >= dayofweek.monday and dow <= dayofweek.friday and mdOpen >= START_MD and mdOpen < math.min(cutMD, forceMD)
+
+// ── VWAP con reinicio diario a la hora indicada (hora NY). Fuente hlc3 ponderada por volumen. ──
+int  vwapMD = vwapHour * 60 + vwapMin
+bool vReset = mdOpen >= vwapMD and nz(mdOpen[1], -1) < vwapMD
+var float cumPV = 0.0
+var float cumV  = 0.0
+if vReset
+    cumPV := 0.0
+    cumV  := 0.0
+cumPV := cumPV + hlc3 * nz(volume)
+cumV  := cumV + nz(volume)
+float vwapVal = cumV > 0 ? cumPV / cumV : na
+plot(useVWAP and not vReset ? vwapVal : na, title = "VWAP", color = #9C27B0, linewidth = 2, style = plot.style_linebr)
+
+// ── Utilidades ─────────────────────────────────────────────────────────────────────
+// Convierte una diferencia de precio a ticks enteros para comparar sin errores de decimales.
+tk(float x) => math.round(x / syminfo.mintick)
+
+// ── Patrones (se evalúan al cierre de cada vela) ───────────────────────────────────
+bool bull0 = close > open
+bool bear0 = close < open
+bool bull1 = close[1] > open[1]
+bool bear1 = close[1] < open[1]
+bool bull2 = close[2] > open[2]
+bool bear2 = close[2] < open[2]
+
+// Vela de indecisión (la del medio en el START): cuerpo menor al X % de su rango.
+float rng1   = high[1] - low[1]
+bool  indec1 = rng1 > 0 and tk(math.abs(close[1] - open[1])) * 100.0 < indecPct * tk(rng1)
+
+bool envBuy  = useEnv and bear1 and bull0 and tk(close - open[1]) >= tk(envDiff)
+bool envSell = useEnv and bull1 and bear0 and tk(open[1] - close) >= tk(envDiff)
+bool stBuy   = useStart and bear2 and bull1 and indec1 and bull0 and tk(close - open[1]) >= tk(startDiff)
+bool stSell  = useStart and bull2 and bear1 and indec1 and bear0 and tk(open[1] - close) >= tk(startDiff)
+
+bool goBuy  = envBuy or stBuy
+bool goSell = envSell or stSell
+
+// SL: punto más bajo (compras) o más alto (ventas) de las velas del patrón, mechas incluidas.
+float slBuy  = stBuy ? math.min(low, math.min(low[1], low[2])) : math.min(low, low[1])
+float slSell = stSell ? math.max(high, math.max(high[1], high[2])) : math.max(high, high[1])
+
+// ── Operativa ──────────────────────────────────────────────────────────────────────
+float stepQ = qtyStepIn > 0 ? qtyStepIn : (syminfo.type == "futures" ? 1.0 : 0.01)
+
+if barstate.isconfirmed
+    // Cierre forzado.
+    if inForce and strategy.position_size != 0
+        strategy.close_all(comment = "Cierre forzado")
+
+    // ¿La vela de entrada es la misma en la que se cerró el trade anterior (por SL o TP)?
+    bool sameBar = blockSameBar and strategy.closedtrades > 0 and strategy.closedtrades.exit_bar_index(strategy.closedtrades - 1) == bar_index
+
+    bool vwapOk = not useVWAP or (goBuy ? close > vwapVal : close < vwapVal)
+
+    if inWin and strategy.position_size == 0 and not sameBar and (goBuy or goSell) and vwapOk
+        int   dir   = goBuy ? 1 : -1
+        float entry = close
+        float slP   = dir == 1 ? slBuy : slSell
+        float dist  = math.abs(entry - slP)
+        float bal   = compound ? strategy.initial_capital + strategy.netprofit : strategy.initial_capital
+        float qtyRaw = dist > 0 and bal > 0 ? bal * riskPct / 100.0 / (dist * syminfo.pointvalue) : 0.0
+        float qty    = math.round(math.floor(qtyRaw / stepQ + 1e-9) * stepQ, 6)
+        if qty >= stepQ
+            float tpP = math.round_to_mintick(dir == 1 ? entry + rr * dist : entry - rr * dist)
+            string pat = (envBuy or envSell) ? "ENV" : "START"
+            if dir == 1
+                strategy.entry("L", strategy.long, qty = qty, comment = pat)
+                strategy.exit("XL", from_entry = "L", stop = slP, limit = tpP, comment_profit = "TP", comment_loss = "SL")
+            else
+                strategy.entry("S", strategy.short, qty = qty, comment = pat)
+                strategy.exit("XS", from_entry = "S", stop = slP, limit = tpP, comment_profit = "TP", comment_loss = "SL")
+            if showMarks
+                string tip = pat + "\nEntrada: " + str.tostring(entry, "#.##") + "\nSL: " + str.tostring(slP, "#.##") + " (" + str.tostring(dist, "#.##") + ")\nTP: " + str.tostring(tpP, "#.##") + "\nCantidad: " + str.tostring(qty)
+                if dir == 1
+                    label.new(bar_index, na, text = "BUY · " + pat, xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = buyLblCol, textcolor = color.white, size = size.small, tooltip = tip)
+                else
+                    label.new(bar_index, na, text = "SELL · " + pat, xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = sellLblCol, textcolor = color.white, size = size.small, tooltip = tip)
