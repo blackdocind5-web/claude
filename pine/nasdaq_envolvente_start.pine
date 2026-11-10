@@ -20,7 +20,8 @@
 //  PATRÓN 2 · START (3 velas)
 //    · COMPRA: vela bajista + vela alcista de INDECISIÓN + vela alcista de entrada. La indecisión
 //      tiene un cuerpo menor al 50 % de su rango (máximo − mínimo). El CIERRE de la entrada supera
-//      la APERTURA de la vela de indecisión en al menos "Diferencia del START" (5 puntos).
+//      la APERTURA de la vela de indecisión en al menos "Diferencia del START" (5 puntos). Con el
+//      selector "START: referencia de la diferencia" se puede medir contra su CIERRE en vez de la apertura.
 //    · VENTA : vela alcista + vela bajista de indecisión + vela bajista de entrada (espejo).
 //    · No vale que la entrada sea la tercera vela seguida del mismo color: como el patrón exige que
 //      la primera vela sea del color contrario, esos casos quedan fuera automáticamente.
@@ -81,6 +82,7 @@ useEnv    = input.bool(true, "Operar el patrón ENVOLVENTE", group = G_PAT)
 envDiff   = input.float(5.0, "Diferencia del envolvente (puntos de precio)", minval = 0.0, step = 0.25, group = G_PAT, tooltip = "Compras: el cierre de la vela de entrada debe superar la apertura de la vela bajista en al menos esta cantidad. Ventas: espejo.")
 useStart  = input.bool(true, "Operar el patrón START", group = G_PAT)
 startDiff = input.float(5.0, "Diferencia del START (puntos de precio)", minval = 0.0, step = 0.25, group = G_PAT, tooltip = "Compras: el cierre de la vela de entrada debe superar la apertura de la vela de indecisión en al menos esta cantidad. Ventas: espejo.")
+startRef  = input.string("Apertura de la indecisión", "START: referencia de la diferencia", options = ["Apertura de la indecisión", "Cierre de la indecisión"], group = G_PAT, tooltip = "Apertura (por defecto): el cierre de la entrada debe superar la APERTURA de la vela de indecisión. Cierre: debe superar su CIERRE, es decir, el extremo de su cuerpo en la dirección del trade. Con la apertura la exigencia es menor cuanto más grande sea el cuerpo de la indecisión.")
 indecPct  = input.float(50.0, "Indecisión: cuerpo menor a este % del rango", minval = 1.0, maxval = 100.0, step = 5.0, group = G_PAT, tooltip = "La vela de indecisión del START debe tener un cuerpo (|cierre − apertura|) menor a este porcentaje de su rango (máximo − mínimo).")
 
 rr = input.float(1.0, "Ratio R:R (recompensa por cada 1 de riesgo)", minval = 0.1, step = 0.1, group = G_SAL, tooltip = "1.0 = 1:1 · 2.0 = 1:2. El TP se mide sobre la distancia real al SL.")
@@ -143,10 +145,13 @@ bool bear2 = close[2] < open[2]
 float rng1   = high[1] - low[1]
 bool  indec1 = rng1 > 0 and tk(math.abs(close[1] - open[1])) * 100.0 < indecPct * tk(rng1)
 
+// Referencia del START: apertura o cierre de la vela de indecisión.
+float refSt = startRef == "Apertura de la indecisión" ? open[1] : close[1]
+
 bool envBuy  = useEnv and bear1 and bull0 and tk(close - open[1]) >= tk(envDiff)
 bool envSell = useEnv and bull1 and bear0 and tk(open[1] - close) >= tk(envDiff)
-bool stBuy   = useStart and bear2 and bull1 and indec1 and bull0 and tk(close - open[1]) >= tk(startDiff)
-bool stSell  = useStart and bull2 and bear1 and indec1 and bear0 and tk(open[1] - close) >= tk(startDiff)
+bool stBuy   = useStart and bear2 and bull1 and indec1 and bull0 and tk(close - refSt) >= tk(startDiff)
+bool stSell  = useStart and bull2 and bear1 and indec1 and bear0 and tk(refSt - close) >= tk(startDiff)
 
 bool goBuy  = envBuy or stBuy
 bool goSell = envSell or stSell
@@ -186,7 +191,11 @@ if barstate.isconfirmed
                 strategy.entry("S", strategy.short, qty = qty, comment = pat)
                 strategy.exit("XS", from_entry = "S", stop = slP, limit = tpP, comment_profit = "TP", comment_loss = "SL")
             if showMarks
+                bool   isEnv   = envBuy or envSell
+                float  diffUsd = isEnv ? math.abs(close - open[1]) : math.abs(close - refSt)
                 string tip = pat + "\nEntrada: " + str.tostring(entry, "#.##") + "\nSL: " + str.tostring(slP, "#.##") + " (" + str.tostring(dist, "#.##") + ")\nTP: " + str.tostring(tpP, "#.##") + "\nCantidad: " + str.tostring(qty)
+                tip := tip + "\nVela " + (isEnv ? "previa" : "de indecisión") + ": apertura " + str.tostring(open[1], "#.##") + " · cierre " + str.tostring(close[1], "#.##")
+                tip := tip + "\nDiferencia medida: " + str.tostring(diffUsd, "#.##") + " (mínimo " + str.tostring(isEnv ? envDiff : startDiff, "#.##") + ")"
                 if dir == 1
                     label.new(bar_index, na, text = "BUY · " + pat, xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = buyLblCol, textcolor = color.white, size = size.small, tooltip = tip)
                 else
