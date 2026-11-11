@@ -28,6 +28,8 @@
 //  ENTRADA: a mercado, al precio de CIERRE de la vela de entrada.
 //  SL: el punto más bajo (compras) o más alto (ventas) de las velas del patrón, mechas incluidas
 //      (2 velas en el envolvente, 3 en el START).
+//  SL mínimo (opcional, desactivado por defecto): si el SL del patrón es menor que este valor en puntos,
+//      el trade se descarta.
 //  TP: R:R × la distancia al SL (1,0 por defecto, editable).
 //  Un solo trade abierto a la vez. No hay límite de trades por día.
 //
@@ -84,6 +86,7 @@ startDiff = input.float(5.0, "Diferencia del START (puntos de precio)", minval =
 indecPct  = input.float(50.0, "Indecisión: cuerpo menor a este % del rango", minval = 1.0, maxval = 100.0, step = 5.0, group = G_PAT, tooltip = "La vela de indecisión del START debe tener un cuerpo (|cierre − apertura|) menor a este porcentaje de su rango (máximo − mínimo).")
 
 rr = input.float(1.0, "Ratio R:R (recompensa por cada 1 de riesgo)", minval = 0.1, step = 0.1, group = G_SAL, tooltip = "1.0 = 1:1 · 2.0 = 1:2. El TP se mide sobre la distancia real al SL.")
+minSL = input.float(0.0, "SL mínimo (puntos): descarta los trades con un SL menor", minval = 0.0, step = 1.0, group = G_SAL, tooltip = "0 = desactivado (por defecto). Si la distancia al SL del patrón es menor a este valor, el trade no se ejecuta. Los SL chicos son los que más cuestan en R (comisión y deslizamiento).")
 
 blockSameBar = input.bool(false, "Bloquear entrada en la misma vela del cierre anterior", group = G_OPE, tooltip = "Desactivado (por defecto): se permite otro trade aunque la vela de entrada sea la misma en la que el precio tocó el SL o el TP del trade anterior. Activado: en ese caso no se ejecuta el nuevo trade.")
 
@@ -176,7 +179,7 @@ if barstate.isconfirmed
         float bal   = compound ? strategy.initial_capital + strategy.netprofit : strategy.initial_capital
         float qtyRaw = dist > 0 and bal > 0 ? bal * riskPct / 100.0 / (dist * syminfo.pointvalue) : 0.0
         float qty    = math.round(math.floor(qtyRaw / stepQ + 1e-9) * stepQ, 6)
-        if qty >= stepQ
+        if qty >= stepQ and tk(dist) >= tk(minSL)
             float tpP = math.round_to_mintick(dir == 1 ? entry + rr * dist : entry - rr * dist)
             string pat = (envBuy or envSell) ? "ENV" : "START"
             if dir == 1
