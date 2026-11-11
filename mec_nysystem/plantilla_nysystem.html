@@ -459,11 +459,11 @@ $('#road').innerHTML = road.map(([id, n, t, r, d], i) => i === 5
 $('#a1').innerHTML = `Sí. En ${B.n} operaciones ganó ${nf(B.wr)}% de las veces, con riesgo y objetivo iguales (1:1). Eso deja ${sg(B.R_op, 2)}R por operación y ${sg(B.R, 1)}R en total, con un valor t de ${nf(B.t)}: difícil que sea azar. El costo de Multibank casi no pesa: ${nf(B.costo_R * 100, 1)}% de R por operación.`;
 $('#f1').innerHTML = [
   ['Activo', 'XAUUSD (oro contra dólar), CFD en Multibank'],
-  ['Horario', 'Sesión de Nueva York, entradas entre 09:30 y 10:45'],
+  ['Horario', 'Sesión de Nueva York: primera operación entre 09:30 y 10:00'],
   ['Señal', 'Patrón «BIS» con stop medido por ATR'],
   ['Salida', 'Stop o objetivo, relación 1:1. Sin break even ni salida por tiempo'],
   ['Frecuencia', `${nf(B.por_sem, 1)} operaciones por semana · ${B.dias} días operados de ${Math.round((new Date(2026, 9, 26) - new Date(2025, 0, 8)) / 864e5 / 7 * 5)} hábiles`],
-  ['Segunda operación', 'Solo si la primera del día tocó el stop'],
+  ['Segunda operación', 'Solo si la primera del día tocó el stop; entrada hasta las 11:00 y queda abierta hasta su stop u objetivo'],
   ['Duración típica', `${B.dur} minutos (mediana)`],
   ['Stop típico', `${nf(D.meta.dist_med, 2)} USD por onza (mediana) · ${nf(D.meta.dist_p90, 2)} USD en el 90% de los casos`],
   ['Período', `${D.meta.desde} al ${D.meta.hasta}`, true]

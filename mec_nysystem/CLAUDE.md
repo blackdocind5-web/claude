@@ -1,6 +1,6 @@
 # Informe "NY SYSTEM" (capital propio, para la cartera con Diego)
 
-- NY SYSTEM = estrategia antes llamada KALA (XAUUSD, sesión NY, RR 1:1, 2.ª operación solo tras SL). Datos: `../mec_lucid/kala/XAU_ATR.csv` (139 ops, 08/01/2025–26/10/2026), cargados con `motor.kala()`.
+- NY SYSTEM = estrategia antes llamada KALA (XAUUSD, sesión NY, RR 1:1; 1.ª operación 09:30–10:00, 2.ª solo tras SL con entrada hasta las 11:00 y salida por SL/TP aunque pase de las 11:00). Datos: `../mec_lucid/kala/XAU_ATR.csv` (139 ops, 08/01/2025–26/10/2026), cargados con `motor.kala()`.
 - Costo Multibank XAUUSD 0,05 USD/oz → 0,05/dist en R (≈0,006R). 1.000 USD, interés compuesto. Perfiles 0,5% / 1% / 1,5% / 2%.
 - Filtro sugerido: no operar días de CPI EE. UU. ni NFP (132 ops, R/op +0,37). La regla del Nasdaq (Rascacielos) empeora (anual 1% 22,1% vs 31,0%). FOMC/minutas salen 14:00, después de la operación.
 - Resultado 1% con filtro: anual +31,0%, caída 3,1%, Calmar 10,1. Referencias (03/11/2026, ancladas a precios de Fabián: oro 2.659,92 → 3.962,66; Nasdaq MNQ 22.890,25 → 28.360,00, enero 2025 → 03/11/2026): oro +49,0% (24,5% anual, caída 25,9%), Nasdaq +23,9% (12,5% anual, caída 18,0%; solo precios de `alex/`, `datos_v7` es serie ajustada por vencimientos y daba +38%). Correlación mensual −0,18 con oro, 0,00 con Nasdaq. Etiquetas: «Oro» y «Nasdaq».
