@@ -41,7 +41,8 @@
 //      (vela alcista seguida de una bajista) en ventas, incluida la vela de entrada si lo forma.
 //    · TP: R:R × la distancia al SL (2,0 por defecto, editable).
 //    · BE (interruptor, desactivado por defecto): al tocar 1R, el SL pasa a la entrada desde la vela siguiente.
-//    · SL máximo 100 puntos: si la distancia al SL llega a ese valor no se opera. Sin SL mínimo.
+//    · SL máximo 100 puntos: si la distancia al SL llega a ese valor, el SL se reduce al extremo de la vela de
+//      entrada (mínimo en compras, máximo en ventas); si aun así llega a 100 puntos, no se opera. Sin SL mínimo.
 //    · Un solo trade abierto a la vez, sin límite de trades por día. Riesgo 1 % por operación.
 //
 //  COSTOS: no se incluyen. Configúralos en Propiedades de TradingView para cada instrumento.
@@ -82,7 +83,7 @@ minDiff = input.float(5.0, "Margen mínimo del cierre de la vela de entrada (pun
 rr     = input.float(2.0, "Ratio R:R (recompensa por cada 1 de riesgo)", minval = 0.1, step = 0.1, group = G_SAL, tooltip = "2.0 = 1:2. El TP se mide sobre la distancia real al SL.")
 useBE  = input.bool(false, "Break-even", group = G_SAL, tooltip = "Activado: cuando el precio toca el nivel de 'BE a' (1R por defecto), el SL pasa a la entrada desde la vela siguiente.")
 beR    = input.float(1.0, "BE a (múltiplo de R)", minval = 0.1, step = 0.1, group = G_SAL)
-maxSL  = input.float(100.0, "SL máximo (puntos de precio): si lo alcanza no se opera", minval = 0.0, step = 1.0, group = G_SAL, tooltip = "Si la distancia al SL es igual o mayor a este valor, el trade no se ejecuta. 0 = sin límite.")
+maxSL  = input.float(100.0, "SL máximo (puntos de precio)", minval = 0.0, step = 1.0, group = G_SAL, tooltip = "Si la distancia al SL es igual o mayor a este valor, el SL se reduce al extremo de la vela de entrada (mínimo en compras, máximo en ventas). Si aun así es igual o mayor, el trade no se ejecuta. 0 = sin límite.")
 
 closeHour = input.int(16, "Hora de cierre forzado (hora NY)", minval = 0, maxval = 23, group = G_CIE, tooltip = "Cualquier posición que siga abierta se cierra a mercado a esta hora.")
 closeMin  = input.int(0, "Minuto de cierre forzado", minval = 0, maxval = 59, group = G_CIE)
@@ -300,6 +301,13 @@ if barstate.isconfirmed
         float slP   = dir == 1 ? swL : swH
         bool  slOk  = not na(slP) and (dir == 1 ? slP < entry : slP > entry)
         float dist  = slOk ? math.abs(entry - slP) : na
+        // SL máximo: si el SL llega a ese valor, se reduce al extremo de la vela de entrada (mínimo en compras, máximo en ventas);
+        // si aun así llega al máximo, no se opera.
+        bool  slCut = slOk and maxSL > 0 and tk(dist) >= tk(maxSL)
+        if slCut
+            slP  := dir == 1 ? low : high
+            dist := math.abs(entry - slP)
+            slOk := dist > 0
         bool  dOk   = slOk and (maxSL <= 0 or tk(dist) < tk(maxSL))
         float bal   = compound ? strategy.initial_capital + strategy.netprofit : strategy.initial_capital
         float qtyRaw = dOk and bal > 0 ? bal * riskPct / 100.0 / (dist * syminfo.pointvalue) : 0.0
@@ -321,6 +329,8 @@ if barstate.isconfirmed
                 strategy.exit("XS", from_entry = "S", stop = slP, limit = tpP, comment_profit = "TP", comment_loss = "SL")
             if showMarks
                 string tip = (kind == "EXT" ? "Retroceso extenso" : "Retroceso corto") + "\nEntrada: " + str.tostring(entry, "#.##") + "\nSL: " + str.tostring(slP, "#.##") + " (" + str.tostring(dist, "#.##") + ")\nTP: " + str.tostring(tpP, "#.##") + "\nCantidad: " + str.tostring(qty)
+                if slCut
+                    tip := tip + "\nSL reducido al extremo de la vela de entrada"
                 tip := tip + "\nNivel envuelto: " + str.tostring(entLvl, "#.##") + " · cierre − nivel: " + str.tostring(math.abs(entry - entLvl), "#.##") + " (mínimo " + str.tostring(minDiff, "#.##") + ")"
                 if dir == 1
                     label.new(bar_index, na, text = "BUY · " + kind, xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = buyLblCol, textcolor = color.white, size = size.small, tooltip = tip)
