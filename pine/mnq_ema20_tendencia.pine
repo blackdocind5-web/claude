@@ -1,0 +1,328 @@
+//@version=6
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  MNQ · Tendencia con EMA20: QUIEBRE + RETROCESO + CONTINUACIÓN, y entrada en el retroceso · 1 minuto
+//  Mismo código para MNQ, NQ y NAS100 (CFD): la cantidad se calcula con el valor del punto.
+// ═══════════════════════════════════════════════════════════════════════════════════
+//
+//  HORARIO (hora de Nueva York, lunes a viernes)
+//    · La vela de ENTRADA debe abrir desde las 09:30 y antes de la hora límite (11:00 por defecto,
+//      editable; la última vela de entrada es la de las 10:59). El estado de la tendencia se sigue
+//      siempre, también antes de las 09:30, para saber si a la apertura ya hay una tendencia confirmada.
+//    · Cierre forzado a las 16:00.
+//
+//  1) TENDENCIA = QUIEBRE + RETROCESO + CONTINUACIÓN (alcista; la bajista es el espejo)
+//    · QUIEBRE: una vela alcista cierra por encima de la EMA20 (aunque abra por debajo) viniendo de un
+//      cierre en o bajo la EMA20. Su ORIGEN es el último punto bajo M1 (vela bajista seguida de una
+//      alcista; el mínimo de las dos) hasta esa vela.
+//    · RETROCESO: una o más velas en contra. Empieza con la primera vela bajista tras el quiebre. El
+//      PUNTO ALTO es el máximo (con mechas) del movimiento del quiebre antes de empezar a retroceder.
+//    · CONTINUACIÓN: una vela alcista que cierra con cuerpo por encima de ese punto alto. Confirma la
+//      tendencia. Recién entonces se buscan entradas.
+//    · CANCELACIÓN: si antes de la continuación el precio (mecha o cuerpo) pierde el origen del
+//      quiebre, el patrón se cancela. Un cierre al otro lado de la EMA20 durante el retroceso NO lo cancela.
+//    · Pueden convivir un quiebre alcista y uno bajista en espera. Mientras un quiebre contrario espera su
+//      continuación se sigue operando a favor de la tendencia actual. Si se cancela, la tendencia sigue; si
+//      se confirma, cambia. Un quiebre en espera solo termina por continuación o por cancelación.
+//
+//  2) ENTRADA (con la tendencia confirmada; a las 09:30 vale la tendencia ya confirmada)
+//    Tras la continuación se espera un retroceso. La vela de retroceso más cercana es la última vela en
+//    contra antes de la vela de entrada. La vela de entrada es una vela a favor (en compras alcista) que
+//    cierra con un margen mínimo (5 puntos) más allá del nivel a envolver:
+//    · RETROCESO EXTENSO (la mecha tocó la EMA20 durante el retroceso, antes de la vela de entrada):
+//      nivel = máximo (mínimo en ventas) de la vela de retroceso más cercana. Además la vela de entrada
+//      debe cerrar por encima (compras) o por debajo (ventas) de la EMA20. Solo vale la 1.ª o la 2.ª vela
+//      a favor seguida; en la 2.ª, el nivel es también el máximo (mínimo) de la vela a favor anterior.
+//    · RETROCESO CORTO (no tocó la EMA20): nivel = punto más alto (más bajo en ventas) que el precio creó
+//      antes de empezar a retroceder. En la 2.ª vela o más, también el máximo (mínimo) de la vela a favor anterior.
+//    · Se entra a MERCADO, al cierre de la vela de entrada.
+//
+//  3) SALIDA
+//    · SL: último punto bajo M1 (vela bajista seguida de una alcista) en compras, o último punto alto M1
+//      (vela alcista seguida de una bajista) en ventas, incluida la vela de entrada si lo forma.
+//    · TP: R:R × la distancia al SL (2,0 por defecto, editable).
+//    · BE (interruptor, desactivado por defecto): al tocar 1R, el SL pasa a la entrada desde la vela siguiente.
+//    · SL máximo 100 puntos: si la distancia al SL llega a ese valor no se opera. Sin SL mínimo.
+//    · Un solo trade abierto a la vez, sin límite de trades por día. Riesgo 1 % por operación.
+//
+//  COSTOS: no se incluyen. Configúralos en Propiedades de TradingView para cada instrumento.
+// ═══════════════════════════════════════════════════════════════════════════════════
+strategy(title = "MNQ · EMA20 Quiebre-Retroceso-Continuación · 1m",
+         shorttitle = "MNQ EMA20",
+         overlay = true,
+         initial_capital = 1000000,
+         currency = currency.USD,
+         default_qty_type = strategy.fixed,
+         default_qty_value = 1,
+         pyramiding = 1,
+         process_orders_on_close = true,
+         use_bar_magnifier = true,
+         calc_on_every_tick = false,
+         margin_long = 0,
+         margin_short = 0,
+         max_labels_count = 500)
+
+// ── Constantes ─────────────────────────────────────────────────────────────────────
+const string TZ       = "America/New_York"
+const int    START_MD = 9 * 60 + 30     // la vela de entrada abre desde las 09:30
+
+// ── Entradas ───────────────────────────────────────────────────────────────────────
+const string G_HOR = "1 · Horario"
+const string G_PAT = "2 · Patrón y entrada"
+const string G_SAL = "3 · Salida"
+const string G_CIE = "4 · Cierre forzado"
+const string G_RSK = "5 · Riesgo"
+const string G_VIS = "6 · Visual"
+
+cutHour = input.int(11, "Hora límite (NY): no se abren más entradas", minval = 0, maxval = 23, group = G_HOR, tooltip = "La vela de entrada debe abrir antes de esta hora. Con 11:00, la última vela de entrada es la de las 10:59. El trade abierto sigue hasta su SL, su TP o el cierre forzado.")
+cutMin  = input.int(0, "Minuto límite", minval = 0, maxval = 59, group = G_HOR)
+
+emaLen  = input.int(20, "Periodos de la EMA", minval = 2, group = G_PAT)
+minDiff = input.float(5.0, "Margen mínimo del cierre de la vela de entrada (puntos de precio)", minval = 0.0, step = 0.25, group = G_PAT, tooltip = "El cierre de la vela de entrada debe superar (compras) o quedar por debajo (ventas) del nivel a envolver en al menos esta cantidad.")
+
+rr     = input.float(2.0, "Ratio R:R (recompensa por cada 1 de riesgo)", minval = 0.1, step = 0.1, group = G_SAL, tooltip = "2.0 = 1:2. El TP se mide sobre la distancia real al SL.")
+useBE  = input.bool(false, "Break-even", group = G_SAL, tooltip = "Activado: cuando el precio toca el nivel de 'BE a' (1R por defecto), el SL pasa a la entrada desde la vela siguiente.")
+beR    = input.float(1.0, "BE a (múltiplo de R)", minval = 0.1, step = 0.1, group = G_SAL)
+maxSL  = input.float(100.0, "SL máximo (puntos de precio): si lo alcanza no se opera", minval = 0.0, step = 1.0, group = G_SAL, tooltip = "Si la distancia al SL es igual o mayor a este valor, el trade no se ejecuta. 0 = sin límite.")
+
+closeHour = input.int(16, "Hora de cierre forzado (hora NY)", minval = 0, maxval = 23, group = G_CIE, tooltip = "Cualquier posición que siga abierta se cierra a mercado a esta hora.")
+closeMin  = input.int(0, "Minuto de cierre forzado", minval = 0, maxval = 59, group = G_CIE)
+
+riskPct   = input.float(1.0, "Riesgo por operación (%)", minval = 0.01, maxval = 100.0, step = 0.1, group = G_RSK)
+compound  = input.bool(false, "Interés compuesto", group = G_RSK, tooltip = "Activado: el riesgo se calcula sobre el capital actual (inicial + resultado cerrado). Desactivado: siempre sobre el capital inicial (Propiedades).")
+qtyStepIn = input.float(0.0, "Paso de cantidad (0 = automático)", minval = 0.0, step = 0.01, group = G_RSK, tooltip = "0 = automático: 1 contrato en futuros (MNQ, NQ) y 0,01 en el resto (CFD NAS100). Pon el paso de tu broker si es distinto.")
+
+showMarks  = input.bool(true, "Mostrar etiqueta en cada entrada (tipo de retroceso)", group = G_VIS, tooltip = "Etiqueta BUY / SELL con EXT (retroceso extenso) o COR (retroceso corto). El detalle está en el tooltip. TradingView conserva como máximo 500 etiquetas: apágala en pruebas largas.")
+showStages = input.bool(false, "Mostrar las etapas del patrón (quiebre, continuación, cancelado)", group = G_VIS, tooltip = "Útil para comprobar visualmente la lógica en pocos días. Apágalo en pruebas largas.")
+buyLblCol  = input.color(#5B5B5B, "Color de la etiqueta BUY", group = G_VIS)
+sellLblCol = input.color(#A9A9A9, "Color de la etiqueta SELL", group = G_VIS)
+
+if timeframe.in_seconds() != 60
+    runtime.error("Esta estrategia está diseñada para el gráfico de 1 minuto.")
+
+// ── Tiempo en hora de Nueva York ───────────────────────────────────────────────────
+int  mdOpen  = hour(time, TZ) * 60 + minute(time, TZ)   // minuto del día en que ABRE la vela
+int  mdClose = mdOpen + 1                               // minuto del día en que CIERRA la vela
+int  dow     = dayofweek(time, TZ)
+int  cutMD   = cutHour * 60 + cutMin
+int  forceMD = closeHour * 60 + closeMin
+bool inForce = mdClose >= forceMD and mdClose <= forceMD + 60
+bool inWin   = dow >= dayofweek.monday and dow <= dayofweek.friday and mdOpen >= START_MD and mdOpen < math.min(cutMD, forceMD)
+
+// ── Utilidades ─────────────────────────────────────────────────────────────────────
+// Convierte una diferencia de precio a ticks enteros para comparar sin errores de decimales.
+tk(float x) => math.round(x / syminfo.mintick)
+
+// ── Velas y EMA ────────────────────────────────────────────────────────────────────
+float ema   = ta.ema(close, emaLen)
+bool  bull0 = close > open
+bool  bear0 = close < open
+bool  bull1 = close[1] > open[1]
+bool  bear1 = close[1] < open[1]
+
+plot(ema, title = "EMA", color = #000000, linewidth = 2)
+
+// Últimos puntos M1: bajo = vela bajista seguida de una alcista (mínimo de las dos); alto = vela alcista seguida de una bajista (máximo de las dos).
+var float swL = na
+var float swH = na
+if bull0 and bear1
+    swL := math.min(low[1], low)
+if bear0 and bull1
+    swH := math.max(high[1], high)
+
+// ── Estado de la tendencia ─────────────────────────────────────────────────────────
+// Las variables con sufijo "T" guardan precios en coordenadas de la dirección: en bajista se invierten (alto = −mínimo, bajo = −máximo),
+// así la misma lógica sirve para compras y ventas.
+var int   trend      = 0       // 1 = alcista confirmada, −1 = bajista confirmada, 0 = sin tendencia confirmada
+// Quiebres en espera de su continuación: posición 0 = alcista, posición 1 = bajista (pueden convivir los dos).
+var array<bool>  cAct = array.new<bool>(2, false)
+var array<float> cOrg = array.new<float>(2, na)   // origen del quiebre
+var array<float> cMax = array.new<float>(2, na)   // máximo del movimiento desde el quiebre
+var array<bool>  cPB  = array.new<bool>(2, false) // ¿ya empezó el retroceso?
+var array<float> cRef = array.new<float>(2, na)   // punto alto antes de empezar a retroceder
+var float tMax       = na
+var bool  inPB       = false   // retroceso en curso dentro de la tendencia confirmada
+var float refPeak    = na      // punto más alto antes de empezar el retroceso en curso
+var bool  pbTouched  = false   // ¿la mecha tocó la EMA20 durante el retroceso?
+var bool  flagBeyond = false   // ¿algún cierre superó el punto alto del retroceso en curso?
+var float lastConH   = na      // máximo de la última vela en contra
+var int   cRun       = 0       // velas a favor seguidas
+var float prevFavH   = na      // máximo de la vela a favor anterior
+
+bool   brkUp    = false
+bool   brkDn    = false
+bool   canceled = false
+bool   promoted = false
+bool   goEntry  = false
+string kind     = ""
+float  entLvl   = na
+
+bool bullBrk = bull0 and close > ema and close[1] <= ema[1]
+bool bearBrk = bear0 and close < ema and close[1] >= ema[1]
+
+// 1) y 2) Quiebres: aparición (solo si van en contra de la tendencia actual o no hay tendencia, y no hay ya uno en espera en esa dirección), cancelación, retroceso y continuación
+for k = 0 to 1
+    int   sc   = k == 0 ? 1 : -1
+    bool  brk  = k == 0 ? bullBrk : bearBrk
+    float swK  = k == 0 ? swL : swH
+    bool  made = false
+    if brk and trend != sc and not cAct.get(k) and not na(swK)
+        cAct.set(k, true)
+        cOrg.set(k, sc * swK)
+        cMax.set(k, k == 0 ? high : -low)
+        cPB.set(k, false)
+        cRef.set(k, na)
+        made := true
+        if k == 0
+            brkUp := true
+        else
+            brkDn := true
+    if cAct.get(k) and not made
+        float hC   = sc == 1 ? high : -low
+        float lC   = sc == 1 ? low : -high
+        float cC   = sc * close
+        bool  favC = sc == 1 ? bull0 : bear0
+        bool  conC = sc == 1 ? bear0 : bull0
+        if tk(lC) < tk(cOrg.get(k))
+            cAct.set(k, false)
+            canceled := true
+        else
+            if not cPB.get(k) and conC
+                cPB.set(k, true)
+                cRef.set(k, cMax.get(k))
+            cMax.set(k, math.max(cMax.get(k), hC))
+            if cPB.get(k) and favC and cC > cRef.get(k)
+                trend      := sc
+                tMax       := cMax.get(k)
+                inPB       := false
+                refPeak    := na
+                pbTouched  := false
+                flagBeyond := false
+                lastConH   := na
+                cRun       := 0
+                prevFavH   := na
+                cAct.set(k, false)
+                promoted   := true
+
+// 3) Tendencia confirmada: retroceso y búsqueda de la vela de entrada
+if trend != 0 and not promoted
+    int   s     = trend
+    float hT    = s == 1 ? high : -low
+    float lT    = s == 1 ? low : -high
+    float cT    = s * close
+    float eT    = s * ema
+    bool  favT  = s == 1 ? bull0 : bear0
+    bool  conT  = s == 1 ? bear0 : bull0
+    if conT
+        if not inPB or flagBeyond
+            refPeak    := tMax
+            inPB       := true
+            pbTouched  := false
+            flagBeyond := false
+            tMax       := hT
+        lastConH := hT
+        cRun     := 0
+    else if favT
+        cRun += 1
+    else
+        cRun := 0
+
+    if favT and inPB and not na(lastConH) and not na(refPeak)
+        if pbTouched
+            // Retroceso extenso: envolver la vela de retroceso más cercana (y la vela a favor anterior si es la 2.ª) y cerrar del lado correcto de la EMA20.
+            if cRun <= 2
+                float lvlE = cRun == 1 ? lastConH : math.max(lastConH, nz(prevFavH, lastConH))
+                if tk(cT - lvlE) >= tk(minDiff) and cT > eT
+                    goEntry := true
+                    kind    := "EXT"
+                    entLvl  := s * lvlE
+        else
+            // Retroceso corto: envolver el punto más alto (bajo) antes de empezar a retroceder (y la vela a favor anterior si es la 2.ª o más).
+            float lvlC = cRun == 1 ? refPeak : math.max(refPeak, nz(prevFavH, refPeak))
+            if tk(cT - lvlC) >= tk(minDiff)
+                goEntry := true
+                kind    := "COR"
+                entLvl  := s * lvlC
+
+    if inPB
+        pbTouched := pbTouched or lT <= eT
+        if favT and cT > refPeak
+            flagBeyond := true
+    tMax     := math.max(nz(tMax, hT), hT)
+    prevFavH := favT ? hT : na
+
+// ── Etapas del patrón (opcionales) ─────────────────────────────────────────────────
+if showStages
+    if brkUp
+        label.new(bar_index, na, text = "Quiebre", xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = color.new(color.gray, 20), textcolor = color.white, size = size.tiny)
+    if brkDn
+        label.new(bar_index, na, text = "Quiebre", xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = color.new(color.gray, 20), textcolor = color.white, size = size.tiny)
+    if canceled
+        label.new(bar_index, na, text = "Cancelado", xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = color.new(color.red, 20), textcolor = color.white, size = size.tiny)
+    if promoted
+        if trend == 1
+            label.new(bar_index, na, text = "Continuación ↑", xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = color.new(color.green, 20), textcolor = color.white, size = size.tiny)
+        else
+            label.new(bar_index, na, text = "Continuación ↓", xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = color.new(color.green, 20), textcolor = color.white, size = size.tiny)
+
+// ── Operativa ──────────────────────────────────────────────────────────────────────
+float stepQ = qtyStepIn > 0 ? qtyStepIn : (syminfo.type == "futures" ? 1.0 : 0.01)
+
+var int   tDir    = 0
+var float tEntry  = na
+var float tSL     = na
+var float tTP     = na
+var float tBE     = na
+var bool  tBeDone = false
+var int   tBar    = na
+
+if barstate.isconfirmed
+    // Cierre forzado.
+    if inForce and strategy.position_size != 0
+        strategy.close_all(comment = "Cierre forzado")
+
+    // Gestión de la operación abierta: break-even y salidas.
+    if strategy.position_size != 0 and tDir != 0
+        if useBE and not tBeDone and bar_index > tBar
+            if tDir == 1 ? high >= tBE : low <= tBE
+                tBeDone := true
+        float stopP = tBeDone ? tEntry : tSL
+        if tDir == 1
+            strategy.exit("XL", from_entry = "L", stop = stopP, limit = tTP, comment_profit = "TP", comment_loss = tBeDone ? "BE" : "SL")
+        else
+            strategy.exit("XS", from_entry = "S", stop = stopP, limit = tTP, comment_profit = "TP", comment_loss = tBeDone ? "BE" : "SL")
+    else if strategy.position_size == 0 and tDir != 0 and bar_index > tBar
+        tDir := 0
+
+    // Nueva entrada.
+    if goEntry and inWin and strategy.position_size == 0
+        int   dir   = trend
+        float entry = close
+        float slP   = dir == 1 ? swL : swH
+        bool  slOk  = not na(slP) and (dir == 1 ? slP < entry : slP > entry)
+        float dist  = slOk ? math.abs(entry - slP) : na
+        bool  dOk   = slOk and (maxSL <= 0 or tk(dist) < tk(maxSL))
+        float bal   = compound ? strategy.initial_capital + strategy.netprofit : strategy.initial_capital
+        float qtyRaw = dOk and bal > 0 ? bal * riskPct / 100.0 / (dist * syminfo.pointvalue) : 0.0
+        float qty    = math.round(math.floor(qtyRaw / stepQ + 1e-9) * stepQ, 6)
+        if qty >= stepQ
+            float tpP = math.round_to_mintick(dir == 1 ? entry + rr * dist : entry - rr * dist)
+            tDir    := dir
+            tEntry  := entry
+            tSL     := slP
+            tTP     := tpP
+            tBE     := dir == 1 ? entry + beR * dist : entry - beR * dist
+            tBeDone := false
+            tBar    := bar_index
+            if dir == 1
+                strategy.entry("L", strategy.long, qty = qty, comment = kind)
+                strategy.exit("XL", from_entry = "L", stop = slP, limit = tpP, comment_profit = "TP", comment_loss = "SL")
+            else
+                strategy.entry("S", strategy.short, qty = qty, comment = kind)
+                strategy.exit("XS", from_entry = "S", stop = slP, limit = tpP, comment_profit = "TP", comment_loss = "SL")
+            if showMarks
+                string tip = (kind == "EXT" ? "Retroceso extenso" : "Retroceso corto") + "\nEntrada: " + str.tostring(entry, "#.##") + "\nSL: " + str.tostring(slP, "#.##") + " (" + str.tostring(dist, "#.##") + ")\nTP: " + str.tostring(tpP, "#.##") + "\nCantidad: " + str.tostring(qty)
+                tip := tip + "\nNivel envuelto: " + str.tostring(entLvl, "#.##") + " · cierre − nivel: " + str.tostring(math.abs(entry - entLvl), "#.##") + " (mínimo " + str.tostring(minDiff, "#.##") + ")"
+                if dir == 1
+                    label.new(bar_index, na, text = "BUY · " + kind, xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = buyLblCol, textcolor = color.white, size = size.small, tooltip = tip)
+                else
+                    label.new(bar_index, na, text = "SELL · " + kind, xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = sellLblCol, textcolor = color.white, size = size.small, tooltip = tip)
