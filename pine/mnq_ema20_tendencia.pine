@@ -126,12 +126,17 @@ bool  bear1 = close[1] < open[1]
 plot(ema, title = "EMA", color = #000000, linewidth = 2)
 
 // Últimos puntos M1: bajo = vela bajista seguida de una alcista (mínimo de las dos); alto = vela alcista seguida de una bajista (máximo de las dos).
+// Si una vela posterior (alcista para el bajo, bajista para el alto) crea una mecha más baja (alta) que ese punto, el punto se actualiza.
 var float swL = na
 var float swH = na
 if bull0 and bear1
     swL := math.min(low[1], low)
+else if bull0 and not na(swL) and low < swL
+    swL := low     // vela alcista que crea una mecha más baja que el último punto bajo: lo actualiza
 if bear0 and bull1
     swH := math.max(high[1], high)
+else if bear0 and not na(swH) and high > swH
+    swH := high    // vela bajista que crea una mecha más alta que el último punto alto: lo actualiza
 
 // ── Estado de la tendencia ─────────────────────────────────────────────────────────
 // Las variables con sufijo "T" guardan precios en coordenadas de la dirección: en bajista se invierten (alto = −mínimo, bajo = −máximo),
@@ -197,9 +202,13 @@ for k = 0 to 1
                 canceled := true
                 alive := false
         if alive
-            if not cPB.get(k) and conC
-                cPB.set(k, true)
-                cRef.set(k, math.max(cMax.get(k), hC))
+            if conC
+                if not cPB.get(k)
+                    cPB.set(k, true)
+                    cRef.set(k, math.max(cMax.get(k), hC))
+                else
+                    // Otra vela en contra del mismo retroceso: si su mecha crea un nivel más alto, el punto alto se actualiza.
+                    cRef.set(k, math.max(cRef.get(k), hC))
             cMax.set(k, math.max(cMax.get(k), hC))
             if cPB.get(k) and favC and cC > cRef.get(k)
                 trend      := sc
@@ -230,6 +239,9 @@ if trend != 0 and not promoted
             pbTouched  := false
             flagBeyond := false
             tMax       := hT
+        else
+            // Otra vela en contra del mismo retroceso: si su mecha crea un nivel más alto, el punto alto se actualiza.
+            refPeak := math.max(refPeak, hT)
         lastConH := hT
         cRun     := 0
     else if favT
