@@ -15,7 +15,8 @@
 //      cierre en o bajo la EMA20. Su ORIGEN es el último punto bajo M1 (vela bajista seguida de una
 //      alcista; el mínimo de las dos) hasta esa vela.
 //    · RETROCESO: una o más velas en contra. Empieza con la primera vela bajista tras el quiebre. El
-//      PUNTO ALTO es el máximo (con mechas) del movimiento del quiebre y de esa primera vela en contra.
+//      PUNTO ALTO es el máximo (con mechas) del movimiento del quiebre y de esa primera vela en contra; para
+//      la continuación queda fijo desde esa primera vela en contra.
 //    · CONTINUACIÓN: una vela alcista que cierra con cuerpo por encima de ese punto alto. Confirma la
 //      tendencia. Recién entonces se buscan entradas.
 //    · CANCELACIÓN: si antes de la continuación una vela EN CONTRA pierde el origen del quiebre (con mecha
@@ -35,7 +36,8 @@
 //      debe cerrar por encima (compras) o por debajo (ventas) de la EMA20. Sin tope de velas a favor
 //      seguidas; desde la 2.ª, el nivel es también el máximo (mínimo) de la vela a favor anterior.
 //    · RETROCESO CORTO (no toca la EMA20): nivel = punto más alto (más bajo en ventas) que el precio creó
-//      antes de empezar a retroceder. Solo vale la 1.ª o la 2.ª vela a favor seguida; en la 2.ª, el nivel es
+//      antes de empezar a retroceder; cualquier vela del retroceso (en contra o a favor) que cree un nivel más
+//      alto con su mecha lo actualiza. Solo vale la 1.ª o la 2.ª vela a favor seguida; en la 2.ª, el nivel es
 //      también el máximo (mínimo) de la vela a favor anterior.
 //    · Se entra a MERCADO, al cierre de la vela de entrada.
 //
@@ -202,13 +204,10 @@ for k = 0 to 1
                 canceled := true
                 alive := false
         if alive
-            if conC
-                if not cPB.get(k)
-                    cPB.set(k, true)
-                    cRef.set(k, math.max(cMax.get(k), hC))
-                else
-                    // Otra vela en contra del mismo retroceso: si su mecha crea un nivel más alto, el punto alto se actualiza.
-                    cRef.set(k, math.max(cRef.get(k), hC))
+            if not cPB.get(k) and conC
+                // El punto alto que exige la continuación queda FIJO desde la primera vela en contra (incluida su mecha).
+                cPB.set(k, true)
+                cRef.set(k, math.max(cMax.get(k), hC))
             cMax.set(k, math.max(cMax.get(k), hC))
             if cPB.get(k) and favC and cC > cRef.get(k)
                 trend      := sc
@@ -239,9 +238,6 @@ if trend != 0 and not promoted
             pbTouched  := false
             flagBeyond := false
             tMax       := hT
-        else
-            // Otra vela en contra del mismo retroceso: si su mecha crea un nivel más alto, el punto alto se actualiza.
-            refPeak := math.max(refPeak, hT)
         lastConH := hT
         cRun     := 0
     else if favT
@@ -268,9 +264,12 @@ if trend != 0 and not promoted
                 entLvl  := s * lvlC
 
     if inPB
-        pbTouched := pbTouched or lT <= eT
         if favT and cT > refPeak
             flagBeyond := true
+        if not pbTouched
+            // Retroceso corto: cualquier vela del retroceso (en contra o a favor) que cree un nivel más alto actualiza el punto alto.
+            refPeak := math.max(refPeak, hT)
+        pbTouched := pbTouched or lT <= eT
     tMax     := math.max(nz(tMax, hT), hT)
     prevFavH := favT ? hT : na
 
