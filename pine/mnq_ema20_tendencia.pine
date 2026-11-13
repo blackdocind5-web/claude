@@ -15,7 +15,7 @@
 //      cierre en o bajo la EMA20. Su ORIGEN es el último punto bajo M1 (vela bajista seguida de una
 //      alcista; el mínimo de las dos) hasta esa vela.
 //    · RETROCESO: una o más velas en contra. Empieza con la primera vela bajista tras el quiebre. El
-//      PUNTO ALTO es el máximo (con mechas) del movimiento del quiebre antes de empezar a retroceder.
+//      PUNTO ALTO es el máximo (con mechas) del movimiento del quiebre y de esa primera vela en contra.
 //    · CONTINUACIÓN: una vela alcista que cierra con cuerpo por encima de ese punto alto. Confirma la
 //      tendencia. Recién entonces se buscan entradas.
 //    · CANCELACIÓN: si antes de la continuación el precio (mecha o cuerpo) pierde el origen del
@@ -28,12 +28,13 @@
 //    Tras la continuación se espera un retroceso. La vela de retroceso más cercana es la última vela en
 //    contra antes de la vela de entrada. La vela de entrada es una vela a favor (en compras alcista) que
 //    cierra con un margen mínimo (5 puntos) más allá del nivel a envolver:
-//    · RETROCESO EXTENSO (la mecha tocó la EMA20 durante el retroceso, antes de la vela de entrada):
+//    · RETROCESO EXTENSO (la mecha toca la EMA20 durante el retroceso, también en la propia vela de entrada):
 //      nivel = máximo (mínimo en ventas) de la vela de retroceso más cercana. Además la vela de entrada
-//      debe cerrar por encima (compras) o por debajo (ventas) de la EMA20. Solo vale la 1.ª o la 2.ª vela
-//      a favor seguida; en la 2.ª, el nivel es también el máximo (mínimo) de la vela a favor anterior.
-//    · RETROCESO CORTO (no tocó la EMA20): nivel = punto más alto (más bajo en ventas) que el precio creó
-//      antes de empezar a retroceder. En la 2.ª vela o más, también el máximo (mínimo) de la vela a favor anterior.
+//      debe cerrar por encima (compras) o por debajo (ventas) de la EMA20. Sin tope de velas a favor
+//      seguidas; desde la 2.ª, el nivel es también el máximo (mínimo) de la vela a favor anterior.
+//    · RETROCESO CORTO (no toca la EMA20): nivel = punto más alto (más bajo en ventas) que el precio creó
+//      antes de empezar a retroceder. Solo vale la 1.ª o la 2.ª vela a favor seguida; en la 2.ª, el nivel es
+//      también el máximo (mínimo) de la vela a favor anterior.
 //    · Se entra a MERCADO, al cierre de la vela de entrada.
 //
 //  3) SALIDA
@@ -189,7 +190,7 @@ for k = 0 to 1
         else
             if not cPB.get(k) and conC
                 cPB.set(k, true)
-                cRef.set(k, cMax.get(k))
+                cRef.set(k, math.max(cMax.get(k), hC))
             cMax.set(k, math.max(cMax.get(k), hC))
             if cPB.get(k) and favC and cC > cRef.get(k)
                 trend      := sc
@@ -215,7 +216,7 @@ if trend != 0 and not promoted
     bool  conT  = s == 1 ? bear0 : bull0
     if conT
         if not inPB or flagBeyond
-            refPeak    := tMax
+            refPeak    := math.max(tMax, hT)
             inPB       := true
             pbTouched  := false
             flagBeyond := false
@@ -228,16 +229,17 @@ if trend != 0 and not promoted
         cRun := 0
 
     if favT and inPB and not na(lastConH) and not na(refPeak)
-        if pbTouched
-            // Retroceso extenso: envolver la vela de retroceso más cercana (y la vela a favor anterior si es la 2.ª) y cerrar del lado correcto de la EMA20.
-            if cRun <= 2
-                float lvlE = cRun == 1 ? lastConH : math.max(lastConH, nz(prevFavH, lastConH))
-                if tk(cT - lvlE) >= tk(minDiff) and cT > eT
-                    goEntry := true
-                    kind    := "EXT"
-                    entLvl  := s * lvlE
-        else
-            // Retroceso corto: envolver el punto más alto (bajo) antes de empezar a retroceder (y la vela a favor anterior si es la 2.ª o más).
+        if pbTouched or lT <= eT
+            // Retroceso extenso (la mecha tocó la EMA20, incluso en la propia vela de entrada): envolver la vela de retroceso más cercana
+            // (y la vela a favor anterior si es la 2.ª o más) y cerrar del lado correcto de la EMA20. Sin tope de velas.
+            float lvlE = cRun == 1 ? lastConH : math.max(lastConH, nz(prevFavH, lastConH))
+            if tk(cT - lvlE) >= tk(minDiff) and cT > eT
+                goEntry := true
+                kind    := "EXT"
+                entLvl  := s * lvlE
+        else if cRun <= 2
+            // Retroceso corto (no tocó la EMA20): envolver el punto más alto (bajo) antes de empezar a retroceder (y la vela a favor anterior
+            // si es la 2.ª). Solo vale la 1.ª o la 2.ª vela a favor seguida.
             float lvlC = cRun == 1 ? refPeak : math.max(refPeak, nz(prevFavH, refPeak))
             if tk(cT - lvlC) >= tk(minDiff)
                 goEntry := true
