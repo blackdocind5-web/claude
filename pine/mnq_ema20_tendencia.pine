@@ -18,8 +18,10 @@
 //      PUNTO ALTO es el máximo (con mechas) del movimiento del quiebre y de esa primera vela en contra.
 //    · CONTINUACIÓN: una vela alcista que cierra con cuerpo por encima de ese punto alto. Confirma la
 //      tendencia. Recién entonces se buscan entradas.
-//    · CANCELACIÓN: si antes de la continuación el precio (mecha o cuerpo) pierde el origen del
-//      quiebre, el patrón se cancela. Un cierre al otro lado de la EMA20 durante el retroceso NO lo cancela.
+//    · CANCELACIÓN: si antes de la continuación una vela EN CONTRA pierde el origen del quiebre (con mecha
+//      o cuerpo), el patrón se cancela. Una vela A FAVOR que pierde el origen con la mecha pero cierra a favor
+//      NO lo cancela: forma parte del quiebre y el origen pasa a su extremo. Un cierre al otro lado de la
+//      EMA20 durante el retroceso tampoco lo cancela.
 //    · Pueden convivir un quiebre alcista y uno bajista en espera. Mientras un quiebre contrario espera su
 //      continuación se sigue operando a favor de la tendencia actual. Si se cancela, la tendencia sigue; si
 //      se confirma, cambia. Un quiebre en espera solo termina por continuación o por cancelación.
@@ -169,7 +171,7 @@ for k = 0 to 1
     bool  made = false
     if brk and trend != sc and not cAct.get(k) and not na(swK)
         cAct.set(k, true)
-        cOrg.set(k, sc * swK)
+        cOrg.set(k, math.min(sc * swK, sc == 1 ? low : -high))
         cMax.set(k, k == 0 ? high : -low)
         cPB.set(k, false)
         cRef.set(k, na)
@@ -184,10 +186,17 @@ for k = 0 to 1
         float cC   = sc * close
         bool  favC = sc == 1 ? bull0 : bear0
         bool  conC = sc == 1 ? bear0 : bull0
+        bool alive = true
         if tk(lC) < tk(cOrg.get(k))
-            cAct.set(k, false)
-            canceled := true
-        else
+            if favC
+                // Vela a favor que pierde el origen con la mecha pero cierra a favor: forma parte del quiebre y el origen pasa a su extremo.
+                cOrg.set(k, lC)
+            else
+                // Vela en contra que pierde el origen: el patrón se cancela.
+                cAct.set(k, false)
+                canceled := true
+                alive := false
+        if alive
             if not cPB.get(k) and conC
                 cPB.set(k, true)
                 cRef.set(k, math.max(cMax.get(k), hC))
