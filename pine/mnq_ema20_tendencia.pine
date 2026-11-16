@@ -47,7 +47,9 @@
 //    · TP: R:R × la distancia al SL (2,0 por defecto, editable).
 //    · BE (interruptor, desactivado por defecto): al tocar 1R, el SL pasa a la entrada desde la vela siguiente.
 //    · SL máximo 100 puntos: si la distancia al SL llega a ese valor, el SL se reduce al extremo de la vela de
-//      entrada (mínimo en compras, máximo en ventas); si aun así llega a 100 puntos, no se opera. Sin SL mínimo.
+//      entrada (mínimo en compras, máximo en ventas). En un retroceso EXTENSO con la entrada en la 3.ª vela a
+//      favor seguida o más, se reduce al extremo de la vela ANTERIOR a la de entrada (más espacio para el
+//      precio). Si aun así llega a 100 puntos, no se opera. Sin SL mínimo.
 //    · Un solo trade abierto a la vez, sin límite de trades por día. Riesgo 1 % por operación.
 //
 //  COSTOS: no se incluyen. Configúralos en Propiedades de TradingView para cada instrumento.
@@ -166,6 +168,7 @@ bool   promoted = false
 bool   goEntry  = false
 string kind     = ""
 float  entLvl   = na
+int    entRun   = 0      // nº de vela a favor seguida en la que se genera la entrada
 
 bool bullBrk = bull0 and close > ema and close[1] <= ema[1]
 bool bearBrk = bear0 and close < ema and close[1] >= ema[1]
@@ -252,6 +255,7 @@ if trend != 0 and not promoted
             if tk(cT - lvlE) >= tk(minDiff) and cT > eT
                 goEntry := true
                 kind    := "EXT"
+                entRun  := cRun
                 entLvl  := s * lvlE
         else if cRun <= 2
             // Retroceso corto (no tocó la EMA20): envolver el punto más alto (bajo) antes de empezar a retroceder (y la vela a favor anterior
@@ -322,13 +326,15 @@ if barstate.isconfirmed
         float slP   = dir == 1 ? swL : swH
         bool  slOk  = not na(slP) and (dir == 1 ? slP < entry : slP > entry)
         float dist  = slOk ? math.abs(entry - slP) : na
-        // SL máximo: si el SL llega a ese valor, se reduce al extremo de la vela de entrada (mínimo en compras, máximo en ventas);
-        // si aun así llega al máximo, no se opera.
-        bool  slCut = slOk and maxSL > 0 and tk(dist) >= tk(maxSL)
+        // SL máximo: si el SL llega a ese valor, se reduce al extremo de la vela de entrada (mínimo en compras, máximo en ventas).
+        // En un retroceso EXTENSO con la entrada en la 3.ª vela a favor seguida o más, se reduce al extremo de la vela ANTERIOR a la de entrada.
+        // Si aun así llega al máximo, no se opera.
+        bool  slCut  = slOk and maxSL > 0 and tk(dist) >= tk(maxSL)
+        bool  slPrev = slCut and kind == "EXT" and entRun >= 3
         if slCut
-            slP  := dir == 1 ? low : high
+            slP  := dir == 1 ? (slPrev ? low[1] : low) : (slPrev ? high[1] : high)
             dist := math.abs(entry - slP)
-            slOk := dist > 0
+            slOk := dist > 0 and (dir == 1 ? slP < entry : slP > entry)
         bool  dOk   = slOk and (maxSL <= 0 or tk(dist) < tk(maxSL))
         float bal   = compound ? strategy.initial_capital + strategy.netprofit : strategy.initial_capital
         float qtyRaw = dOk and bal > 0 ? bal * riskPct / 100.0 / (dist * syminfo.pointvalue) : 0.0
@@ -351,7 +357,7 @@ if barstate.isconfirmed
             if showMarks
                 string tip = (kind == "EXT" ? "Retroceso extenso" : "Retroceso corto") + "\nEntrada: " + str.tostring(entry, "#.##") + "\nSL: " + str.tostring(slP, "#.##") + " (" + str.tostring(dist, "#.##") + ")\nTP: " + str.tostring(tpP, "#.##") + "\nCantidad: " + str.tostring(qty)
                 if slCut
-                    tip := tip + "\nSL reducido al extremo de la vela de entrada"
+                    tip := tip + (slPrev ? "\nSL reducido al extremo de la vela anterior a la de entrada" : "\nSL reducido al extremo de la vela de entrada")
                 tip := tip + "\nNivel envuelto: " + str.tostring(entLvl, "#.##") + " · cierre − nivel: " + str.tostring(math.abs(entry - entLvl), "#.##") + " (mínimo " + str.tostring(minDiff, "#.##") + ")"
                 if dir == 1
                     label.new(bar_index, na, text = "BUY · " + kind, xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = buyLblCol, textcolor = color.white, size = size.small, tooltip = tip)
