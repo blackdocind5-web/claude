@@ -40,6 +40,9 @@
 //      alto con su mecha lo actualiza. Solo vale la 1.ª o la 2.ª vela a favor seguida; en la 2.ª, el nivel es
 //      también el máximo (mínimo) de la vela a favor anterior.
 //    · Se entra a MERCADO, al cierre de la vela de entrada.
+//    · UN RETROCESO SE AGOTA CUANDO SE ENTRA EN ÉL: tras ejecutarse una operación, ese retroceso no vuelve a dar entradas;
+//      para volver a entrar hace falta una VELA EN CONTRA NUEVA (que inicia un retroceso nuevo). Una señal que no se ejecuta
+//      (posición abierta, rango, gestión del día, fuera de horario, SL ≥ máximo) no agota el retroceso.
 //
 //  RANGO DE APERTURA (interruptor, activado por defecto)
 //    · Rango = máximo y mínimo (con mechas) de las velas desde las 09:00 hasta las 09:30 NY (inicio editable).
@@ -226,6 +229,7 @@ var bool  inPB       = false   // retroceso en curso dentro de la tendencia conf
 var float refPeak    = na      // punto más alto antes de empezar el retroceso en curso
 var bool  pbTouched  = false   // ¿la mecha tocó la EMA20 durante el retroceso?
 var bool  flagBeyond = false   // ¿algún cierre superó el punto alto del retroceso en curso?
+var bool  pbUsed     = false   // ¿ya se entró (se ejecutó una operación) en este retroceso? Si sí, está agotado
 var float lastConH   = na      // máximo de la última vela en contra
 var int   cRun       = 0       // velas a favor seguidas
 var float prevFavH   = na      // máximo de la vela a favor anterior
@@ -287,6 +291,7 @@ for k = 0 to 1
                 refPeak    := na
                 pbTouched  := false
                 flagBeyond := false
+                pbUsed     := false
                 lastConH   := na
                 cRun       := 0
                 prevFavH   := na
@@ -303,11 +308,12 @@ if trend != 0 and not promoted
     bool  favT  = s == 1 ? bull0 : bear0
     bool  conT  = s == 1 ? bear0 : bull0
     if conT
-        if not inPB or flagBeyond
+        if not inPB or flagBeyond or pbUsed
             refPeak    := math.max(tMax, hT)
             inPB       := true
             pbTouched  := false
             flagBeyond := false
+            pbUsed     := false
             tMax       := hT
         lastConH := hT
         cRun     := 0
@@ -316,7 +322,7 @@ if trend != 0 and not promoted
     else
         cRun := 0
 
-    if favT and inPB and not na(lastConH) and not na(refPeak)
+    if favT and inPB and not pbUsed and not na(lastConH) and not na(refPeak)
         if pbTouched or lT <= eT
             // Retroceso extenso (la mecha tocó la EMA20, incluso en la propia vela de entrada): envolver la vela de retroceso más cercana
             // (y la vela a favor anterior si es la 2.ª o más) y cerrar del lado correcto de la EMA20. Sin tope de velas.
@@ -466,6 +472,7 @@ if barstate.isconfirmed
             tBeDone := false
             tBar    := bar_index
             tRiskUSD := bal * riskPct / 100.0
+            pbUsed  := true      // el retroceso queda agotado: para volver a entrar hace falta una vela en contra nueva
             dTr     += 1
             if dir == 1
                 strategy.entry("L", strategy.long, qty = qty, comment = kind)

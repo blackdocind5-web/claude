@@ -4,6 +4,8 @@ Estrategia: `pine/mnq_ema20_tendencia.pine` (Pine v6, gráfico de 1 minuto, MNQ)
 Periodo analizado: 01/12/2023 a 13/11/2026 (2,95 años, 754 días, 1.664 operaciones).
 Todos los resultados son **brutos** (los CSV traen comisión 0) salvo donde se indica «neto».
 
+> **Aviso de versión:** estos números se calcularon con el código **anterior** al ajuste «un retroceso se agota cuando se entra en él» (commit posterior a `85298ae`). Con el código nuevo habrá menos operaciones y los resultados cambiarán: hay que repetir las pruebas y actualizar este documento con los CSV nuevos.
+
 ## 1. Veredicto
 
 - Es la mejor combinación de las probadas y **sigue siendo positiva fuera de la muestra** con la que se eligió (dic-2023 a dic-2024: +61,1 R).
