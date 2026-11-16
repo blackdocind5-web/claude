@@ -47,6 +47,19 @@
 //      (también vale la propia vela de entrada si cierra por encima); una VENTA, si cerró con cuerpo por debajo.
 //      Un cierre dentro del rango no desbloquea nada. Una vez que sale, ese lado queda desbloqueado el resto del día.
 //
+//  GESTIÓN DEL DÍA (interruptores, grupo 8; activada por defecto)
+//    · Cada operación cerrada se asigna al día de su ENTRADA. El día queda FRENADO (no se abren más entradas ese día)
+//      con lo primero que ocurra de lo que esté activado:
+//        – el primer TP del día,
+//        – el N.º SL seguidos del día (3 por defecto; 0 = sin límite; un TP reinicia el conteo),
+//        – un BE, solo si el BE está configurado como «Cierra el día»,
+//        – el resultado del día llega a +X R (0 = apagado),
+//        – se alcanza el máximo de operaciones del día (0 = sin límite).
+//    · El BE es NEUTRO por defecto: no cuenta como SL, no frena el día y no reinicia el conteo de SL.
+//    · El freno solo impide ABRIR entradas nuevas: nunca cierra una posición abierta.
+//    · Configuración del análisis (+135,8 R, caída 24 R): Rango OFF · RR 2,0 · BE ON a 1R · SL máx. 100 · hasta las 11:00
+//      · primer TP ON · máx. 3 SL · BE neutro · máx. operaciones 0 · parar a +X R 0.
+//
 //  3) SALIDA
 //    · SL: último punto bajo M1 (vela bajista seguida de una alcista) en compras, o último punto alto M1
 //      (vela alcista seguida de una bajista) en ventas, incluida la vela de entrada si lo forma.
@@ -56,7 +69,7 @@
 //      entrada (mínimo en compras, máximo en ventas). En un retroceso EXTENSO con la entrada en la 3.ª vela a
 //      favor seguida o más, se reduce al extremo de la vela ANTERIOR a la de entrada (más espacio para el
 //      precio). Si aun así llega a 100 puntos, no se opera. Sin SL mínimo.
-//    · Un solo trade abierto a la vez, sin límite de trades por día. Riesgo 1 % por operación.
+//    · Un solo trade abierto a la vez. Riesgo 1 % por operación. Los límites por día están en GESTIÓN DEL DÍA.
 //
 //  COSTOS: no se incluyen. Configúralos en Propiedades de TradingView para cada instrumento.
 // ═══════════════════════════════════════════════════════════════════════════════════
@@ -88,6 +101,7 @@ const string G_CIE = "4 · Cierre forzado"
 const string G_RSK = "5 · Riesgo"
 const string G_VIS = "6 · Visual"
 const string G_RNG = "7 · Rango de apertura"
+const string G_DAY = "8 · Gestión del día"
 
 cutHour = input.int(11, "Hora límite (NY): no se abren más entradas", minval = 0, maxval = 23, group = G_HOR, tooltip = "La vela de entrada debe abrir antes de esta hora. Con 11:00, la última vela de entrada es la de las 10:59. El trade abierto sigue hasta su SL, su TP o el cierre forzado.")
 cutMin  = input.int(0, "Minuto límite", minval = 0, maxval = 59, group = G_HOR)
@@ -117,6 +131,14 @@ rngStartH = input.int(9, "Inicio del rango · hora (NY)", minval = 0, maxval = 9
 rngStartM = input.int(0, "Inicio del rango · minuto", minval = 0, maxval = 59, group = G_RNG)
 showRange = input.bool(true, "Mostrar el rango de apertura", group = G_RNG)
 rangeCol  = input.color(#000000, "Color del contorno del rango", group = G_RNG)
+
+useDayRules = input.bool(true, "Gestión del día: activar", group = G_DAY, tooltip = "Desactivado: sin frenos por día (los demás interruptores de este grupo se ignoran). El freno solo impide abrir entradas nuevas; nunca cierra una posición abierta.")
+dayTpStop   = input.bool(true, "Parar el día tras el primer TP", group = G_DAY, tooltip = "Tras el primer TP del día no se abren más entradas. Con un solo TP el día cierra en +2 R (con RR 2), en +1 R si hubo 1 SL antes y en 0 R si hubo 2 SL antes.")
+daySlMax    = input.int(3, "Máximo de SL seguidos en el día (0 = sin límite)", minval = 0, group = G_DAY, tooltip = "Al llegar a este número de SL seguidos en el día no se abren más entradas (un TP reinicia el conteo; un BE neutro no lo toca). Con 3, la pérdida máxima del día es de unos −3 R.")
+dayBeMode   = input.string("Neutro", "El BE cuenta como…", options = ["Neutro", "Cuenta como SL", "Cierra el día"], group = G_DAY, tooltip = "Neutro: el BE no cuenta como SL ni frena el día (se siguió operando en el análisis). Cuenta como SL: suma 1 al conteo del máximo de SL. Cierra el día: un BE frena el día.")
+dayMaxTr    = input.int(0, "Máximo de operaciones por día (0 = sin límite)", minval = 0, group = G_DAY, tooltip = "Cuenta las operaciones abiertas en el día. Al llegar al máximo no se abren más.")
+dayWinR     = input.float(0.0, "Parar al llegar a +X R en el día (0 = apagado)", minval = 0.0, step = 0.5, group = G_DAY, tooltip = "Suma el resultado realizado de las operaciones cerradas del día en múltiplos del riesgo nominal. Aproximado si hay comisiones en Propiedades.")
+showDayStop = input.bool(true, "Marcar cuándo se frena el día", group = G_DAY, tooltip = "Etiqueta «Fin del día» con el motivo y el resultado del día. Apágala en pruebas largas.")
 
 if timeframe.in_seconds() != 60
     runtime.error("Esta estrategia está diseñada para el gráfico de 1 minuto.")
@@ -347,6 +369,16 @@ var float tTP     = na
 var float tBE     = na
 var bool  tBeDone = false
 var int   tBar    = na
+var float tRiskUSD = 0.0           // riesgo nominal de la operación abierta (USD), para expresar el resultado en R
+
+// Gestión del día.
+var int    dKey  = 0               // día (NY) al que corresponde el estado
+var int    dSL   = 0               // SL del día (más los BE si «cuenta como SL»)
+var int    dTr   = 0               // operaciones abiertas en el día
+var float  dR    = 0.0             // resultado realizado del día en R
+var bool   dStop = false           // el día está frenado
+var string dWhy  = ""              // motivo del freno
+var int    dProc = 0               // operaciones cerradas ya contabilizadas
 
 if barstate.isconfirmed
     // Cierre forzado.
@@ -366,9 +398,46 @@ if barstate.isconfirmed
     else if strategy.position_size == 0 and tDir != 0 and bar_index > tBar
         tDir := 0
 
+    // Gestión del día: se contabilizan las operaciones cerradas (también las cerradas en esta misma vela) antes de decidir la entrada.
+    if dKey != dayKey
+        dKey  := dayKey
+        dSL   := 0
+        dTr   := 0
+        dR    := 0.0
+        dStop := false
+        dWhy  := ""
+    bool dWas = dStop
+    while dProc < strategy.closedtrades
+        int ei   = strategy.closedtrades.entry_time(dProc)
+        int eKey = year(ei, TZ) * 10000 + month(ei, TZ) * 100 + dayofmonth(ei, TZ)
+        if eKey == dayKey
+            string oc = strategy.closedtrades.exit_comment(dProc)
+            dR += tRiskUSD > 0 ? strategy.closedtrades.profit(dProc) / tRiskUSD : 0.0
+            if oc == "SL" or (oc == "BE" and dayBeMode == "Cuenta como SL")
+                dSL += 1
+            else if oc == "TP"
+                dSL := 0
+            if not dStop
+                if oc == "TP" and dayTpStop
+                    dStop := true
+                    dWhy  := "TP"
+                else if oc == "BE" and dayBeMode == "Cierra el día"
+                    dStop := true
+                    dWhy  := "BE"
+                else if daySlMax > 0 and dSL >= daySlMax
+                    dStop := true
+                    dWhy  := str.tostring(dSL) + " SL"
+                else if dayWinR > 0 and dR >= dayWinR - 1e-9
+                    dStop := true
+                    dWhy  := "+" + str.tostring(dayWinR, "#.##") + " R"
+        dProc += 1
+    if useDayRules and showDayStop and dStop and not dWas
+        label.new(bar_index, na, text = "Fin del día · " + dWhy + " · " + str.tostring(dR, "#.##") + " R", xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = color.new(color.orange, 15), textcolor = color.white, size = size.tiny)
+    bool dayFree = not useDayRules or (not dStop and (dayMaxTr == 0 or dTr < dayMaxTr))
+
     // Nueva entrada.
     bool rangeFree = not useRange or (rngKey == dayKey and not na(rngHi) and (trend == 1 ? buyOk : sellOk))
-    if goEntry and inWin and rangeFree and strategy.position_size == 0
+    if goEntry and inWin and rangeFree and dayFree and strategy.position_size == 0
         int   dir   = trend
         float entry = close
         float slP   = dir == 1 ? swL : swH
@@ -396,6 +465,8 @@ if barstate.isconfirmed
             tBE     := dir == 1 ? entry + beR * dist : entry - beR * dist
             tBeDone := false
             tBar    := bar_index
+            tRiskUSD := bal * riskPct / 100.0
+            dTr     += 1
             if dir == 1
                 strategy.entry("L", strategy.long, qty = qty, comment = kind)
                 strategy.exit("XL", from_entry = "L", stop = slP, limit = tpP, comment_profit = "TP", comment_loss = "SL")
@@ -406,6 +477,8 @@ if barstate.isconfirmed
                 string tip = (kind == "EXT" ? "Retroceso extenso" : "Retroceso corto") + "\nEntrada: " + str.tostring(entry, "#.##") + "\nSL: " + str.tostring(slP, "#.##") + " (" + str.tostring(dist, "#.##") + ")\nTP: " + str.tostring(tpP, "#.##") + "\nCantidad: " + str.tostring(qty)
                 if slCut
                     tip := tip + (slPrev ? "\nSL reducido al extremo de la vela anterior a la de entrada" : "\nSL reducido al extremo de la vela de entrada")
+                if useDayRules
+                    tip := tip + "\nOperación n.º " + str.tostring(dTr) + " del día · SL previos: " + str.tostring(dSL) + " · resultado previo del día: " + str.tostring(dR, "#.##") + " R"
                 tip := tip + "\nNivel envuelto: " + str.tostring(entLvl, "#.##") + " · cierre − nivel: " + str.tostring(math.abs(entry - entLvl), "#.##") + " (mínimo " + str.tostring(minDiff, "#.##") + ")"
                 if dir == 1
                     label.new(bar_index, na, text = "BUY · " + kind, xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = buyLblCol, textcolor = color.white, size = size.small, tooltip = tip)

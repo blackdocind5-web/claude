@@ -24,7 +24,7 @@ Todos los resultados son **brutos** (los CSV traen comisión 0) salvo donde se i
 | Riesgo | 1% del capital inicial por operación, sin interés compuesto, una posición a la vez |
 | **Rango de apertura** | **Desactivado** (interruptor del grupo 7) |
 
-### 2.2 Gestión del día (hoy **no está programada**: se simuló sobre tus CSV)
+### 2.2 Gestión del día (programada como interruptores, grupo 8 del código)
 
 Cada día se opera con normalidad y el día **termina con lo primero que ocurra**:
 
@@ -34,7 +34,11 @@ Cada día se opera con normalidad y el día **termina con lo primero que ocurra*
 
 El **BE no cuenta como SL ni cierra el día**: se sigue operando y no reinicia el conteo de SL.
 
-Ejemplos: BE → TP = +2 R · SL → BE → TP = +1 R · SL → SL → TP = 0 R · SL → BE → SL → SL = −3 R.
+Ejemplos: TP = +2 R · BE → BE → TP = +2 R · SL → TP = +1 R · SL → BE → TP = +1 R · SL → SL → TP = 0 R · SL → BE → SL → SL = −3 R.
+
+**El mejor día posible con esta regla es +2 R** (un TP sin SL previos, con cualquier cantidad de BE antes). El día de +1 R (un SL y luego un TP) **se cierra ahí**: la regla no sigue operando.
+
+**¿Conviene seguir tras SL → TP?** No hay evidencia a favor. Sumando los 150 días de este tipo (sin rango, 11:00), seguir operando rindió en promedio −0,10 R por día (IC 95% de −0,34 a +0,14): 29% de esos días terminó peor que +1 R, 49% igual y 21% mejor, con un peor caso de −5 R. Tras un TP sin SL previos (+2 R) fue −0,05 R por día. Probar «parar a +2 R del día» en vez del primer TP dio +55,7 R (validación) y +47,4 R (2025-2026) frente a +61,1 y +74,7 con el primer TP, y con más caída.
 
 ### 2.3 Frenos y límites
 
@@ -116,7 +120,7 @@ La caída «a planificar» sale de remuestrear los días 4.000 veces: la mediana
 
 ## 7. Consideraciones importantes
 
-1. **Las reglas del día no están en el código.** Los números salen de recortar los días de tus CSV; es exacto porque se opera de a una, pero hay que programarlas y comprobar que el backtest da lo mismo.
+1. **Las reglas del día ya están en el código, pero no se han compilado en TradingView.** Los números salen de recortar los días de tus CSV (exacto porque se opera de a una); hay que comprobar que el backtest en TradingView da lo mismo. Configuración para reproducirlo: rango OFF · RR 2,0 · BE ON a 1R · SL máx. 100 · hasta las 11:00 · gestión del día ON · primer TP ON · 3 SL seguidos · BE neutro · máx. operaciones 0 · parar a +X R 0.
 2. **La regla se eligió mirando 2025-2026**, y se probó después en 2024. Esa es la única validación independiente que existe.
 3. **Rachas esperables**: 7 SL seguidos, 17 operaciones sin TP, 5 días negativos seguidos, mes de −13 R y 125 días sin nuevo máximo. Con 1% de riesgo eso son caídas de dos dígitos.
 4. **Tamaño**: con 1 millón de capital llegó a 1.176 contratos en las entradas con SL corto. Hay que ajustar al capital de la cuenta, revisar el máximo de contratos de la firma y recordar que el redondeo hacia abajo reduce el riesgo real en cuentas pequeñas.
@@ -126,7 +130,7 @@ La caída «a planificar» sale de remuestrear los días 4.000 veces: la mediana
 
 ## 8. Siguientes pasos
 
-1. Programar los interruptores de gestión del día: parar tras el primer TP, máximo de SL por día, y cómo cuenta el BE.
-2. Repetir el backtest completo y comprobar que reproduce los números de arriba.
+1. Correr el backtest con la configuración de la sección 7 (punto 1) y comprobar que reproduce los números de arriba (sobre todo diciembre 2023 a diciembre 2024: +61,1 R y 591 operaciones; 2025 a nov-2026: +74,7 R y 1.073 operaciones). Pequeñas diferencias son normales si cambiaste costos.
+2. Si no coincide, mandarme el CSV y las etiquetas «Fin del día» de un día concreto para ubicar la diferencia.
 3. Operar en demo 4 a 8 semanas con los costos reales de tu cuenta y medir la comisión y el slippage efectivos.
 4. Definir el riesgo por operación a partir de la caída máxima que permita la firma (guía: caída permitida dividida entre 50 R).
