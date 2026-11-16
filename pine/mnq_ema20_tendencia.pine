@@ -41,6 +41,12 @@
 //      también el máximo (mínimo) de la vela a favor anterior.
 //    · Se entra a MERCADO, al cierre de la vela de entrada.
 //
+//  RANGO DE APERTURA (interruptor, activado por defecto)
+//    · Rango = máximo y mínimo (con mechas) de las velas desde las 09:00 hasta las 09:30 NY (inicio editable).
+//    · Bloquea toda entrada. Una COMPRA solo es válida si antes el precio cerró con cuerpo por encima del rango
+//      (también vale la propia vela de entrada si cierra por encima); una VENTA, si cerró con cuerpo por debajo.
+//      Un cierre dentro del rango no desbloquea nada. Una vez que sale, ese lado queda desbloqueado el resto del día.
+//
 //  3) SALIDA
 //    · SL: último punto bajo M1 (vela bajista seguida de una alcista) en compras, o último punto alto M1
 //      (vela alcista seguida de una bajista) en ventas, incluida la vela de entrada si lo forma.
@@ -67,7 +73,8 @@ strategy(title = "MNQ · EMA20 Quiebre-Retroceso-Continuación · 1m",
          calc_on_every_tick = false,
          margin_long = 0,
          margin_short = 0,
-         max_labels_count = 500)
+         max_labels_count = 500,
+         max_boxes_count = 500)
 
 // ── Constantes ─────────────────────────────────────────────────────────────────────
 const string TZ       = "America/New_York"
@@ -80,6 +87,7 @@ const string G_SAL = "3 · Salida"
 const string G_CIE = "4 · Cierre forzado"
 const string G_RSK = "5 · Riesgo"
 const string G_VIS = "6 · Visual"
+const string G_RNG = "7 · Rango de apertura"
 
 cutHour = input.int(11, "Hora límite (NY): no se abren más entradas", minval = 0, maxval = 23, group = G_HOR, tooltip = "La vela de entrada debe abrir antes de esta hora. Con 11:00, la última vela de entrada es la de las 10:59. El trade abierto sigue hasta su SL, su TP o el cierre forzado.")
 cutMin  = input.int(0, "Minuto límite", minval = 0, maxval = 59, group = G_HOR)
@@ -103,6 +111,12 @@ showMarks  = input.bool(true, "Mostrar etiqueta en cada entrada (tipo de retroce
 showStages = input.bool(false, "Mostrar las etapas del patrón (quiebre, continuación, cancelado)", group = G_VIS, tooltip = "Útil para comprobar visualmente la lógica en pocos días. Apágalo en pruebas largas.")
 buyLblCol  = input.color(#5B5B5B, "Color de la etiqueta BUY", group = G_VIS)
 sellLblCol = input.color(#A9A9A9, "Color de la etiqueta SELL", group = G_VIS)
+
+useRange  = input.bool(true, "Rango de apertura: bloquea las entradas hasta que el precio salga de él", group = G_RNG, tooltip = "Activado: el rango (máximo y mínimo, con mechas, desde la hora de inicio hasta las 09:30) bloquea toda entrada. Una compra solo es válida si antes (o en la propia vela de entrada) el precio cerró con cuerpo por encima del rango; una venta, si cerró con cuerpo por debajo. Una vez que sale, la ejecución queda desbloqueada ese día para ese lado.")
+rngStartH = input.int(9, "Inicio del rango · hora (NY)", minval = 0, maxval = 9, group = G_RNG, tooltip = "El rango termina a las 09:30 (apertura).")
+rngStartM = input.int(0, "Inicio del rango · minuto", minval = 0, maxval = 59, group = G_RNG)
+showRange = input.bool(true, "Mostrar el rango de apertura", group = G_RNG)
+rangeCol  = input.color(#000000, "Color del contorno del rango", group = G_RNG)
 
 if timeframe.in_seconds() != 60
     runtime.error("Esta estrategia está diseñada para el gráfico de 1 minuto.")
@@ -128,6 +142,39 @@ bool  bull1 = close[1] > open[1]
 bool  bear1 = close[1] < open[1]
 
 plot(ema, title = "EMA", color = #000000, linewidth = 2)
+
+// ── Rango de apertura: bloquea las entradas hasta que el precio sale de él con el cuerpo ──────────────────────
+int  rngStartMD = rngStartH * 60 + rngStartM
+int  dayKey     = year(time, TZ) * 10000 + month(time, TZ) * 100 + dayofmonth(time, TZ)
+bool inRng      = dow >= dayofweek.monday and dow <= dayofweek.friday and mdOpen >= rngStartMD and mdOpen < START_MD
+bool rngNew     = inRng and not inRng[1]
+var float rngHi  = na
+var float rngLo  = na
+var int   rngKey = na
+var bool  buyOk  = false     // el precio ya cerró con cuerpo por encima del rango: las compras están desbloqueadas
+var bool  sellOk = false     // el precio ya cerró con cuerpo por debajo del rango: las ventas están desbloqueadas
+var box   rngBox = na
+if rngNew
+    rngHi  := high
+    rngLo  := low
+    rngKey := dayKey
+    buyOk  := false
+    sellOk := false
+    if showRange
+        rngBox := box.new(time, high, time + 60000, low, xloc = xloc.bar_time, border_color = rangeCol, border_width = 1, bgcolor = na)
+else if inRng
+    rngHi := math.max(rngHi, high)
+    rngLo := math.min(rngLo, low)
+    if showRange and not na(rngBox)
+        box.set_top(rngBox, rngHi)
+        box.set_bottom(rngBox, rngLo)
+        box.set_right(rngBox, time + 60000)
+// A partir de las 09:30: un cierre fuera del rango desbloquea ese lado (también cuenta la propia vela de entrada).
+if rngKey == dayKey and mdOpen >= START_MD and not na(rngHi)
+    if tk(close) > tk(rngHi)
+        buyOk := true
+    if tk(close) < tk(rngLo)
+        sellOk := true
 
 // Últimos puntos M1: bajo = vela bajista seguida de una alcista (mínimo de las dos); alto = vela alcista seguida de una bajista (máximo de las dos).
 // Si una vela posterior (alcista para el bajo, bajista para el alto) crea una mecha más baja (alta) que ese punto, el punto se actualiza.
@@ -320,7 +367,8 @@ if barstate.isconfirmed
         tDir := 0
 
     // Nueva entrada.
-    if goEntry and inWin and strategy.position_size == 0
+    bool rangeFree = not useRange or (rngKey == dayKey and not na(rngHi) and (trend == 1 ? buyOk : sellOk))
+    if goEntry and inWin and rangeFree and strategy.position_size == 0
         int   dir   = trend
         float entry = close
         float slP   = dir == 1 ? swL : swH
