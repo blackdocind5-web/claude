@@ -1,0 +1,530 @@
+//@version=6
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  EMA20 · QUIEBRE + RETROCESO + CONTINUACIÓN · INDICADOR PARA OPERAR EN VIVO · 1 minuto (MNQ, NQ, NAS100)
+//  Gemelo de la estrategia «mnq_ema20_tendencia.pine» (misma lógica de señales, versión «retroceso agotado al entrar»).
+// ═══════════════════════════════════════════════════════════════════════════════════
+//
+//  QUÉ MUESTRA
+//    · NUBE «BUY · EXT/COR» por DEBAJO de la vela de entrada (compra) o «SELL · EXT/COR» por ENCIMA (venta).
+//      La señal se confirma al CIERRE de esa vela: es el momento de entrar a mercado.
+//    · Líneas con sus etiquetas a la derecha: ENTRADA (cierre de la vela), SL, BE y TP.
+//        – BE = nivel que debe TOCAR el precio (1R por defecto). Al tocarlo, MUEVE EL SL A LA ENTRADA. El indicador
+//          lo marca en el gráfico y avisa por alerta.
+//    · Marca de cierre de la operación teórica (TP +2R, SL −1R, BE 0R) y etiqueta «Fin del día» cuando la gestión frena el día.
+//    · Tabla de estado: gestión activa, operaciones de hoy, SL seguidos, resultado del día (R), estado y tendencia.
+//
+//  GESTIÓN DEL DÍA (elige UNA; interruptores del grupo 1)
+//    · «Máx. 3 por día» (activada por defecto): se admiten como máximo 3 operaciones al día; después no aparecen más señales.
+//    · «Primer TP o 3 SL»: el día termina con el primer TP o con el 3.er SL seguido; el BE no cuenta como SL ni frena el día.
+//    · Si activas las dos, manda «Primer TP o 3 SL». Si desactivas las dos, no hay frenos por día.
+//    · El indicador SOLO muestra señales mientras el día siga abierto según la gestión elegida.
+//
+//  CÓMO SE SIGUE CADA OPERACIÓN (teórica, vela a vela, con los máximos y mínimos de 1 minuto)
+//    · Se asume que TOMAS TODAS las señales que muestra. Si te saltas una, el conteo del día cambia: ajústalo a mano.
+//    · SL y TP se evalúan desde la vela siguiente a la de entrada. Si una misma vela toca SL y TP se asume SL primero.
+//    · BE: si una vela toca el nivel de BE sin tocar SL ni TP, el SL pasa a la entrada desde la vela siguiente.
+//    · Tras un TP, SL o BE se puede volver a entrar en esa misma vela si hay señal (igual que la estrategia).
+//    · Cierre forzado teórico a la hora indicada (16:00 NY).
+//
+//  CONFIGURACIÓN RECOMENDADA (la misma de la estrategia): RR 2,0 · BE ON a 1R · SL máximo 100 puntos · margen mínimo 5 puntos ·
+//  entradas 09:30–11:00 (hora de Nueva York) · rango de apertura NO incluido (apagado en la estrategia).
+//
+//  ALERTAS: crea una alerta sobre este indicador con la condición «Cualquier llamada a la función alert()». Avisa de cada
+//  señal (con entrada, SL, BE, TP y contratos), de BE alcanzado, de cierre y de fin del día.
+//
+//  LÍMITES: solo gráfico de 1 minuto. El indicador no ve tus ejecuciones reales (deslizamiento, rechazos): es la operación teórica.
+//  Los valores deben coincidir con los de la estrategia para que ambas muestren las mismas señales.
+// ═══════════════════════════════════════════════════════════════════════════════════
+indicator(title = "EMA20 Quiebre-Retroceso-Continuación · en vivo · 1m",
+          shorttitle = "EMA20 en vivo",
+          overlay = true,
+          max_lines_count = 500,
+          max_labels_count = 500)
+
+// ── Constantes ─────────────────────────────────────────────────────────────────────
+const string TZ       = "America/New_York"
+const int    START_MD = 9 * 60 + 30     // la vela de entrada abre desde las 09:30
+
+// ── Entradas ───────────────────────────────────────────────────────────────────────
+const string G_GES = "1 · Gestión del día (elige UNA)"
+const string G_HOR = "2 · Horario"
+const string G_PAT = "3 · Patrón y entrada"
+const string G_SAL = "4 · Salida (SL, BE, TP)"
+const string G_CTA = "5 · Cuenta (solo para calcular los contratos)"
+const string G_VIS = "6 · Visual y alertas"
+
+mgMax3  = input.bool(true, "Máx. 3 por día", group = G_GES, tooltip = "Activada por defecto. Se admiten como máximo 3 operaciones al día (cuenta las operaciones abiertas, sea cual sea su resultado). Después de la 3.ª no aparecen más señales ese día. El número se cambia abajo.")
+mgTP3SL = input.bool(false, "Primer TP o 3 SL", group = G_GES, tooltip = "El día termina con el primer TP o con el 3.er SL seguido (un TP reinicia el conteo). El BE no cuenta como SL ni frena el día. Si la activas, manda sobre «Máx. 3 por día». Si desactivas las dos, no hay frenos por día.")
+maxTr   = input.int(3, "Máx. por día: número de operaciones", minval = 1, group = G_GES)
+slLim   = input.int(3, "Primer TP o 3 SL: SL seguidos que cierran el día", minval = 1, group = G_GES)
+
+cutHour   = input.int(11, "Hora límite (NY): no se abren más entradas", minval = 0, maxval = 23, group = G_HOR, tooltip = "La vela de entrada debe abrir antes de esta hora. Con 11:00, la última vela de entrada es la de las 10:59.")
+cutMin    = input.int(0, "Minuto límite", minval = 0, maxval = 59, group = G_HOR)
+closeHour = input.int(16, "Hora de cierre forzado teórico (NY)", minval = 0, maxval = 23, group = G_HOR, tooltip = "Una operación teórica que siga abierta se da por cerrada a esta hora. Cierra a mano la tuya.")
+closeMin  = input.int(0, "Minuto de cierre forzado", minval = 0, maxval = 59, group = G_HOR)
+
+emaLen  = input.int(20, "Periodos de la EMA", minval = 2, group = G_PAT)
+minDiff = input.float(5.0, "Margen mínimo del cierre de la vela de entrada (puntos de precio)", minval = 0.0, step = 0.25, group = G_PAT, tooltip = "El cierre de la vela de entrada debe superar (compras) o quedar por debajo (ventas) del nivel a envolver en al menos esta cantidad.")
+
+rr    = input.float(2.0, "Ratio R:R (recompensa por cada 1 de riesgo)", minval = 0.1, step = 0.1, group = G_SAL)
+useBE = input.bool(true, "Break-even", group = G_SAL, tooltip = "Activado (recomendado): al tocar el nivel de BE, el SL pasa a la entrada. El indicador dibuja ese nivel.")
+beR   = input.float(1.0, "BE a (múltiplo de R)", minval = 0.1, step = 0.1, group = G_SAL)
+maxSL = input.float(100.0, "SL máximo (puntos de precio)", minval = 0.0, step = 1.0, group = G_SAL, tooltip = "Si la distancia al SL es igual o mayor a este valor, el SL se reduce al extremo de la vela de entrada (en un retroceso EXTENSO con entrada en la 3.ª vela a favor seguida o más, al de la vela anterior). Si aun así es igual o mayor, la señal se omite. 0 = sin límite.")
+
+acct      = input.float(50000.0, "Capital de la cuenta (USD)", minval = 1.0, step = 1000.0, group = G_CTA, tooltip = "Solo para calcular los contratos o unidades de cada señal: capital × riesgo % ÷ (distancia del SL × valor del punto).")
+riskPct   = input.float(0.5, "Riesgo por operación (%)", minval = 0.01, maxval = 100.0, step = 0.05, group = G_CTA)
+qtyStepIn = input.float(0.0, "Paso de cantidad (0 = automático)", minval = 0.0, step = 0.01, group = G_CTA, tooltip = "0 = automático: 1 contrato en futuros (MNQ, NQ) y 0,01 en el resto (CFD NAS100). Pon el paso de tu broker si es distinto.")
+ptvIn     = input.float(0.0, "Valor de 1 punto por contrato o unidad, en USD (0 = automático)", minval = 0.0, step = 0.1, group = G_CTA, tooltip = "0 = lo toma del símbolo (2 USD en MNQ, 20 USD en NQ). En un CFD revisa el valor de 1 punto por unidad en tu broker.")
+
+showLevels  = input.bool(true, "Mostrar líneas y etiquetas de ENTRADA, SL, BE y TP", group = G_VIS)
+showMarks   = input.bool(true, "Mostrar la nube BUY / SELL y las señales omitidas", group = G_VIS)
+showExit    = input.bool(true, "Mostrar el cierre de cada operación (TP, SL, BE)", group = G_VIS)
+showDayStop = input.bool(true, "Marcar cuándo se frena el día", group = G_VIS)
+showStages  = input.bool(false, "Mostrar las etapas del patrón (quiebre, continuación, cancelado)", group = G_VIS)
+showTable   = input.bool(true, "Mostrar tabla de estado", group = G_VIS)
+useAlert    = input.bool(true, "Enviar alertas (requiere crear la alerta sobre el indicador)", group = G_VIS)
+buyLblCol   = input.color(#5B5B5B, "Color de la nube BUY", group = G_VIS)
+sellLblCol  = input.color(#A9A9A9, "Color de la nube SELL", group = G_VIS)
+slCol       = input.color(#F23645, "Color del SL", group = G_VIS)
+tpCol       = input.color(#089981, "Color del TP", group = G_VIS)
+beCol       = input.color(#2962FF, "Color del BE", group = G_VIS)
+
+if timeframe.in_seconds() != 60
+    runtime.error("Este indicador está diseñado para el gráfico de 1 minuto.")
+
+// ── Tiempo en hora de Nueva York ───────────────────────────────────────────────────
+int  mdOpen  = hour(time, TZ) * 60 + minute(time, TZ)   // minuto del día en que ABRE la vela
+int  mdClose = mdOpen + 1                               // minuto del día en que CIERRA la vela
+int  dow     = dayofweek(time, TZ)
+int  cutMD   = cutHour * 60 + cutMin
+int  forceMD = closeHour * 60 + closeMin
+bool inForce = mdClose >= forceMD and mdClose <= forceMD + 60
+bool inWin   = dow >= dayofweek.monday and dow <= dayofweek.friday and mdOpen >= START_MD and mdOpen < math.min(cutMD, forceMD)
+int  dayKey  = year(time, TZ) * 10000 + month(time, TZ) * 100 + dayofmonth(time, TZ)
+
+// ── Utilidades ─────────────────────────────────────────────────────────────────────
+// Convierte una diferencia de precio a ticks enteros para comparar sin errores de decimales.
+tk(float x) => math.round(x / syminfo.mintick)
+ptxt(float x) => str.tostring(x, format.mintick)
+
+// ── Velas y EMA ────────────────────────────────────────────────────────────────────
+float ema   = ta.ema(close, emaLen)
+bool  bull0 = close > open
+bool  bear0 = close < open
+bool  bull1 = close[1] > open[1]
+bool  bear1 = close[1] < open[1]
+
+plot(ema, title = "EMA", color = #000000, linewidth = 2)
+
+// ── Gestión elegida ────────────────────────────────────────────────────────────────
+bool   mgTP   = mgTP3SL
+bool   mgMx   = mgMax3 and not mgTP3SL
+string mgName = mgTP ? "PRIMER TP O " + str.tostring(slLim) + " SL" : mgMx ? "MÁX. " + str.tostring(maxTr) + " POR DÍA" : "SIN GESTIÓN"
+
+
+// Últimos puntos M1 y estado de la tendencia (idéntico a la estrategia).
+// Si una vela posterior (alcista para el bajo, bajista para el alto) crea una mecha más baja (alta) que ese punto, el punto se actualiza.
+var float swL = na
+var float swH = na
+
+// ── Estado de la tendencia ─────────────────────────────────────────────────────────
+// Las variables con sufijo "T" guardan precios en coordenadas de la dirección: en bajista se invierten (alto = −mínimo, bajo = −máximo),
+// así la misma lógica sirve para compras y ventas.
+var int   trend      = 0       // 1 = alcista confirmada, −1 = bajista confirmada, 0 = sin tendencia confirmada
+// Quiebres en espera de su continuación: posición 0 = alcista, posición 1 = bajista (pueden convivir los dos).
+var array<bool>  cAct = array.new<bool>(2, false)
+var array<float> cOrg = array.new<float>(2, na)   // origen del quiebre
+var array<float> cMax = array.new<float>(2, na)   // máximo del movimiento desde el quiebre
+var array<bool>  cPB  = array.new<bool>(2, false) // ¿ya empezó el retroceso?
+var array<float> cRef = array.new<float>(2, na)   // punto alto antes de empezar a retroceder
+var float tMax       = na
+var bool  inPB       = false   // retroceso en curso dentro de la tendencia confirmada
+var float refPeak    = na      // punto más alto antes de empezar el retroceso en curso
+var bool  pbTouched  = false   // ¿la mecha tocó la EMA20 durante el retroceso?
+var bool  flagBeyond = false   // ¿algún cierre superó el punto alto del retroceso en curso?
+var bool  pbUsed     = false   // ¿ya se entró (se ejecutó una operación) en este retroceso? Si sí, está agotado
+var float lastConH   = na      // máximo de la última vela en contra
+var int   cRun       = 0       // velas a favor seguidas
+var float prevFavH   = na      // máximo de la vela a favor anterior
+
+bool   brkUp    = false
+bool   brkDn    = false
+bool   canceled = false
+bool   promoted = false
+bool   goEntry  = false
+string kind     = ""
+float  entLvl   = na
+int    entRun   = 0      // nº de vela a favor seguida en la que se genera la entrada
+
+// ── Operación teórica en curso, estado del día y dibujos ───────────────────────────
+var bool   tOpen   = false
+var int    tDir    = 0
+var float  tEntry  = na
+var float  tSL     = na
+var float  tTP     = na
+var float  tBE     = na
+var float  tDist   = na
+var bool   tBeDone = false
+var int    tBar    = na
+var int    tDay    = 0
+var int    dKey    = 0               // día (NY) al que corresponde el estado
+var int    dSL     = 0               // SL seguidos del día
+var int    dTr     = 0               // operaciones abiertas en el día
+var float  dR      = 0.0             // resultado del día en R
+var bool   dStop   = false           // día frenado por «Primer TP o 3 SL»
+var string dWhy    = ""
+var string tTxt    = "—"             // resumen de la operación abierta (para la tabla)
+var line   lnE     = na
+var line   lnS     = na
+var line   lnB     = na
+var line   lnT     = na
+var label  lbE     = na
+var label  lbS     = na
+var label  lbB     = na
+var label  lbT     = na
+
+// Todo el motor trabaja AL CIERRE de cada vela (igual que la estrategia): en una vela en formación no cambia nada.
+if barstate.isconfirmed
+    // Últimos puntos M1 (idéntico a la estrategia).
+    if bull0 and bear1
+        swL := math.min(low[1], low)
+    else if bull0 and not na(swL) and low < swL
+        swL := low     // vela alcista que crea una mecha más baja que el último punto bajo: lo actualiza
+    if bear0 and bull1
+        swH := math.max(high[1], high)
+    else if bear0 and not na(swH) and high > swH
+        swH := high    // vela bajista que crea una mecha más alta que el último punto alto: lo actualiza
+
+    bool bullBrk = bull0 and close > ema and close[1] <= ema[1]
+    bool bearBrk = bear0 and close < ema and close[1] >= ema[1]
+
+    // 1) y 2) Quiebres: aparición (solo si van en contra de la tendencia actual o no hay tendencia, y no hay ya uno en espera en esa dirección), cancelación, retroceso y continuación
+    for k = 0 to 1
+        int   sc   = k == 0 ? 1 : -1
+        bool  brk  = k == 0 ? bullBrk : bearBrk
+        float swK  = k == 0 ? swL : swH
+        bool  made = false
+        if brk and trend != sc and not cAct.get(k) and not na(swK)
+            cAct.set(k, true)
+            cOrg.set(k, math.min(sc * swK, sc == 1 ? low : -high))
+            cMax.set(k, k == 0 ? high : -low)
+            cPB.set(k, false)
+            cRef.set(k, na)
+            made := true
+            if k == 0
+                brkUp := true
+            else
+                brkDn := true
+        if cAct.get(k) and not made
+            float hC   = sc == 1 ? high : -low
+            float lC   = sc == 1 ? low : -high
+            float cC   = sc * close
+            bool  favC = sc == 1 ? bull0 : bear0
+            bool  conC = sc == 1 ? bear0 : bull0
+            bool alive = true
+            if tk(cC) < tk(cOrg.get(k))
+                // Una vela CIERRA más allá del origen (solo cuerpo; la mecha sola no cancela): el patrón se cancela.
+                cAct.set(k, false)
+                canceled := true
+                alive := false
+            else if favC and tk(lC) < tk(cOrg.get(k))
+                // Vela a favor que pierde el origen solo con la mecha: forma parte del quiebre y el origen pasa a su extremo.
+                cOrg.set(k, lC)
+            if alive
+                if not cPB.get(k) and conC
+                    // El punto alto que exige la continuación queda FIJO desde la primera vela en contra (incluida su mecha).
+                    cPB.set(k, true)
+                    cRef.set(k, math.max(cMax.get(k), hC))
+                cMax.set(k, math.max(cMax.get(k), hC))
+                if cPB.get(k) and favC and cC > cRef.get(k)
+                    trend      := sc
+                    tMax       := cMax.get(k)
+                    inPB       := false
+                    refPeak    := na
+                    pbTouched  := false
+                    flagBeyond := false
+                    pbUsed     := false
+                    lastConH   := na
+                    cRun       := 0
+                    prevFavH   := na
+                    cAct.set(k, false)
+                    promoted   := true
+
+    // 3) Tendencia confirmada: retroceso y búsqueda de la vela de entrada
+    if trend != 0 and not promoted
+        int   s     = trend
+        float hT    = s == 1 ? high : -low
+        float lT    = s == 1 ? low : -high
+        float cT    = s * close
+        float eT    = s * ema
+        bool  favT  = s == 1 ? bull0 : bear0
+        bool  conT  = s == 1 ? bear0 : bull0
+        if conT
+            if not inPB or flagBeyond or pbUsed
+                refPeak    := math.max(tMax, hT)
+                inPB       := true
+                pbTouched  := false
+                flagBeyond := false
+                pbUsed     := false
+                tMax       := hT
+            lastConH := hT
+            cRun     := 0
+        else if favT
+            cRun += 1
+        else
+            cRun := 0
+
+        if favT and inPB and not pbUsed and not na(lastConH) and not na(refPeak)
+            if pbTouched or lT <= eT
+                // Retroceso extenso (la mecha tocó la EMA20, incluso en la propia vela de entrada): envolver la vela de retroceso más cercana
+                // (y la vela a favor anterior si es la 2.ª o más) y cerrar del lado correcto de la EMA20. Sin tope de velas.
+                float lvlE = cRun == 1 ? lastConH : math.max(lastConH, nz(prevFavH, lastConH))
+                if tk(cT - lvlE) >= tk(minDiff) and cT > eT
+                    goEntry := true
+                    kind    := "EXT"
+                    entRun  := cRun
+                    entLvl  := s * lvlE
+            else if cRun <= 2
+                // Retroceso corto (no tocó la EMA20): envolver el punto más alto (bajo) antes de empezar a retroceder (y la vela a favor anterior
+                // si es la 2.ª). Solo vale la 1.ª o la 2.ª vela a favor seguida.
+                float lvlC = cRun == 1 ? refPeak : math.max(refPeak, nz(prevFavH, refPeak))
+                if tk(cT - lvlC) >= tk(minDiff)
+                    goEntry := true
+                    kind    := "COR"
+                    entLvl  := s * lvlC
+
+        if inPB
+            if favT and cT > refPeak
+                flagBeyond := true
+            if not pbTouched
+                // Retroceso corto: cualquier vela del retroceso (en contra o a favor) que cree un nivel más alto actualiza el punto alto.
+                refPeak := math.max(refPeak, hT)
+            pbTouched := pbTouched or lT <= eT
+        tMax     := math.max(nz(tMax, hT), hT)
+        prevFavH := favT ? hT : na
+
+    // ── Gestión del día: se reinicia cada día de Nueva York ───────────────────────────
+    if dKey != dayKey
+        dKey  := dayKey
+        dSL   := 0
+        dTr   := 0
+        dR    := 0.0
+        dStop := false
+        dWhy  := ""
+    bool dWas = dStop
+
+    // ── Seguimiento de la operación teórica ───────────────────────────────────────────
+    bool   closedNow = false
+    bool   beNow     = false
+    string cOut      = ""
+    float  cPx       = na
+    if tOpen
+        if tDay != dayKey
+            closedNow := true
+            cOut      := "Cierre"
+            cPx       := open
+        else if bar_index > tBar
+            float stopP = tBeDone ? tEntry : tSL
+            bool  hitSL = tDir == 1 ? low <= stopP : high >= stopP
+            bool  hitTP = tDir == 1 ? high >= tTP : low <= tTP
+            if hitSL
+                closedNow := true
+                cOut      := tBeDone ? "BE" : "SL"
+                cPx       := stopP
+            else if hitTP
+                closedNow := true
+                cOut      := "TP"
+                cPx       := tTP
+            else
+                if useBE and not tBeDone and (tDir == 1 ? high >= tBE : low <= tBE)
+                    tBeDone := true
+                    beNow   := true
+                if inForce
+                    closedNow := true
+                    cOut      := "Cierre"
+                    cPx       := close
+
+    // BE alcanzado: el SL pasa a la entrada desde la vela siguiente.
+    if beNow
+        if showLevels
+            if not na(lnS)
+                line.set_extend(lnS, extend.none)
+                line.set_x2(lnS, bar_index)
+            lnS := line.new(bar_index, tEntry, bar_index + 1, tEntry, extend = extend.right, color = slCol, style = line.style_dashed, width = 1)
+            if not na(lnB)
+                line.set_extend(lnB, extend.none)
+                line.set_x2(lnB, bar_index)
+                lnB := na
+            if not na(lbS)
+                label.set_xy(lbS, bar_index + 2, tEntry)
+                label.set_text(lbS, "SL → ENTRADA  " + ptxt(tEntry) + "  (BE activado)")
+            if not na(lbB)
+                label.delete(lbB)
+                lbB := na
+        if showMarks
+            label.new(bar_index, tBE, text = "BE alcanzado: SL a " + ptxt(tEntry), xloc = xloc.bar_index, style = label.style_label_left, color = beCol, textcolor = color.white, size = size.small)
+        tTxt := (tDir == 1 ? "BUY " : "SELL ") + ptxt(tEntry) + " · SL en entrada (BE) · TP " + ptxt(tTP)
+        if useAlert
+            alert("BE alcanzado " + syminfo.ticker + ": mueve el SL a la entrada " + ptxt(tEntry), alert.freq_once_per_bar_close)
+
+    // Cierre de la operación teórica.
+    if closedNow
+        float rOut = tDir * (cPx - tEntry) / tDist
+        dR += rOut
+        if cOut == "SL"
+            dSL += 1
+        else if cOut == "TP"
+            dSL := 0
+        if mgTP and not dStop
+            if cOut == "TP"
+                dStop := true
+                dWhy  := "TP"
+            else if dSL >= slLim
+                dStop := true
+                dWhy  := str.tostring(dSL) + " SL"
+        if not na(lnE)
+            line.set_extend(lnE, extend.none)
+            line.set_x2(lnE, bar_index)
+        if not na(lnS)
+            line.set_extend(lnS, extend.none)
+            line.set_x2(lnS, bar_index)
+        if not na(lnB)
+            line.set_extend(lnB, extend.none)
+            line.set_x2(lnB, bar_index)
+        if not na(lnT)
+            line.set_extend(lnT, extend.none)
+            line.set_x2(lnT, bar_index)
+        if not na(lbE)
+            label.delete(lbE)
+        if not na(lbS)
+            label.delete(lbS)
+        if not na(lbB)
+            label.delete(lbB)
+        if not na(lbT)
+            label.delete(lbT)
+        lnE := na
+        lnS := na
+        lnB := na
+        lnT := na
+        lbE := na
+        lbS := na
+        lbB := na
+        lbT := na
+        if showExit
+            color xc = cOut == "TP" ? tpCol : cOut == "SL" ? slCol : color.gray
+            label.new(bar_index, cPx, text = cOut + " " + (rOut > 0 ? "+" : "") + str.tostring(rOut, "#.#") + "R", xloc = xloc.bar_index, style = label.style_label_left, color = xc, textcolor = color.white, size = size.tiny)
+        if useAlert
+            alert("Operación cerrada " + syminfo.ticker + ": " + cOut + " " + (rOut > 0 ? "+" : "") + str.tostring(rOut, "#.#") + "R · resultado del día " + str.tostring(dR, "#.##") + "R", alert.freq_once_per_bar_close)
+        tOpen := false
+        tDir  := 0
+        tTxt  := "—"
+
+    if showDayStop and dStop and not dWas
+        label.new(bar_index, na, text = "Fin del día · " + dWhy + " · " + str.tostring(dR, "#.##") + " R", xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = color.new(color.orange, 15), textcolor = color.white, size = size.tiny)
+    if useAlert and dStop and not dWas
+        alert("FIN DEL DÍA " + syminfo.ticker + ": " + dWhy + " · resultado " + str.tostring(dR, "#.##") + "R. No operes más hoy.", alert.freq_once_per_bar_close)
+
+    // ── Nueva señal ───────────────────────────────────────────────────────────────────
+    bool dayFree = not dStop and (not mgMx or dTr < maxTr)
+    if goEntry and inWin and dayFree and not tOpen
+        int   dir   = trend
+        float entry = close
+        float slP   = dir == 1 ? swL : swH
+        bool  slOk  = not na(slP) and (dir == 1 ? slP < entry : slP > entry)
+        float dist  = slOk ? math.abs(entry - slP) : na
+        // SL máximo: si el SL llega a ese valor, se reduce al extremo de la vela de entrada (mínimo en compras, máximo en ventas).
+        // En un retroceso EXTENSO con la entrada en la 3.ª vela a favor seguida o más, se reduce al extremo de la vela ANTERIOR a la de entrada.
+        // Si aun así llega al máximo, no se opera.
+        bool  slCut  = slOk and maxSL > 0 and tk(dist) >= tk(maxSL)
+        bool  slPrev = slCut and kind == "EXT" and entRun >= 3
+        if slCut
+            slP  := dir == 1 ? (slPrev ? low[1] : low) : (slPrev ? high[1] : high)
+            dist := math.abs(entry - slP)
+            slOk := dist > 0 and (dir == 1 ? slP < entry : slP > entry)
+        bool  dOk     = slOk and (maxSL <= 0 or tk(dist) < tk(maxSL))
+        float stepQ   = qtyStepIn > 0 ? qtyStepIn : (syminfo.type == "futures" ? 1.0 : 0.01)
+        float ptv     = ptvIn > 0 ? ptvIn : syminfo.pointvalue
+        float riskUSD = acct * riskPct / 100.0
+        float qtyRaw  = dOk and ptv > 0 ? riskUSD / (dist * ptv) : 0.0
+        float qty     = math.round(math.floor(qtyRaw / stepQ + 1e-9) * stepQ, 6)
+        string side   = dir == 1 ? "BUY" : "SELL"
+        if dOk and qty >= stepQ
+            float tpP = math.round_to_mintick(dir == 1 ? entry + rr * dist : entry - rr * dist)
+            float beP = dir == 1 ? entry + beR * dist : entry - beR * dist
+            tOpen   := true
+            tDir    := dir
+            tEntry  := entry
+            tSL     := slP
+            tTP     := tpP
+            tBE     := beP
+            tDist   := dist
+            tBeDone := false
+            tBar    := bar_index
+            tDay    := dayKey
+            pbUsed  := true      // el retroceso queda agotado: para volver a entrar hace falta una vela en contra nueva
+            dTr     += 1
+            tTxt    := side + " " + ptxt(entry) + " · SL " + ptxt(slP) + " · BE " + ptxt(beP) + " · TP " + ptxt(tpP)
+            string cnt = mgMx ? " · " + str.tostring(dTr) + "/" + str.tostring(maxTr) : mgTP ? " · n.º " + str.tostring(dTr) : ""
+            if showLevels
+                lnE := line.new(bar_index, entry, bar_index + 1, entry, extend = extend.right, color = color.new(#787B86, 20), style = line.style_dotted, width = 1)
+                lnS := line.new(bar_index, slP, bar_index + 1, slP, extend = extend.right, color = slCol, width = 1)
+                lnT := line.new(bar_index, tpP, bar_index + 1, tpP, extend = extend.right, color = tpCol, width = 1)
+                lbE := label.new(bar_index + 2, entry, text = "ENTRADA  " + ptxt(entry) + "  ·  " + str.tostring(qty) + " (riesgo ≈ " + str.tostring(qty * dist * ptv, "#") + " USD)", xloc = xloc.bar_index, style = label.style_label_left, color = color.new(#787B86, 10), textcolor = color.white, size = size.small)
+                lbS := label.new(bar_index + 2, slP, text = "SL  " + ptxt(slP) + "  (" + str.tostring(dist, "#.##") + " pts)", xloc = xloc.bar_index, style = label.style_label_left, color = slCol, textcolor = color.white, size = size.small)
+                lbT := label.new(bar_index + 2, tpP, text = "TP  " + ptxt(tpP) + "  (" + str.tostring(math.abs(tpP - entry), "#.##") + " pts · +" + str.tostring(rr, "#.#") + "R)", xloc = xloc.bar_index, style = label.style_label_left, color = tpCol, textcolor = color.white, size = size.small)
+                if useBE
+                    lnB := line.new(bar_index, beP, bar_index + 1, beP, extend = extend.right, color = beCol, style = line.style_dashed, width = 1)
+                    lbB := label.new(bar_index + 2, beP, text = "BE  " + ptxt(beP) + "  (al tocarlo: SL a " + ptxt(entry) + ")", xloc = xloc.bar_index, style = label.style_label_left, color = beCol, textcolor = color.white, size = size.small)
+            if showMarks
+                string tip = (kind == "EXT" ? "Retroceso extenso" : "Retroceso corto") + "\nEntrada: " + ptxt(entry) + "\nSL: " + ptxt(slP) + " (" + str.tostring(dist, "#.##") + " pts)\nBE: " + ptxt(beP) + "\nTP: " + ptxt(tpP) + "\nCantidad: " + str.tostring(qty)
+                if slCut
+                    tip := tip + (slPrev ? "\nSL reducido al extremo de la vela anterior a la de entrada" : "\nSL reducido al extremo de la vela de entrada")
+                tip := tip + "\nGestión: " + mgName + " · operación n.º " + str.tostring(dTr) + " del día · SL seguidos: " + str.tostring(dSL) + " · resultado del día: " + str.tostring(dR, "#.##") + " R"
+                if dir == 1
+                    label.new(bar_index, na, text = "BUY · " + kind + cnt, xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = buyLblCol, textcolor = color.white, size = size.small, tooltip = tip)
+                else
+                    label.new(bar_index, na, text = "SELL · " + kind + cnt, xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = sellLblCol, textcolor = color.white, size = size.small, tooltip = tip)
+            if useAlert
+                alert(side + " " + syminfo.ticker + " · " + (kind == "EXT" ? "retroceso extenso" : "retroceso corto") + cnt + " | Entrada " + ptxt(entry) + " | SL " + ptxt(slP) + " | BE " + ptxt(beP) + " (al tocarlo, SL a la entrada) | TP " + ptxt(tpP) + " | " + str.tostring(qty) + " contratos", alert.freq_once_per_bar_close)
+        else if showMarks
+            string why = not dOk ? "SL de " + (na(dist) ? "—" : str.tostring(dist, "#.##")) + " pts ≥ máximo o sin SL válido" : "no cabe " + str.tostring(stepQ) + " contrato con tu riesgo"
+            if dir == 1
+                label.new(bar_index, na, text = "BUY omitida", xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = color.new(color.gray, 30), textcolor = color.white, size = size.tiny, tooltip = "Señal omitida: " + why)
+            else
+                label.new(bar_index, na, text = "SELL omitida", xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = color.new(color.gray, 30), textcolor = color.white, size = size.tiny, tooltip = "Señal omitida: " + why)
+
+    // ── Etapas del patrón (opcionales) ────────────────────────────────────────────────
+    if showStages
+        if brkUp
+            label.new(bar_index, na, text = "Quiebre", xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = color.new(color.gray, 20), textcolor = color.white, size = size.tiny)
+        if brkDn
+            label.new(bar_index, na, text = "Quiebre", xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = color.new(color.gray, 20), textcolor = color.white, size = size.tiny)
+        if canceled
+            label.new(bar_index, na, text = "Cancelado", xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = color.new(color.red, 20), textcolor = color.white, size = size.tiny)
+        if promoted
+            if trend == 1
+                label.new(bar_index, na, text = "Continuación ↑", xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = color.new(color.green, 20), textcolor = color.white, size = size.tiny)
+            else
+                label.new(bar_index, na, text = "Continuación ↓", xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = color.new(color.green, 20), textcolor = color.white, size = size.tiny)
+
+// ── Tabla de estado ────────────────────────────────────────────────────────────────
+var table tb = table.new(position.top_right, 2, 7, bgcolor = #2A2E39, border_width = 1)
+if showTable and barstate.islast
+    bool   both   = mgMax3 and mgTP3SL
+    bool   maxHit = mgMx and dTr >= maxTr
+    string st     = tOpen ? "OPERACIÓN ABIERTA" : not inWin ? "FUERA DE HORARIO" : dStop ? "DÍA CERRADO · " + dWhy : maxHit ? "DÍA CERRADO · MÁX. " + str.tostring(maxTr) : "BUSCANDO ENTRADA"
+    color  stc    = tOpen ? color.new(color.blue, 0) : not inWin ? color.gray : (dStop or maxHit) ? color.orange : color.new(#089981, 0)
+    table.cell(tb, 0, 0, "Gestión activa", text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 0, mgName + (both ? " (manda esta)" : ""), text_color = color.white, text_size = size.small)
+    table.cell(tb, 0, 1, "Operaciones hoy", text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 1, str.tostring(dTr) + (mgMx ? " de " + str.tostring(maxTr) : ""), text_color = color.white, text_size = size.small)
+    table.cell(tb, 0, 2, "SL seguidos hoy", text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 2, str.tostring(dSL) + (mgTP ? " de " + str.tostring(slLim) : ""), text_color = color.white, text_size = size.small)
+    table.cell(tb, 0, 3, "Resultado del día", text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 3, (dR > 0 ? "+" : "") + str.tostring(dR, "#.##") + " R", text_color = dR > 0 ? color.new(#089981, 0) : dR < 0 ? color.new(#F23645, 0) : color.white, text_size = size.small)
+    table.cell(tb, 0, 4, "Estado", text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 4, st, text_color = stc, text_size = size.small)
+    table.cell(tb, 0, 5, "Tendencia", text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 5, trend == 1 ? "ALCISTA" : trend == -1 ? "BAJISTA" : "SIN CONFIRMAR", text_color = trend == 1 ? color.new(#089981, 0) : trend == -1 ? color.new(#F23645, 0) : color.gray, text_size = size.small)
+    table.cell(tb, 0, 6, "Operación abierta", text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 6, tTxt, text_color = color.white, text_size = size.small)
