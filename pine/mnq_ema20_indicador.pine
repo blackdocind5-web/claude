@@ -12,6 +12,7 @@
 //          lo marca en el gráfico y avisa por alerta.
 //    · Marca de cierre de la operación teórica (TP +2R, SL −1R, BE 0R) y etiqueta «Fin del día» cuando la gestión frena el día.
 //    · Tabla de estado: gestión activa, operaciones de hoy, SL seguidos, resultado del día (R), estado y tendencia.
+//    · Fondo gris claro durante el horario operativo (09:30 hasta la hora límite, 11:00 por defecto) para ver cuándo arranca la sesión.
 //
 //  GESTIÓN DEL DÍA (elige UNA; interruptores del grupo 1)
 //    · «Máx. 3 por día» (activada por defecto): se admiten como máximo 3 operaciones al día; después no aparecen más señales.
@@ -82,6 +83,8 @@ showExit    = input.bool(true, "Mostrar el cierre de cada operación (TP, SL, BE
 showDayStop = input.bool(true, "Marcar cuándo se frena el día", group = G_VIS)
 showStages  = input.bool(false, "Mostrar las etapas del patrón (quiebre, continuación, cancelado)", group = G_VIS)
 showTable   = input.bool(true, "Mostrar tabla de estado", group = G_VIS)
+showSession = input.bool(true, "Sombrear el horario operativo (09:30 a la hora límite, hora NY)", group = G_VIS, tooltip = "Pinta el fondo de gris claro desde las 09:30 hasta la hora límite de entradas (11:00 por defecto), de lunes a viernes. Así ves de un vistazo cuándo arranca y cuándo termina la sesión.")
+sessCol     = input.color(color.new(#787B86, 88), "Color del sombreado del horario operativo", group = G_VIS)
 useAlert    = input.bool(true, "Enviar alertas (requiere crear la alerta sobre el indicador)", group = G_VIS)
 buyLblCol   = input.color(#5B5B5B, "Color de la nube BUY", group = G_VIS)
 sellLblCol  = input.color(#A9A9A9, "Color de la nube SELL", group = G_VIS)
@@ -115,6 +118,9 @@ bool  bull1 = close[1] > open[1]
 bool  bear1 = close[1] < open[1]
 
 plot(ema, title = "EMA", color = #000000, linewidth = 2)
+
+// Fondo gris claro durante el horario operativo (de las 09:30 a la hora límite).
+bgcolor(showSession and inWin ? sessCol : na, title = "Horario operativo")
 
 // ── Gestión elegida ────────────────────────────────────────────────────────────────
 bool   mgTP   = mgTP3SL
