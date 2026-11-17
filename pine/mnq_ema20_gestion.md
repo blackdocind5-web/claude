@@ -1,4 +1,4 @@
-# EMA20 · MNQ, NQ y NAS100 · análisis completo y gestión recomendada · versión 3
+# EMA20 · MNQ, NQ y NAS100 · análisis completo y gestión recomendada · versión 4
 
 Estrategia: `pine/mnq_ema20_tendencia.pine` (Pine v6, gráfico de 1 minuto).
 Periodo: 01/12/2023 a 13/11/2026 (2,95 años, ~750 días). Código con el retroceso agotado al entrar y la gestión del día en interruptores.
@@ -14,18 +14,19 @@ Resultados **brutos** (los CSV traen comisión 0) salvo donde se indica «neto»
 ## 1. Veredicto
 
 - **Rango de apertura: apagado.** Con el rango ON el resultado empeora en los 3 instrumentos con «1.er TP o 3 SL» (promedio −57 R, IC de +11 a +107 en sentido contrario) y en MNQ con las otras dos gestiones (intervalos que incluyen el 0). El efecto es mayor en 2024 y se mantiene en 2025 y en casi todo 2026.
-- **Gestión: «máximo 3 operaciones por día», sin parar tras TP y sin tope de SL.** Es la única regla que baja la caída en las 4 corridas y en los 12 casos de corrida por periodo, y no cambia el R (de −13,5 a +13,1 R). Limita el peor día a unos −3 R.
-- **«Primer TP o 3 SL» se descarta**: resta R en las 4 corridas (de −7 a −40 R) y no baja la caída de forma fiable.
-- **Instrumento: no hay evidencia de que uno rinda más.** Las diferencias entre NAS100, NQ y MNQ caen dentro del ruido (intervalos de unos ±60 R) y los R diarios tienen correlación de 0,79 a 0,90. NAS100 es el mejor en una configuración y el peor en otras dos.
-- **La estrategia en sí no tiene ventaja demostrada.** Con la configuración recomendada en MNQ: t = 1,99 bruto y 0,89 neto con 1 punto de costo.
+- **Gestión: «máximo 3 operaciones por día», sin parar tras TP y sin tope de SL.** Con el rango OFF baja la caída en los 3 instrumentos (−8,7 / −11,6 / −10,5 R) sin restar R (+1,3 / +2,6 / +11,1 R) y limita el peor día a unos −3 R. «Primer TP o 3 SL» se descarta.
+- **Instrumento: no hay uno con ventaja demostrable.** Con la configuración recomendada, en 35 meses: NQ +122,7 R, NAS100 +118,0 R, MNQ +108,6 R. Las diferencias (de −5 a +14 R) tienen intervalos de unos ±70 R y los meses se reparten 21 a 15 (NAS100 contra MNQ), es decir, un empate.
+- **La estrategia no tiene ventaja fuera de tiempo demostrada.** En NAS100 de marzo 2021 a noviembre 2023 dio +35,1 R (t = 0,76; 2021 en 0 R). Sin 2024 (el mejor año), el t en 5,7 años baja a 1,26.
 
 ## 2. Qué hay en las pruebas
 
 | Instrumento | Rango ON, sin gestión | Rango OFF, sin gestión | Rango ON, 1.er TP o 3 SL | Rango OFF, 1.er TP o 3 SL |
 |---|---|---|---|---|
-| MNQ | archivo | ronda anterior | simulado | ronda anterior |
-| NQ | archivo | **falta** | archivo | archivo |
-| NAS100 | archivo | **falta** | archivo | archivo |
+| MNQ | archivo | archivo | simulado | archivo |
+| NQ | archivo | archivo | archivo | archivo |
+| NAS100 | archivo | archivo | archivo | archivo |
+
+Además, NAS100 de 01/03/2021 a 30/11/2023 con rango OFF y «máx. 3 por día» activo (prueba fuera de tiempo). Los archivos «rango OFF, gestión desactivada» de NQ y NAS100 confirman la coherencia: el recorte «1.er TP o 3 SL» del archivo sin gestión coincide con el archivo con gestión (1.648 de 1.648 y 1.689 de 1.689 operaciones).
 
 ## 3. Rango de apertura: apagado
 
@@ -44,20 +45,56 @@ En MNQ el rango deja fuera 516 operaciones que sumaban +25,5 R (esperanza +0,049
 
 ## 4. Instrumentos
 
-R bruto total (esperanza por operación, t-stat), mismos ajustes y periodo:
+### 4.1 Configuración recomendada en los tres (rango OFF, RR 2, BE a 1R, SL máx. 100, hasta las 11:00, máx. 3 por día), 01/12/2023 a 13/11/2026
 
-| Configuración | MNQ | NQ | NAS100 |
+| Métrica | MNQ | NQ | NAS100 (CFD) |
 |---|---|---|---|
-| Rango OFF · 1.er TP o 3 SL | +90,2 (0,055 · 1,82) | +106,9 (0,065 · 2,26) | +118,4 (0,070 · 2,40) |
-| Rango ON · sin gestión | +75,4 (0,035 · 1,30) | +80,9 (0,038 · 1,51) | +59,7 (0,027 · 1,01) |
-| Rango ON · 1.er TP o 3 SL | +35,3 (0,023 · 0,74) | +55,7 (0,037 · 1,23) | +52,7 (0,034 · 1,10) |
+| Operaciones | 1.979 | 1.982 | 1.988 |
+| Win rate (TP sobre operaciones) | 27,1% | 27,8% | 27,4% |
+| **R bruto** | **+108,6** | **+122,7** | **+118,0** |
+| Esperanza por operación | +0,055 R | +0,062 R | +0,059 R |
+| t-stat · IC 95% del R | 1,99 · +5 a +218 | 2,34 · +21 a +228 | 2,14 · +12 a +228 |
+| Factor de beneficio | 1,11 | 1,13 | 1,12 |
+| Caída máx. | 26,9 R | 18,9 R | 22,0 R |
+| Peor día | −3,0 R | −3,0 R | −3,2 R |
+| Racha máx. de SL seguidos | 10 | 11 | 10 |
+| Meses positivos | 72% | 67% | 61% |
+| R 2023-24 / 2025 / 2026 | +53,3 / +22,3 / +32,9 | +67,9 / +30,0 / +24,9 | +71,2 / +43,3 / +3,5 |
+| Costo de equilibrio | 1,80 pt | 2,07 pt | 1,89 pt |
+| R neto con 1 punto de costo | +48,3 | +63,6 | +55,5 |
 
-Diferencias pareadas por día (rango OFF · 1.er TP o 3 SL): NQ − MNQ +16,7 R (IC −29 a +63); NAS100 − MNQ +28,2 R (IC −35 a +92); NAS100 − NQ +11,5 R (IC −48 a +68). Ninguna es significativa. En 2026 con rango OFF y 1.er TP o 3 SL, NAS100 rinde +12,9 R frente a +41,8 R en NQ y +33,9 R en MNQ.
+Diferencias pareadas por día: NAS100 − MNQ +9,4 R (IC −65 a +82); NQ − MNQ +14,1 R (IC −44 a +72); NAS100 − NQ −4,7 R (IC −75 a +63). NAS100 gana en 21 de los 36 meses frente a MNQ y en 18 frente a NQ. La correlación de los R diarios es de 0,77 a 0,85.
 
-**Qué instrumento usar es una decisión práctica:**
-- **Futuros (MNQ o NQ)** si tu firma opera futuros. Según tengo entendido Lucid Trading es de futuros: confírmalo. El CFD de NAS100 no aplica ahí.
-- **MNQ** para cuentas pequeñas. Con el SL mediano de 37 puntos, 1 contrato de NQ arriesga unos 737 USD. Con 0,5% de riesgo hace falta una cuenta de ≥ 147.000 USD para abrir un solo contrato; por debajo, NQ no opera o sobredimensiona. MNQ arriesga unos 73 USD por contrato.
-- NQ redondea los contratos hacia abajo: el riesgo real fue en promedio el 95,8% del nominal, así que sus R brutos salen un 4% menores a igual ventaja.
+Por año, NAS100 supera a MNQ en 2023-24 (+17,8 R) y en 2025 (+21,0 R) pero queda por debajo en 2026 (−29,4 R, IC −66 a +7): +3,5 R frente a +32,9 R.
+
+### 4.2 ¿Se parecen las operaciones?
+
+NAS100 y MNQ comparten el 75% de las operaciones (misma hora y dirección). En las 1.488 comunes, el 96% termina con el mismo resultado (TP, SL o BE) y el R tiene correlación de 0,95. Las exclusivas de cada uno rinden parecido: 491 operaciones solo de MNQ (+34,6 R, +0,071 por operación) y 500 solo de NAS100 (+33,2 R, +0,066). La ventaja nominal de NAS100 sobre MNQ (+9,4 R) sale de las comunes (+10,8 R): son diferencias de precio entre las series, no de ventaja.
+
+### 4.3 Prueba fuera de tiempo: NAS100, 01/03/2021 a 30/11/2023 (rango OFF, máx. 3 por día)
+
+| | Valor |
+|---|---|
+| Operaciones · días | 1.407 · 701 |
+| Win rate (TP sobre operaciones) | 26,1% (34,3% sin contar BE) |
+| R bruto · esperanza por operación | +35,1 · +0,025 R |
+| t-stat · IC 95% del R | 0,76 · −57 a +128 (prueba de signos p = 0,23) |
+| Caída máx. · peor día | 27,2 R · −3,0 R |
+| Racha de SL seguidos · días negativos seguidos | 8 · 5 |
+| Meses positivos | 48% |
+| Por año | 2021: 0,0 R (409 operaciones) · 2022: +24,5 R (538) · 2023 hasta noviembre: +10,7 R (460) |
+| Costo de equilibrio | 0,67 pt (con 0,5 pt: +8,8 R; con 1 pt: −17,5 R) |
+
+Todo NAS100, 5,7 años (01/03/2021 a 13/11/2026): +153,2 R, esperanza +0,045 R, t = 2,13, caída máx. 27,2 R, equilibrio 1,33 pt (con 1 pt: +38,0 R). Por año: 2021 0,0 · 2022 +24,5 · 2023 +9,7 · 2024 **+72,2** · 2025 +43,3 · 2026 +3,5 R. Sin 2024: +81,0 R y t = 1,26 (MNQ sin 2024: +45,3 R, t = 1,04).
+
+El periodo 2021-2023 fue positivo pero débil. Solo NAS100 tiene datos de esa época, así que no se puede decir si la debilidad es del instrumento o del periodo.
+
+### 4.4 Qué instrumento usar para las señales
+
+No hay base estadística para elegir. Si quieres una sola gráfica maestra:
+- **Gráfica de futuros (MNQ o NQ).** Es el instrumento de la cuenta de fondeo, y la ejecución coincide con las señales. NQ salió nominalmente mejor (t = 2,34 y caída de 18,9 R) y es el mismo mercado que MNQ, pero la diferencia de +14 R con MNQ está dentro del ruido: desempate práctico, no evidencia.
+- **NAS100 CFD** para la cuenta de CFD, con sus propias señales. Copiar las señales de futuros al CFD (o al revés) es razonable: el 96% de las operaciones comunes termina igual, pero un 25% de las operaciones no coincide entre gráficas. Los niveles se trasladan por distancias en puntos, no por precio (los precios de cada gráfico difieren).
+- **Tamaño:** MNQ para cuentas pequeñas (1 contrato de NQ arriesga unos 737 USD con el SL mediano; con 0,5% de riesgo hace falta una cuenta de ≥ 147.000 USD).
 
 ## 5. Gestión del día
 
@@ -75,6 +112,7 @@ Diferencias pareadas por día (rango OFF · 1.er TP o 3 SL): NQ − MNQ +16,7 R 
 
 - **Máx. 3** baja la caída en 4 de 4 corridas y en los 12 casos corrida por periodo (de −2 a −18 R), con peor día de −3 R frente a −6,6 a −7,9 R sin gestión.
 - Bootstrap por días en MNQ rango OFF: Δcaída −9,7 R (IC −31,8 a +11,4; el 80% de las remuestras baja) y ΔR +1,3 R (IC −52 a +59). El tope de pérdida diaria es mecánico; el efecto sobre la caída es consistente pero no concluyente.
+- **Con el rango OFF, en los tres instrumentos** (corridas sin gestión de NQ y NAS100 recibidas): «máx. 3» pasa de 35,5 a 26,9 R de caída en MNQ, de 30,5 a 18,9 R en NQ y de 32,5 a 22,0 R en NAS100, con R +1,3 / +2,6 / +11,1 y peor día de −3 R frente a −7,6 a −8,0 R.
 - **Máx. 4** rinde más (+14,8 R de media) pero no baja la caída (2 de 4) y el peor día llega a −4 R. Es la alternativa si priorizas rentabilidad sobre protección.
 - Ninguna regla supera al azar tras corregir por haber probado varias; son controles de riesgo, no fuentes de ventaja.
 
@@ -106,7 +144,7 @@ Diferencias pareadas por día (rango OFF · 1.er TP o 3 SL): NQ − MNQ +16,7 R 
 | **Win rate** (TP sobre operaciones) | **27,1%** (35,7% sin contar BE) |
 | **R bruto total** | **+108,6** (+36,8 por año) |
 | Esperanza por operación | +0,055 R |
-| t-stat · IC 95% del R total | 1,99 · +1,9 a +218 |
+| t-stat · IC 95% del R total | 1,99 · +5 a +218 |
 | Factor de beneficio | 1,11 |
 | **Caída máxima** · a planificar (p95) | **26,9 R** · 61 R |
 | Peor / mejor día | −3,0 / +6,0 R |
@@ -141,14 +179,14 @@ Un costo de 1 punto equivale a 2 USD por contrato de MNQ. En puntos, la comisió
 
 ## 9. Lo que no está probado
 
-1. **No hay una prueba fuera de muestra limpia.** El rango OFF y el «máx. 3» se eligieron mirando estos mismos 35 meses.
-2. **«Máx. 3» no se verificó con el rango OFF en NQ ni en NAS100** (faltan esas corridas sin gestión). Con el rango ON sí se verificó en los tres.
-3. **Sin ventaja neta demostrada**: t neto de 0,5 a 1,3 con un punto de costo.
-4. No se evaluaron las reglas de Lucid Trading (tipo de drawdown, pérdida diaria, consistencia, contratos).
-5. Fills ideales en el backtest, y días de cierre anticipado sin cierre forzado (por ejemplo el 19/06/2026).
+1. **No hay ventaja fuera de tiempo demostrada.** La configuración se eligió mirando diciembre 2023 a noviembre 2026. En 2021-2023 (solo NAS100) dio +35,1 R, t = 0,76. El resultado de 2024 pesa casi la mitad del total.
+2. **Sin ventaja neta demostrada**: t neto de 0,5 a 1,3 con un punto de costo; en NAS100 2021-2023 el equilibrio es 0,67 puntos.
+3. No se evaluaron las reglas de Lucid Trading (tipo de drawdown, pérdida diaria, consistencia, contratos).
+4. Fills ideales en el backtest, y días de cierre anticipado sin cierre forzado (por ejemplo el 19/06/2026).
+5. NQ y NAS100 con «máx. 3» no se probaron con la gestión del día encendida en los archivos del periodo 2023-2026 (se aplicó por simulación, que es exacta). Solo el archivo de 2021-2023 trae el tope activo.
 
 ## 10. Próximos pasos
 
-1. NQ y NAS100 con **rango desactivado y gestión del día desactivada** (con «Gestión del día: activar» apagado), del 01/12/2023 al 13/11/2026. Con eso se completa la tabla de la sección 2 y se confirma «máx. 3» con el rango OFF.
-2. **Prueba fuera de tiempo**: la configuración recomendada en NAS100 (CFD) del 01/03/2021 al 30/11/2023, con «Gestión del día: activar» **encendido** y solo «máximo de operaciones por día = 3». NAS100 ya mostró el mismo comportamiento que los futuros, y es el único con historial anterior a diciembre de 2023.
-3. Demo de 4 a 8 semanas con los costos reales de tu cuenta.
+1. **Demo de 4 a 8 semanas** con la configuración recomendada y los costos reales de cada cuenta (MNQ y CFD).
+2. Medir comisión, spread y slippage reales. Con NAS100 el equilibrio histórico va de 0,7 a 1,9 puntos según el periodo.
+3. Si quieres más evidencia fuera de tiempo, probar otros mercados o periodos (por ejemplo NAS100 antes de 2021 si hay datos de 1 minuto) con la misma configuración, sin cambiar nada.
