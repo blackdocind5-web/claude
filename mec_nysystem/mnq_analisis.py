@@ -55,7 +55,7 @@ def sim_crono(ts, pesos, curva=False):
                calmar=round(cagr / mdd, 2), sharpe=round(mw / sd * math.sqrt(52), 2), sortino=round(mw / dn * math.sqrt(52), 2), bajo_agua=uw,
                mes_pos=round(100 * sum(m["pct"] > 0 for m in meses) / len(meses)), peor_mes=min(m["pct"] for m in meses), peor_sem=round(min(sem) * 100, 1),
                anios={"2025": round((e25 / A.CAP0 - 1) * 100, 1), "2026": round((eq / e25 - 1) * 100, 1)}, final=round(eq))
-    if curva: out["curve"] = A.diaria(cur)
+    if curva: out["curve"] = A.diaria(cur); out["meses"] = meses
     return out
 
 def mc_crono(ts, pesos, sims=3000, seed=7):

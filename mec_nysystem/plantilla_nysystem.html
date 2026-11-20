@@ -190,7 +190,11 @@ tr.hl td:first-child{border-radius:12px 0 0 12px} tr.hl td:last-child{border-rad
 footer{display:grid;gap:8px;border-top:1px solid var(--grid);padding-top:24px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 /* ---------- NY SYSTEM: ruta de 6 paradas, la última pendiente ---------- */
-.road{grid-template-columns:repeat(3,minmax(0,1fr))}
+.road{grid-template-columns:repeat(4,minmax(0,1fr))}
+.fw{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fw ul{margin:0;padding-left:18px;display:grid;gap:8px;color:var(--fg2);font-size:14.5px;line-height:1.45}
+.fw .fwl{font-size:13px;font-weight:600}
+@media (max-width:820px){.fw{grid-template-columns:1fr}}
 .road a.soon{background:transparent;border:1px dashed var(--line);cursor:default}
 .road a.soon:hover{transform:none;border-color:var(--line)}
 .road a.soon .n{background:var(--surface2);color:var(--fg3)}
@@ -204,8 +208,8 @@ footer{display:grid;gap:8px;border-top:1px solid var(--grid);padding-top:24px}
 <section class="cover" aria-label="Portada"><h1>NY SYSTEM</h1></section>
 
 <header class="hero">
-  <span class="eyebrow">Capital propio · XAUUSD · informe de avance · 03/11/2026</span>
-  <h2 class="hero-t">¿Merece NY SYSTEM un lugar en la cartera?</h2>
+  <span class="eyebrow">Capital propio · oro y Nasdaq · informe de avance · 20/11/2026</span>
+  <h2 class="hero-t">¿Qué estrategias merecen capital real?</h2>
   <div class="hero-figs" aria-label="Rendimiento anual de NY SYSTEM frente al mercado">
     <div><span class="big num grad" id="h-a"></span><span class="cap" id="h-a-c"></span></div>
     <span class="arrow" aria-hidden="true">vs</span>
@@ -329,7 +333,7 @@ footer{display:grid;gap:8px;border-top:1px solid var(--grid);padding-top:24px}
 <!-- 5 -->
 <section class="stage" id="veredicto" aria-labelledby="tc">
   <div class="final-claim">
-    <span class="st-kicker">Veredicto</span>
+    <span class="st-kicker">5 · Veredicto del oro</span>
     <h2 id="tc" style="font-size:clamp(26px,3.4vw,38px);max-width:32ch;line-height:1.15"></h2>
   </div>
   <div class="panel">
@@ -339,15 +343,195 @@ footer{display:grid;gap:8px;border-top:1px solid var(--grid);padding-top:24px}
     <p class="small" id="tc-n"></p>
   </div>
   <div class="learn" id="lc"></div>
-  <div class="panel alt">
-    <h3>Próxima etapa: Nasdaq (MNQ)</h3>
-    <p class="muted">Este informe crece por etapas. Cuando sumemos la estrategia del Nasdaq, la comparamos con NY SYSTEM y medimos si operar los dos juntos baja la caída sin resignar rendimiento. Un dato a favor: los meses de NY SYSTEM casi no se mueven con los del oro ni con los del Nasdaq.</p>
+  <p class="next"><span class="go" aria-hidden="true">→</span><span>Hasta acá, el oro. Ahora sumamos la estrategia del Nasdaq, con el mismo análisis, y medimos si conviene operarlas juntas.</span></p>
+</section>
+
+<!-- 6 -->
+<section class="stage" id="nq-1" aria-labelledby="tt6">
+  <div class="st-head">
+    <span class="st-num grad">6</span>
+    <span class="st-kicker">NQ | Nasdaq · la estrategia y sus dos gestiones, sin filtros</span>
+    <h2 id="tt6">Qué gestión del Nasdaq tiene ventaja</h2>
+    <p class="q">¿«1TP y 3SL» o «Máx. 3 por día»? ¿Hay una ventaja real después del costo de Multibank?</p>
   </div>
+  <div class="answer"><span class="lbl">Respuesta</span><p id="a6"></p></div>
+  <dl class="ficha" id="f6"></dl>
+  <div class="kpis" id="k6"></div>
+  <div class="years" id="y6"></div>
+  <div class="panel">
+    <h3>Las dos gestiones, frente a frente</h3>
+    <p class="sub">Sin filtros · riesgo de 1% · 1.000 USD iniciales · interés compuesto · netas de costos</p>
+    <div class="tbl"><table id="t6"></table></div>
+  </div>
+  <div class="cols">
+    <div class="panel"><h3>Dónde está la diferencia</h3><p class="sub">Operaciones que toma una sola de las gestiones</p><div class="tbl wrapt"><table id="t6b"></table></div></div>
+    <div class="panel"><h3>«Máx. 3»: qué pasa después de cada resultado</h3><p class="sub">R por operación según el resultado de la operación anterior del día</p><div class="hbars" id="hb6"></div></div>
+  </div>
+  <div class="learn" id="l6"></div>
+</section>
+
+<!-- 7 -->
+<section class="stage" id="nq-2" aria-labelledby="tt7">
+  <div class="st-head">
+    <span class="st-num grad">7</span>
+    <span class="st-kicker">NQ | Filtro por noticias · calendario económico 2025–2026</span>
+    <h2 id="tt7">Qué noticias respetar en el Nasdaq</h2>
+    <p class="q">¿El mismo filtro del oro sirve para el Nasdaq?</p>
+  </div>
+  <div class="answer"><span class="lbl">Respuesta</span><p id="a7"></p></div>
+  <div class="panel">
+    <h3>Resultado según la noticia del día</h3>
+    <p class="sub">Gestión «1TP y 3SL» · una operación puede caer en más de una categoría · R por operación neto de costos</p>
+    <div class="tbl wrapt"><table id="t7"></table></div>
+  </div>
+  <div class="panel">
+    <h3>Cuatro maneras de filtrar, con riesgo de 1%</h3>
+    <p class="sub">Si el día se filtra, no se opera nada ese día</p>
+    <div class="tbl"><table id="t7b"></table></div>
+  </div>
+  <div class="learn" id="l7"></div>
+</section>
+
+<!-- 8 -->
+<section class="stage" id="nq-3" aria-labelledby="tt8">
+  <div class="st-head">
+    <span class="st-num grad">8</span>
+    <span class="st-kicker">NQ | Perfiles de riesgo · con el filtro sugerido</span>
+    <h2 id="tt8">Cuánto arriesgar en el Nasdaq</h2>
+    <p class="q">¿Qué rinde y cuánto cae cada perfil?</p>
+  </div>
+  <div class="answer"><span class="lbl">Respuesta</span><p id="a8"></p></div>
+  <div class="panel">
+    <h3>Evolución de la cuenta por perfil</h3>
+    <p class="sub">1.000 USD iniciales · interés compuesto · escala logarítmica · comparado con el Nasdaq</p>
+    <div class="legend" id="lg8"></div>
+    <div class="chart" id="c8"></div>
+  </div>
+  <div class="panel">
+    <h3>Ficha de cada perfil</h3>
+    <div class="tbl"><table id="t8"></table></div>
+    <p class="small">Simulaciones: 3.000 mezclas al azar de días completos de operación.</p>
+  </div>
+  <div class="cols">
+    <div class="panel">
+      <h3>Capital mínimo para ejecutar cada perfil</h3>
+      <p class="sub">En Multibank el lote mínimo de NAS100 es 0,01: 0,20 USD por punto</p>
+      <div class="tbl"><table id="t8b"></table></div>
+    </div>
+    <div class="panel">
+      <h3>Cuánto pesa el costo</h3>
+      <p class="sub">Ventaja por operación según el costo total ida y vuelta, en puntos</p>
+      <div class="tbl"><table id="t8c"></table></div>
+      <p class="small" id="t8c-n"></p>
+    </div>
+  </div>
+  <div class="learn" id="l8"></div>
+</section>
+
+<!-- 9 -->
+<section class="stage" id="nq-4" aria-labelledby="tt9">
+  <div class="st-head">
+    <span class="st-num grad">9</span>
+    <span class="st-kicker">NQ | Robustez y patrones</span>
+    <h2 id="tt9">Qué tan firme es la ventaja del Nasdaq</h2>
+    <p class="q">¿Funciona parejo, o depende de unos pocos días y horarios?</p>
+  </div>
+  <div class="answer"><span class="lbl">Respuesta</span><p id="a9"></p></div>
+  <div class="years" id="y9"></div>
+  <div class="panel">
+    <h3>Resultado de cada mes (R)</h3>
+    <p class="sub">Con el filtro sugerido · verde: mes ganador · naranja: mes perdedor</p>
+    <div class="chart" id="m9"></div>
+  </div>
+  <div class="cols">
+    <div class="panel"><h3>Por día de la semana</h3><p class="sub">R por operación · con el filtro sugerido</p><div class="hbars" id="hb9-dia"></div></div>
+    <div class="panel"><h3>Por hora de entrada (Nueva York)</h3><p class="sub">R por operación · con el filtro sugerido</p><div class="hbars" id="hb9-hora"></div></div>
+  </div>
+  <div class="panel">
+    <h3>Detalle de patrones</h3>
+    <div class="tbl"><table id="t9"></table></div>
+  </div>
+  <div class="learn" id="l9"></div>
+</section>
+
+<!-- 10 -->
+<section class="stage" id="cartera" aria-labelledby="tt10">
+  <div class="st-head">
+    <span class="st-num grad">10</span>
+    <span class="st-kicker">Oro + Nasdaq | Gestión híbrida en orden cronológico</span>
+    <h2 id="tt10">¿Sumar el Nasdaq mejora la cartera?</h2>
+    <p class="q">Las dos estrategias juntas, respetando la hora real de apertura y cierre de cada operación.</p>
+  </div>
+  <div class="answer"><span class="lbl">Respuesta</span><p id="a10"></p></div>
+  <div class="panel">
+    <h3>Evolución de la cuenta</h3>
+    <p class="sub">1.000 USD iniciales · el tamaño de cada operación se calcula con el capital disponible al abrir · escala logarítmica</p>
+    <div class="legend" id="lg10"></div>
+    <div class="chart" id="c10"></div>
+  </div>
+  <div class="panel">
+    <h3>Combinaciones de riesgo</h3>
+    <div class="tbl"><table id="t10"></table></div>
+    <p class="small" id="t10-n"></p>
+  </div>
+  <div class="learn" id="l10"></div>
+</section>
+
+<!-- 11 -->
+<section class="stage" id="flujo" aria-labelledby="tt11">
+  <div class="st-head">
+    <span class="st-num grad">11</span>
+    <span class="st-kicker">Flujo de caja · semana a semana y mes a mes</span>
+    <h2 id="tt11">¿Qué estrategia da una ganancia más constante?</h2>
+    <p class="q">El objetivo es una rentabilidad por goteo: ganar seguido, no solo ganar al final.</p>
+  </div>
+  <div class="answer"><span class="lbl">Respuesta</span><p id="a11"></p></div>
+  <div class="panel">
+    <h3>Constancia de la ganancia</h3>
+    <p class="sub">Todas las semanas y meses del período, también los que no tuvieron operaciones · 08/01/2025 al 26/10/2026</p>
+    <div class="tbl"><table id="t11"></table></div>
+    <p class="small" id="t11-n"></p>
+  </div>
+  <div class="panel">
+    <h3>Cada semana del oro solo, con riesgo de 1,5%</h3>
+    <p class="sub">Resultado semanal en % de la cuenta · las semanas sin barra no tuvieron operaciones</p>
+    <div class="chart" id="w11a"></div>
+  </div>
+  <div class="panel">
+    <h3>Cada semana de oro 1,5% + Nasdaq 0,25%</h3>
+    <p class="sub">Resultado semanal en % de la cuenta</p>
+    <div class="chart" id="w11b"></div>
+  </div>
+  <div class="learn" id="l11"></div>
+</section>
+
+<!-- 12 -->
+<section class="stage" id="decision" aria-labelledby="tt12">
+  <div class="final-claim">
+    <span class="st-kicker">12 · Decisión para capital real</span>
+    <h2 id="tt12" style="font-size:clamp(26px,3.4vw,38px);max-width:32ch;line-height:1.15"></h2>
+  </div>
+  <div class="panel">
+    <h3>Las dos estrategias, criterio por criterio</h3>
+    <p class="sub">Oro con el filtro sugerido · Nasdaq con «1TP y 3SL» y el filtro sugerido · netas de costos</p>
+    <div class="tbl"><table id="t12"></table></div>
+  </div>
+  <div class="fw">
+    <div class="panel"><h3>Oro · NY SYSTEM</h3><b class="fwl pos">Fortalezas</b><ul id="fx-f"></ul><b class="fwl neg">Debilidades</b><ul id="fx-d"></ul></div>
+    <div class="panel"><h3>Nasdaq · «1TP y 3SL»</h3><b class="fwl pos">Fortalezas</b><ul id="fn-f"></ul><b class="fwl neg">Debilidades</b><ul id="fn-d"></ul></div>
+  </div>
+  <div class="panel">
+    <h3>¿Los datos confirman tu criterio?</h3>
+    <div class="learn" id="l12h"></div>
+  </div>
+  <div class="answer"><span class="lbl">Decisión</span><p id="a12"></p></div>
+  <div class="learn" id="l12"></div>
   <footer>
-    <p class="caveat">Resultados de backtest: operaciones de TradingView reproducidas con interés compuesto. Cada operación descuenta el costo de Multibank para XAUUSD (0,05 USD por onza ida y vuelta: spread más comisión), medido contra la distancia del stop. No se modeló deslizamiento extra en noticias. Un resultado pasado no asegura el futuro.</p>
+    <p class="caveat">Resultados de backtest: operaciones de TradingView reproducidas con interés compuesto. Cada operación descuenta el costo de Multibank, medido contra la distancia del stop: XAUUSD 0,05 USD por onza ida y vuelta; NAS100 1,1 puntos (spread promedio 0,8 más comisión de 6 USD por lote de 20 contratos). No se modeló deslizamiento extra en noticias. Un resultado pasado no asegura el futuro.</p>
     <p class="small" id="ft"></p>
   </footer>
 </section>
+
 
 </div>
 
@@ -389,7 +573,7 @@ function lineChart(el, series, {h = 300, log = false} = {}) {
   if (!log) { const pad = (hi - lo) * .06; lo -= pad; hi += pad; } else { lo *= .96; hi *= 1.04; }
   const x = d => m.l + (d - T0) / (T1 - T0) * (W - m.l - m.r);
   const y = v => m.t + (1 - (f(v) - f(lo)) / (f(hi) - f(lo))) * (H - m.t - m.b);
-  let ticks = log ? [800, 1000, 1250, 1500, 2000, 2500, 3000].filter(v => v >= lo && v <= hi) : niceTicks(lo, hi);
+  let ticks = log ? [600, 800, 1000, 1250, 1500, 2000, 2500, 3000, 4000].filter(v => v >= lo && v <= hi) : niceTicks(lo, hi);
   let g = '';
   ticks.forEach(v => { g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end">${usd(v)}</text>`; });
   g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(1000)}" y2="${y(1000)}" stroke="var(--fg3)" stroke-dasharray="2 4" opacity=".7"/>`;
@@ -439,21 +623,25 @@ function barChart(el, items, {h = 200, unit = 'R', dec = 1} = {}) {
 const hbars = (items, max) => items.map(it => `<div class="hbar"><span>${it.l}</span><div class="tr"><div class="fl" style="width:${Math.max(1.5, Math.abs(it.v) / max * 100)}%;background:${it.v >= 0 ? 'var(--green)' : 'var(--orange)'}"></div></div><span class="vv ${cl(it.v)}">${sg(it.v, 2)}</span></div>`).join('');
 
 /* ---------------- portada y ruta ---------------- */
-$('#h-a').textContent = pc(P1.cagr, 0); $('#h-a-c').textContent = `anual · NY SYSTEM con riesgo de 1% · caída máx. ${pc(-P1.mdd)}`;
-$('#h-o').textContent = pc(BO.cagr, 0); $('#h-o-c').textContent = `anual · oro · caída máx. ${pc(-BO.mdd)}`;
-$('#h-n').textContent = pc(BN.cagr, 0); $('#h-n-c').textContent = `anual · Nasdaq · caída máx. ${pc(-BN.mdd)}`;
-$('#h-lead').innerHTML = `Con riesgo de 1% por operación, NY SYSTEM llevó 1.000 USD a ${usd(P1.final)} USD (${pc(P1.ret)}), con una caída máxima de ${pc(-P1.mdd)}. Comprar oro y esperar rindió ${pc(BO.ret)}, pero con una caída de ${pc(-BO.mdd)}. La estrategia gana por riesgo asumido, no por rendimiento bruto. La advertencia: en 2026 la ventaja por operación se redujo a la mitad.`;
-$('#h-pill').textContent = `Mismo punto de partida para todo: 1.000 USD, operaciones del backtest entre el ${D.meta.desde} y el ${D.meta.hasta}, en horario de Nueva York, netas del costo de Multibank.`;
+$('#h-a').textContent = pc(P1.cagr, 0); $('#h-a-c').textContent = `anual · oro (NY SYSTEM) con 1% · caída máx. ${pc(-P1.mdd)}`;
+$('#h-o').textContent = pc(D.nq.perfiles.find(p => p.p === 1).cagr, 0); $('#h-o-c').textContent = `anual · Nasdaq («1TP y 3SL») con 1% · caída máx. ${pc(-D.nq.perfiles.find(p => p.p === 1).mdd)}`;
+$('#h-n').textContent = pc(BN.cagr, 0); $('#h-n-c').textContent = `anual · Nasdaq, comprar y mantener · caída máx. ${pc(-BN.mdd)}`;
+$('#h-lead').innerHTML = `Dos estrategias de la sesión de Nueva York, medidas con el mismo criterio. El oro gana ${sg(PS.base.R_op, 2)}R por operación con una caída de ${pc(-P1.mdd)} al 1%: es la que va a capital real. El Nasdaq rinde más en bruto con 1%, pero cae ${pc(-D.nq.perfiles.find(p => p.p === 1).mdd)} y su ventaja (${sg(D.nq.fbase.R_op, 3)}R por operación) todavía no se distingue del azar. Su aporte es otro: junto al oro, sube las semanas positivas de ${nf(D.hibrida.find(h => h.px === 1.5 && !h.pn).fl.sem_pos, 0)}% a ${nf(D.hibrida.find(h => h.px === 1.5 && h.pn === 0.25).fl.sem_pos, 0)}%.`;
+$('#h-pill').textContent = `Mismo punto de partida para todo: 1.000 USD, operaciones del backtest entre el ${D.meta.desde} y el ${D.meta.hasta}, en horario de Nueva York, netas de los costos de Multibank.`;
 const road = [
-  ['etapa-1', 1, 'La estrategia', sg(B.R_op, 2) + 'R', `por operación · win rate ${nf(B.wr)}%`],
-  ['etapa-2', 2, 'Filtro por noticias', sg(PS.base.R_op, 2) + 'R', `por operación · sin CPI ni NFP`],
-  ['etapa-3', 3, 'Perfiles de riesgo', pc(P1.cagr), `anual con riesgo de 1%`],
-  ['etapa-4', 4, 'Robustez', sg(PS.anios['2026'].R_op, 2) + 'R', `por operación en 2026 · era ${sg(PS.anios['2025'].R_op, 2)}R`],
-  ['veredicto', 5, 'Veredicto', 'Sí, con 1%', 'y validando 2023–2024'],
-  ['', 6, 'Nasdaq (MNQ)', 'Próximamente', 'diversificación de la cartera']];
-$('#road').innerHTML = road.map(([id, n, t, r, d], i) => i === 5
-  ? `<a class="soon" aria-disabled="true"><span class="n">${n}</span><span class="t">${t}</span><span class="r num" style="color:var(--fg3);font-size:22px">${r}</span><span class="d">${d}</span></a>`
-  : `<a href="#${id}" class="${i === 4 ? 'final' : ''}"><span class="n">${n}</span><span class="t">${t}</span><span class="r num ${i === 4 ? 'grad' : 'pos'}">${r}</span><span class="d">${d}</span></a>`).join('');
+  ['etapa-1', 1, 'Oro · la estrategia', sg(B.R_op, 2) + 'R', `por operación · win rate ${nf(B.wr)}%`],
+  ['etapa-2', 2, 'Oro · noticias', sg(PS.base.R_op, 2) + 'R', 'por operación · sin CPI ni NFP'],
+  ['etapa-3', 3, 'Oro · perfiles', pc(P1.cagr), 'anual con riesgo de 1%'],
+  ['etapa-4', 4, 'Oro · robustez', sg(PS.anios['2026'].R_op, 2) + 'R', `por operación en 2026 · era ${sg(PS.anios['2025'].R_op, 2)}R`],
+  ['veredicto', 5, 'Veredicto del oro', 'Sí', 'con 1% a 1,5%'],
+  ['nq-1', 6, 'Nasdaq · gestiones', '1TP y 3SL', `${sg(D.nq.gestiones[0].R_op, 3)}R por op. · «Máx. 3» descartada`],
+  ['nq-2', 7, 'Nasdaq · noticias', sg(D.nq.fbase.R_op, 3) + 'R', 'por operación · sin CPI ni NFP'],
+  ['nq-3', 8, 'Nasdaq · perfiles', pc(-D.nq.perfiles.find(p => p.p === 1).mdd), 'caída máxima con 1%'],
+  ['nq-4', 9, 'Nasdaq · robustez', 'Valor t ' + nf(D.nq.fbase.t), 'ventaja sin confirmar'],
+  ['cartera', 10, 'Oro + Nasdaq', pc(D.hibrida.find(h => h.px === 1.5 && h.pn === 0.25).cagr), 'anual · 1,5% + 0,25%'],
+  ['flujo', 11, 'Flujo de caja', nf(D.hibrida.find(h => h.px === 1.5 && h.pn === 0.25).fl.sem_pos, 0) + '%', 'de semanas positivas, juntas'],
+  ['decision', 12, 'Decisión', 'Oro en vivo', 'Nasdaq, primero en demo']];
+$('#road').innerHTML = road.map(([id, n, t, r, d], i) => `<a href="#${id}" class="${i === 11 ? 'final' : ''}"><span class="n">${n}</span><span class="t">${t}</span><span class="r num ${i === 11 ? 'grad' : i === 7 ? 'neg' : 'pos'}" style="${r.length > 8 ? 'font-size:20px' : ''}">${r}</span><span class="d">${d}</span></a>`).join('');
 
 /* ---------------- 1 ---------------- */
 $('#a1').innerHTML = `Sí. En ${B.n} operaciones ganó ${nf(B.wr)}% de las veces, con riesgo y objetivo iguales (1:1). Eso deja ${sg(B.R_op, 2)}R por operación y ${sg(B.R, 1)}R en total, con un valor t de ${nf(B.t)}: difícil que sea azar. El costo de Multibank casi no pesa: ${nf(B.costo_R * 100, 1)}% de R por operación.`;
@@ -553,6 +741,202 @@ $('#lc').innerHTML = learn([
   ['Próximos pasos', 'Exportar 2023 y 2024 con los mismos parámetros. Si la ventaja se sostiene, operarla en vivo con 1% y no operar CPI ni NFP. Revisar cada trimestre y sumar la estrategia del Nasdaq.']]);
 $('#ft').textContent = `Fuentes: lista de operaciones del Strategy Tester de TradingView (XAU_ATR, ${B.n} operaciones), calendario económico de Nueva York 2025–2026 (cargado hasta el ${D.meta.cal_hasta}) y precios de oro (XAUUSD) y Nasdaq (MNQ) de las exportaciones de TradingView, anclados al precio de enero de 2025 y al del 03/11/2026.`;
 
+/* ================= NASDAQ (NQ) ================= */
+const Q = D.nq, QR = Q.base, QB = Q.fbase, QP = Q.perfiles;
+const qp = p => QP.find(x => x.p === p), Q05 = qp(0.5), Q1 = qp(1), Q025 = qp(0.25);
+const HB = (px, pn) => D.hibrida.find(h => h.px === px && h.pn === pn);
+const NOMQ = {'Mínimo': 'Mínimo', Conservador: 'Conservador', Moderado: 'Moderado', 'Moderado+': 'Moderado alto', Arriesgado: 'Arriesgado'};
+const rp = p => nf(p, p === 0.25 ? 2 : p % 1 ? 1 : 0) + '%';
+const qn = p => `${NOMQ[p.nombre]} · ${rp(p.p)}`;
+const G1 = Q.gestiones.find(g => g.nombre === '1TP y 3SL'), G3 = Q.gestiones.find(g => g.nombre === 'Máx. 3 por día');
+const tTP = Q.tras.find(x => x.k === 'Tras un TP'), dif3 = Q.diferencia[1];
+const FQ = Q.filtros, FQ0 = FQ[0], FQ1 = FQ[1];
+const QA25 = Q.fanios['2025'], QA26 = Q.fanios['2026'];
+const hm = (px, pn) => (px ? `Oro ${rp(px)}` : '') + (px && pn ? ' + ' : '') + (pn ? `Nasdaq ${rp(pn)}` : '');
+
+/* ---------------- 6 ---------------- */
+$('#a6').innerHTML = `«1TP y 3SL». Rinde ${sg(G1.R_op, 3)}R por operación contra ${sg(G3.R_op, 3)}R de «Máx. 3 por día», y con riesgo de 1% da ${pc(G1.cagr)} anual contra ${pc(G3.cagr)}. La diferencia son las operaciones que «Máx. 3» toma después de un TP: pierden ${sg(tTP.R_op, 2)}R cada una. Pero aun la mejor gestión tiene una ventaja chica: valor t de ${nf(G1.t)}, lejos del ${nf(B.t)} del oro.`;
+$('#f6').innerHTML = [
+  ['Activo', 'NQ (Nasdaq 100). En Multibank se opera como CFD NAS100: 20 USD por punto por lote'],
+  ['Horario', 'Sesión de Nueva York, entradas entre 09:30 y 10:59'],
+  ['Señales', 'EXT y COR'],
+  ['Salida', 'Stop, objetivo 1:2 o break even (BE)'],
+  ['Gestión «1TP y 3SL»', 'Deja de operar en el día con el primer TP o con el tercer stop. Los BE no cuentan'],
+  ['Gestión «Máx. 3 por día»', 'Hasta 3 operaciones por día, sin importar el resultado'],
+  ['Frecuencia', `${nf(QR.ops_sem, 1)} operaciones por semana · ${QR.dias} días operados`],
+  ['Duración típica', `${QR.dur} minutos (mediana)`],
+  ['Stop típico', `${nf(QR.dist_med, 1)} puntos (mediana) · ${nf(QR.dist_p90, 1)} puntos en el 90% de los casos`],
+  ['Período', `${D.meta.desde} al ${D.meta.hasta} (ventana común con el oro)`]
+].map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join('');
+$('#k6').innerHTML = kpi('Operaciones con TP', nf(QR.tp) + '%', `BE ${nf(QR.be)}% · stop ${nf(QR.sl)}%`, '', true) +
+  kpi('R por operación', sg(QR.R_op, 3), `valor t ${nf(QR.t)}`, 'pos', true) +
+  kpi('Resultado total', sg(QR.R) + 'R', `${QR.n} operaciones`, 'pos') +
+  kpi('Factor de beneficio', nf(QR.pf, 2), `gana ${nf(QR.pf, 2)} por cada 1 que pierde`) +
+  kpi('Payoff', nf(QR.payoff, 2), 'ganancia media / pérdida media') +
+  kpi('Peor racha', QR.racha_sl + ' stops', 'seguidos (los BE no la cortan)', 'neg') +
+  kpi('Peor día', sg(QR.peor_dia, 1) + 'R', `días positivos: ${nf(QR.dia_pos, 0)}%`, 'neg') +
+  kpi('Costo por operación', nf(QR.costo_R, 3) + 'R', '1,1 puntos ida y vuelta');
+const yrq = (y, o) => `<div class="year"><div class="yh"><b>${y}</b><span class="num ${cl(o.R_op)}">${sg(o.R_op, 3)}R <span class="small">por op.</span></span></div><dl>
+  <div><dt>Operaciones con TP</dt><dd>${nf(o.tp)}%</dd></div><div><dt>Factor de beneficio</dt><dd>${nf(o.pf, 2)}</dd></div><div><dt>Valor t</dt><dd>${nf(o.t)}</dd></div>
+  <div><dt>Operaciones</dt><dd>${o.n}</dd></div><div><dt>Resultado</dt><dd class="${cl(o.R)}">${sg(o.R)}R</dd></div><div><dt>Peor racha de stops</dt><dd>${o.racha_sl}</dd></div></dl></div>`;
+$('#y6').innerHTML = yrq('2025', Q.anios['2025']) + yrq('2026 (hasta el 26/10)', Q.anios['2026']);
+$('#t6').innerHTML = `<thead><tr><th>Gestión</th><th class="n">Ops.</th><th class="n">TP / BE / stop</th><th class="n">R por op.</th><th class="n">Valor t</th><th class="n">Fact. benef.</th><th class="n">Anual</th><th class="n">Caída máx.</th><th class="n">Sin máximo</th><th></th></tr></thead><tbody>` +
+  [G1, G3].map((g, i) => `<tr${i === 0 ? ' class="hl"' : ''}><td>${g.nombre}</td><td class="n">${g.n}</td><td class="n">${nf(g.tp, 0)} / ${nf(g.be, 0)} / ${nf(g.sl, 0)}%</td><td class="n ${cl(g.R_op)}">${sg(g.R_op, 3)}</td><td class="n">${nf(g.t)}</td><td class="n">${nf(g.pf, 2)}</td><td class="n pos">${pc(g.cagr)}</td><td class="n neg">${pc(-g.mdd)}</td><td class="n">${g.bajo_agua} días</td><td><span class="tag ${i ? 'o' : 'g'}">${i ? 'Descartada' : 'Elegida'}</span></td></tr>`).join('') + '</tbody>';
+$('#t6b').innerHTML = `<thead><tr><th>Operaciones</th><th class="n">Ops.</th><th class="n">R por op.</th><th class="n">Resultado</th></tr></thead><tbody>` +
+  Q.diferencia.map(x => `<tr><td>${x.k}</td><td class="n">${x.n}</td><td class="n ${cl(x.R_op)}">${sg(x.R_op, 3)}</td><td class="n ${cl(x.R)}">${sg(x.R)}R</td></tr>`).join('') + '</tbody>';
+$('#hb6').innerHTML = hbars(Q.tras.map(x => ({l: x.k, v: x.R_op})), Math.max(...Q.tras.map(x => Math.abs(x.R_op))));
+$('#l6').innerHTML = learn([
+  ['Frenar tras un TP es la regla clave', `Después de un TP, la siguiente operación del día pierde ${sg(tTP.R_op, 2)}R en promedio (${tTP.n} casos). «1TP y 3SL» no las toma y por eso gana. Las 4.ª y 5.ª que agrega tras un BE son casi neutras.`],
+  ['Ventaja chica', `${sg(QR.R_op, 3)}R por operación con valor t ${nf(QR.t)}: estadísticamente no se distingue de cero. El oro gana ${sg(B.R_op, 2)}R por operación con valor t ${nf(B.t)}.`],
+  ['Perfil de las rachas', `Con 28% de TP y objetivo 1:2, las rachas son largas: hasta ${QR.racha_sl} stops seguidos y días de ${sg(QR.peor_dia, 1)}R. En el oro, la peor racha fue de ${B.racha_p} pérdidas.`]]);
+
+/* ---------------- 7 ---------------- */
+const RECQ = {
+  'CPI EE. UU.': ['o', 'No operar', 'Pierde en los dos años: 13% de TP. Igual que en el oro, es el peor dato.'],
+  'NFP': ['o', 'No operar', 'Sin ventaja; mismo criterio que en el oro.'],
+  'FOMC (decisión)': ['v', 'Observar', 'Negativo, pero solo en 2025. Sale a las 14:00.'],
+  'ISM': ['v', 'Observar', 'Casi neutro; pierde en 2025 y gana en 2026.'],
+  'Feriado EE. UU.': ['v', 'Observar', 'Casi neutro.'],
+  'Receso fin de año': ['v', 'Observar', 'Neutro.'],
+  'Feriado Europa / R. Unido': ['g', 'Operar', 'Neutro, sin motivo para filtrar.'],
+  'Sin noticias': ['g', 'Operar', 'El grueso de las operaciones.']};
+const n7 = Q.noticias.slice().sort((a, b) => (a.k === 'Sin noticias') - (b.k === 'Sin noticias') || b.n - a.n);
+$('#t7').innerHTML = `<thead><tr><th>Noticia del día</th><th class="n">Ops.</th><th class="n">TP</th><th class="n">R por op.</th><th class="n">2025</th><th class="n">2026</th><th>Sugerencia</th><th>Por qué</th></tr></thead><tbody>` +
+  n7.map(x => { const r = RECQ[x.k] || ['g', 'Operar', 'Positivo en el total.'];
+    return `<tr${r[0] === 'o' ? ' class="hl"' : ''}><td>${x.k}</td><td class="n">${x.n}</td><td class="n">${nf(x.wr, 0)}%</td><td class="n ${cl(x.R_op)}">${sg(x.R_op, 2)}</td><td class="n ${cl(x.R2025)}">${sg(x.R2025)}R</td><td class="n ${cl(x.R2026)}">${sg(x.R2026)}R</td><td><span class="tag ${r[0]}">${r[1]}</span></td><td class="small" style="min-width:220px">${r[2]}</td></tr>`; }).join('') + '</tbody>';
+const dF = {'Sin filtro': 'Todas las operaciones', 'Filtro sugerido': 'Sin CPI de EE. UU. ni NFP (el mismo del oro)', 'Regla del Nasdaq': 'La regla de Rascacielos (MNQ)', 'Sin datos de las 10:00': 'Filtro sugerido, sin ISM, JOLTS, CB ni PCE'};
+$('#t7b').innerHTML = `<thead><tr><th>Filtro</th><th class="n">Ops.</th><th class="n">TP</th><th class="n">R por op.</th><th class="n">Valor t</th><th class="n">Anual</th><th class="n">Caída máx.</th><th class="n">Calmar</th><th class="n">Sharpe</th><th></th></tr></thead><tbody>` +
+  FQ.map((f, i) => `<tr${i === 1 ? ' class="hl"' : ''}><td>${f.nombre}<div class="small">${dF[f.nombre]}</div></td><td class="n">${f.n}</td><td class="n">${nf(f.wr)}%</td><td class="n pos">${sg(f.R_op, 3)}</td><td class="n">${nf(f.t)}</td><td class="n pos">${pc(f.cagr)}</td><td class="n neg">${pc(-f.mdd)}</td><td class="n">${nf(f.calmar, 2)}</td><td class="n">${nf(f.sharpe, 2)}</td><td>${i === 1 ? '<span class="tag g">Elegido</span>' : i === 0 ? '<span class="tag v">Referencia</span>' : '<span class="tag o">Descartado</span>'}</td></tr>`).join('') + '</tbody>';
+const cpiQ = Q.noticias.find(x => x.k === 'CPI EE. UU.');
+$('#a7').innerHTML = `Sí: el mismo filtro del oro, no operar CPI de EE. UU. ni NFP. El CPI es el peor día también en el Nasdaq (${sg(cpiQ.R_op, 2)}R por operación, ${cpiQ.n} operaciones, pierde en los dos años). Con el filtro, la ventaja sube de ${sg(FQ0.R_op, 3)}R a ${sg(FQ1.R_op, 3)}R y el anual con 1% de ${pc(FQ0.cagr)} a ${pc(FQ1.cagr)}. Sacar los datos de las 10:00 o usar la regla de Rascacielos empeora.`;
+$('#l7').innerHTML = learn([
+  ['Un mismo filtro para todo', 'El CPI de EE. UU. es el peor día en las dos estrategias. Usar la misma regla en el oro y el Nasdaq simplifica la operatoria y evita ajustar cada activo por separado.'],
+  ['Datos de las 10:00', 'ISM, JOLTS y Confianza CB salen justo cuando opera la estrategia. JOLTS y CB ganan; ISM es neutro. Excluirlos empeora el resultado.'],
+  ['Aun filtrada, no alcanza', `Con el filtro el valor t llega a ${nf(FQ1.t)}. Sigue por debajo de 2: la ventaja puede ser real, pero estos datos no alcanzan para confirmarlo.`]]);
+
+/* ---------------- 8 ---------------- */
+$('#a8').innerHTML = `El Nasdaq solo cae mucho para lo que rinde. Con 1% da ${pc(Q1.cagr)} anual, pero con caída de ${pc(-Q1.mdd)}, un peor mes de ${pc(Q1.peor_mes)} y, en las simulaciones, una caída de ${pc(-Q1.mc.dd_p95)} en el 5% de los casos. Por cada punto de caída gana ${nf(Q1.calmar, 1)} puntos de rendimiento; el oro, ${nf(P1.calmar, 1)}. Solo con 0,25% a 0,5% la caída queda en un rango tolerable.`;
+$('#t8').innerHTML = `<thead><tr><th>Perfil</th><th class="n">Anual</th><th class="n">Total</th><th class="n">2025</th><th class="n">2026</th><th class="n">Caída máx.</th><th class="n">Flotante</th><th class="n">Calmar</th><th class="n">Sharpe</th><th class="n">Sortino</th><th class="n">Peor mes</th><th class="n">Peor semana</th><th class="n">Meses +</th><th class="n">Sin máximo</th><th class="n">Peor 5% sim.</th><th class="n">Caída 95% sim.</th><th class="n">P(caída &gt; 20%)</th></tr></thead><tbody>` +
+  QP.map(p => `<tr${p.p === 0.5 ? ' class="hl"' : ''}><td>${qn(p)}</td><td class="n pos">${pc(p.cagr)}</td><td class="n pos">${pc(p.ret)}</td><td class="n ${cl(p.anios['2025'])}">${pc(p.anios['2025'])}</td><td class="n ${cl(p.anios['2026'])}">${pc(p.anios['2026'])}</td><td class="n neg">${pc(-p.mdd)}</td><td class="n neg">${pc(-p.mdd_flot)}</td><td class="n">${nf(p.calmar, 2)}</td><td class="n">${nf(p.sharpe, 2)}</td><td class="n">${nf(p.sortino, 2)}</td><td class="n neg">${pc(p.peor_mes)}</td><td class="n neg">${pc(p.peor_sem)}</td><td class="n">${nf(p.mes_pos, 0)}%</td><td class="n">${p.bajo_agua} días</td><td class="n ${cl(p.mc.cagr_p5)}">${pc(p.mc.cagr_p5)}</td><td class="n neg">${pc(-p.mc.dd_p95)}</td><td class="n">${nf(p.mc.p_dd20)}%</td></tr>`).join('') + '</tbody>';
+$('#t8b').innerHTML = `<thead><tr><th>Perfil</th><th class="n">Ejecutables con 1.000 USD</th><th class="n">Capital mínimo (stop típico)</th><th class="n">Capital mínimo (90% de los stops)</th></tr></thead><tbody>` +
+  Q.capital.map(c => `<tr${c.p === 0.5 ? ' class="hl"' : ''}><td>${NOMQ[c.nombre]} · ${rp(c.p)}</td><td class="n ${c.ok1000 < 80 ? 'neg' : ''}">${nf(c.ok1000, 0)}%</td><td class="n">${usd(c.med)} USD</td><td class="n">${usd(c.p90)} USD</td></tr>`).join('') + '</tbody>';
+$('#t8c').innerHTML = `<thead><tr><th>Costo por operación</th><th class="n">R por op.</th><th class="n">Valor t</th></tr></thead><tbody>` +
+  Q.costo_sens.map(c => `<tr${c.pt === 1.1 ? ' class="hl"' : ''}><td>${c.pt === 0 ? 'Sin costo' : nf(c.pt, 1) + ' puntos'}${c.pt === 1.1 ? ' (Multibank)' : ''}</td><td class="n ${cl(c.R_op)}">${sg(c.R_op, 3)}</td><td class="n">${nf(c.t)}</td></tr>`).join('') + '</tbody>';
+const c0 = Q.costo_sens[0], c11 = Q.costo_sens[1];
+$('#t8c-n').textContent = `El costo se lleva el ${nf(100 * (c0.R_op - c11.R_op) / c0.R_op, 0)}% de la ventaja. En el oro se lleva menos del 2%.`;
+$('#l8').innerHTML = learn([
+  ['Mínimo · 0,25%', `${pc(Q025.cagr)} anual con caída de ${pc(-Q025.mdd)}. Con 1.000 USD solo se puede ejecutar el ${nf(Q.capital[0].ok1000, 0)}% de las operaciones: hacen falta unos ${usd(Q.capital[0].med)} USD.`],
+  ['Conservador · 0,5%', `${pc(Q05.cagr)} anual con caída de ${pc(-Q05.mdd)}. En el peor 5% de las simulaciones rinde ${pc(Q05.mc.cagr_p5)}: casi cero en dos años.`],
+  ['Moderado y más', `Desde 1% la probabilidad de caer más de 20% supera el ${nf(Q1.mc.p_dd20, 0)}%. Para un perfil que busca goteo, no es una opción razonable.`]]);
+
+/* ---------------- 9 ---------------- */
+const MQ = Q.meses_R.map(m => ({v: m.R, label: MES[+m.mes.slice(5) - 1], year: m.mes.endsWith('-01') ? m.mes.slice(0, 4) : '', title: `${MES[+m.mes.slice(5) - 1]} ${m.mes.slice(0, 4)}`}));
+const mneg = Q.meses_R.filter(m => m.R < 0).length;
+const fq = x => Q.franja.find(f => f.k === x), o3 = Q.orden.find(x => x.k === '3.ª del día');
+$('#a9').innerHTML = `Al revés que el oro, mejora: la ventaja pasó de ${sg(QA25.R_op, 3)}R en 2025 a ${sg(QA26.R_op, 3)}R en 2026. Pero ninguno de los dos años es concluyente por sí solo (valor t ${nf(QA25.t)} y ${nf(QA26.t)}), ${mneg} de ${Q.meses_R.length} meses terminan en pérdida, y buena parte del resultado viene de dos patrones encontrados buscando: la franja de 10:15 a 10:29 y la tercera operación del día.`;
+$('#y9').innerHTML = yrq('2025 · con filtro', QA25) + yrq('2026 · con filtro', QA26);
+const DQ = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'].map(d => Q.dia.find(x => x.k === d));
+const HQ = ['09:30–09:44', '09:45–09:59', '10:00–10:14', '10:15–10:29', '10:30–10:59'].map(fq);
+const mq = Math.max(...DQ.concat(HQ).map(x => Math.abs(x.R_op)));
+$('#hb9-dia').innerHTML = hbars(DQ.map(x => ({l: x.k, v: x.R_op})), mq);
+$('#hb9-hora').innerHTML = hbars(HQ.map(x => ({l: x.k, v: x.R_op})), mq);
+const ordQ = ['1.ª del día', '2.ª del día', '3.ª del día', '4.ª o más'].map(k => Q.orden.find(x => x.k === k)).filter(Boolean);
+const patQ = [['Día', DQ], ['Hora de entrada', HQ], ['Orden en el día', ordQ], ['Señal', Q.senal], ['Dirección', Q.lado]];
+$('#t9').innerHTML = `<thead><tr><th>Grupo</th><th class="n">Ops.</th><th class="n">TP</th><th class="n">R por op.</th><th class="n">Valor t</th><th class="n">Resultado</th><th class="n">2025</th><th class="n">2026</th></tr></thead><tbody>` +
+  patQ.map(([g, xs]) => `<tr><td colspan="8" class="small" style="padding-top:18px">${g}</td></tr>` + xs.map(x => `<tr><td>${x.k}</td><td class="n">${x.n}</td><td class="n">${nf(x.wr, 0)}%</td><td class="n ${cl(x.R_op)}">${sg(x.R_op, 3)}</td><td class="n">${nf(x.t)}</td><td class="n ${cl(x.R)}">${sg(x.R)}R</td><td class="n ${cl(x.R2025)}">${sg(x.R2025)}R</td><td class="n ${cl(x.R2026)}">${sg(x.R2026)}R</td></tr>`).join('')).join('') + '</tbody>';
+const o1 = Q.orden.find(x => x.k === '1.ª del día'), f1015 = fq('10:15–10:29');
+$('#l9').innerHTML = learn([
+  ['La primera operación no gana', `La 1.ª del día da ${sg(o1.R_op, 3)}R por operación. El resultado viene de la 3.ª, que se toma tras dos operaciones sin TP: ${sg(o3.R_op, 3)}R (valor t ${nf(o3.t)}, ${o3.n} casos).`],
+  ['Un horario fuerte', `Las entradas de 10:15 a 10:29 dan ${sg(f1015.R_op, 3)}R (valor t ${nf(f1015.t)}), y ganan en los dos años. En la estrategia MNQ anterior, también era la mejor franja.`],
+  ['Por qué no los aplicamos', 'Son 2 resultados buenos entre más de 20 grupos mirados. Si se usan para recortar, el backtest mejora seguro, pero la operativa real no necesariamente. Primero hay que verlos en 2023–2024.']]);
+
+/* ---------------- 10 ---------------- */
+const X15 = HB(1.5, 0), X2 = HB(2, 0), X1 = HB(1, 0), N05 = HB(0, 0.5), H1 = HB(1.5, 0.25), H2 = HB(1.5, 0.5), H0 = HB(1, 0.25), H3 = HB(1, 1);
+$('#a10').innerHTML = `Mejora la constancia, no el rendimiento. Oro 1,5% + Nasdaq 0,25% rinde ${pc(H1.cagr)} anual con caída de ${pc(-H1.mdd)}. Oro solo al 2% rinde ${pc(X2.cagr)} con caída de ${pc(-X2.mdd)}: a riesgo parecido, el oro solo gana un poco más. La mezcla tiene el mejor Sharpe de todas (${nf(H1.sharpe, 2)} contra ${nf(X2.sharpe, 2)}). Darle al Nasdaq el mismo riesgo que al oro empeora todo.`;
+const filas10 = [X1, X15, X2, N05, H0, H1, H2, H3];
+$('#t10').innerHTML = `<thead><tr><th>Gestión</th><th class="n">Anual</th><th class="n">Caída máx.</th><th class="n">Calmar</th><th class="n">Sharpe</th><th class="n">Sortino</th><th class="n">Meses +</th><th class="n">Peor mes</th><th class="n">Sin máximo</th><th class="n">Peor 5% sim.</th><th class="n">Caída 95% sim.</th></tr></thead><tbody>` +
+  filas10.map(h => `<tr${h === H1 ? ' class="hl"' : ''}><td>${hm(h.px, h.pn)}</td><td class="n pos">${pc(h.cagr)}</td><td class="n neg">${pc(-h.mdd)}</td><td class="n">${nf(h.calmar, 2)}</td><td class="n">${nf(h.sharpe, 2)}</td><td class="n">${nf(h.sortino, 2)}</td><td class="n">${nf(h.mes_pos, 0)}%</td><td class="n neg">${pc(h.peor_mes)}</td><td class="n">${h.bajo_agua} días</td><td class="n ${cl(h.mc.cagr_p5)}">${pc(h.mc.cagr_p5)}</td><td class="n neg">${pc(-h.mc.dd_p95)}</td></tr>`).join('') + '</tbody>';
+$('#t10-n').textContent = `Correlación entre las dos estrategias: ${sg(D.hib_meta.corr_mes, 2)} mensual y ${sg(D.hib_meta.corr_dia, 2)} diaria (${D.hib_meta.dias_ambos} días en que operaron las dos). Las simulaciones mezclan días completos, con las operaciones de los dos activos de ese día.`;
+$('#l10').innerHTML = learn([
+  ['Por qué suma poco', `El Nasdaq aporta ${sg(QB.R_op, 3)}R por operación con mucha oscilación. Mezclado con el oro, que gana ${sg(PS.base.R_op, 2)}R, diluye la calidad: por eso a igual caída rinde un poco menos que subir el oro.`],
+  ['Por qué igual puede servir', `Opera todos los días y casi no se mueve con el oro. Eso llena las semanas en que el oro no opera, que es justo la debilidad del oro.`],
+  ['El peso justo', `Con 0,25% en el Nasdaq la mezcla mejora el Sharpe. Con 0,5% la caída sube a ${pc(-H2.mdd)} y con 1% a ${pc(-H3.mdd)}: el Nasdaq empieza a mandar sobre la cuenta.`]]);
+
+/* ---------------- 11 ---------------- */
+const filas11 = [X1, X15, N05, H0, H1, H2];
+$('#t11').innerHTML = `<thead><tr><th>Gestión</th><th class="n">Ops. por semana</th><th class="n">Semanas con ops.</th><th class="n">Semanas +</th><th class="n">Semanas −</th><th class="n">Semana típica</th><th class="n">Peor semana</th><th class="n">Máx. semanas seguidas sin ganar</th><th class="n">Meses +</th><th class="n">Mes típico</th><th class="n">Peor mes</th><th class="n">Anual</th></tr></thead><tbody>` +
+  filas11.map(h => { const f = h.fl; return `<tr${h === H1 ? ' class="hl"' : ''}><td>${hm(h.px, h.pn)}</td><td class="n">${nf(h.ops_sem, 1)}</td><td class="n">${nf(h.sem_act, 0)}%</td><td class="n pos">${nf(f.sem_pos, 0)}%</td><td class="n neg">${nf(f.sem_neg, 0)}%</td><td class="n ${cl(f.sem_med)}">${pc(f.sem_med, 2)}</td><td class="n neg">${pc(f.peor_sem)}</td><td class="n">${f.racha_sem}</td><td class="n">${nf(f.mes_pos, 0)}%</td><td class="n pos">${pc(f.mes_med, 2)}</td><td class="n neg">${pc(f.peor_mes)}</td><td class="n pos">${pc(h.cagr)}</td></tr>`; }).join('') + '</tbody>';
+$('#t11-n').textContent = `Semana típica y mes típico: la mediana, el resultado que se repite más seguido. Con 10.000 USD, la semana típica de oro 1,5% + Nasdaq 0,25% es de unos ${usd(100 * H1.fl.sem_med)} USD y el mes típico, de unos ${usd(100 * H1.fl.mes_med)} USD (antes del interés compuesto).`;
+$('#a11').innerHTML = `La mezcla. El oro solo gana en el ${nf(X15.fl.sem_pos, 0)}% de las semanas: ${nf(100 - X15.sem_act, 0)}% de las semanas no opera, y llegó a pasar ${X15.fl.racha_sem} semanas seguidas sin ganar. El Nasdaq solo opera todas las semanas pero gana en el ${nf(N05.fl.sem_pos, 0)}%. Juntos, con 1,5% y 0,25%, ganan en el ${nf(H1.fl.sem_pos, 0)}% de las semanas y nunca pasan más de ${H1.fl.racha_sem} semanas sin ganar. Mes a mes, en cambio, el oro solo ya es muy constante: ${nf(X15.fl.mes_pos, 0)}% de meses positivos.`;
+const SW = h => { const w0 = new Date(2025, 0, 6); return h.fl.sem_serie.map((v, i) => { const d = new Date(+w0 + i * 7 * 864e5), m = d.getMonth(), first = d.getDate() <= 7 && m % 3 === 0;
+  return {v, label: first ? MES[m] : '', year: first && m === 0 ? String(d.getFullYear()) : '', title: `Semana del ${d.toLocaleDateString('es-AR', {day: '2-digit', month: '2-digit', year: 'numeric'})}`}; }); };
+$('#l11').innerHTML = learn([
+  ['Tu primer criterio, con datos', `Es cierto que el oro opera poco: ${nf(X15.ops_sem, 1)} operaciones por semana y ${nf(100 - X15.sem_act, 0)}% de semanas sin operar. Semana a semana no da goteo. Mes a mes sí: ${nf(X15.fl.mes_pos, 0)}% de meses positivos y un peor mes de ${pc(X15.fl.peor_mes)} con 1,5%.`],
+  ['El Nasdaq solo no da goteo', `Opera todas las semanas, pero pierde en el ${nf(N05.fl.sem_neg, 0)}% de ellas y su peor mes con 0,5% es de ${pc(N05.fl.peor_mes)}. Mucha actividad, poca constancia.`],
+  ['Lo que sí da goteo', `Las dos juntas: ${nf(H1.fl.sem_pos, 0)}% de semanas positivas, como máximo ${H1.fl.racha_sem} semanas seguidas sin ganar y ${nf(H1.fl.mes_pos, 0)}% de meses positivos. El precio es rendir algo menos que el oro solo al 2% y operar más.`]]);
+
+/* ---------------- 12 ---------------- */
+const XF = HB(1, 0).fl, NF = N05.fl, cx = D.capital, cq = Q.capital;
+const crit = [
+  ['Ventaja por operación', sg(PS.base.R_op, 3) + 'R', sg(QB.R_op, 3) + 'R', 'x'],
+  ['Valor t (¿puede ser azar?)', nf(PS.base.t), nf(QB.t), 'x'],
+  ['Factor de beneficio', nf(PS.base.pf, 2), nf(QB.pf, 2), 'x'],
+  ['Operaciones ganadoras', nf(PS.base.wr) + '%', nf(QB.wr) + '% (más ' + nf(QB.be, 0) + '% de BE)', 'x'],
+  ['Peor racha', PS.base.racha_p + ' pérdidas', QB.racha_sl + ' stops', 'x'],
+  ['Rendimiento anual con 1%', pc(P1.cagr), pc(Q1.cagr), 'n'],
+  ['Caída máxima con 1%', pc(-P1.mdd), pc(-Q1.mdd), 'x'],
+  ['Calmar (rendimiento por punto de caída)', nf(P1.calmar, 1), nf(Q1.calmar, 1), 'x'],
+  ['Caída en el 5% de simulaciones peores, con 1%', pc(-P1.mc.dd_p95), pc(-Q1.mc.dd_p95), 'x'],
+  ['Evolución 2025 → 2026 (R por op.)', `${sg(PS.anios['2025'].R_op, 2)} → ${sg(PS.anios['2026'].R_op, 2)}`, `${sg(QA25.R_op, 2)} → ${sg(QA26.R_op, 2)}`, 'n'],
+  ['Operaciones por semana', nf(X1.ops_sem, 1), nf(N05.ops_sem, 1), 'n'],
+  ['Semanas positivas', nf(XF.sem_pos, 0) + '%', nf(NF.sem_pos, 0) + '%', 'n'],
+  ['Meses positivos', nf(XF.mes_pos, 0) + '%', nf(NF.mes_pos, 0) + '%', 'x'],
+  ['Costo sobre la ventaja', 'menos de 2%', nf(100 * (c0.R_op - c11.R_op) / c0.R_op, 0) + '%', 'x'],
+  ['Capital para el riesgo sugerido (oro 1,5% · Nasdaq 0,25%)', `${usd(cx[2].med)}–${usd(cx[2].p90)} USD`, `${usd(cq[0].med)}–${usd(cq[0].p90)} USD`, 'x'],
+  ['Muestra (operaciones)', String(PS.base.n), String(QB.n), 'n']];
+$('#t12').innerHTML = `<thead><tr><th>Criterio</th><th class="n">Oro</th><th class="n">Nasdaq</th><th>Mejor</th></tr></thead><tbody>` +
+  crit.map(c => `<tr><td>${c[0]}</td><td class="n">${c[1]}</td><td class="n">${c[2]}</td><td><span class="tag ${c[3] === 'x' ? 'g' : 'v'}">${c[3] === 'x' ? 'Oro' : 'Nasdaq'}</span></td></tr>`).join('') + '</tbody>';
+const li = xs => xs.map(x => `<li>${x}</li>`).join('');
+$('#fx-f').innerHTML = li([
+  `Ventaja grande y difícil de explicar por azar: ${sg(PS.base.R_op, 2)}R por operación, valor t ${nf(PS.base.t)}.`,
+  `Muy poca caída: ${pc(-P1.mdd)} con 1%, Calmar ${nf(P1.calmar, 1)}, peor mes ${pc(P1.peor_mes)}.`,
+  `${nf(XF.mes_pos, 0)}% de meses positivos.`,
+  'El costo casi no pesa (menos de 2% de la ventaja).',
+  'No sigue al mercado: correlación casi nula con el oro y el Nasdaq.',
+  'Poca pantalla: una operación de unos 15 minutos, dos como máximo.']);
+$('#fx-d').innerHTML = li([
+  `Opera poco: ${nf(X1.ops_sem, 1)} operaciones por semana y ${nf(100 - X1.sem_act, 0)}% de semanas sin operar.`,
+  `Solo ${nf(XF.sem_pos, 0)}% de semanas positivas; llegó a pasar ${XF.racha_sem} semanas seguidas sin ganar.`,
+  `La ventaja bajó de ${sg(PS.anios['2025'].R_op, 2)}R en 2025 a ${sg(PS.anios['2026'].R_op, 2)}R en 2026.`,
+  `Muestra chica (${PS.base.n} operaciones) y parámetros elegidos con los mismos datos.`,
+  'Con 1.000 USD, el lote mínimo obliga a usar 1,5% para poder abrir casi todas las operaciones.']);
+$('#fn-f').innerHTML = li([
+  `Opera todas las semanas: ${nf(N05.ops_sem, 1)} operaciones por semana.`,
+  `Mejoró en 2026: ${sg(QA25.R_op, 3)}R → ${sg(QA26.R_op, 3)}R por operación.`,
+  `Muestra grande (${QB.n} operaciones) y ganancias de 2,7 veces la pérdida media.`,
+  `Junto al oro, sube las semanas positivas de ${nf(X15.fl.sem_pos, 0)}% a ${nf(H1.fl.sem_pos, 0)}%.`,
+  'Mismo filtro de noticias que el oro.']);
+$('#fn-d').innerHTML = li([
+  `Ventaja chica y no confirmada: ${sg(QB.R_op, 3)}R por operación, valor t ${nf(QB.t)}.`,
+  `El costo se lleva el ${nf(100 * (c0.R_op - c11.R_op) / c0.R_op, 0)}% de la ventaja; si el costo real es 2 puntos, queda en ${sg(Q.costo_sens[3].R_op, 3)}R.`,
+  `Caídas grandes: ${pc(-Q1.mdd)} con 1% y peor mes de ${pc(Q1.peor_mes)}; rachas de hasta ${QB.racha_sl} stops y días de ${sg(QB.peor_dia, 1)}R.`,
+  `Gana en solo ${nf(NF.sem_pos, 0)}% de las semanas: actividad no es constancia.`,
+  'Buena parte del resultado viene de la 3.ª operación del día y de la franja de 10:15 a 10:29, dos patrones sin validar.',
+  `Necesita capital: con 0,25% hacen falta unos ${usd(cq[0].med)} USD; con 1.000 USD se ejecuta el ${nf(cq[0].ok1000, 0)}% de las operaciones.`,
+  'Más pantalla: hasta 5 operaciones por día entre 09:30 y 11:00.']);
+$('#l12h').innerHTML = learn([
+  ['«El oro es rentable»', `Confirmado. Es la estrategia con más ventaja de todo lo que probamos: ${sg(PS.base.R_op, 2)}R por operación y ${nf(XF.mes_pos, 0)}% de meses positivos. La única alerta es que 2026 rinde menos que 2025.`],
+  ['«Opera poco y no da goteo»', `Cierto semana a semana: ${nf(XF.sem_pos, 0)}% de semanas positivas y hasta ${XF.racha_sem} semanas seguidas sin ganar. Falso mes a mes: gana en ${nf(XF.mes_pos, 0)}% de los meses y el peor mes con 1% fue ${pc(XF.peor_mes)}.`],
+  ['«El Nasdaq no es tan rentable»', `Confirmado. Gana ${sg(QB.R_op, 3)}R por operación (el oro, ${sg(PS.base.R_op, 2)}R), con valor t ${nf(QB.t)}, y por cada punto de caída rinde ${nf(Q1.calmar, 1)} contra ${nf(P1.calmar, 1)} del oro. La estrategia MNQ anterior tampoco llegaba (valor t ${nf(D.mnq_bis.t)}).`]]);
+$('#tt12').textContent = 'El oro va a capital real. El Nasdaq todavía no: primero hay que validarlo.';
+$('#a12').innerHTML = `Operar NY SYSTEM en oro con capital real, con 1,5% por operación si la cuenta es de 1.000 USD (o 1% desde unos 1.500 USD) y sin operar CPI de EE. UU. ni NFP. El Nasdaq no tiene, con estos datos, una ventaja demostrada: no conviene arriesgar capital real en él solo. Su único aporte es el goteo semanal, y para eso alcanza con una pata chica de 0,25%, que con 1.000 USD no se puede ejecutar.`;
+$('#l12').innerHTML = learn([
+  ['Ahora', 'Oro en vivo con riesgo fijo. Registrar cada operación con su costo real (spread y deslizamiento) para compararla con el backtest.'],
+  ['En paralelo', 'Nasdaq «1TP y 3SL» en cuenta demo, con el filtro de CPI y NFP. Medir el costo real por operación y la ventaja neta.'],
+  ['Regla para sumar el Nasdaq', 'Que en demo, después de unas 200 operaciones, gane al menos +0,05R por operación neto de costos; que 2023–2024 confirme la ventaja, y que la cuenta llegue a unos 3.500 USD. Recién ahí, sumarlo con 0,25%.'],
+  ['Para los dos', 'Exportar 2023 y 2024 con los mismos parámetros. Si el oro mantiene la ventaja, subir a 1,5%–2%; si el Nasdaq la confirma, se vuelve una pata fija de la cartera.']]);
+$('#ft').textContent = `Fuentes: listas de operaciones del Strategy Tester de TradingView (oro: XAU_ATR, ${B.n} operaciones; Nasdaq: NQ «1TP y 3SL» y «Máx. 3 por día», ${D.meta.nq_desde} al ${D.meta.nq_hasta}, medidas en la ventana común), calendario económico de Nueva York 2025–2026 (cargado hasta el ${D.meta.cal_hasta}), costos de Multibank tomados de MT5 y precios de oro (XAUUSD) y Nasdaq (MNQ) anclados al precio de enero de 2025 y al del 03/11/2026.`;
+
 /* ---------------- dibujar ---------------- */
 function draw() {
   const col = ['--s-esc', '--s-rec', '--s-xau', '--orange'];
@@ -560,6 +944,17 @@ function draw() {
   $('#lg3').innerHTML = leg(s3);
   lineChart($('#c3'), s3, {h: 360, log: true});
   barChart($('#m4'), MR, {h: 210});
+  const colq = ['--fg3', '--s-esc', '--s-rec', '--s-xau', '--orange'];
+  const s8 = QP.map((p, i) => ({name: `${qn(p)} (${pc(p.ret)})`, short: qn(p), color: css(colq[i]), pts: p.curve, w: p.p === 0.5 ? 3 : 1.7, area: p.p === 0.5, dash: i === 4})).concat([bNas()]);
+  $('#lg8').innerHTML = leg(s8);
+  lineChart($('#c8'), s8, {h: 360, log: true});
+  barChart($('#m9'), MQ, {h: 210});
+  const s10 = [{h: X15, c: '--s-xau', w: 1.8}, {h: X2, c: '--orange', w: 1.6, dash: true}, {h: N05, c: '--s-esc', w: 1.6}, {h: H2, c: '--violet', w: 1.6, dash: true}, {h: H1, c: '--s-rec', w: 3, area: true}]
+    .map(o => ({name: `${hm(o.h.px, o.h.pn)} (${pc(o.h.cagr)} anual)`, short: hm(o.h.px, o.h.pn), color: css(o.c), pts: o.h.curve, w: o.w, dash: o.dash, area: o.area}));
+  $('#lg10').innerHTML = leg(s10);
+  lineChart($('#c10'), s10, {h: 360, log: true});
+  barChart($('#w11a'), SW(X15), {h: 190, unit: '%', dec: 2});
+  barChart($('#w11b'), SW(H1), {h: 190, unit: '%', dec: 2});
 }
 draw();
 let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(draw, 150); });
