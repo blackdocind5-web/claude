@@ -70,7 +70,11 @@ Todo lo de abajo se explica para **ventas**; las compras son el espejo exacto. �
 - Si el impulso no genera un FVG válido, se descarta ese impulso y se espera el siguiente. El modelo sigue vivo el resto del día.
 - Una orden pendiente se reemplaza por la del último impulso válido con FVG. Vence a la hora límite.
 
-**Cambio de dirección.** Cuando el lado contrario confirma su paso 3 o un FVG, se cancela la orden pendiente de este lado porque la dirección cambió. El modelo 2 de este lado **no** queda descartado el resto del día: queda en espera de realinearse. La realineación ocurre cuando una vela con el color de este lado cierra con cuerpo más allá del último M1 creado antes del cambio. Después se repiten los pasos 2 y 3 (retroceso e impulso más allá de la referencia confirmada desde la realineación) con un FVG válido. En el ejemplo de tus imágenes: el paso 3 bajista a las 09:40 → el cambio a alcista a las 09:58 → la vela bajista de las 10:20 que cierra por debajo del bajo M1 → retroceso → impulso con FVG → venta.
+**Cambio de dirección.** Lo dispara un quiebre válido del rango por el lado contrario: cierre con cuerpo de al menos 5 puntos fuera del borde. No lo dispara el paso 3 ni el FVG del otro lado. En ese momento se cancela la orden pendiente del modelo 2 de este lado, que queda en espera de realinearse.
+- **Nivel de realineación:** el punto M1 más bajo (en compras, más alto) vigente cuando se confirmó el cambio.
+- **Realineación:** una vela con el color de este lado cierra con cuerpo más allá de ese nivel. Después se repiten los pasos 2 y 3 (retroceso e impulso más allá de la referencia confirmada desde la realineación) con un FVG válido.
+- **Límite de realineaciones:** solo es válida **una realineación por día**. Tras ella se puede ejecutar una operación del modelo 2, siempre que el modelo 2 de ese lado no haya ejecutado ya la suya. Después de una segunda, tercera o más realineaciones no se ejecuta ninguna operación del modelo 2, para evitar el «ping pong» del precio.
+- **Ejemplo de tus imágenes:** el paso 3 bajista a las 09:40; el quiebre superior del rango cambia la dirección a alcista (paso 3 alcista a las 09:58); a las 10:20 una vela bajista cierra por debajo del bajo M1, es la realineación; retroceso; impulso con FVG válido; venta.
 
 **Con el modelo 1.** Al confirmarse el paso 3, el modelo 1 de ese lado se descarta: se cancelan sus pendientes y no abre nuevas. Una operación ya ejecutada sigue abierta. Si el modelo 1 apagó el lado por falta de FVG principal, el modelo 2 sigue activo.
 
@@ -86,6 +90,4 @@ Todo lo de abajo se explica para **ventas**; las compras son el espejo exacto. �
 
 ## 6. Pendiente de confirmar
 
-1. **Nivel de realineación.** Entiendo que es la referencia vigente (el bajo M1 más bajo) cuando se confirmó el cambio de dirección. ¿O es el último bajo M1 formado antes del paso 3 contrario?
-2. **Alcance.** La suspensión y realineación aplican solo al modelo 2. Si el cambio de dirección cancela una pendiente del modelo 1, ese lado queda apagado el resto del día, como acordamos.
-3. **Qué dispara el cambio de dirección.** ¿Solo el paso 3 del modelo 2 contrario, o también un FVG del modelo 1 contrario?
+1. **Conteo de realineaciones.** ¿La «una por día» se cuenta en total (cualquier lado) o por lado? Propongo en total, porque el objetivo es evitar el «ping pong» del precio.
