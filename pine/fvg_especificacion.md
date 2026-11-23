@@ -73,7 +73,7 @@ Todo lo de abajo se explica para **ventas**; las compras son el espejo exacto. �
 **Cambio de dirección.** Lo dispara un quiebre válido del rango por el lado contrario: cierre con cuerpo de al menos 5 puntos fuera del borde. No lo dispara el paso 3 ni el FVG del otro lado. En ese momento se cancela la orden pendiente del modelo 2 de este lado, que queda en espera de realinearse.
 - **Nivel de realineación:** el punto M1 más bajo (en compras, más alto) vigente cuando se confirmó el cambio.
 - **Realineación:** una vela con el color de este lado cierra con cuerpo más allá de ese nivel. Después se repiten los pasos 2 y 3 (retroceso e impulso más allá de la referencia confirmada desde la realineación) con un FVG válido.
-- **Límite de realineaciones:** solo es válida **una realineación por día**. Tras ella se puede ejecutar una operación del modelo 2, siempre que el modelo 2 de ese lado no haya ejecutado ya la suya. Después de una segunda, tercera o más realineaciones no se ejecuta ninguna operación del modelo 2, para evitar el «ping pong» del precio.
+- **Límite de realineaciones:** solo es válida **una realineación por día, contada en total** (cualquier lado). Tras ella se puede ejecutar una operación del modelo 2, siempre que el modelo 2 de ese lado no haya ejecutado ya la suya. Después de una segunda, tercera o más realineaciones no se ejecuta ninguna operación del modelo 2, para evitar el «ping pong» del precio.
 - **Ejemplo de tus imágenes:** el paso 3 bajista a las 09:40; el quiebre superior del rango cambia la dirección a alcista (paso 3 alcista a las 09:58); a las 10:20 una vela bajista cierra por debajo del bajo M1, es la realineación; retroceso; impulso con FVG válido; venta.
 
 **Con el modelo 1.** Al confirmarse el paso 3, el modelo 1 de ese lado se descarta: se cancelan sus pendientes y no abre nuevas. Una operación ya ejecutada sigue abierta. Si el modelo 1 apagó el lado por falta de FVG principal, el modelo 2 sigue activo.
@@ -88,6 +88,13 @@ Todo lo de abajo se explica para **ventas**; las compras son el espejo exacto. �
 - **Filtros EMA20 y VWAP** (apagados por defecto): una compra solo vale con la entrada por encima de la EMA20 y del VWAP, y una venta por debajo. El VWAP usa hlc3 y se reinicia a las 18:00 NY.
 - **Backtest:** las órdenes límite se llenan al tocar el nivel, con las velas de menor temporalidad (bar magnifier). Los costos se configuran en Propiedades de TradingView.
 
-## 6. Pendiente de confirmar
+## 6. Supuestos de implementación (no estaban en tus reglas; dímelo si alguno no es lo que quieres)
 
-1. **Conteo de realineaciones.** ¿La «una por día» se cuenta en total (cualquier lado) o por lado? Propongo en total, porque el objetivo es evitar el «ping pong» del precio.
+1. **Una sola tendencia a la vez.** Cuando un lado llega al paso 3 o se realinea, el otro lado, si estaba en tendencia, queda suspendido como si hubiera habido un quiebre contrario, con su referencia vigente como nivel de realineación. Esa realineación posterior contaría como segunda y no operaría.
+2. **La vela de realineación hace de vela de quiebre** del nuevo ciclo: el extremo del movimiento empieza en ella.
+3. **Un FVG principal confirmado del modelo 1, o una orden válida del modelo 2, de un lado** cancela la orden pendiente del modelo 1 del lado contrario y lo apaga.
+4. **Una orden se reprecia al cierre de cada vela** con el extremo conocido hasta esa vela, que es el extremo hasta la vela anterior a la del posible toque. Si el RR no llega en el borde ni en el 50%, la orden no se envía y el FVG se descarta solo cuando el precio toca el borde.
+5. **Si el precio ya pasó la entrada** al cierre de una vela (venta con el cierre por encima del nivel, compra por debajo), ese FVG queda atrás y se descarta.
+6. **Orden pendiente y operación abierta del mismo lado:** no se envía la orden. Si el precio toca el nivel mientras esa operación sigue abierta, el FVG se pierde.
+7. **Límites de búsqueda:** hasta 6 candidatos por lado en el modelo 1 y hasta 60 velas hacia atrás para la racha.
+8. **Órdenes:** límites con SL y TP adjuntos en el motor de TradingView (reversión automática si la orden del lado contrario se activa con una operación abierta). El BE se mueve como en la estrategia EMA20.

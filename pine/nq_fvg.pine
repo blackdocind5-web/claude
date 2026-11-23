@@ -1,0 +1,626 @@
+//@version=6
+// ═══════════════════════════════════════════════════════════════════════════════════
+//  FVG · «FVG EN RANGO» + «FVG EN TENDENCIA» · 1 minuto · pensada para NQ (sirve igual en MNQ y NAS100)
+//  Implementa la especificación de pine/fvg_especificacion.md. Todo se explica para VENTAS; las compras son el espejo.
+// ═══════════════════════════════════════════════════════════════════════════════════
+//
+//  BASE
+//    · Rango de apertura: máximo y mínimo (con mechas) de las velas que abren entre las 09:00 y las 09:30 NY.
+//    · Quiebre válido: una vela del color de la dirección, desde las 09:30 y antes de la hora límite, cierra fuera del
+//      rango por al menos 5 puntos. Cada lado (superior / inferior) se evalúa por separado.
+//    · FVG bajista: tres velas (1, 2, 3) con hueco entre el mínimo de la vela 1 y el máximo de la vela 3. La vela 2 tiene
+//      el color de la dirección y un cuerpo de al menos 30 puntos; la zona mide al menos 12 puntos.
+//    · Entrada: orden LÍMITE en el borde del FVG (ventas: el inferior). SL: nivel base + 5 puntos (máximo 140). TP: RR 1:2.
+//      BE a 1R. Un solo trade abierto a la vez.
+//
+//  MODELO 1 · FVG EN RANGO (por lado)
+//    · Quiebre → FVG principal (caso A: el quiebre es la vela 2; caso B: el quiebre es la vela 1 y la vela 2 del mismo color).
+//      Sin FVG principal el lado queda apagado el día. Filtros: cuerpo vela 2, tamaño, CONTACTO con el rango y SL máximo.
+//      Un FVG que falla un filtro se descarta y se prueba el anterior del mismo movimiento (racha ininterrumpida de velas
+//      del color de la dirección que contiene el quiebre).
+//    · RR mínimo 0,9 hasta el extremo del movimiento, medido al tocar el borde; si no llega, la entrada pasa al 50% del FVG.
+//
+//  MODELO 2 · FVG EN TENDENCIA (por lado)
+//    · Paso 1 quiebre del rango · Paso 2 retroceso (una vela contraria) · Paso 3 impulso: una vela cierra con cuerpo más allá
+//      de la REFERENCIA (punto M1 más extremo confirmado desde el quiebre). Después se busca el FVG que creó cada impulso;
+//      sin contacto con el rango ni RR mínimo. El último impulso válido reemplaza a la orden pendiente.
+//    · Un quiebre válido del lado contrario es un CAMBIO DE DIRECCIÓN: cancela la orden pendiente y suspende el lado hasta que
+//      se REALINEE (una vela cierra con cuerpo más allá del M1 vigente al cambio). Solo vale UNA realineación por día.
+//
+//  LÍMITES: una operación por lado y modelo al día. Al activarse una orden del lado contrario se cierra la operación abierta;
+//  al activarse una del mismo lado y otro modelo no se abre. EMA20 y VWAP: filtros apagados por defecto.
+//
+//  COSTOS: no se incluyen. Configúralos en Propiedades de TradingView.
+// ═══════════════════════════════════════════════════════════════════════════════════
+strategy(title = "NQ · FVG en rango + FVG en tendencia · 1m",
+         shorttitle = "NQ FVG",
+         overlay = true,
+         initial_capital = 1000000,
+         currency = currency.USD,
+         default_qty_type = strategy.fixed,
+         default_qty_value = 1,
+         pyramiding = 1,
+         process_orders_on_close = false,
+         use_bar_magnifier = true,
+         calc_on_every_tick = false,
+         margin_long = 0,
+         margin_short = 0,
+         max_labels_count = 500,
+         max_boxes_count = 500,
+         max_bars_back = 300)
+
+// ── Constantes ─────────────────────────────────────────────────────────────────────
+const string TZ       = "America/New_York"
+const int    START_MD = 9 * 60 + 30     // el quiebre y las entradas cuentan desde las 09:30
+const int    NC       = 6               // candidatos máximos por lado (modelo 1)
+const int    BAR_MS   = 60000
+
+// ── Entradas ───────────────────────────────────────────────────────────────────────
+const string G_HOR = "1 · Horario"
+const string G_MOD = "2 · Modelos"
+const string G_FVG = "3 · Quiebre y FVG"
+const string G_SAL = "4 · SL y salida"
+const string G_FIL = "5 · Filtros (apagados por defecto)"
+const string G_RSK = "6 · Riesgo"
+const string G_VIS = "7 · Visual"
+
+cutHour   = input.int(11, "Hora límite (NY): quiebres, pasos, FVG y órdenes", minval = 0, maxval = 23, group = G_HOR, tooltip = "Las órdenes pendientes vencen a esta hora. Con 11:00, la última vela que puede llenar una orden es la de las 10:59. Una operación abierta sigue hasta su SL, su TP o el cierre forzado.")
+cutMin    = input.int(0, "Minuto límite", minval = 0, maxval = 59, group = G_HOR)
+closeHour = input.int(16, "Hora de cierre forzado (NY)", minval = 0, maxval = 23, group = G_HOR)
+closeMin  = input.int(0, "Minuto de cierre forzado", minval = 0, maxval = 59, group = G_HOR)
+rngH      = input.int(9, "Inicio del rango · hora (NY)", minval = 0, maxval = 9, group = G_HOR, tooltip = "El rango termina a las 09:30.")
+rngM      = input.int(0, "Inicio del rango · minuto", minval = 0, maxval = 59, group = G_HOR)
+
+use1 = input.bool(true, "Modelo 1: FVG en rango", group = G_MOD)
+use2 = input.bool(true, "Modelo 2: FVG en tendencia", group = G_MOD)
+
+minBreak = input.float(5.0, "Quiebre mínimo del rango (puntos, cierre fuera del borde)", minval = 0.0, step = 0.25, group = G_FVG)
+bodyMin  = input.float(30.0, "Cuerpo mínimo de la vela 2 del FVG (puntos)", minval = 0.0, step = 1.0, group = G_FVG, tooltip = "|cierre − apertura| de la vela de impulso. Confirma que el impulso es grande y expansivo.")
+zoneMin  = input.float(12.0, "Tamaño mínimo de la zona del FVG (puntos)", minval = 0.0, step = 1.0, group = G_FVG)
+
+slMargin = input.float(5.0, "Margen del SL sobre su nivel base (puntos)", minval = 0.0, step = 0.25, group = G_SAL, tooltip = "Ventas: máximo de la primera vela de la racha (o alto M1) + este margen. Compras: en espejo.")
+maxSL    = input.float(140.0, "SL máximo (puntos)", minval = 1.0, step = 1.0, group = G_SAL, tooltip = "Si la distancia al nivel base + margen supera este valor pero la distancia al nivel base no, el SL va en el nivel base. Si el nivel base ya lo supera, el FVG se descarta.")
+rr       = input.float(2.0, "Ratio R:R del TP", minval = 0.1, step = 0.1, group = G_SAL)
+useBE    = input.bool(true, "Break-even", group = G_SAL)
+beR      = input.float(1.0, "BE a (múltiplo de R)", minval = 0.1, step = 0.1, group = G_SAL)
+rrMin    = input.float(0.9, "RR mínimo hasta el extremo del movimiento (solo modelo 1)", minval = 0.0, step = 0.05, group = G_SAL, tooltip = "Al tocar el borde del FVG: recorrido de la entrada al extremo del movimiento ÷ distancia al SL. Si no llega, la entrada pasa al 50% del FVG; si tampoco, el FVG se descarta.")
+
+useEMA   = input.bool(false, "Filtro EMA", group = G_FIL, tooltip = "Compras solo con la entrada por encima de la EMA, ventas por debajo.")
+emaLen   = input.int(20, "Periodos de la EMA", minval = 2, group = G_FIL)
+useVWAP  = input.bool(false, "Filtro VWAP", group = G_FIL, tooltip = "Compras solo con la entrada por encima del VWAP, ventas por debajo. Fuente hlc3 ponderada por volumen, con reinicio diario.")
+vwapHour = input.int(18, "Reinicio del VWAP · hora (NY)", minval = 0, maxval = 23, group = G_FIL)
+vwapMin  = input.int(0, "Reinicio del VWAP · minuto", minval = 0, maxval = 59, group = G_FIL)
+
+riskPct   = input.float(1.0, "Riesgo por operación (%)", minval = 0.01, maxval = 100.0, step = 0.1, group = G_RSK)
+compound  = input.bool(false, "Interés compuesto", group = G_RSK, tooltip = "Activado: el riesgo se calcula sobre el capital actual. Desactivado: siempre sobre el capital inicial (Propiedades).")
+qtyStepIn = input.float(0.0, "Paso de cantidad (0 = automático)", minval = 0.0, step = 0.01, group = G_RSK, tooltip = "0 = automático: 1 contrato en futuros (NQ, MNQ) y 0,01 en el resto (CFD NAS100).")
+
+showRange  = input.bool(true, "Mostrar el rango de apertura", group = G_VIS)
+showFvg    = input.bool(true, "Mostrar la zona del FVG en espera de ejecución", group = G_VIS)
+showMarks  = input.bool(true, "Mostrar etiqueta BUY / SELL en cada entrada", group = G_VIS, tooltip = "TradingView conserva como máximo 500 etiquetas: apágala en pruebas largas.")
+rangeCol   = input.color(#000000, "Color del contorno del rango", group = G_VIS)
+fvgCol     = input.color(color.new(#9E9E9E, 70), "Color de la zona del FVG", group = G_VIS)
+buyLblCol  = input.color(#5B5B5B, "Color de la etiqueta BUY", group = G_VIS)
+sellLblCol = input.color(#A9A9A9, "Color de la etiqueta SELL", group = G_VIS)
+
+if timeframe.in_seconds() != 60
+    runtime.error("Esta estrategia está diseñada para el gráfico de 1 minuto.")
+
+// ── Tiempo en hora de Nueva York ───────────────────────────────────────────────────
+int  mdOpen  = hour(time, TZ) * 60 + minute(time, TZ)
+int  mdClose = mdOpen + 1
+int  dow     = dayofweek(time, TZ)
+int  cutMD   = cutHour * 60 + cutMin
+int  forceMD = closeHour * 60 + closeMin
+bool inForce = mdClose >= forceMD and mdClose <= forceMD + 60
+bool wkday   = dow >= dayofweek.monday and dow <= dayofweek.friday
+bool inWin   = wkday and mdOpen >= START_MD and mdOpen < math.min(cutMD, forceMD)
+int  dayKey  = year(time, TZ) * 10000 + month(time, TZ) * 100 + dayofmonth(time, TZ)
+
+// ── Funciones auxiliares ───────────────────────────────────────────────────────────
+tk(float x) => math.round(x / syminfo.mintick)
+
+// ¿La vela del desplazamiento 'o' tiene el color de la dirección s?
+favAt(int s, int o) => s == 1 ? close[o] > open[o] : close[o] < open[o]
+
+// SL a partir de la entrada y del nivel base. Devuelve [SL, válido].
+slCalc(int s, float entry, float anchor) =>
+    float d0 = math.abs(entry - anchor)
+    float sl = na
+    bool  ok = false
+    if tk(d0) > 0 and tk(d0) <= tk(maxSL) and (s == 1 ? anchor < entry : anchor > entry)
+        ok := true
+        sl := tk(d0) + tk(slMargin) > tk(maxSL) ? anchor : (s == 1 ? anchor - slMargin : anchor + slMargin)
+    [sl, ok]
+
+// Nivel base del SL para un FVG cuya vela 2 está en el desplazamiento o2 (la vela 1 en o2 + 1).
+//  · vela 1 del mismo color que la 2 → extremo de la primera vela de la racha ininterrumpida de velas de la dirección;
+//  · vela 1 de otro color → extremo M1 (el mayor de los máximos de las dos velas en ventas; el menor de los mínimos en compras).
+anchorOf(int s, int o2) =>
+    float a = na
+    if favAt(s, o2 + 1)
+        int i = o2 + 1
+        while i < 80 and favAt(s, i + 1)
+            i += 1
+        a := s == 1 ? low[i] : high[i]
+    else
+        a := s == 1 ? math.min(low[o2], low[o2 + 1]) : math.max(high[o2], high[o2 + 1])
+    a
+
+// ¿Las velas (o3 + 2, o3 + 1, o3) forman un FVG con hueco real y vela 2 del color de la dirección?
+gapStruct(int s, int o3) =>
+    bool gap = s == 1 ? tk(low[o3]) > tk(high[o3 + 2]) : tk(low[o3 + 2]) > tk(high[o3])
+    gap and favAt(s, o3 + 1)
+
+// FVG completo con filtros. Devuelve [válido, zona inferior, zona superior, nivel base, tiempo de la vela 1].
+candOk(int s, int o3, bool needContact) =>
+    bool  ok  = false
+    float zLo = na
+    float zHi = na
+    float anc = na
+    if gapStruct(s, o3)
+        zLo := s == 1 ? high[o3 + 2] : high[o3]
+        zHi := s == 1 ? low[o3] : low[o3 + 2]
+        bool bodyOk = tk(math.abs(close[o3 + 1] - open[o3 + 1])) >= tk(bodyMin)
+        bool sizeOk = tk(zHi - zLo) >= tk(zoneMin)
+        bool contOk = not needContact or (tk(zLo) <= tk(rngHi) and tk(zHi) >= tk(rngLo))
+        if bodyOk and sizeOk and contOk
+            anc := anchorOf(s, o3 + 1)
+            float edge = s == 1 ? zHi : zLo
+            [slx, okx] = slCalc(s, edge, anc)
+            ok := okx
+    [ok, zLo, zHi, anc, time[o3 + 2]]
+
+// Contratos según el riesgo.
+qtyOf(float entry, float sl) =>
+    float stepQ = qtyStepIn > 0 ? qtyStepIn : (syminfo.type == "futures" ? 1.0 : 0.01)
+    float bal   = compound ? strategy.initial_capital + strategy.netprofit : strategy.initial_capital
+    float dist  = math.abs(entry - sl)
+    float raw   = dist > 0 ? bal * riskPct / 100.0 / (dist * syminfo.pointvalue) : 0.0
+    math.round(math.floor(raw / stepQ + 1e-9) * stepQ, 6)
+
+// ── EMA, VWAP y velas ──────────────────────────────────────────────────────────────
+float ema   = ta.ema(close, emaLen)
+bool  bull0 = close > open
+bool  bear0 = close < open
+bool  bull1 = close[1] > open[1]
+bool  bear1 = close[1] < open[1]
+
+int  vwapMD = vwapHour * 60 + vwapMin
+bool vReset = mdOpen >= vwapMD and nz(mdOpen[1], -1) < vwapMD
+var float cumPV = 0.0
+var float cumV  = 0.0
+if vReset
+    cumPV := 0.0
+    cumV  := 0.0
+cumPV := cumPV + hlc3 * nz(volume)
+cumV  := cumV + nz(volume)
+float vwapVal = cumV > 0 ? cumPV / cumV : na
+
+plot(useEMA ? ema : na, title = "EMA", color = #2962FF, linewidth = 2)
+plot(useVWAP and not vReset ? vwapVal : na, title = "VWAP", color = #9C27B0, linewidth = 2, style = plot.style_linebr)
+
+// ── Rango de apertura ──────────────────────────────────────────────────────────────
+int  rngStartMD = rngH * 60 + rngM
+bool inRng      = wkday and mdOpen >= rngStartMD and mdOpen < START_MD
+var float rngHi  = na
+var float rngLo  = na
+var int   rngKey = na
+var box   rngBox = na
+if inRng and not inRng[1]
+    rngHi  := high
+    rngLo  := low
+    rngKey := dayKey
+    if showRange
+        rngBox := box.new(time, high, time + BAR_MS, low, xloc = xloc.bar_time, border_color = rangeCol, border_width = 1, bgcolor = na)
+else if inRng
+    rngHi := math.max(rngHi, high)
+    rngLo := math.min(rngLo, low)
+    if showRange and not na(rngBox)
+        box.set_top(rngBox, rngHi)
+        box.set_bottom(rngBox, rngLo)
+        box.set_right(rngBox, time + BAR_MS)
+bool rngOk = rngKey == dayKey and not na(rngHi) and not na(rngLo) and mdOpen >= START_MD
+
+// ── Estado ─────────────────────────────────────────────────────────────────────────
+// Posición 0 = lado alcista (compras), posición 1 = lado bajista (ventas). Todo lo siguiente se reinicia cada día.
+// Modelo 1: 0 sin quiebre · 1 espera el caso A · 2 espera el caso B · 3 activo (candidatos) · 4 ejecutado · 5 apagado.
+var array<int>   m1St   = array.new<int>(2, 0)
+var array<int>   m1X    = array.new<int>(2, 0)
+var array<float> m1Ext  = array.new<float>(2, na)
+var array<int>   qN     = array.new<int>(2, 0)
+var array<int>   qP     = array.new<int>(2, 0)
+var array<bool>  qBlk   = array.new<bool>(2, false)
+var array<int>   qBox   = array.new<int>(2, -1)
+var array<bool>  qMidOn = array.new<bool>(2, false)   // ya se tocó el borde con el RR insuficiente: la entrada quedó en el 50%
+var array<int>   qKind  = array.new<int>(2, 0)          // última orden enviada: 0 ninguna · 1 en el borde · 2 en el 50%
+var array<float> qZLo   = array.new<float>(2 * NC, na)
+var array<float> qZHi   = array.new<float>(2 * NC, na)
+var array<float> qAnc   = array.new<float>(2 * NC, na)
+var array<int>   qT1    = array.new<int>(2 * NC, 0)
+// Modelo 2: 0 sin quiebre · 1 espera retroceso · 2 espera impulso · 3 tendencia · 4 suspendido · 5 sin más operaciones.
+var array<int>   m2Ph   = array.new<int>(2, 0)
+var array<float> m2Ext  = array.new<float>(2, na)
+var array<float> m2R    = array.new<float>(2, na)
+var array<float> m2Re   = array.new<float>(2, na)
+var array<bool>  m2Done = array.new<bool>(2, false)
+var array<bool>  imp1   = array.new<bool>(2, false)
+var array<bool>  imp2   = array.new<bool>(2, false)
+var int dKey      = 0
+var int realignCn = 0
+// Órdenes pendientes: ranura 0 y 1 = modelo 1 (compras, ventas); 2 y 3 = modelo 2.
+var array<bool>  oAct = array.new<bool>(4, false)
+var array<float> oEnt = array.new<float>(4, na)
+var array<float> oSL  = array.new<float>(4, na)
+var array<float> oTP  = array.new<float>(4, na)
+var array<float> oQty = array.new<float>(4, 0.0)
+var array<int>   oSeq = array.new<int>(4, 0)
+var array<box>   oBox = array.new<box>(4, na)
+// Orden enviada al motor y operación abierta.
+var int   wM = -1
+var float wSL = na
+var float wTP = na
+var bool  tOpen = false
+var int   tDir = 0
+var float tEntry = na
+var float tSL = na
+var float tTP = na
+var float tBE = na
+var float tDist = na
+var bool  tBeDone = false
+var int   tBar = na
+
+// ═════════════════════════════════════════════════════════════════════════════════
+// Todo el motor trabaja AL CIERRE de cada vela.
+// ═════════════════════════════════════════════════════════════════════════════════
+if barstate.isconfirmed and bar_index >= 100
+    bool canPlace = wkday and mdClose >= START_MD and mdClose < math.min(cutMD, forceMD)
+
+    // 0) Día nuevo: se reinicia todo.
+    if dKey != dayKey
+        dKey      := dayKey
+        realignCn := 0
+        for k = 0 to 1
+            m1St.set(k, 0)
+            m1X.set(k, 0)
+            m1Ext.set(k, na)
+            qN.set(k, 0)
+            qP.set(k, 0)
+            qBlk.set(k, false)
+            qBox.set(k, -1)
+            qMidOn.set(k, false)
+            qKind.set(k, 0)
+            m2Ph.set(k, 0)
+            m2Ext.set(k, na)
+            m2R.set(k, na)
+            m2Re.set(k, na)
+            m2Done.set(k, false)
+            imp1.set(k, false)
+            imp2.set(k, false)
+        for q = 0 to 3
+            oAct.set(q, false)
+        strategy.cancel("BUY")
+        strategy.cancel("SELL")
+
+    // 1) ¿Se llenó una orden en esta vela?
+    if strategy.opentrades > 0 and wM >= 0
+        int li = strategy.opentrades - 1
+        if strategy.opentrades.entry_bar_index(li) == bar_index
+            int dirF = strategy.opentrades.size(li) > 0 ? 1 : -1
+            int kf   = dirF == 1 ? 0 : 1
+            tOpen   := true
+            tDir    := dirF
+            tEntry  := strategy.opentrades.entry_price(li)
+            tSL     := wSL
+            tTP     := wTP
+            tDist   := math.abs(tEntry - wSL)
+            tBE     := dirF == 1 ? tEntry + beR * tDist : tEntry - beR * tDist
+            tBeDone := false
+            tBar    := bar_index
+            if wM == 0
+                m1St.set(kf, 4)
+            else
+                m2Done.set(kf, true)
+            oAct.set(wM * 2 + kf, false)
+            if showMarks
+                string tip = (wM == 0 ? "FVG en rango" : "FVG en tendencia") + "\nEntrada: " + str.tostring(tEntry, format.mintick) + "\nSL: " + str.tostring(tSL, format.mintick) + "\nTP: " + str.tostring(tTP, format.mintick)
+                if dirF == 1
+                    label.new(bar_index, na, text = "BUY", xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = buyLblCol, textcolor = color.white, size = size.small, tooltip = tip)
+                else
+                    label.new(bar_index, na, text = "SELL", xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = sellLblCol, textcolor = color.white, size = size.small, tooltip = tip)
+    if tOpen and strategy.position_size == 0
+        tOpen := false
+        tDir  := 0
+
+    // 2) Gestión de la operación abierta: BE, salidas y cierre forzado.
+    if tOpen and strategy.position_size != 0
+        string idO = tDir == 1 ? "BUY" : "SELL"
+        if useBE and not tBeDone and bar_index > tBar
+            if tDir == 1 ? high >= tBE : low <= tBE
+                tBeDone := true
+        float stopP = tBeDone ? tEntry : tSL
+        strategy.exit("X" + idO, from_entry = idO, stop = stopP, limit = tTP, comment_profit = "TP", comment_loss = tBeDone ? "BE" : "SL")
+        if inForce
+            strategy.close_all(comment = "Cierre forzado")
+
+    // 3) Quiebres válidos de esta vela.
+    array<bool> brk = array.new<bool>(2, false)
+    for k = 0 to 1
+        int  s    = k == 0 ? 1 : -1
+        bool fav  = s == 1 ? bull0 : bear0
+        bool out  = rngOk and (s == 1 ? tk(close - rngHi) >= tk(minBreak) : tk(rngLo - close) >= tk(minBreak))
+        brk.set(k, inWin and fav and out)
+
+    // 4) Cambio de dirección: un quiebre válido del lado contrario suspende el lado en tendencia y cancela su orden.
+    for k = 0 to 1
+        if brk.get(1 - k) and m2Ph.get(k) == 3
+            m2Ph.set(k, 4)
+            m2Re.set(k, m2R.get(k))
+            oAct.set(2 + k, false)
+
+    // 5) MODELO 2 · FVG en tendencia.
+    array<bool> step3   = array.new<bool>(2, false)
+    array<bool> created = array.new<bool>(2, false)
+    if use2
+        for k = 0 to 1
+            int   s    = k == 0 ? 1 : -1
+            bool  fav  = s == 1 ? bull0 : bear0
+            bool  con  = s == 1 ? bear0 : bull0
+            bool  fav1 = s == 1 ? bull1 : bear1
+            float hK   = s == 1 ? high : -low
+            float hP   = s == 1 ? high[1] : -low[1]
+            float cK   = s * close
+            bool  imp0 = false
+            int   ph   = m2Ph.get(k)
+            if ph == 0
+                if brk.get(k)
+                    m2Ph.set(k, 1)
+                    m2Ext.set(k, hK)
+            else if ph == 1
+                m2Ext.set(k, math.max(m2Ext.get(k), hK))
+                if con and inWin
+                    m2Ph.set(k, 2)
+                    m2R.set(k, m2Ext.get(k))
+            else if ph == 2 or ph == 3
+                if fav and inWin and tk(cK) > tk(m2R.get(k))
+                    imp0 := true
+                if imp0 and ph == 2
+                    m2Ph.set(k, 3)
+                    step3.set(k, true)
+                if con and fav1
+                    float pk = math.max(hP, hK)
+                    if tk(pk) > tk(m2R.get(k))
+                        m2R.set(k, pk)
+            else if ph == 4
+                if fav and inWin and tk(cK) > tk(m2Re.get(k))
+                    realignCn += 1
+                    if realignCn == 1
+                        m2Ph.set(k, 1)
+                        m2Ext.set(k, hK)
+                    else
+                        m2Ph.set(k, 5)
+                    int j = 1 - k
+                    if m2Ph.get(j) == 3
+                        m2Ph.set(j, 4)
+                        m2Re.set(j, m2R.get(j))
+                        oAct.set(2 + j, false)
+            // FVG del impulso (solo en tendencia).
+            if m2Ph.get(k) == 3 and not m2Done.get(k) and inWin and canPlace and (imp0 or imp1.get(k) or imp2.get(k))
+                [okc, zlc, zhc, anc, t1c] = candOk(s, 0, false)
+                if okc
+                    float edge = s == 1 ? zhc : zlc
+                    [slc, oks] = slCalc(s, edge, anc)
+                    bool  fOk  = (not useEMA or s * (edge - ema) > 0) and (not useVWAP or na(vwapVal) or s * (edge - vwapVal) > 0)
+                    bool  pass = s == 1 ? close < edge : close > edge
+                    float qty  = qtyOf(edge, slc)
+                    float stepQ = qtyStepIn > 0 ? qtyStepIn : (syminfo.type == "futures" ? 1.0 : 0.01)
+                    if oks and fOk and not pass and qty >= stepQ
+                        int q2 = 2 + k
+                        oAct.set(q2, true)
+                        oEnt.set(q2, edge)
+                        oSL.set(q2, slc)
+                        oTP.set(q2, math.round_to_mintick(s == 1 ? edge + rr * math.abs(edge - slc) : edge - rr * math.abs(edge - slc)))
+                        oQty.set(q2, qty)
+                        oSeq.set(q2, bar_index)
+                        created.set(k, true)
+                        if showFvg
+                            oBox.set(q2, box.new(t1c, zhc, time + BAR_MS, zlc, xloc = xloc.bar_time, border_color = na, bgcolor = fvgCol))
+            imp2.set(k, imp1.get(k))
+            imp1.set(k, imp0)
+
+    // 6) Efectos entre modelos y lados.
+    for k = 0 to 1
+        if step3.get(k)
+            // Con el paso 3 el modelo 1 de ese lado se descarta; el otro lado en tendencia queda suspendido.
+            if m1St.get(k) != 4
+                m1St.set(k, 5)
+                oAct.set(k, false)
+            int j = 1 - k
+            if m2Ph.get(j) == 3
+                m2Ph.set(j, 4)
+                m2Re.set(j, m2R.get(j))
+                oAct.set(2 + j, false)
+        if created.get(k)
+            int j = 1 - k
+            if m1St.get(j) == 3
+                m1St.set(j, 5)
+                oAct.set(j, false)
+
+    // 7) MODELO 1 · FVG en rango.
+    array<bool> prinA = array.new<bool>(2, false)
+    if use1
+        for k = 0 to 1
+            int   s    = k == 0 ? 1 : -1
+            bool  fav  = s == 1 ? bull0 : bear0
+            float hK   = s == 1 ? high : -low
+            int   st   = m1St.get(k)
+            bool  prin = false
+            bool  built = false
+            if st >= 1 and st <= 3
+                m1Ext.set(k, math.max(m1Ext.get(k), hK))
+            if st == 0
+                if brk.get(k)
+                    m1St.set(k, 1)
+                    m1X.set(k, bar_index)
+                    m1Ext.set(k, hK)
+            else if st == 1
+                if gapStruct(s, 0)
+                    prin := true
+                else if fav
+                    m1St.set(k, 2)
+                else
+                    m1St.set(k, 5)
+            else if st == 2
+                if gapStruct(s, 0)
+                    prin := true
+                else
+                    m1St.set(k, 5)
+            if prin
+                prinA.set(k, true)
+                int xo = bar_index - m1X.get(k)
+                int r  = 0
+                while r < 60 and favAt(s, xo + r)
+                    r += 1
+                array<int> offs = array.new<int>(0)
+                offs.push(0)
+                if r >= 2
+                    for d = xo to math.min(xo + r - 2, 58)
+                        offs.push(d)
+                int n = 0
+                for oi = 0 to offs.size() - 1
+                    int o3 = offs.get(oi)
+                    [okq, zlq, zhq, anq, t1q] = candOk(s, o3, true)
+                    if okq and n < NC
+                        qZLo.set(k * NC + n, zlq)
+                        qZHi.set(k * NC + n, zhq)
+                        qAnc.set(k * NC + n, anq)
+                        qT1.set(k * NC + n, t1q)
+                        n += 1
+                qN.set(k, n)
+                qP.set(k, 0)
+                qBlk.set(k, false)
+                qBox.set(k, -1)
+                qMidOn.set(k, false)
+                qKind.set(k, 0)
+                if n == 0
+                    m1St.set(k, 5)
+                else
+                    m1St.set(k, 3)
+                    oSeq.set(k, bar_index)
+                    built := true
+            if m1St.get(k) == 3
+                while m1St.get(k) == 3
+                    int   jj   = k * NC + qP.get(k)
+                    float zl   = qZLo.get(jj)
+                    float zh   = qZHi.get(jj)
+                    float an   = qAnc.get(jj)
+                    float edge = s == 1 ? zh : zl
+                    bool  touched = s == 1 ? tk(low) <= tk(edge) : tk(high) >= tk(edge)
+                    if touched and qKind.get(k) == 2
+                        qMidOn.set(k, true)       // tocó el borde con la orden en el 50%: la entrada sigue en el 50%
+                    bool  drop = touched and qBlk.get(k) and not built
+                    float price = na
+                    float slP   = na
+                    float qtyP  = 0.0
+                    int   kindP = 0
+                    if not drop
+                        float mid  = math.round_to_mintick((zl + zh) / 2)
+                        [slE, okE] = slCalc(s, edge, an)
+                        [slM, okM] = slCalc(s, mid, an)
+                        float ext  = m1Ext.get(k)
+                        float rewE = s == 1 ? ext - edge : edge + ext
+                        float rewM = s == 1 ? ext - mid : mid + ext
+                        float rkE  = math.abs(slE - edge)
+                        float rkM  = math.abs(slM - mid)
+                        if not qMidOn.get(k) and okE and rkE > 0 and rewE / rkE >= rrMin - 1e-9
+                            price := edge
+                            slP   := slE
+                            kindP := 1
+                        else if okM and rkM > 0 and rewM / rkM >= rrMin - 1e-9
+                            price := mid
+                            slP   := slM
+                            kindP := 2
+                        if not na(price)
+                            bool fOk = (not useEMA or s * (price - ema) > 0) and (not useVWAP or na(vwapVal) or s * (price - vwapVal) > 0)
+                            float stepQ = qtyStepIn > 0 ? qtyStepIn : (syminfo.type == "futures" ? 1.0 : 0.01)
+                            qtyP := qtyOf(price, slP)
+                            if not fOk or qtyP < stepQ
+                                price := na
+                                kindP := 0
+                        if not na(price) and (s == 1 ? close < price : close > price)
+                            drop := true
+                    if drop
+                        qP.set(k, qP.get(k) + 1)
+                        qBlk.set(k, false)
+                        qMidOn.set(k, false)
+                        qKind.set(k, 0)
+                        built := false
+                        oAct.set(k, false)
+                        if qP.get(k) >= qN.get(k)
+                            m1St.set(k, 5)
+                        else
+                            oSeq.set(k, bar_index)
+                        continue
+                    qKind.set(k, kindP)
+                    if na(price)
+                        qBlk.set(k, true)
+                        oAct.set(k, false)
+                    else
+                        qBlk.set(k, false)
+                        oAct.set(k, true)
+                        oEnt.set(k, price)
+                        oSL.set(k, slP)
+                        oTP.set(k, math.round_to_mintick(s == 1 ? price + rr * math.abs(price - slP) : price - rr * math.abs(price - slP)))
+                        oQty.set(k, qtyP)
+                    if showFvg and qBox.get(k) != qP.get(k)
+                        qBox.set(k, qP.get(k))
+                        oBox.set(k, box.new(qT1.get(jj), zh, time + BAR_MS, zl, xloc = xloc.bar_time, border_color = na, bgcolor = fvgCol))
+                    break
+        // Un FVG principal confirmado de un lado cancela la orden pendiente del modelo 1 del lado contrario y lo apaga.
+        for k = 0 to 1
+            if prinA.get(k)
+                int j = 1 - k
+                if m1St.get(j) == 3
+                    m1St.set(j, 5)
+                    oAct.set(j, false)
+
+    // 8) Elegir UNA orden pendiente y enviarla al motor.
+    int wSeq = -1
+    int wq   = -1
+    for q = 0 to 3
+        if oAct.get(q)
+            int   kq = q % 2
+            int   sq = kq == 0 ? 1 : -1
+            float eq = oEnt.get(q)
+            bool  sameOpen = tOpen and tDir == sq
+            bool  tchQ = sq == 1 ? tk(low) <= tk(eq) : tk(high) >= tk(eq)
+            if sameOpen
+                if tchQ
+                    oAct.set(q, false)
+            else if not canPlace
+                oAct.set(q, false)
+            else if oSeq.get(q) > wSeq
+                wSeq := oSeq.get(q)
+                wq   := q
+    if wq >= 0
+        string idW = wq % 2 == 0 ? "BUY" : "SELL"
+        strategy.entry(idW, wq % 2 == 0 ? strategy.long : strategy.short, qty = oQty.get(wq), limit = oEnt.get(wq), comment = idW)
+        strategy.exit("X" + idW, from_entry = idW, stop = oSL.get(wq), limit = oTP.get(wq), comment_profit = "TP", comment_loss = "SL")
+        wM  := wq < 2 ? 0 : 1
+        wSL := oSL.get(wq)
+        wTP := oTP.get(wq)
+    bool wantBuy  = wq >= 0 and wq % 2 == 0
+    bool wantSell = wq >= 0 and wq % 2 == 1
+    if not wantBuy and not (tOpen and tDir == 1)
+        strategy.cancel("BUY")
+        strategy.cancel("XBUY")
+    if not wantSell and not (tOpen and tDir == -1)
+        strategy.cancel("SELL")
+        strategy.cancel("XSELL")
+
+    // 9) Las zonas en espera se alargan mientras sigan pendientes.
+    if showFvg
+        for q = 0 to 3
+            bool alive = q < 2 ? m1St.get(q) == 3 : oAct.get(q)
+            if alive and not na(oBox.get(q))
+                box.set_right(oBox.get(q), time + BAR_MS)
