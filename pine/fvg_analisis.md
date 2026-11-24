@@ -30,7 +30,7 @@ Gráfico: `pine/fvg_analisis_curvas.png`.
 - **Límites diarios: no hacen falta.** La estrategia ya opera 1 o 2 veces por día. Limitarla a 1 resta entre 0 y 5,6 R. Parar tras un SL ahorra 1 a 3 R en 12 a 19 días: ruido.
 - **Pareto: hay concentración, pero no es una ley demostrable.** El tramo 09:30–09:45 (32 a 36% de las operaciones) produce el 95% del R neto (corrida 2) y el 87% (corrida 6). Es el hallazgo más llamativo y también el menos fiable: p = 0,06 a 0,08 sin corregir y entre 0,3 y 0,4 corrigiendo por las cinco ventanas horarias probadas.
 - **No hay ventaja estadística demostrada en ninguna corrida.** El mejor t es 1,37 (p = 0,09). Más de la mitad del R sale de un solo mes: **noviembre de 2026 aporta +14,5 R de los +25,2** (corrida 2). Sin él, +10,7 R en 22 meses; sin las 10 mejores operaciones, +5,2 R.
-- **Frente a las estrategias anteriores: no es superadora en retorno** (13 a 15 R por año frente a ~29 R por año de la EMA20 en NQ en el mismo periodo). Es mejor en esperanza por operación y en robustez a costos, y opera 5 veces menos. Ver sección 10.
+- **Frente a las estrategias anteriores: no es superadora.** Rinde 13 a 15 R por año frente a ~29 de la EMA20 en NQ y ~34 de XAU BIS en el mismo periodo. Es mejor que la EMA20 en esperanza por operación y en robustez a costos, y opera 5 veces menos. Su mejor papel es complementar a XAU (correlación diaria 0,00). Ver sección 10.
 
 ## 2. Las 6 corridas
 
@@ -155,35 +155,36 @@ Los costos pesan poco: se opera poco y el SL medio es de 68 puntos (mediana 64, 
 
 ## 10. Comparación con las estrategias anteriores
 
-Las cifras de la EMA20 salen de `pine/mnq_ema20_gestion.md` (rango OFF, RR 2, BE a 1R, SL máx. 100, hasta las 11:00, máx. 3 por día; 01/12/2023 a 13/11/2026, 2,95 años). Para que el periodo sea comparable uso los R de 2025 y 2026 (1,87 años) de esa tabla.
-**No tengo cifras de las estrategias de XAUUSD** (no quedaron registradas en el repositorio y no hay CSV de ellas en esta sesión). Si me pasas sus CSV, las agrego con el mismo método.
+- **EMA20 (MNQ, NQ, NAS100):** cifras de `pine/mnq_ema20_gestion.md` (rango OFF, RR 2, BE a 1R, SL máx. 100, hasta las 11:00, máx. 3 por día; 01/12/2023 a 13/11/2026, 2,95 años). Para que el periodo sea comparable uso los R de 2025 y 2026 (1,87 años).
+- **XAUUSD BIS (CFD):** `XAU_BIS_BOS.csv`, 02/01/2025 a 20/11/2026 (1,88 años), 344 operaciones, RR 1:1, 1% de 10.000 USD. Es prácticamente el mismo periodo que la FVG. **Sus R ya son netos de comisión** (0,011 R por operación); los de la FVG y la EMA20 son brutos. Ninguno incluye spread ni deslizamiento. El R de cada operación sale de PyG ÷ (onzas × distancia al SL); con RR 1:1 la distancia al SL es la distancia entre entrada y salida.
 
-| Métrica | **FVG · NQ · VWAP, sin BE** (corrida 6) | **FVG · NQ · sin filtro, sin BE** (corrida 2) | EMA20 · NQ | EMA20 · MNQ | EMA20 · NAS100 (CFD) |
-|---|---|---|---|---|---|
-| Periodo | 03/01/2025 a 23/11/2026 | igual | 01/12/2023 a 13/11/2026 | igual | igual |
-| Operaciones (por año) | 219 (116) | 242 (128) | 1.982 (672) | 1.979 (671) | 1.988 (674) |
-| Win rate (TP sobre operaciones) | 35,2% | 34,7% | 27,8% | 27,1% | 27,4% |
-| R bruto total | +28,9 | +25,2 | +122,7 | +108,6 | +118,0 |
-| **R por año, mismo periodo** (entre paréntesis el total de 2025 + 2026) | **+15,3** | **+13,3** | **+29,4** (+54,9) | **+29,5** (+55,2) | **+25,0** (+46,8) |
-| R por año, periodo completo de cada una | +15,3 | +13,3 | +41,6 | +36,8 | +40,0 |
-| Esperanza por operación | **+0,132 R** | +0,104 R | +0,062 R | +0,055 R | +0,059 R |
-| t-stat · años | 1,37 · 1,9 | 1,14 · 1,9 | 2,34 · 2,95 | 1,99 · 2,95 | 2,14 · 2,95 |
-| Caída máx. (R) | **9,1** | 13,0 | 18,9 | 26,9 | 22,0 |
-| R por año ÷ caída máx. (periodo completo) | 1,7 | 1,0 | 2,2 | 1,4 | 1,8 |
-| Peor día | **−2,0 R** | −2,0 R | −3,0 R | −3,0 R | −3,2 R |
-| Meses positivos | 57% | 52% | 67% | 72% | 61% |
-| R neto con 1 pt de costo (por año) | +25,3 (+13,4) | +21,0 (+11,1) | +63,6 (+21,6) | +48,3 (+16,4) | +55,5 (+18,8) |
-| Costo de equilibrio | **7,9 pt** | 6,1 pt | 2,07 pt | 1,80 pt | 1,89 pt |
-| Fuera de tiempo | no hay | no hay | NAS100 2021–23: +35,1 R, t = 0,76 | — | — |
-| Mejor mes sobre el total | 33% (+9,5 R) | 58% (+14,5 R) | — | — | — |
+| Métrica | **XAU · BIS** | **FVG · NQ · VWAP, sin BE** (corrida 6) | **FVG · NQ · sin filtro, sin BE** (corrida 2) | EMA20 · NQ | EMA20 · MNQ | EMA20 · NAS100 (CFD) |
+|---|---|---|---|---|---|---|
+| Periodo | 02/01/2025 a 20/11/2026 | 03/01/2025 a 23/11/2026 | igual | 01/12/2023 a 13/11/2026 | igual | igual |
+| Operaciones (por año) | 344 (183) | 219 (116) | 242 (128) | 1.982 (672) | 1.979 (671) | 1.988 (674) |
+| Win rate (TP sobre operaciones) | 59,9% (RR 1:1) | 35,2% (RR 2) | 34,7% (RR 2) | 27,8% | 27,1% | 27,4% |
+| R total | **+64,3** | +28,9 | +25,2 | +122,7 | +108,6 | +118,0 |
+| **R por año, mismo periodo** (entre paréntesis el total de 2025 + 2026) | **+34,2** (+64,3) | +15,3 (+28,9) | +13,3 (+25,2) | +29,4 (+54,9) | +29,5 (+55,2) | +25,0 (+46,8) |
+| R por año, periodo completo de cada una | +34,2 | +15,3 | +13,3 | +41,6 | +36,8 | +40,0 |
+| R 2025 / 2026 | +40,6 / +23,7 | +7,3 / +21,6 | +7,3 / +17,8 | +30,0 / +24,9 | +22,3 / +32,9 | +43,3 / +3,5 |
+| Esperanza por operación | **+0,187 R** | +0,132 R | +0,104 R | +0,062 R | +0,055 R | +0,059 R |
+| t-stat · años | **3,53** · 1,9 | 1,37 · 1,9 | 1,14 · 1,9 | 2,34 · 2,95 | 1,99 · 2,95 | 2,14 · 2,95 |
+| Caída máx. (R) | **7,1** | 9,1 | 13,0 | 18,9 | 26,9 | 22,0 |
+| R por año ÷ caída máx. | **4,8** | 1,7 | 1,0 | 2,2 | 1,4 | 1,8 |
+| Peor día | −2,0 R | −2,0 R | −2,0 R | −3,0 R | −3,0 R | −3,2 R |
+| Meses positivos | **87%** (20 de 23) | 57% | 52% | 67% | 72% | 61% |
+| Costo de equilibrio | 1,38 USD por onza | 7,9 pt | 6,1 pt | 2,07 pt | 1,80 pt | 1,89 pt |
+| R neto con costo extra | +50,3 con 0,3 USD/oz · +41,0 con 0,5 | +25,3 con 1 pt | +21,0 con 1 pt | +63,6 con 1 pt | +48,3 con 1 pt | +55,5 con 1 pt |
+| Fuera de tiempo | no hay | no hay | no hay | NAS100 2021–23: +35,1 R, t = 0,76 | — | — |
+| Mejor mes sobre el total | 17% (+10,7 R) | 33% (+9,5 R) | 58% (+14,5 R) | — | — | — |
 
 **Lectura**
 
-- **Retorno: la EMA20 gana.** En el mismo periodo rinde ~29 R por año frente a 13 a 15 R de la FVG, es decir, el doble. Con 1 punto de costo la diferencia se acorta (FVG +13,4 R por año; EMA20 en NQ +21,6 R por año, medido en su periodo completo).
-- **Calidad por operación: la FVG gana.** La esperanza es el doble (+0,13 frente a +0,06 R) y el costo de equilibrio es de 6 a 8 puntos frente a 1,8 a 2,1. Es una estrategia más barata de operar, con 5 veces menos operaciones.
-- **Riesgo: empate técnico.** Caída máx. y peor día más bajos en la FVG, pero con la mitad del retorno; el cociente R por año ÷ caída es de 1,0 a 1,7 frente a 1,4 a 2,2.
-- **Evidencia: ninguna está demostrada.** La EMA20 tiene t = 2,3 en 2,95 años, pero en 2021–2023 (NAS100) bajó a 0,76. La FVG tiene t = 1,1 a 1,4 en 1,9 años y no tiene un periodo fuera de tiempo.
-- **¿Superadora? No, no todavía.** No supera a la EMA20 en R por año. Es, en cambio, una estrategia distinta (pocas operaciones, SL grandes, entradas límite en el hueco) que podría complementarla. No sé si sus resultados se correlacionan: eso requiere los CSV de ambas en el mismo periodo.
+- **XAU BIS es la mejor de las tres en este periodo** y por mucho: 34 R por año frente a 15 (FVG) y 29 (EMA20), caída máxima de 7,1 R (9,1 a 13,0 en la FVG), 20 meses positivos de 23 y un t de 3,5. Sin las 10 mejores operaciones sigue en +54,3 R y sin el mejor mes en +53,6 R; la FVG queda en +5 a +9 R sin sus 10 mejores.
+- **Su punto débil son los costos de ejecución.** Con RR 1:1 y un SL medio de 8,6 USD por onza, cada 0,1 USD de spread o deslizamiento resta unos 4,6 R en el periodo; con 0,5 USD por onza el resultado baja a +41 R y el equilibrio está en 1,38 USD. No sé qué spread y deslizamiento tienes en Multibank con órdenes stop (las de ruptura son las que más deslizan). Mídelo antes de dar el resultado por bueno.
+- **La FVG no supera a ninguna de las dos.** Menos R por año que XAU y EMA20; mejor esperanza por operación que la EMA20, pero no que XAU; evidencia estadística menor (t 1,1 a 1,4).
+- **Hay un uso razonable para la FVG: diversificar.** La correlación diaria de los R entre XAU BIS y la FVG (VWAP, sin BE) es de 0,00. Como complemento de XAU: con un cuarto del riesgo de XAU, el R sube de +64,3 a +71,5, la caída máx. se queda en 7,1 R y el ratio R/caída pasa de 9,1 a 10,1 (Sharpe diario anualizado de 2,62 a 2,78). Con el mismo riesgo que XAU el ratio queda prácticamente igual (9,1) y el Sharpe baja a 2,37. La mejora con un cuarto del riesgo es pequeña y no es demostrable con esta muestra.
+- **Evidencia: la de XAU es la mejor, pero tiene la misma limitación que las demás:** son resultados dentro de la muestra. No sé cuánto se afinaron sus parámetros (por ejemplo, ruptura mínima de 1,44, ATR × 3) sobre estos mismos datos; si se ajustaron sobre este periodo, el resultado está inflado. La prueba que falta es un periodo que no se haya mirado.
 
 ## 11. Lo que no está probado
 
