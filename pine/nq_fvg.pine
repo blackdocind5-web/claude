@@ -117,6 +117,10 @@ bool wkday   = dow >= dayofweek.monday and dow <= dayofweek.friday
 bool inWin   = wkday and mdOpen >= START_MD and mdOpen < math.min(cutMD, forceMD)
 int  dayKey  = year(time, TZ) * 10000 + month(time, TZ) * 100 + dayofmonth(time, TZ)
 
+// ── Rango de apertura: extremos (se declaran antes de las funciones que los usan) ───
+var float rngHi = na
+var float rngLo = na
+
 // ── Funciones auxiliares ───────────────────────────────────────────────────────────
 tk(float x) => math.round(x / syminfo.mintick)
 
@@ -203,8 +207,6 @@ plot(useVWAP and not vReset ? vwapVal : na, title = "VWAP", color = #9C27B0, lin
 // ── Rango de apertura ──────────────────────────────────────────────────────────────
 int  rngStartMD = rngH * 60 + rngM
 bool inRng      = wkday and mdOpen >= rngStartMD and mdOpen < START_MD
-var float rngHi  = na
-var float rngLo  = na
 var int   rngKey = na
 var box   rngBox = na
 if inRng and not inRng[1]
