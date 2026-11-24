@@ -70,9 +70,9 @@ Todo lo de abajo se explica para **ventas**; las compras son el espejo exacto. �
 - Si el impulso no genera un FVG válido, se descarta ese impulso y se espera el siguiente. El modelo sigue vivo el resto del día.
 - Una orden pendiente se reemplaza por la del último impulso válido con FVG. Vence a la hora límite.
 
-**Cambio de dirección.** Lo dispara un quiebre válido del rango por el lado contrario: cierre con cuerpo de al menos 5 puntos fuera del borde. No lo dispara el paso 3 ni el FVG del otro lado. En ese momento se cancela la orden pendiente del modelo 2 de este lado, que queda en espera de realinearse.
-- **Nivel de realineación:** el punto M1 más bajo (en compras, más alto) vigente cuando se confirmó el cambio.
-- **Realineación:** una vela con el color de este lado cierra con cuerpo más allá de ese nivel. Después se repiten los pasos 2 y 3 (retroceso e impulso más allá de la referencia confirmada desde la realineación) con un FVG válido.
+**Cambio de dirección.** Lo dispara un quiebre válido del rango por el lado contrario: cierre con cuerpo de al menos 5 puntos fuera del borde. No lo dispara el paso 3 ni el FVG del otro lado. En ese momento **el ciclo del lado que estaba en curso se reinicia, esté en la etapa que esté** (esperando el retroceso, esperando el impulso o ya en tendencia): se cancela su orden pendiente y queda en espera de realinearse. Mientras espera, ninguna vela de ese lado cuenta como paso 3 ni como impulso.
+- **Nivel de realineación:** el punto M1 más bajo (en compras, más alto) vigente cuando se confirmó el cambio (la referencia; si todavía no hubo retroceso, el extremo del movimiento).
+- **Realineación:** una vela con el color de este lado cierra con cuerpo más allá de ese nivel. Esa vela solo realinea: no es un paso 3 ni un impulso. Después hay que cumplir de nuevo **quiebre + retroceso + impulso** (pasos 1 a 3, con la referencia medida desde la realineación) y un FVG válido para poder operar.
 - **Límite de realineaciones:** solo es válida **una realineación por día, contada en total** (cualquier lado). Tras ella se puede ejecutar una operación del modelo 2, siempre que el modelo 2 de ese lado no haya ejecutado ya la suya. Después de una segunda, tercera o más realineaciones no se ejecuta ninguna operación del modelo 2, para evitar el «ping pong» del precio.
 - **Ejemplo de tus imágenes:** el paso 3 bajista a las 09:40; el quiebre superior del rango cambia la dirección a alcista (paso 3 alcista a las 09:58); a las 10:20 una vela bajista cierra por debajo del bajo M1, es la realineación; retroceso; impulso con FVG válido; venta.
 
@@ -90,7 +90,7 @@ Todo lo de abajo se explica para **ventas**; las compras son el espejo exacto. �
 
 ## 6. Supuestos de implementación (no estaban en tus reglas; dímelo si alguno no es lo que quieres)
 
-1. **Una sola tendencia a la vez.** Cuando un lado llega al paso 3 o se realinea, el otro lado, si estaba en tendencia, queda suspendido como si hubiera habido un quiebre contrario, con su referencia vigente como nivel de realineación. Esa realineación posterior contaría como segunda y no operaría.
+1. **Una sola tendencia a la vez.** Cuando un lado llega al paso 3 o se realinea, el otro lado, si tenía un ciclo en curso (fases de retroceso, impulso o tendencia), queda suspendido como si hubiera habido un quiebre contrario, con su referencia vigente (o el extremo del movimiento, si aún no hubo retroceso) como nivel de realineación. Esa realineación posterior contaría como segunda y no operaría.
 2. **La vela de realineación hace de vela de quiebre** del nuevo ciclo: el extremo del movimiento empieza en ella.
 3. **Un FVG principal confirmado del modelo 1, o una orden válida del modelo 2, de un lado** cancela la orden pendiente del modelo 1 del lado contrario y lo apaga.
 4. **Una orden se reprecia al cierre de cada vela** con el extremo conocido hasta esa vela, que es el extremo hasta la vela anterior a la del posible toque. Si el RR no llega en el borde ni en el 50%, la orden no se envía y el FVG se descarta solo cuando el precio toca el borde.

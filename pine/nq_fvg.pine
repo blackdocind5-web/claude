@@ -362,13 +362,16 @@ if barstate.isconfirmed and bar_index >= 100
         bool out  = rngOk and (s == 1 ? tk(close - rngHi) >= tk(minBreak) : tk(rngLo - close) >= tk(minBreak))
         brk.set(k, inWin and fav and out)
 
-    // 4) Cambio de dirección: un quiebre válido del lado contrario suspende el lado en tendencia y cancela su orden.
+    // 4) Cambio de dirección: un quiebre válido del lado contrario REINICIA el ciclo del lado que estaba en curso
+    //    (fase 1, 2 o 3): se cancela su orden y queda esperando la realineación. El nivel de realineación es el
+    //    punto M1 vigente (la referencia; en la fase 1, todavía sin retroceso, el extremo del movimiento).
     for k = 0 to 1
-        if brk.get(1 - k) and m2Ph.get(k) == 3
+        int phk = m2Ph.get(k)
+        if brk.get(1 - k) and phk >= 1 and phk <= 3
             m2Ph.set(k, 4)
-            m2Re.set(k, m2R.get(k))
+            m2Re.set(k, phk == 1 ? m2Ext.get(k) : m2R.get(k))
             oAct.set(2 + k, false)
-            dbg("M2 suspendido", k == 0 ? 1 : -1, color.purple, "Quiebre válido del lado contrario. Nivel de realineación: " + str.tostring((k == 0 ? 1 : -1) * m2Re.get(k), format.mintick))
+            dbg("M2 suspendido", k == 0 ? 1 : -1, color.purple, "Quiebre válido del lado contrario: el ciclo se reinicia. Nivel de realineación: " + str.tostring((k == 0 ? 1 : -1) * m2Re.get(k), format.mintick))
 
     // 5) MODELO 2 · FVG en tendencia.
     array<bool> step3   = array.new<bool>(2, false)
@@ -417,12 +420,13 @@ if barstate.isconfirmed and bar_index >= 100
                     else
                         m2Ph.set(k, 5)
                     dbg("M2 realineación #" + str.tostring(realignCn), s, color.purple, realignCn == 1 ? "Primera realineación: ahora se espera retroceso e impulso" : "Realineación posterior a la primera: el modelo 2 ya no opera hoy")
-                    int j = 1 - k
-                    if m2Ph.get(j) == 3
+                    int j  = 1 - k
+                    int phj = m2Ph.get(j)
+                    if phj >= 1 and phj <= 3
                         m2Ph.set(j, 4)
-                        m2Re.set(j, m2R.get(j))
+                        m2Re.set(j, phj == 1 ? m2Ext.get(j) : m2R.get(j))
                         oAct.set(2 + j, false)
-            // FVG del impulso (solo en tendencia).
+            // FVG del impulso (solo en tendencia, fase 3).
             if m2Ph.get(k) == 3 and not m2Done.get(k) and inWin and canPlace and (imp0 or imp1.get(k) or imp2.get(k))
                 [okc, zlc, zhc, anc, t1c] = candOk(s, 0, false)
                 if okc
@@ -456,10 +460,11 @@ if barstate.isconfirmed and bar_index >= 100
                     dbg("M1 descartado (paso 3 del M2)", k == 0 ? 1 : -1, color.orange, "Con el paso 3 del modelo 2 el modelo 1 de este lado se descarta")
                 m1St.set(k, 5)
                 oAct.set(k, false)
-            int j = 1 - k
-            if m2Ph.get(j) == 3
+            int j  = 1 - k
+            int phj = m2Ph.get(j)
+            if phj >= 1 and phj <= 3
                 m2Ph.set(j, 4)
-                m2Re.set(j, m2R.get(j))
+                m2Re.set(j, phj == 1 ? m2Ext.get(j) : m2R.get(j))
                 oAct.set(2 + j, false)
         if created.get(k)
             int j = 1 - k
