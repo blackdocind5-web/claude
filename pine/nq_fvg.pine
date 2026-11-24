@@ -412,7 +412,9 @@ if barstate.isconfirmed and bar_index >= 100
                     if tk(pk) > tk(m2R.get(k))
                         m2R.set(k, pk)
             else if ph == 4
-                if fav and inWin and tk(cK) > tk(m2Re.get(k))
+                // La realineación exige cerrar con cuerpo del color del lado al menos minBreak puntos más allá del nivel
+                // (igual que el quiebre del rango). Un intento que no llega (mecha o cierre corto) no cuenta.
+                if fav and inWin and tk(cK - m2Re.get(k)) >= tk(minBreak)
                     realignCn += 1
                     if realignCn == 1
                         m2Ph.set(k, 1)
@@ -426,6 +428,12 @@ if barstate.isconfirmed and bar_index >= 100
                         m2Ph.set(j, 4)
                         m2Re.set(j, phj == 1 ? m2Ext.get(j) : m2R.get(j))
                         oAct.set(2 + j, false)
+                else if con and fav1
+                    // Intento fallido: si luego se confirma un punto M1 más extremo que el nivel, el nivel se traslada a él.
+                    float pk = math.max(hP, hK)
+                    if tk(pk) > tk(m2Re.get(k))
+                        m2Re.set(k, pk)
+                        dbg("M2 nivel trasladado", s, color.purple, "Intento sin cierre válido: el nivel de realineación pasa al siguiente punto M1: " + str.tostring(s * pk, format.mintick))
             // FVG del impulso (solo en tendencia, fase 3).
             if m2Ph.get(k) == 3 and not m2Done.get(k) and inWin and canPlace and (imp0 or imp1.get(k) or imp2.get(k))
                 [okc, zlc, zhc, anc, t1c] = candOk(s, 0, false)
