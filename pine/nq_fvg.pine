@@ -659,7 +659,7 @@ if barstate.isconfirmed and bar_index >= 100
                 wq   := q
     if wq >= 0
         string idW = wq % 2 == 0 ? "BUY" : "SELL"
-        strategy.entry(idW, wq % 2 == 0 ? strategy.long : strategy.short, qty = oQty.get(wq), limit = oEnt.get(wq), comment = idW)
+        strategy.entry(idW, wq % 2 == 0 ? strategy.long : strategy.short, qty = oQty.get(wq), limit = oEnt.get(wq), comment = idW + (wq < 2 ? " M1" : " M2"))
         strategy.exit("X" + idW, from_entry = idW, stop = oSL.get(wq), limit = oTP.get(wq), comment_profit = "TP", comment_loss = "SL")
         wM  := wq < 2 ? 0 : 1
         wSL := oSL.get(wq)

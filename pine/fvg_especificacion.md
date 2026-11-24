@@ -85,7 +85,7 @@ Todo lo de abajo se explica para **ventas**; las compras son el espejo exacto. �
 ## 5. Reglas globales
 
 - **Sin gestión del día.** Los límites de «una operación por lado y modelo» ya acotan las operaciones: como máximo 4 en el día.
-- **Etiqueta de entrada:** solo «BUY» o «SELL», sin el modelo.
+- **Etiqueta de entrada:** solo «BUY» o «SELL», sin el modelo. En la lista de operaciones de TradingView (columna «Señal») la entrada lleva el modelo: «BUY M1», «BUY M2», «SELL M1» o «SELL M2», para poder medir cada modelo por separado.
 - **Visual:** contorno negro del rango, rectángulo gris del FVG, líneas de SL, BE y TP.
 - **Filtros EMA20 y VWAP** (apagados por defecto): una compra solo vale con la entrada por encima de la EMA20 y del VWAP, y una venta por debajo. El VWAP usa hlc3 y se reinicia a las 18:00 NY.
 - **Backtest:** las órdenes límite se llenan al tocar el nivel, con las velas de menor temporalidad (bar magnifier). Los costos se configuran en Propiedades de TradingView.
