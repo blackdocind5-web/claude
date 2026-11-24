@@ -97,6 +97,7 @@ qtyStepIn = input.float(0.0, "Paso de cantidad (0 = automático)", minval = 0.0,
 
 showRange  = input.bool(true, "Mostrar el rango de apertura", group = G_VIS)
 showFvg    = input.bool(true, "Mostrar la zona del FVG en espera de ejecución", group = G_VIS)
+showDebug  = input.bool(false, "Diagnóstico: mostrar los pasos y descartes de cada modelo", group = G_VIS, tooltip = "Pone etiquetas pequeñas con cada cambio de estado (quiebre, retroceso, paso 3, FVG, descartes, suspensiones). Naranja = modelo 1, azul = modelo 2. Úsalo en pocos días para ver por qué una operación no se tomó.")
 showMarks  = input.bool(true, "Mostrar etiqueta BUY / SELL en cada entrada", group = G_VIS, tooltip = "TradingView conserva como máximo 500 etiquetas: apágala en pruebas largas.")
 rangeCol   = input.color(#000000, "Color del contorno del rango", group = G_VIS)
 fvgCol     = input.color(color.new(#9E9E9E, 70), "Color de la zona del FVG", group = G_VIS)
@@ -122,6 +123,14 @@ var float rngHi = na
 var float rngLo = na
 
 // ── Funciones auxiliares ───────────────────────────────────────────────────────────
+// Etiqueta de diagnóstico (solo si está activada): s = 1 debajo de la vela, −1 encima.
+dbg(string txt, int s, color c, string tip) =>
+    if showDebug
+        if s == 1
+            label.new(bar_index, na, text = txt, xloc = xloc.bar_index, yloc = yloc.belowbar, style = label.style_label_up, color = c, textcolor = color.white, size = size.tiny, tooltip = tip)
+        else
+            label.new(bar_index, na, text = txt, xloc = xloc.bar_index, yloc = yloc.abovebar, style = label.style_label_down, color = c, textcolor = color.white, size = size.tiny, tooltip = tip)
+    0
 tk(float x) => math.round(x / syminfo.mintick)
 
 // ¿La vela del desplazamiento 'o' tiene el color de la dirección s?
@@ -359,6 +368,7 @@ if barstate.isconfirmed and bar_index >= 100
             m2Ph.set(k, 4)
             m2Re.set(k, m2R.get(k))
             oAct.set(2 + k, false)
+            dbg("M2 suspendido", k == 0 ? 1 : -1, color.purple, "Quiebre válido del lado contrario. Nivel de realineación: " + str.tostring((k == 0 ? 1 : -1) * m2Re.get(k), format.mintick))
 
     // 5) MODELO 2 · FVG en tendencia.
     array<bool> step3   = array.new<bool>(2, false)
@@ -378,17 +388,22 @@ if barstate.isconfirmed and bar_index >= 100
                 if brk.get(k)
                     m2Ph.set(k, 1)
                     m2Ext.set(k, hK)
+                    dbg("M2 quiebre", s, color.blue, "Paso 1: quiebre válido del rango")
             else if ph == 1
                 m2Ext.set(k, math.max(m2Ext.get(k), hK))
                 if con and inWin
                     m2Ph.set(k, 2)
                     m2R.set(k, m2Ext.get(k))
+                    dbg("M2 retroceso", s, color.blue, "Paso 2. Referencia (extremo del movimiento): " + str.tostring(s * m2R.get(k), format.mintick))
             else if ph == 2 or ph == 3
                 if fav and inWin and tk(cK) > tk(m2R.get(k))
                     imp0 := true
                 if imp0 and ph == 2
                     m2Ph.set(k, 3)
                     step3.set(k, true)
+                    dbg("M2 PASO 3", s, color.blue, "Impulso: cierre con cuerpo más allá de la referencia " + str.tostring(s * m2R.get(k), format.mintick))
+                else if imp0
+                    dbg("M2 impulso", s, color.new(color.blue, 40), "Impulso (cierra más allá de la referencia " + str.tostring(s * m2R.get(k), format.mintick) + ")")
                 if con and fav1
                     float pk = math.max(hP, hK)
                     if tk(pk) > tk(m2R.get(k))
@@ -401,6 +416,7 @@ if barstate.isconfirmed and bar_index >= 100
                         m2Ext.set(k, hK)
                     else
                         m2Ph.set(k, 5)
+                    dbg("M2 realineación #" + str.tostring(realignCn), s, color.purple, realignCn == 1 ? "Primera realineación: ahora se espera retroceso e impulso" : "Realineación posterior a la primera: el modelo 2 ya no opera hoy")
                     int j = 1 - k
                     if m2Ph.get(j) == 3
                         m2Ph.set(j, 4)
@@ -425,6 +441,7 @@ if barstate.isconfirmed and bar_index >= 100
                         oQty.set(q2, qty)
                         oSeq.set(q2, bar_index)
                         created.set(k, true)
+                        dbg("M2 orden " + str.tostring(edge, format.mintick), s, color.blue, "FVG del impulso: zona " + str.tostring(zlc, format.mintick) + " – " + str.tostring(zhc, format.mintick) + " · SL " + str.tostring(slc, format.mintick))
                         if showFvg
                             oBox.set(q2, box.new(t1c, zhc, time + BAR_MS, zlc, xloc = xloc.bar_time, border_color = na, bgcolor = fvgCol))
             imp2.set(k, imp1.get(k))
@@ -435,6 +452,8 @@ if barstate.isconfirmed and bar_index >= 100
         if step3.get(k)
             // Con el paso 3 el modelo 1 de ese lado se descarta; el otro lado en tendencia queda suspendido.
             if m1St.get(k) != 4
+                if m1St.get(k) != 5
+                    dbg("M1 descartado (paso 3 del M2)", k == 0 ? 1 : -1, color.orange, "Con el paso 3 del modelo 2 el modelo 1 de este lado se descarta")
                 m1St.set(k, 5)
                 oAct.set(k, false)
             int j = 1 - k
@@ -447,6 +466,7 @@ if barstate.isconfirmed and bar_index >= 100
             if m1St.get(j) == 3
                 m1St.set(j, 5)
                 oAct.set(j, false)
+                dbg("M1 apagado (FVG contrario)", j == 0 ? 1 : -1, color.orange, "El lado contrario creó una orden del modelo 2")
 
     // 7) MODELO 1 · FVG en rango.
     array<bool> prinA = array.new<bool>(2, false)
@@ -465,6 +485,7 @@ if barstate.isconfirmed and bar_index >= 100
                     m1St.set(k, 1)
                     m1X.set(k, bar_index)
                     m1Ext.set(k, hK)
+                    dbg("M1 quiebre", s, color.orange, "Primer quiebre válido del lado")
             else if st == 1
                 if gapStruct(s, 0)
                     prin := true
@@ -472,11 +493,13 @@ if barstate.isconfirmed and bar_index >= 100
                     m1St.set(k, 2)
                 else
                     m1St.set(k, 5)
+                    dbg("M1 apagado (sin FVG principal)", s, color.orange, "Caso A sin hueco y la vela siguiente no tiene el color de la dirección")
             else if st == 2
                 if gapStruct(s, 0)
                     prin := true
                 else
                     m1St.set(k, 5)
+                    dbg("M1 apagado (caso B sin hueco)", s, color.orange, "No hay FVG principal")
             if prin
                 prinA.set(k, true)
                 int xo = bar_index - m1X.get(k)
@@ -498,6 +521,7 @@ if barstate.isconfirmed and bar_index >= 100
                         qAnc.set(k * NC + n, anq)
                         qT1.set(k * NC + n, t1q)
                         n += 1
+                dbg("M1 FVG principal · válidos: " + str.tostring(n), s, color.orange, "Candidatos que pasan cuerpo, tamaño, contacto con el rango y SL máximo")
                 qN.set(k, n)
                 qP.set(k, 0)
                 qBlk.set(k, false)
@@ -525,6 +549,8 @@ if barstate.isconfirmed and bar_index >= 100
                     float slP   = na
                     float qtyP  = 0.0
                     int   kindP = 0
+                    float rrEdgeD = na
+                    float rrMidD  = na
                     if not drop
                         float mid  = math.round_to_mintick((zl + zh) / 2)
                         [slE, okE] = slCalc(s, edge, an)
@@ -534,6 +560,8 @@ if barstate.isconfirmed and bar_index >= 100
                         float rewM = s == 1 ? ext - mid : mid + ext
                         float rkE  = math.abs(slE - edge)
                         float rkM  = math.abs(slM - mid)
+                        rrEdgeD := rkE > 0 ? rewE / rkE : na
+                        rrMidD  := rkM > 0 ? rewM / rkM : na
                         if not qMidOn.get(k) and okE and rkE > 0 and rewE / rkE >= rrMin - 1e-9
                             price := edge
                             slP   := slE
@@ -552,6 +580,7 @@ if barstate.isconfirmed and bar_index >= 100
                         if not na(price) and (s == 1 ? close < price : close > price)
                             drop := true
                     if drop
+                        dbg("M1 FVG descartado", s, color.orange, touched ? "El precio tocó el borde sin RR suficiente (ni en el borde ni en el 50%)" : "El precio ya pasó la entrada")
                         qP.set(k, qP.get(k) + 1)
                         qBlk.set(k, false)
                         qMidOn.set(k, false)
@@ -565,6 +594,8 @@ if barstate.isconfirmed and bar_index >= 100
                         continue
                     qKind.set(k, kindP)
                     if na(price)
+                        if not qBlk.get(k)
+                            dbg("M1 sin RR", s, color.new(color.orange, 40), "RR borde: " + str.tostring(rrEdgeD, "#.##") + " · RR 50%: " + str.tostring(rrMidD, "#.##") + " · mínimo " + str.tostring(rrMin, "#.##"))
                         qBlk.set(k, true)
                         oAct.set(k, false)
                     else
