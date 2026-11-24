@@ -25,7 +25,9 @@
 //      de la REFERENCIA (punto M1 más extremo confirmado desde el quiebre). Después se busca el FVG que creó cada impulso;
 //      sin contacto con el rango ni RR mínimo. El último impulso válido reemplaza a la orden pendiente.
 //    · Un quiebre válido del lado contrario es un CAMBIO DE DIRECCIÓN: cancela la orden pendiente y suspende el lado hasta que
-//      se REALINEE (una vela cierra con cuerpo más allá del M1 vigente al cambio). Solo vale UNA realineación por día.
+//      se REALINEE (una vela cierra con cuerpo, al menos minBreak puntos más allá del M1 vigente al cambio). Tras realinear hay
+//      que repetir quiebre + retroceso + impulso. La realineación solo gasta el cupo si después OPERA: mientras ninguna
+//      operación realineada se haya ejecutado, cada realineación sigue siendo válida; tras la primera, el modelo 2 ya no opera hoy.
 //
 //  LÍMITES: una operación por lado y modelo al día. Al activarse una orden del lado contrario se cierra la operación abierta;
 //  al activarse una del mismo lado y otro modelo no se abre. EMA20 y VWAP: filtros apagados por defecto.
@@ -259,6 +261,8 @@ var array<bool>  imp1   = array.new<bool>(2, false)
 var array<bool>  imp2   = array.new<bool>(2, false)
 var int dKey      = 0
 var int realignCn = 0
+var bool realignUsed = false
+var array<bool>  m2Real = array.new<bool>(2, false)
 // Órdenes pendientes: ranura 0 y 1 = modelo 1 (compras, ventas); 2 y 3 = modelo 2.
 var array<bool>  oAct = array.new<bool>(4, false)
 var array<float> oEnt = array.new<float>(4, na)
@@ -291,6 +295,7 @@ if barstate.isconfirmed and bar_index >= 100
     if dKey != dayKey
         dKey      := dayKey
         realignCn := 0
+        realignUsed := false
         for k = 0 to 1
             m1St.set(k, 0)
             m1X.set(k, 0)
@@ -306,6 +311,7 @@ if barstate.isconfirmed and bar_index >= 100
             m2R.set(k, na)
             m2Re.set(k, na)
             m2Done.set(k, false)
+            m2Real.set(k, false)
             imp1.set(k, false)
             imp2.set(k, false)
         for q = 0 to 3
@@ -332,6 +338,8 @@ if barstate.isconfirmed and bar_index >= 100
                 m1St.set(kf, 4)
             else
                 m2Done.set(kf, true)
+                if m2Real.get(kf)
+                    realignUsed := true
             oAct.set(wM * 2 + kf, false)
             if showMarks
                 string tip = (wM == 0 ? "FVG en rango" : "FVG en tendencia") + "\nEntrada: " + str.tostring(tEntry, format.mintick) + "\nSL: " + str.tostring(tSL, format.mintick) + "\nTP: " + str.tostring(tTP, format.mintick)
@@ -416,12 +424,13 @@ if barstate.isconfirmed and bar_index >= 100
                 // (igual que el quiebre del rango). Un intento que no llega (mecha o cierre corto) no cuenta.
                 if fav and inWin and tk(cK - m2Re.get(k)) >= tk(minBreak)
                     realignCn += 1
-                    if realignCn == 1
+                    if not realignUsed
                         m2Ph.set(k, 1)
                         m2Ext.set(k, hK)
+                        m2Real.set(k, true)
                     else
                         m2Ph.set(k, 5)
-                    dbg("M2 realineación #" + str.tostring(realignCn), s, color.purple, realignCn == 1 ? "Primera realineación: ahora se espera retroceso e impulso" : "Realineación posterior a la primera: el modelo 2 ya no opera hoy")
+                    dbg("M2 realineación #" + str.tostring(realignCn), s, color.purple, not realignUsed ? "Realineación válida: ahora se esperan retroceso e impulso" : "Ya operó una realineación: el modelo 2 no opera más hoy")
                     int j  = 1 - k
                     int phj = m2Ph.get(j)
                     if phj >= 1 and phj <= 3
